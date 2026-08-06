@@ -42,9 +42,7 @@ async function readData() {
     return await seed();
   }
 
-  const blob = result.blobs[0];
-
-  const response = await fetch(blob.url, {
+  const response = await fetch(result.blobs[0].url, {
     cache: 'no-store'
   });
 
@@ -71,7 +69,6 @@ export default async function handler(req, res) {
     );
 
     return res.status(200).json(data);
-
   } catch (error) {
     console.error('ERROR /api/content:', error);
 
