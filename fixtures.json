@@ -1,0 +1,16 @@
+[
+  { "date": "2026-08-05", "competition": "Los Pumas", "time": "16:00", "home": "Argentina", "away": "Sudáfrica", "channel": "ESPN" },
+  { "date": "2026-08-05", "competition": "Los Pumas", "time": "19:00", "home": "Argentina XV", "away": "Chile", "channel": "Disney+" },
+  { "date": "2026-08-05", "competition": "Super Rugby", "time": "08:00", "home": "Crusaders", "away": "Blues", "channel": "ESPN" },
+  { "date": "2026-08-05", "competition": "Super Rugby", "time": "10:30", "home": "Chiefs", "away": "Brumbies", "channel": "Disney+" },
+  { "date": "2026-08-06", "competition": "URBA TOP 14", "time": "15:30", "home": "SIC", "away": "Alumni", "channel": "URBA Play" },
+  { "date": "2026-08-06", "competition": "URBA TOP 14", "time": "17:00", "home": "Belgrano", "away": "Hindú", "channel": "URBA Play" },
+  { "date": "2026-08-06", "competition": "URBA", "time": "14:00", "home": "Club A", "away": "Club B", "channel": "URBA Play" },
+  { "date": "2026-08-06", "competition": "URBA", "time": "16:00", "home": "Club C", "away": "Club D", "channel": "URBA Play" },
+  { "date": "2026-08-08", "competition": "Los Pumas", "time": "17:00", "home": "Argentina", "away": "Nueva Zelanda", "channel": "ESPN" },
+  { "date": "2026-08-08", "competition": "Super Rugby", "time": "09:00", "home": "Hurricanes", "away": "Highlanders", "channel": "Disney+" },
+  { "date": "2026-08-09", "competition": "URBA TOP 14", "time": "15:00", "home": "CUBA", "away": "Newman", "channel": "URBA Play" },
+  { "date": "2026-08-09", "competition": "URBA", "time": "13:30", "home": "Club E", "away": "Club F", "channel": "URBA Play" },
+  { "date": "2026-08-09", "competition": "URBA", "time": "15:30", "home": "Club G", "away": "Club H", "channel": "URBA Play" },
+  { "date": "2026-08-12", "competition": "Super Rugby", "time": "08:30", "home": "Reds", "away": "Waratahs", "channel": "ESPN" }
+]
