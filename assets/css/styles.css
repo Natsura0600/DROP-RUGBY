@@ -392,3 +392,65 @@ blockquote { font-family: var(--serif); font-size: 28px; line-height: 1.5; font-
   .search-overlay input { font-size: 22px; }
 }
 .story-image img,.hero-image img{width:100%;height:100%;object-fit:cover;display:block}
+
+
+/* ================================
+   MOBILE - POSTS DEL INICIO
+   ================================ */
+
+@media (max-width: 768px) {
+
+  /* Grillas de noticias */
+  .stories-grid,
+  .category-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+  }
+
+  /* Evita que las tarjetas se salgan de la pantalla */
+  .story-card,
+  .category-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* Imágenes de las noticias */
+  .story-card img,
+  .category-card img,
+  .story-image,
+  .category-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Si las imágenes son divs con background */
+  .story-card .ph-image,
+  .category-card .ph-image {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Evita textos que empujen las tarjetas */
+  .story-card *,
+  .category-card * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Títulos */
+  .story-card h2,
+  .story-card h3,
+  .category-card h2,
+  .category-card h3 {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+}
