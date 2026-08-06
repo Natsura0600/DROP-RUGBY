@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby, URBA Top 14 y URBA. El rugby contado como tiene que ser.">
+  <link rel="canonical" href="https://www.droprugby.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DropRugby">
+  <meta property="og:title" content="DropRugby | Rugby, sin vueltas">
+  <meta property="og:description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby, URBA Top 14 y URBA. El rugby contado como tiene que ser.">
+  <meta property="og:url" content="https://www.droprugby.com/">
+  <meta name="robots" content="index, follow">
+  <title>DropRugby | Rugby, sin vueltas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+  <div class="topline"></div>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="DropRugby inicio">
+        <div class="logo-mark" aria-hidden="true">
+          <span class="goal goal-left"></span>
+          <span class="goal goal-right"></span>
+          <span class="player"></span>
+          <span class="ball"></span>
+        </div>
+        <div>
+          <div class="brand-name">DROP<span>RUGBY</span></div>
+          <div class="brand-tagline">Rugby, sin vueltas.</div>
+        </div>
+      </a>
+
+      <nav class="main-nav">
+        <a href="los-pumas.html">LOS PUMAS</a>
+        <a href="super-rugby.html">SUPER RUGBY</a>
+        <a href="urba-top-14.html">URBA TOP 14</a>
+        <a href="urba.html">URBA</a>
+        <a href="calendario.html">CALENDARIO</a>
+        <a href="contacto.html">CONTACTO</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="search-btn" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
+        <div class="social-links">
+          <a class="social-btn" href="https://www.instagram.com/droprugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
+          <a class="social-btn" href="https://www.tiktok.com/@droprugby" target="_blank" rel="noopener">TIKTOK ↗</a>
+        </div>
+        <button class="menu-btn" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-nav">
+      <a href="los-pumas.html">LOS PUMAS</a>
+      <a href="super-rugby.html">SUPER RUGBY</a>
+      <a href="urba-top-14.html">URBA TOP 14</a>
+      <a href="urba.html">URBA</a>
+      <a href="calendario.html">CALENDARIO</a>
+      <a href="contacto.html">CONTACTO</a>
+      <div class="mobile-social">
+        <a class="social-btn" href="https://www.instagram.com/droprugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
+        <a class="social-btn" href="https://www.tiktok.com/@droprugby" target="_blank" rel="noopener">TIKTOK ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="search-overlay" id="search-overlay">
+    <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
+    <div class="search-overlay-inner">
+      <input type="text" id="search-input" placeholder="Buscar noticias, equipos, jugadores…" autocomplete="off">
+      <p class="search-hint">Probá con "Los Pumas", "URBA", "Super Rugby" o el nombre de un equipo.</p>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <main>
+
+    <section class="hero" id="hero">
+      <div class="hero-copy reveal">
+        <p class="eyebrow">DROP RUGBY · ACTUALIDAD</p>
+        <h1>El rugby contado<br><em>como tiene que ser.</em></h1>
+        <p class="hero-text">Noticias, protagonistas y análisis para entender lo que pasa dentro y fuera de la cancha: Los Pumas, Super Rugby y el rugby de clubes de URBA.</p>
+        <a class="button" id="home-hero-link" href="los-pumas.html">Leer la historia principal <span>→</span></a>
+      </div>
+      <div class="hero-card reveal" id="home-hero">
+        <div class="hero-card-inner">
+          <div class="hero-image img-tone-1 photo-not-clickable ph-image">
+            <div class="image-overlay"></div>
+            <div class="hero-card-caption"><span>TOP STORY</span><h2>Cargando la noticia principal…</h2></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADSENSE SLOT -->
+    <div class="ad-slot">ESPACIO PUBLICITARIO</div>
+
+    <section class="section" id="ultimas-noticias">
+      <div class="section-heading">
+        <div><p class="eyebrow">LO MÁS RECIENTE</p><h2>Últimas noticias</h2></div>
+        <span class="section-line"></span>
+      </div>
+      <div class="stories-grid" id="home-top-stories"></div>
+    </section>
+
+    <section class="section" id="pumas">
+      <div class="section-heading-row">
+        <div><p class="eyebrow">SELECCIÓN NACIONAL</p><h2>Los Pumas</h2></div>
+        <a class="section-more" href="los-pumas.html">VER TODAS LAS NOTICIAS DE LOS PUMAS →</a>
+      </div>
+      <div class="category-cards" id="home-los-pumas"></div>
+    </section>
+
+    <!-- ADSENSE SLOT -->
+    <div class="ad-slot">ESPACIO PUBLICITARIO</div>
+
+    <section class="section" id="super-rugby">
+      <div class="section-heading-row">
+        <div><p class="eyebrow">HEMISFERIO SUR</p><h2>Super Rugby</h2></div>
+        <a class="section-more" href="super-rugby.html">VER TODAS LAS NOTICIAS DE SUPER RUGBY →</a>
+      </div>
+      <div class="category-cards" id="home-super-rugby"></div>
+    </section>
+
+    <section class="quote-band">
+      <div class="quote-inner reveal">
+        <span class="quote-mark">"</span>
+        <blockquote>El rugby no se explica solamente con el resultado. Se entiende en las decisiones que lo construyen.</blockquote>
+        <p>— DROPRUGBY</p>
+      </div>
+    </section>
+
+    <section class="section" id="urba-top14">
+      <div class="section-heading-row">
+        <div><p class="eyebrow">RUGBY DE CLUBES</p><h2>URBA Top 14</h2></div>
+        <a class="section-more" href="urba-top-14.html">VER TODAS LAS NOTICIAS DE URBA TOP 14 →</a>
+      </div>
+      <div class="category-cards" id="home-urba-top14"></div>
+    </section>
+
+    <section class="section" id="urba">
+      <div class="section-heading-row">
+        <div><p class="eyebrow">RUGBY AMATEUR</p><h2>URBA</h2></div>
+        <a class="section-more" href="urba.html">VER TODAS LAS NOTICIAS DE URBA →</a>
+      </div>
+      <div class="category-cards" id="home-urba"></div>
+    </section>
+
+    <section class="section" id="calendario-preview">
+      <div class="section-heading-row">
+        <div><p class="eyebrow">AGENDA</p><h2>Próximos partidos</h2></div>
+        <a class="section-more" href="calendario.html">VER CALENDARIO COMPLETO →</a>
+      </div>
+      <div class="competition-block" id="home-calendar-preview" style="border:1px solid var(--line);"></div>
+    </section>
+
+    <section class="newsletter">
+      <div>
+        <p class="eyebrow">NEWSLETTER</p>
+        <h2>Recibí las principales<br>noticias de rugby.</h2>
+      </div>
+      <form class="newsletter-form" onsubmit="event.preventDefault(); this.classList.add('submitted');">
+        <!-- NEWSLETTER PROVIDER FORM HERE (Brevo / Mailchimp / Buttondown) -->
+        <input type="email" placeholder="Tu email" aria-label="Tu email" required>
+        <button type="submit">Suscribirme <span>→</span></button>
+        <small>Sin spam. Solo rugby.</small>
+      </form>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <div class="brand-name">DROP<span>RUGBY</span></div>
+      <p>Medio digital de rugby: noticias, análisis y opinión de Los Pumas, Super Rugby y el rugby de clubes.</p>
+      <div class="footer-socials" style="margin-top:16px;">
+        <a class="social-btn" href="https://www.instagram.com/droprugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
+        <a class="social-btn" href="https://www.tiktok.com/@droprugby" target="_blank" rel="noopener">TIKTOK ↗</a>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="los-pumas.html">Los Pumas</a>
+      <a href="super-rugby.html">Super Rugby</a>
+      <a href="urba-top-14.html">Urba Top 14</a>
+      <a href="urba.html">Urba</a>
+      <a href="calendario.html">Calendario</a>
+      <a href="contacto.html">Contacto</a>
+    </div>
+    <p class="copyright">© 2026 DropRugby. Todos los derechos reservados.</p>
+  </footer>
+  
+  <script src="assets/js/script.js"></script>
+  
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="index, follow">
+  <title>Artículo | DropRugby</title>
+  <meta id="meta-description" name="description" content="Noticias de rugby en DropRugby.">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>.dynamic-article{max-width:860px;margin:0 auto;padding:70px 24px 100px}.dynamic-article .article-kicker{font:700 10px var(--sans);letter-spacing:2px;color:#777;margin:0 0 12px}.dynamic-article h1{font:400 clamp(38px,6vw,72px) var(--serif);line-height:1.04;margin:0 0 18px}.dynamic-article .lead{font:400 19px/1.65 var(--sans);color:#666;max-width:720px}.dynamic-meta{margin:24px 0 34px;font:600 10px var(--sans);letter-spacing:.8px;color:#777}.dynamic-image{height:430px;margin:0 0 42px;border-radius:3px;overflow:hidden;background:#ddd}.dynamic-image img{width:100%;height:100%;object-fit:cover}.dynamic-body{font:400 17px/1.9 var(--sans);color:#272727}.dynamic-body p{margin:0 0 24px}.dynamic-body h2{font:400 32px var(--serif);margin:42px 0 15px}.dynamic-body blockquote{font:italic 25px/1.5 var(--serif);border-left:3px solid #111;padding:8px 0 8px 22px;margin:35px 0}.dynamic-back{display:inline-block;margin-top:35px;font:700 10px var(--sans);letter-spacing:1px;text-decoration:none;color:#111}@media(max-width:600px){.dynamic-article{padding-top:45px}.dynamic-image{height:260px}.dynamic-body{font-size:16px}.dynamic-article .lead{font-size:17px}}</style>
+</head>
+<body>
+  <div class="topline"></div>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="index.html"><div class="logo-mark" aria-hidden="true"><span class="goal goal-left"></span><span class="goal goal-right"></span><span class="player"></span><span class="ball"></span></div><div><div class="brand-name">DROP<span>RUGBY</span></div><div class="brand-tagline">Rugby, sin vueltas.</div></div></a>
+    <nav class="main-nav"><a href="los-pumas.html">LOS PUMAS</a><a href="super-rugby.html">SUPER RUGBY</a><a href="urba-top-14.html">URBA TOP 14</a><a href="urba.html">URBA</a><a href="calendario.html">CALENDARIO</a><a href="contacto.html">CONTACTO</a></nav>
+    <div class="header-actions"><a class="social-btn" href="https://www.instagram.com/droprugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a><button class="menu-btn" aria-label="Abrir menú"><span></span><span></span></button></div>
+  </div><div class="mobile-nav"><a href="los-pumas.html">LOS PUMAS</a><a href="super-rugby.html">SUPER RUGBY</a><a href="urba-top-14.html">URBA TOP 14</a><a href="urba.html">URBA</a><a href="calendario.html">CALENDARIO</a><a href="contacto.html">CONTACTO</a></div></header>
+  <main><article class="dynamic-article" id="article-root"><p class="article-kicker">DROP RUGBY</p><h1>Cargando artículo…</h1></article></main>
+  <footer class="footer"><div class="footer-brand"><div class="brand-name">DROP<span>RUGBY</span></div><p>Medio digital de rugby: noticias, análisis y opinión.</p></div><div class="footer-links"><a href="los-pumas.html">Los Pumas</a><a href="super-rugby.html">Super Rugby</a><a href="urba-top-14.html">URBA Top 14</a><a href="urba.html">URBA</a><a href="calendario.html">Calendario</a></div><p class="copyright">© 2026 DropRugby. Todos los derechos reservados.</p></footer>
+  <script src="assets/js/script.js"></script>
+  <script>
+    (async()=>{
+      const id=new URLSearchParams(location.search).get('id');
+      const root=document.getElementById('article-root');
+      function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+      try{
+        const res=await fetch('/api/content',{cache:'no-store'}); if(!res.ok) throw new Error(); const data=await res.json();
+        const a=(data.articles||[]).find(x=>x.id===id);
+        if(!a) throw new Error();
+        document.title=`${a.title} | DropRugby`; document.getElementById('meta-description').content=a.excerpt||'';
+        const image=a.imageUrl?`<div class="dynamic-image"><img src="${esc(a.imageUrl)}" alt="${esc(a.title)}"></div>`:`<div class="dynamic-image ${esc(a.imageClass||'img-tone-1')}"></div>`;
+        root.innerHTML=`<p class="article-kicker">${esc(a.category).toUpperCase()} · ${esc(a.subcategory||'ACTUALIDAD').toUpperCase()}</p><h1>${esc(a.title)}</h1><p class="lead">${esc(a.excerpt)}</p><div class="dynamic-meta">POR ${esc(a.author||'DROPRUGBY').toUpperCase()} · ${esc(a.date)}</div>${image}<div class="dynamic-body">${a.content||`<p>${esc(a.excerpt)}</p>`}</div><a class="dynamic-back" href="index.html">← VOLVER A DROP RUGBY</a>`;
+      }catch(e){root.innerHTML='<p class="article-kicker">DROP RUGBY</p><h1>Artículo no encontrado.</h1><p class="lead">La publicación puede haber sido eliminada o todavía no está disponible.</p><a class="dynamic-back" href="index.html">← VOLVER A DROP RUGBY</a>';}
+    })();
+  </script>
+</body></html>
