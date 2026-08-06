@@ -49,7 +49,7 @@ async function saveData(data) {
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: 'application/json; charset=utf-8',
-    cacheControlMaxAge: 30
+    cacheControlMaxAge: 0
   });
 }
 
