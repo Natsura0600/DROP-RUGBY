@@ -51,15 +51,22 @@ img { max-width: 100%; }
 .brand-name span { font-weight: 500; }
 .brand-tagline { font-family: var(--serif); font-size: 10px; margin-top: 3px; opacity: .85; }
 
-.logo-mark { width: 46px; height: 46px; background: #000; border: 1px solid rgba(255,255,255,.4); position: relative; overflow: hidden; flex-shrink: 0; }
-.goal { position: absolute; bottom: 8px; width: 2px; height: 22px; background: white; }
-.goal-left { left: 10px; }
-.goal-right { left: 24px; }
-.logo-mark::after { content: ""; position: absolute; left: 9px; top: 12px; width: 17px; height: 2px; background: white; }
-.player { position: absolute; width: 16px; height: 5px; background: white; transform: rotate(-28deg); left: 16px; top: 25px; border-radius: 5px; }
-.player::before { content: ""; position: absolute; width: 6px; height: 6px; border-radius: 50%; background: white; left: 12px; top: -5px; }
-.player::after { content: ""; position: absolute; width: 12px; height: 3px; background: white; left: -8px; top: 6px; transform: rotate(35deg); transform-origin: right center; }
-.ball { position: absolute; width: 7px; height: 4px; background: white; border-radius: 50%; left: 28px; top: 19px; transform: rotate(-35deg); }
+.logo-mark {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.logo-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 
 .main-nav { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
 .main-nav a, .mobile-nav a { font-size: 11px; font-weight: 700; letter-spacing: 1px; position: relative; padding: 6px 0; white-space: nowrap; }
