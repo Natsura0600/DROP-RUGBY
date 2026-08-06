@@ -42,18 +42,17 @@ async function readData() {
     return await seed();
   }
 
-  const resultData = await get(BLOB_PATH, {
-    access: 'public',
-    useCache: false
+  const blob = result.blobs[0];
+
+  const response = await fetch(`${blob.url}?cache=0`, {
+    cache: 'no-store'
   });
 
-  if (!resultData) {
+  if (!response.ok) {
     throw new Error('No se pudo leer el contenido guardado.');
   }
 
-  const text = await new Response(resultData.stream).text();
-
-  return JSON.parse(text);
+  return await response.json();
 }
 
 export default async function handler(req, res) {
@@ -64,14 +63,15 @@ export default async function handler(req, res) {
       });
     }
 
-   const data = await readData();
+    const data = await readData();
 
-res.setHeader(
-  'Cache-Control',
-  'no-store, no-cache, must-revalidate'
-);
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate'
+    );
 
-return res.status(200).json(data);
+    return res.status(200).json(data);
+
   } catch (error) {
     console.error('ERROR /api/content:', error);
 
