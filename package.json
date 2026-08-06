@@ -2,7 +2,10 @@
   "name": "droprugby",
   "version": "5.0.0",
   "private": true,
-  "engines": {"node": ">=20"},
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@vercel/blob": "latest"
   }
