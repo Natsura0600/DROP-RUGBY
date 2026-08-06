@@ -1,4 +1,4 @@
-import { list, put } from '@vercel/blob';
+import { get, put } from '@vercel/blob';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -24,8 +24,9 @@ async function seed() {
     {
       access: 'public',
       addRandomSuffix: false,
-      contentType: 'application/json; charset=utf-8',
-      allowOverwrite: true
+      contentType: 'application/json',
+      allowOverwrite: true,
+      cacheControlMaxAge: 60
     }
   );
 
@@ -33,26 +34,25 @@ async function seed() {
 }
 
 async function readData() {
-  const result = await list({
-    prefix: BLOB_PATH,
-    limit: 1
+  // Intentar leer directamente el Blob existente
+  const result = await get(BLOB_PATH, {
+    access: 'public'
   });
 
-  if (!result.blobs.length) {
+  // Si todavía no existe, crear el contenido inicial
+  if (!result) {
     return await seed();
   }
 
-  const blob = result.blobs[0];
-
-  const response = await fetch(`${blob.url}?cache=0`, {
-    cache: 'no-store'
-  });
-
-  if (!response.ok) {
-    throw new Error('No se pudo leer el contenido guardado.');
+  if (result.statusCode !== 200 || !result.stream) {
+    throw new Error(
+      `No se pudo leer el Blob. Status: ${result.statusCode}`
+    );
   }
 
-  return await response.json();
+  const text = await new Response(result.stream).text();
+
+  return JSON.parse(text);
 }
 
 export default async function handler(req, res) {
@@ -65,10 +65,14 @@ export default async function handler(req, res) {
 
     const data = await readData();
 
+    // Evita que /api/content quede cacheado por Vercel
     res.setHeader(
       'Cache-Control',
-      'no-store, no-cache, must-revalidate'
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
     );
+
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     return res.status(200).json(data);
 
@@ -77,7 +81,9 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       error: 'No se pudo cargar el contenido.',
-      detail: error instanceof Error ? error.message : String(error)
+      detail: error instanceof Error
+        ? error.message
+        : String(error)
     });
   }
 }
