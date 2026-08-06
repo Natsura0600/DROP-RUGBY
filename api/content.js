@@ -1,82 +1,83 @@
-const { list, put } = require('@vercel/blob');
-const fs = require('node:fs/promises');
-const path = require('node:path');
+import { list, put } from '@vercel/blob';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 const BLOB_PATH = 'droprugby/content.json';
 
 async function seed() {
-const [articles, fixtures] = await Promise.all([
-fs.readFile(path.join(process.cwd(), 'data/articles.json'), 'utf8'),
-fs.readFile(path.join(process.cwd(), 'data/fixtures.json'), 'utf8')
-]);
+  const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
+  const fixturesPath = path.join(process.cwd(), 'data', 'fixtures.json');
 
-const data = {
-articles: JSON.parse(articles),
-fixtures: JSON.parse(fixtures)
-};
+  const [articlesFile, fixturesFile] = await Promise.all([
+    fs.readFile(articlesPath, 'utf8'),
+    fs.readFile(fixturesPath, 'utf8')
+  ]);
 
-await put(
-BLOB_PATH,
-JSON.stringify(data),
-{
-access: 'public',
-addRandomSuffix: false,
-contentType: 'application/json; charset=utf-8'
-}
-);
+  const data = {
+    articles: JSON.parse(articlesFile),
+    fixtures: JSON.parse(fixturesFile)
+  };
 
-return data;
+  await put(
+    BLOB_PATH,
+    JSON.stringify(data),
+    {
+      access: 'public',
+      addRandomSuffix: false,
+      contentType: 'application/json; charset=utf-8',
+      allowOverwrite: true
+    }
+  );
+
+  return data;
 }
 
 async function readData() {
-const result = await list({
-prefix: BLOB_PATH,
-limit: 1
-});
+  const result = await list({
+    prefix: BLOB_PATH,
+    limit: 1
+  });
 
-if (!result.blobs.length) {
-return seed();
+  if (!result.blobs.length) {
+    return await seed();
+  }
+
+  const blob = result.blobs[0];
+
+  const response = await fetch(blob.url, {
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo leer el contenido guardado.');
+  }
+
+  return await response.json();
 }
 
-const res = await fetch(result.blobs[0].url, {
-cache: 'no-store'
-});
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'GET') {
+      return res.status(405).json({
+        error: 'Método no permitido'
+      });
+    }
 
-if (!res.ok) {
-throw new Error('No se pudo leer el contenido guardado.');
+    const data = await readData();
+
+    res.setHeader(
+      'Cache-Control',
+      's-maxage=30, stale-while-revalidate=120'
+    );
+
+    return res.status(200).json(data);
+
+  } catch (error) {
+    console.error('ERROR /api/content:', error);
+
+    return res.status(500).json({
+      error: 'No se pudo cargar el contenido.',
+      detail: error instanceof Error ? error.message : String(error)
+    });
+  }
 }
-
-return res.json();
-}
-
-module.exports = async function handler(req, res) {
-try {
-if (req.method === 'GET') {
-const data = await readData();
-
-```
-  res.setHeader(
-    'Cache-Control',
-    's-maxage=30, stale-while-revalidate=120'
-  );
-
-  return res.status(200).json(data);
-}
-
-return res.status(405).json({
-  error: 'Método no permitido'
-});
-```
-
-} catch (error) {
-console.error(error);
-
-```
-return res.status(500).json({
-  error: 'No se pudo cargar el contenido.',
-  detail: error.message
-});
-```
-
-}
-};
