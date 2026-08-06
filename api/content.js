@@ -42,15 +42,18 @@ async function readData() {
     return await seed();
   }
 
-  const response = await fetch(result.blobs[0].url, {
-    cache: 'no-store'
+  const resultData = await get(BLOB_PATH, {
+    access: 'public',
+    useCache: false
   });
 
-  if (!response.ok) {
+  if (!resultData) {
     throw new Error('No se pudo leer el contenido guardado.');
   }
 
-  return await response.json();
+  const text = await new Response(resultData.stream).text();
+
+  return JSON.parse(text);
 }
 
 export default async function handler(req, res) {
