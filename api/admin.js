@@ -44,7 +44,13 @@ async function readData() {
   return r.json();
 }
 async function saveData(data) {
-  await put(BLOB_PATH, JSON.stringify(data), { access: 'public', addRandomSuffix: false, contentType: 'application/json; charset=utf-8', cacheControlMaxAge: 30 });
+  await put(BLOB_PATH, JSON.stringify(data), {
+    access: 'public',
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: 'application/json; charset=utf-8',
+    cacheControlMaxAge: 30
+  });
 }
 
 export default async function handler(req, res) {
