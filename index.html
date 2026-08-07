@@ -171,6 +171,420 @@
       <div class="competition-block" id="home-calendar-preview" style="border:1px solid var(--line);"></div>
     </section>
 
+
+<!-- =========================
+     DROP RUGBY - INSTAGRAM
+========================= -->
+
+<section class="dr-instagram">
+
+  <div class="dr-instagram-header">
+    <div>
+      <span class="dr-instagram-label">INSTAGRAM</span>
+      <h2>Seguinos en Instagram</h2>
+      <p>@drop_rugby · Noticias, resultados y actualidad del rugby argentino</p>
+    </div>
+
+    <a
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="dr-instagram-follow"
+    >
+      Ver perfil
+    </a>
+  </div>
+
+
+  <div class="dr-instagram-carousel">
+
+    <a
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="dr-instagram-card"
+    >
+      <div class="dr-instagram-card-image">
+        <div class="dr-instagram-icon">◎</div>
+      </div>
+
+      <div class="dr-instagram-card-content">
+        <span>@drop_rugby</span>
+        <strong>Últimas noticias</strong>
+        <small>Ver en Instagram →</small>
+      </div>
+    </a>
+
+
+    <a
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="dr-instagram-card"
+    >
+      <div class="dr-instagram-card-image">
+        <div class="dr-instagram-icon">◎</div>
+      </div>
+
+      <div class="dr-instagram-card-content">
+        <span>@drop_rugby</span>
+        <strong>Resultados y estadísticas</strong>
+        <small>Ver en Instagram →</small>
+      </div>
+    </a>
+
+
+    <a
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="dr-instagram-card"
+    >
+      <div class="dr-instagram-card-image">
+        <div class="dr-instagram-icon">◎</div>
+      </div>
+
+      <div class="dr-instagram-card-content">
+        <span>@drop_rugby</span>
+        <strong>Rugby argentino</strong>
+        <small>Ver en Instagram →</small>
+      </div>
+    </a>
+
+
+    <a
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="dr-instagram-card"
+    >
+      <div class="dr-instagram-card-image">
+        <div class="dr-instagram-icon">◎</div>
+      </div>
+
+      <div class="dr-instagram-card-content">
+        <span>@drop_rugby</span>
+        <strong>Contenido exclusivo</strong>
+        <small>Ver en Instagram →</small>
+      </div>
+    </a>
+
+
+    <a
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="dr-instagram-card"
+    >
+      <div class="dr-instagram-card-image">
+        <div class="dr-instagram-icon">◎</div>
+      </div>
+
+      <div class="dr-instagram-card-content">
+        <span>@drop_rugby</span>
+        <strong>Seguinos</strong>
+        <small>Instagram →</small>
+      </div>
+    </a>
+
+  </div>
+
+</section>
+
+
+<style>
+
+/* =========================
+   INSTAGRAM SECTION
+========================= */
+
+.dr-instagram {
+  width: 100%;
+  margin: 70px auto;
+  padding: 45px 0;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.dr-instagram-header {
+  max-width: 1200px;
+  margin: 0 auto 28px;
+  padding: 0 20px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.dr-instagram-label {
+  display: inline-block;
+  margin-bottom: 8px;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  color: #777;
+}
+
+.dr-instagram-header h2 {
+  margin: 0;
+
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.05;
+  font-weight: 850;
+  letter-spacing: -1px;
+  color: #111;
+}
+
+.dr-instagram-header p {
+  margin: 10px 0 0;
+
+  color: #777;
+  font-size: 14px;
+}
+
+.dr-instagram-follow {
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 44px;
+  padding: 0 20px;
+
+  border-radius: 5px;
+
+  background: #111;
+  color: #fff !important;
+
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none !important;
+
+  transition:
+    transform .2s ease,
+    background .2s ease;
+}
+
+.dr-instagram-follow:hover {
+  transform: translateY(-2px);
+  background: #333;
+}
+
+
+/* =========================
+   CARRUSEL
+========================= */
+
+.dr-instagram-carousel {
+  width: 100%;
+
+  display: flex;
+  gap: 16px;
+
+  overflow-x: auto;
+
+  padding: 5px 20px 20px;
+
+  scroll-snap-type: x mandatory;
+
+  scrollbar-width: thin;
+  scrollbar-color: #bbb transparent;
+}
+
+.dr-instagram-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.dr-instagram-carousel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dr-instagram-carousel::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 20px;
+}
+
+
+/* =========================
+   CARD
+========================= */
+
+.dr-instagram-card {
+  position: relative;
+
+  flex: 0 0 260px;
+
+  height: 330px;
+
+  overflow: hidden;
+
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #111 0%,
+      #222 50%,
+      #111 100%
+    );
+
+  text-decoration: none !important;
+
+  scroll-snap-align: start;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.dr-instagram-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,.18);
+}
+
+
+/* Imagen / fondo */
+
+.dr-instagram-card-image {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at 30% 20%,
+      rgba(255,255,255,.12),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(255,255,255,.08),
+      transparent 35%
+    ),
+    #111;
+}
+
+.dr-instagram-icon {
+  width: 75px;
+  height: 75px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid rgba(255,255,255,.8);
+  border-radius: 22px;
+
+  color: #fff;
+
+  font-size: 58px;
+  font-weight: 300;
+
+  line-height: 1;
+}
+
+
+/* Degradado inferior */
+
+.dr-instagram-card::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(0,0,0,.95) 0%,
+      rgba(0,0,0,.55) 35%,
+      rgba(0,0,0,0) 70%
+    );
+
+  pointer-events: none;
+}
+
+
+/* Texto */
+
+.dr-instagram-card-content {
+  position: absolute;
+
+  z-index: 2;
+
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.dr-instagram-card-content span {
+  margin-bottom: 5px;
+
+  color: #bbb;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dr-instagram-card-content strong {
+  color: #fff;
+
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.dr-instagram-card-content small {
+  margin-top: 8px;
+
+  color: #fff;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 650px) {
+
+  .dr-instagram {
+    margin: 45px auto;
+    padding: 35px 0;
+  }
+
+  .dr-instagram-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .dr-instagram-follow {
+    width: 100%;
+  }
+
+  .dr-instagram-card {
+    flex-basis: 220px;
+    height: 290px;
+  }
+
+}
+
+</style>
+
+
+
+    
+
 <section class="newsletter">
   <div>
     <p class="eyebrow">NEWSLETTER</p>
