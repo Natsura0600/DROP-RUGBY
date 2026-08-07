@@ -172,205 +172,78 @@
     </section>
 
 
-```html
-<!-- =========================================================
-     DROP RUGBY — INSTAGRAM CAROUSEL
-========================================================= -->
+<!-- DROP RUGBY - CONTENIDO EXCLUSIVO -->
+<section class="dr-exclusive-instagram">
+  <a
+    href="https://www.instagram.com/drop_rugby/"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="dr-exclusive-link"
+  >
 
-<section class="dr-instagram-section">
+    <div class="dr-exclusive-content">
 
-  <div class="dr-instagram-container">
-
-    <!-- HEADER -->
-
-    <div class="dr-instagram-heading">
-
-      <div class="dr-instagram-heading-left">
-
-        <span class="dr-instagram-kicker">
-          INSTAGRAM
-        </span>
-
-        <h2>
-          Seguinos en Instagram
-        </h2>
-
-        <p>
-          La actualidad del rugby argentino también está en
-          <strong>@drop_rugby</strong>
-        </p>
-
+      <div class="dr-exclusive-instagram-icon">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+          <circle cx="12" cy="12" r="4"></circle>
+          <circle cx="17.5" cy="6.5" r="1"></circle>
+        </svg>
       </div>
 
-      <a
-        href="https://www.instagram.com/drop_rugby/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="dr-instagram-profile-button"
-      >
-        <span class="dr-instagram-button-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="5"></rect>
-            <circle cx="12" cy="12" r="4"></circle>
-            <circle cx="17.5" cy="6.5" r="1"></circle>
-          </svg>
-        </span>
+      <span class="dr-exclusive-label">
+        DROP RUGBY · INSTAGRAM
+      </span>
 
-        Ver perfil
-      </a>
+      <h2>
+        Contenido exclusivo<br>
+        que no vas a encontrar acá.
+      </h2>
 
-    </div>
+      <p>
+        Seguinos en Instagram para acceder a contenido,
+        estadísticas, imágenes y toda la actualidad del rugby argentino.
+      </p>
 
-
-    <!-- CAROUSEL -->
-
-    <div class="dr-instagram-carousel-wrapper">
-
-      <!-- LEFT ARROW -->
-
-      <button
-        type="button"
-        class="dr-instagram-arrow dr-instagram-arrow-left"
-        aria-label="Publicación anterior"
-      >
-        <svg viewBox="0 0 24 24">
-          <path d="M15 18l-6-6 6-6"></path>
-        </svg>
-      </button>
-
-
-      <!-- POSTS -->
-
-      <div
-        class="dr-instagram-carousel"
-        id="dropRugbyInstagramCarousel"
-      ></div>
-
-
-      <!-- RIGHT ARROW -->
-
-      <button
-        type="button"
-        class="dr-instagram-arrow dr-instagram-arrow-right"
-        aria-label="Siguiente publicación"
-      >
-        <svg viewBox="0 0 24 24">
-          <path d="M9 18l6-6-6-6"></path>
-        </svg>
-      </button>
+      <span class="dr-exclusive-button">
+        Seguinos en Instagram
+        <span>→</span>
+      </span>
 
     </div>
 
+    <div class="dr-exclusive-background">
+      <span>DR</span>
+    </div>
 
-    <!-- DOTS -->
-
-    <div
-      class="dr-instagram-dots"
-      id="dropRugbyInstagramDots"
-    ></div>
-
-  </div>
-
+  </a>
 </section>
 
 
 <style>
 
-/* =========================================================
-   GENERAL
-========================================================= */
+/* =========================================
+   DROP RUGBY — INSTAGRAM EXCLUSIVE
+========================================= */
 
-.dr-instagram-section {
+.dr-exclusive-instagram {
   width: 100%;
-  margin: 75px 0;
-  padding: 60px 0;
+  margin: 70px 0;
+}
 
-  background: #f5f5f5;
+.dr-exclusive-link {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  min-height: 330px;
 
   overflow: hidden;
-}
 
-.dr-instagram-container {
-  width: min(1250px, calc(100% - 40px));
-  margin: 0 auto;
-}
+  padding: 55px 7%;
 
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.dr-instagram-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-
-  gap: 30px;
-
-  margin-bottom: 35px;
-}
-
-.dr-instagram-heading-left {
-  min-width: 0;
-}
-
-.dr-instagram-kicker {
-  display: block;
-
-  margin-bottom: 10px;
-
-  font-size: 11px;
-  font-weight: 800;
-
-  letter-spacing: .18em;
-
-  color: #777;
-}
-
-.dr-instagram-heading h2 {
-  margin: 0;
-
-  font-size: clamp(30px, 4vw, 46px);
-
-  line-height: 1;
-
-  letter-spacing: -1.5px;
-
-  font-weight: 900;
-
-  color: #111;
-}
-
-.dr-instagram-heading p {
-  margin: 12px 0 0;
-
-  color: #777;
-
-  font-size: 15px;
-}
-
-.dr-instagram-heading p strong {
-  color: #111;
-}
-
-
-/* =========================================================
-   PROFILE BUTTON
-========================================================= */
-
-.dr-instagram-profile-button {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  gap: 9px;
-
-  min-height: 45px;
-
-  padding: 0 20px;
-
-  border-radius: 5px;
+  border-radius: 8px;
 
   background: #111;
 
@@ -378,917 +251,251 @@
 
   text-decoration: none !important;
 
-  font-size: 13px;
-
-  font-weight: 750;
-
-  white-space: nowrap;
+  box-shadow: 0 15px 40px rgba(0,0,0,.12);
 
   transition:
-    transform .2s ease,
-    background .2s ease;
-}
-
-.dr-instagram-profile-button:hover {
-  transform: translateY(-2px);
-
-  background: #292929;
-}
-
-.dr-instagram-button-icon {
-  width: 18px;
-  height: 18px;
-
-  display: inline-flex;
-}
-
-.dr-instagram-button-icon svg {
-  width: 100%;
-  height: 100%;
-
-  fill: none;
-
-  stroke: currentColor;
-
-  stroke-width: 1.7;
-}
-
-
-/* =========================================================
-   CAROUSEL WRAPPER
-========================================================= */
-
-.dr-instagram-carousel-wrapper {
-  position: relative;
-
-  width: 100%;
-}
-
-
-/* =========================================================
-   CAROUSEL
-========================================================= */
-
-.dr-instagram-carousel {
-  display: flex;
-
-  gap: 18px;
-
-  width: 100%;
-
-  overflow-x: auto;
-
-  scroll-behavior: smooth;
-
-  scroll-snap-type: x mandatory;
-
-  scrollbar-width: none;
-
-  padding: 5px 4px 20px;
-}
-
-.dr-instagram-carousel::-webkit-scrollbar {
-  display: none;
-}
-
-
-/* =========================================================
-   CARD
-========================================================= */
-
-.dr-instagram-card {
-  position: relative;
-
-  flex: 0 0 300px;
-
-  height: 405px;
-
-  overflow: hidden;
-
-  border-radius: 8px;
-
-  background: #111;
-
-  scroll-snap-align: start;
-
-  text-decoration: none !important;
-
-  box-shadow:
-    0 8px 25px rgba(0,0,0,.08);
-
-  transition:
-    transform .3s cubic-bezier(.2,.8,.2,1),
+    transform .3s ease,
     box-shadow .3s ease;
 }
 
-.dr-instagram-card:hover {
-  transform: translateY(-7px);
+.dr-exclusive-link:hover {
+  transform: translateY(-5px);
 
   box-shadow:
-    0 18px 40px rgba(0,0,0,.18);
+    0 22px 50px rgba(0,0,0,.2);
 }
 
 
-/* =========================================================
-   IMAGE
-========================================================= */
+/* =========================================
+   CONTENIDO
+========================================= */
 
-.dr-instagram-image {
-  position: absolute;
-
-  inset: 0;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-
-  transition:
-    transform .6s cubic-bezier(.2,.8,.2,1);
-}
-
-.dr-instagram-card:hover .dr-instagram-image {
-  transform: scale(1.06);
-}
-
-
-/* =========================================================
-   IMAGE DARK OVERLAY
-========================================================= */
-
-.dr-instagram-overlay {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 1;
-
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(0,0,0,.08) 0%,
-      rgba(0,0,0,.02) 35%,
-      rgba(0,0,0,.28) 55%,
-      rgba(0,0,0,.94) 100%
-    );
-}
-
-
-/* =========================================================
-   INSTAGRAM ICON
-========================================================= */
-
-.dr-instagram-post-icon {
-  position: absolute;
+.dr-exclusive-content {
+  position: relative;
 
   z-index: 3;
 
-  top: 18px;
-  right: 18px;
+  max-width: 650px;
+}
 
-  width: 36px;
-  height: 36px;
+.dr-exclusive-label {
+  display: block;
+
+  margin-bottom: 14px;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: .18em;
+
+  color: rgba(255,255,255,.55);
+}
+
+.dr-exclusive-content h2 {
+  margin: 0;
+
+  font-size: clamp(34px, 5vw, 58px);
+
+  line-height: .98;
+
+  letter-spacing: -2px;
+
+  font-weight: 900;
+
+  color: #fff;
+}
+
+.dr-exclusive-content p {
+  max-width: 560px;
+
+  margin: 20px 0 25px;
+
+  color: rgba(255,255,255,.68);
+
+  font-size: 15px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================
+   INSTAGRAM ICON
+========================================= */
+
+.dr-exclusive-instagram-icon {
+  width: 48px;
+  height: 48px;
 
   display: flex;
 
   align-items: center;
   justify-content: center;
 
-  border-radius: 50%;
+  margin-bottom: 22px;
 
-  background: rgba(0,0,0,.62);
+  border: 1px solid rgba(255,255,255,.25);
+
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.06);
 
   backdrop-filter: blur(8px);
-
-  color: #fff;
 }
 
-.dr-instagram-post-icon svg {
-  width: 19px;
-  height: 19px;
+.dr-exclusive-instagram-icon svg {
+  width: 25px;
+  height: 25px;
 
   fill: none;
 
-  stroke: currentColor;
+  stroke: #fff;
 
-  stroke-width: 1.7;
+  stroke-width: 1.6;
 }
 
 
-/* =========================================================
-   POST CONTENT
-========================================================= */
+/* =========================================
+   BOTÓN
+========================================= */
 
-.dr-instagram-post-content {
-  position: absolute;
-
-  z-index: 3;
-
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-
-  color: #fff;
-}
-
-.dr-instagram-post-date {
-  display: block;
-
-  margin-bottom: 7px;
-
-  font-size: 11px;
-
-  color: rgba(255,255,255,.65);
-
-  font-weight: 600;
-
-  text-transform: uppercase;
-
-  letter-spacing: .08em;
-}
-
-.dr-instagram-post-title {
-  display: -webkit-box;
-
-  overflow: hidden;
-
-  margin: 0;
-
-  font-size: 19px;
-
-  line-height: 1.22;
-
-  font-weight: 800;
-
-  color: #fff;
-
-  -webkit-line-clamp: 2;
-
-  -webkit-box-orient: vertical;
-}
-
-.dr-instagram-post-caption {
-  display: -webkit-box;
-
-  overflow: hidden;
-
-  margin: 8px 0 0;
-
-  font-size: 12px;
-
-  line-height: 1.45;
-
-  color: rgba(255,255,255,.75);
-
-  -webkit-line-clamp: 2;
-
-  -webkit-box-orient: vertical;
-}
-
-
-/* =========================================================
-   VIEW BUTTON
-========================================================= */
-
-.dr-instagram-view {
+.dr-exclusive-button {
   display: inline-flex;
 
   align-items: center;
 
-  gap: 6px;
+  gap: 10px;
 
-  margin-top: 13px;
+  padding: 13px 18px;
 
-  color: #fff;
-
-  font-size: 12px;
-
-  font-weight: 750;
-}
-
-.dr-instagram-view svg {
-  width: 14px;
-  height: 14px;
-
-  fill: none;
-
-  stroke: currentColor;
-
-  stroke-width: 2;
-
-  transition: transform .2s ease;
-}
-
-.dr-instagram-card:hover .dr-instagram-view svg {
-  transform: translateX(4px);
-}
-
-
-/* =========================================================
-   ARROWS
-========================================================= */
-
-.dr-instagram-arrow {
-  position: absolute;
-
-  z-index: 10;
-
-  top: 50%;
-
-  transform: translateY(-50%);
-
-  width: 45px;
-  height: 45px;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  border: 0;
-
-  border-radius: 50%;
+  border-radius: 4px;
 
   background: #fff;
 
   color: #111;
 
-  cursor: pointer;
+  font-size: 13px;
 
-  box-shadow:
-    0 6px 20px rgba(0,0,0,.15);
+  font-weight: 800;
 
   transition:
-    transform .2s ease,
-    background .2s ease;
+    gap .25s ease;
 }
 
-.dr-instagram-arrow:hover {
-  background: #111;
-
-  color: #fff;
+.dr-exclusive-link:hover .dr-exclusive-button {
+  gap: 16px;
 }
 
-.dr-instagram-arrow-left {
-  left: -22px;
-}
-
-.dr-instagram-arrow-right {
-  right: -22px;
-}
-
-.dr-instagram-arrow svg {
-  width: 21px;
-  height: 21px;
-
-  fill: none;
-
-  stroke: currentColor;
-
-  stroke-width: 2;
+.dr-exclusive-button span {
+  font-size: 17px;
 }
 
 
-/* =========================================================
-   DOTS
-========================================================= */
+/* =========================================
+   FONDO "DR"
+========================================= */
 
-.dr-instagram-dots {
-  display: flex;
+.dr-exclusive-background {
+  position: absolute;
 
-  justify-content: center;
+  z-index: 1;
 
-  gap: 7px;
+  right: -30px;
+  bottom: -85px;
 
-  margin-top: 8px;
+  pointer-events: none;
+
+  user-select: none;
 }
 
-.dr-instagram-dot {
-  width: 7px;
-  height: 7px;
+.dr-exclusive-background span {
+  font-size: 330px;
 
-  padding: 0;
+  line-height: 1;
 
-  border: 0;
+  font-weight: 1000;
+
+  letter-spacing: -35px;
+
+  color: rgba(255,255,255,.035);
+}
+
+
+/* =========================================
+   DETALLE
+========================================= */
+
+.dr-exclusive-link::after {
+  content: "";
+
+  position: absolute;
+
+  z-index: 2;
+
+  width: 500px;
+  height: 500px;
+
+  right: -180px;
+  top: -250px;
 
   border-radius: 50%;
 
-  background: #ccc;
+  border: 1px solid rgba(255,255,255,.06);
 
-  cursor: pointer;
+  box-shadow:
+    0 0 0 70px rgba(255,255,255,.018),
+    0 0 0 140px rgba(255,255,255,.012);
 
-  transition:
-    width .25s ease,
-    background .25s ease;
-}
-
-.dr-instagram-dot.active {
-  width: 22px;
-
-  border-radius: 10px;
-
-  background: #111;
+  pointer-events: none;
 }
 
 
-/* =========================================================
+/* =========================================
    MOBILE
-========================================================= */
+========================================= */
 
-@media (max-width: 700px) {
+@media (max-width: 650px) {
 
-  .dr-instagram-section {
-    margin: 50px 0;
-
-    padding: 45px 0;
+  .dr-exclusive-instagram {
+    margin: 45px 0;
   }
 
-  .dr-instagram-container {
-    width: calc(100% - 30px);
-  }
+  .dr-exclusive-link {
+    min-height: 420px;
 
-  .dr-instagram-heading {
+    padding: 40px 25px;
+
     align-items: flex-start;
-
-    flex-direction: column;
-
-    gap: 20px;
   }
 
-  .dr-instagram-profile-button {
+  .dr-exclusive-content h2 {
+    font-size: 36px;
+
+    letter-spacing: -1.3px;
+  }
+
+  .dr-exclusive-content p {
+    font-size: 14px;
+  }
+
+  .dr-exclusive-button {
     width: 100%;
+
+    justify-content: center;
   }
 
-  .dr-instagram-card {
-    flex-basis: 255px;
-
-    height: 350px;
+  .dr-exclusive-background {
+    right: -35px;
+    bottom: -50px;
   }
 
-  .dr-instagram-arrow {
-    display: none;
-  }
-
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
-
-@media (max-width: 400px) {
-
-  .dr-instagram-card {
-    flex-basis: 235px;
-
-    height: 325px;
-  }
-
-  .dr-instagram-post-title {
-    font-size: 17px;
+  .dr-exclusive-background span {
+    font-size: 230px;
   }
 
 }
 
 </style>
-
-
-<script>
-
-/* =========================================================
-   DROP RUGBY — INSTAGRAM POSTS
-========================================================= */
-
-/*
-  ACÁ SE CARGAN LAS PUBLICACIONES DE @drop_rugby.
-
-  Para cada publicación:
-
-  image:
-    URL directa de la foto
-
-  title:
-    Título que aparecerá en la tarjeta
-
-  caption:
-    Texto corto del post
-
-  date:
-    Fecha de publicación
-
-  url:
-    URL exacta de Instagram de esa publicación
-*/
-
-const instagramPosts = [
-
-  {
-    image: "URL-DE-LA-FOTO-1",
-    title: "Máximos goleadores del URBA Top 14",
-    caption: "Akemeier continúa liderando la tabla tras la fecha 16.",
-    date: "6 de agosto de 2026",
-    url: "https://www.instagram.com/p/POST_ID_1/"
-  },
-
-  {
-    image: "URL-DE-LA-FOTO-2",
-    title: "Top tryman del URBA Top 14",
-    caption: "Landívar continúa al frente de la clasificación.",
-    date: "6 de agosto de 2026",
-    url: "https://www.instagram.com/p/POST_ID_2/"
-  },
-
-  {
-    image: "URL-DE-LA-FOTO-3",
-    title: "Actualidad del rugby argentino",
-    caption: "Toda la información del rugby nacional.",
-    date: "5 de agosto de 2026",
-    url: "https://www.instagram.com/p/POST_ID_3/"
-  },
-
-  {
-    image: "URL-DE-LA-FOTO-4",
-    title: "URBA Top 14",
-    caption: "Resultados, estadísticas y protagonistas.",
-    date: "4 de agosto de 2026",
-    url: "https://www.instagram.com/p/POST_ID_4/"
-  },
-
-  {
-    image: "URL-DE-LA-FOTO-5",
-    title: "Rugby argentino",
-    caption: "Las últimas noticias del rugby.",
-    date: "3 de agosto de 2026",
-    url: "https://www.instagram.com/p/POST_ID_5/"
-  },
-
-  {
-    image: "URL-DE-LA-FOTO-6",
-    title: "Drop Rugby",
-    caption: "Seguinos para no perderte ninguna noticia.",
-    date: "2 de agosto de 2026",
-    url: "https://www.instagram.com/p/POST_ID_6/"
-  }
-
-];
-
-
-/* =========================================================
-   ELEMENTOS
-========================================================= */
-
-const instagramCarousel =
-  document.getElementById("dropRugbyInstagramCarousel");
-
-const instagramDots =
-  document.getElementById("dropRugbyInstagramDots");
-
-const instagramPrevious =
-  document.querySelector(".dr-instagram-arrow-left");
-
-const instagramNext =
-  document.querySelector(".dr-instagram-arrow-right");
-
-
-/* =========================================================
-   INSTAGRAM ICON
-========================================================= */
-
-function instagramIcon() {
-
-  return `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect
-        x="3"
-        y="3"
-        width="18"
-        height="18"
-        rx="5"
-      ></rect>
-
-      <circle
-        cx="12"
-        cy="12"
-        r="4"
-      ></circle>
-
-      <circle
-        cx="17.5"
-        cy="6.5"
-        r="1"
-      ></circle>
-    </svg>
-  `;
-
-}
-
-
-/* =========================================================
-   ARROW ICON
-========================================================= */
-
-function arrowIcon() {
-
-  return `
-    <svg viewBox="0 0 24 24">
-      <path d="M9 18l6-6-6-6"></path>
-    </svg>
-  `;
-
-}
-
-
-/* =========================================================
-   CREAR POSTS
-========================================================= */
-
-instagramPosts.forEach((post, index) => {
-
-  const card = document.createElement("a");
-
-  card.className = "dr-instagram-card";
-
-  card.href = post.url;
-
-  card.target = "_blank";
-
-  card.rel = "noopener noreferrer";
-
-
-  card.innerHTML = `
-
-    <img
-      class="dr-instagram-image"
-      src="${post.image}"
-      alt="${post.title}"
-      loading="lazy"
-    >
-
-    <div class="dr-instagram-overlay"></div>
-
-
-    <div class="dr-instagram-post-icon">
-      ${instagramIcon()}
-    </div>
-
-
-    <div class="dr-instagram-post-content">
-
-      <span class="dr-instagram-post-date">
-        ${post.date}
-      </span>
-
-      <h3 class="dr-instagram-post-title">
-        ${post.title}
-      </h3>
-
-      <p class="dr-instagram-post-caption">
-        ${post.caption}
-      </p>
-
-      <span class="dr-instagram-view">
-        Ver en Instagram
-        ${arrowIcon()}
-      </span>
-
-    </div>
-
-  `;
-
-
-  instagramCarousel.appendChild(card);
-
-
-  /* DOT */
-
-  const dot = document.createElement("button");
-
-  dot.className = "dr-instagram-dot";
-
-  dot.type = "button";
-
-  dot.setAttribute(
-    "aria-label",
-    `Ir a publicación ${index + 1}`
-  );
-
-
-  dot.addEventListener("click", () => {
-
-    card.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "start"
-    });
-
-  });
-
-
-  instagramDots.appendChild(dot);
-
-});
-
-
-/* =========================================================
-   DOT ACTIVO
-========================================================= */
-
-const cards =
-  [...document.querySelectorAll(".dr-instagram-card")];
-
-const dots =
-  [...document.querySelectorAll(".dr-instagram-dot")];
-
-
-function updateActiveDot() {
-
-  if (!cards.length) return;
-
-
-  const carouselRect =
-    instagramCarousel.getBoundingClientRect();
-
-
-  let closestIndex = 0;
-
-  let closestDistance = Infinity;
-
-
-  cards.forEach((card, index) => {
-
-    const rect =
-      card.getBoundingClientRect();
-
-    const distance =
-      Math.abs(
-        rect.left - carouselRect.left
-      );
-
-
-    if (distance < closestDistance) {
-
-      closestDistance = distance;
-
-      closestIndex = index;
-
-    }
-
-  });
-
-
-  dots.forEach((dot, index) => {
-
-    dot.classList.toggle(
-      "active",
-      index === closestIndex
-    );
-
-  });
-
-}
-
-
-instagramCarousel.addEventListener(
-  "scroll",
-  updateActiveDot,
-  { passive: true }
-);
-
-
-updateActiveDot();
-
-
-/* =========================================================
-   FLECHA IZQUIERDA
-========================================================= */
-
-instagramPrevious.addEventListener(
-  "click",
-  () => {
-
-    instagramCarousel.scrollBy({
-
-      left: -320,
-
-      behavior: "smooth"
-
-    });
-
-  }
-);
-
-
-/* =========================================================
-   FLECHA DERECHA
-========================================================= */
-
-instagramNext.addEventListener(
-  "click",
-  () => {
-
-    instagramCarousel.scrollBy({
-
-      left: 320,
-
-      behavior: "smooth"
-
-    });
-
-  }
-);
-
-
-/* =========================================================
-   AUTOPLAY
-========================================================= */
-
-let instagramAutoplay;
-
-
-function startInstagramAutoplay() {
-
-  clearInterval(instagramAutoplay);
-
-
-  instagramAutoplay = setInterval(() => {
-
-    const maxScroll =
-      instagramCarousel.scrollWidth -
-      instagramCarousel.clientWidth;
-
-
-    if (
-      instagramCarousel.scrollLeft >=
-      maxScroll - 10
-    ) {
-
-      instagramCarousel.scrollTo({
-
-        left: 0,
-
-        behavior: "smooth"
-
-      });
-
-    } else {
-
-      instagramCarousel.scrollBy({
-
-        left: 320,
-
-        behavior: "smooth"
-
-      });
-
-    }
-
-  }, 4500);
-
-}
-
-
-startInstagramAutoplay();
-
-
-/* =========================================================
-   PAUSAR AL PASAR EL MOUSE
-========================================================= */
-
-instagramCarousel.addEventListener(
-  "mouseenter",
-  () => clearInterval(instagramAutoplay)
-);
-
-
-instagramCarousel.addEventListener(
-  "mouseleave",
-  startInstagramAutoplay
-);
-
-
-/* =========================================================
-   PAUSAR EN TOUCH
-========================================================= */
-
-instagramCarousel.addEventListener(
-  "touchstart",
-  () => clearInterval(instagramAutoplay),
-  { passive: true }
-);
-
-
-instagramCarousel.addEventListener(
-  "touchend",
-  startInstagramAutoplay,
-  { passive: true }
-);
-
-</script>
-```
-
-
-
-
     
 
 <section class="newsletter">
