@@ -1,1032 +1,1286 @@
 import { list, put } from '@vercel/blob';
 import crypto from 'node:crypto';
-import { Resend } from 'resend';
 
 const BLOB_PATH = 'droprugby/content.json';
-const COOKIE = 'droprugby_session';
-const MAX_AGE = 60 * 60 * 24 * 7;
 
-const resend = new Resend(
-  process.env.RESEND_API_KEY
-);
+const COOKIE = 'droprugby_session';
+
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 días
+
 
 /* =========================================================
    CONFIGURACIÓN
 ========================================================= */
 
-function secret() {
-  return process.env.ADMIN_SESSION_SECRET;
+function getSecret() {
+
+  const secret =
+    process.env.ADMIN_SESSION_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      'Falta configurar ADMIN_SESSION_SECRET en Vercel.'
+    );
+  }
+
+  return secret;
 }
 
-function adminPassword() {
-  return process.env.ADMIN_PASSWORD;
+
+function getAdminUsername() {
+
+  return (
+    process.env.ADMIN_USERNAME ||
+    process.env.ADMIN_USER ||
+    'admin'
+  );
+
 }
+
+
+function getAdminPassword() {
+
+  return (
+    process.env.ADMIN_PASSWORD ||
+    process.env.ADMIN_PASS ||
+    ''
+  );
+
+}
+
+
+/* =========================================================
+   COOKIES
+========================================================= */
+
+function parseCookies(request) {
+
+  const header =
+    request.headers.get('cookie') || '';
+
+  const cookies = {};
+
+  header
+    .split(';')
+    .forEach(part => {
+
+      const index =
+        part.indexOf('=');
+
+      if (index === -1) return;
+
+      const key =
+        part.slice(0, index).trim();
+
+      const value =
+        part.slice(index + 1).trim();
+
+      cookies[key] =
+        decodeURIComponent(value);
+
+    });
+
+  return cookies;
+
+}
+
 
 /* =========================================================
    SESIONES
 ========================================================= */
 
 function createSession() {
-  const timestamp = Date.now().toString();
 
-  const signature = crypto
-    .createHmac('sha256', secret())
-    .update(timestamp)
-    .digest('hex');
+  const timestamp =
+    Math.floor(
+      Date.now() / 1000
+    );
 
-  return `${timestamp}.${signature}`;
+  const random =
+    crypto
+      .randomBytes(32)
+      .toString('hex');
+
+  const payload =
+    `${timestamp}.${random}`;
+
+  const signature =
+    crypto
+      .createHmac(
+        'sha256',
+        getSecret()
+      )
+      .update(payload)
+      .digest('hex');
+
+  return `${payload}.${signature}`;
+
 }
 
+
 function verifySession(token) {
-  if (!token) return false;
 
-  const parts = token.split('.');
-
-  if (parts.length !== 2) {
+  if (!token) {
     return false;
   }
 
-  const [timestamp, signature] = parts;
+  const parts =
+    token.split('.');
 
-  const timestampNumber = Number(timestamp);
-
-  if (!Number.isFinite(timestampNumber)) {
+  if (parts.length !== 3) {
     return false;
   }
+
+  const [
+    timestamp,
+    random,
+    signature
+  ] = parts;
+
+  const payload =
+    `${timestamp}.${random}`;
+
+  const expected =
+    crypto
+      .createHmac(
+        'sha256',
+        getSecret()
+      )
+      .update(payload)
+      .digest('hex');
+
 
   if (
-    Date.now() - timestampNumber >
-    MAX_AGE * 1000
+    signature.length !==
+    expected.length
   ) {
     return false;
   }
 
-  const expectedSignature = crypto
-    .createHmac('sha256', secret())
-    .update(timestamp)
-    .digest('hex');
+
+  let validSignature = false;
 
   try {
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+
+    validSignature =
+      crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expected)
+      );
+
   } catch {
+
+    return false;
+
+  }
+
+
+  if (!validSignature) {
     return false;
   }
-}
 
-function getCookie(req, name) {
-  const cookieHeader =
-    req.headers.cookie || '';
 
-  const cookies = cookieHeader
-    .split(';')
-    .map(cookie => cookie.trim());
+  const created =
+    Number(timestamp);
 
-  for (const cookie of cookies) {
-    const index = cookie.indexOf('=');
 
-    if (index === -1) {
-      continue;
-    }
-
-    const key = cookie.slice(0, index);
-    const value = cookie.slice(index + 1);
-
-    if (key === name) {
-      return decodeURIComponent(value);
-    }
+  if (!Number.isFinite(created)) {
+    return false;
   }
 
-  return null;
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
+
+  if (
+    now - created >
+    MAX_AGE
+  ) {
+    return false;
+  }
+
+
+  if (
+    created > now + 60
+  ) {
+    return false;
+  }
+
+
+  return true;
+
 }
 
-function setSessionCookie(res, session) {
-  res.setHeader(
-    'Set-Cookie',
-    [
-      `${COOKIE}=${encodeURIComponent(session)}`,
-      'HttpOnly',
-      'Secure',
-      'SameSite=Lax',
-      'Path=/',
-      `Max-Age=${MAX_AGE}`
-    ].join('; ')
-  );
+
+function sessionCookie(token) {
+
+  const secure =
+    process.env.NODE_ENV === 'production'
+      ? '; Secure'
+      : '';
+
+  return [
+    `${COOKIE}=${encodeURIComponent(token)}`,
+    'Path=/',
+    `Max-Age=${MAX_AGE}`,
+    'HttpOnly',
+    'SameSite=Lax',
+    secure
+  ]
+    .filter(Boolean)
+    .join('; ');
+
 }
 
-function clearSessionCookie(res) {
-  res.setHeader(
-    'Set-Cookie',
-    [
-      `${COOKIE}=`,
-      'HttpOnly',
-      'Secure',
-      'SameSite=Lax',
-      'Path=/',
-      'Max-Age=0'
-    ].join('; ')
-  );
+
+function deleteSessionCookie() {
+
+  const secure =
+    process.env.NODE_ENV === 'production'
+      ? '; Secure'
+      : '';
+
+  return [
+    `${COOKIE}=`,
+    'Path=/',
+    'Max-Age=0',
+    'HttpOnly',
+    'SameSite=Lax',
+    secure
+  ]
+    .filter(Boolean)
+    .join('; ');
+
 }
+
+
+function isAuthenticated(request) {
+
+  const cookies =
+    parseCookies(request);
+
+  return verifySession(
+    cookies[COOKIE]
+  );
+
+}
+
 
 /* =========================================================
-   VERCEL BLOB
+   RESPUESTAS
 ========================================================= */
 
-async function readData() {
-  const result = await list({
-    prefix: BLOB_PATH,
-    limit: 100
-  });
+function json(
+  data,
+  status = 200,
+  extraHeaders = {}
+) {
 
-  const blob = result.blobs?.find(
-    item => item.pathname === BLOB_PATH
-  );
-
-  if (!blob) {
-    return {
-      articles: [],
-      fixtures: []
-    };
-  }
-
-  const response = await fetch(blob.url);
-
-  if (!response.ok) {
-    throw new Error(
-      `No se pudo leer ${BLOB_PATH}`
-    );
-  }
-
-  const data = await response.json();
-
-  return {
-    articles: Array.isArray(data.articles)
-      ? data.articles
-      : [],
-
-    fixtures: Array.isArray(data.fixtures)
-      ? data.fixtures
-      : []
-  };
-}
-
-async function saveData(data) {
-  await put(
-    BLOB_PATH,
-    JSON.stringify(data, null, 2),
+  return new Response(
+    JSON.stringify(data),
     {
-      access: 'public',
-      contentType: 'application/json',
-      addRandomSuffix: false,
-      allowOverwrite: true
+      status,
+      headers: {
+        'Content-Type':
+          'application/json; charset=utf-8',
+
+        'Cache-Control':
+          'no-store',
+
+        ...extraHeaders
+      }
     }
   );
+
 }
 
-/* =========================================================
-   ESCAPE HTML
-========================================================= */
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+function error(
+  message,
+  status = 400
+) {
+
+  return json(
+    {
+      error: message
+    },
+    status
+  );
+
 }
 
-/* =========================================================
-   IDENTIFICADOR DEL ARTÍCULO
-========================================================= */
-
-function getArticleIdentifier(article) {
-  if (!article) {
-    return null;
-  }
-
-  /*
-   * Prioridad:
-   *
-   * 1. ID
-   * 2. slug
-   * 3. URL
-   * 4. título
-   */
-
-  if (article.id) {
-    return `id:${String(article.id)}`;
-  }
-
-  if (article.slug) {
-    return `slug:${String(article.slug)}`;
-  }
-
-  if (article.url) {
-    return `url:${String(article.url)}`;
-  }
-
-  if (article.title) {
-    return `title:${String(article.title)
-      .trim()
-      .toLowerCase()}`;
-  }
-
-  return null;
-}
 
 /* =========================================================
-   NEWSLETTER
+   OBTENER CONTENT.JSON
 ========================================================= */
 
-async function sendNewArticleNewsletter(article) {
-
-  console.log(
-    '========================================'
-  );
-
-  console.log(
-    'NEWSLETTER: iniciando envío'
-  );
-
-  console.log(
-    'NEWSLETTER: artículo:',
-    article?.title
-  );
-
-  /* -------------------------------------------------------
-     VARIABLES
-  ------------------------------------------------------- */
-
-  const segmentId =
-    process.env.RESEND_SEGMENT_ID;
-
-  if (!process.env.RESEND_API_KEY) {
-
-    throw new Error(
-      'Falta RESEND_API_KEY en Vercel.'
-    );
-  }
-
-  if (!segmentId) {
-
-    throw new Error(
-      'Falta RESEND_SEGMENT_ID en Vercel.'
-    );
-  }
-
-  if (!article) {
-
-    throw new Error(
-      'No se recibió la noticia.'
-    );
-  }
-
-  console.log(
-    'NEWSLETTER: segmento:',
-    segmentId
-  );
-
-  /* -------------------------------------------------------
-     DATOS
-  ------------------------------------------------------- */
-
-  const title =
-    article.title ||
-    'Nueva noticia de DropRugby';
-
-  const excerpt =
-    article.excerpt ||
-    article.description ||
-    '';
-
-  const category =
-    article.category ||
-    'Rugby';
-
-  const articleUrl =
-    article.url ||
-    article.slug ||
-    '';
-
-  const cleanUrl =
-    String(articleUrl)
-      .replace(/^\/+/, '');
-
-  /*
-   * Si existe URL/slug usamos eso.
-   * Si no existe, vamos directamente
-   * a la página principal para evitar
-   * generar una URL rota.
-   */
-
-  const fullUrl =
-    cleanUrl
-      ? `https://www.droprugby.com/${cleanUrl}`
-      : 'https://www.droprugby.com/';
-
-  const safeTitle =
-    escapeHtml(title);
-
-  const safeExcerpt =
-    escapeHtml(excerpt);
-
-  const safeCategory =
-    escapeHtml(category);
-
-  console.log(
-    'NEWSLETTER: URL:',
-    fullUrl
-  );
-
-  /* -------------------------------------------------------
-     CREAR Y ENVIAR BROADCAST
-  ------------------------------------------------------- */
+async function getContentBlob() {
 
   const result =
-    await resend.broadcasts.create({
-
-      segmentId,
-
-      from: 
-        'DropRugby <newsletter@droprugby.com>',
-
-      subject:
-        `🏉 ${title}`,
-
-      html: `
-        <!DOCTYPE html>
-
-        <html lang="es">
-
-        <head>
-
-          <meta charset="UTF-8">
-
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-          >
-
-          <title>
-            ${safeTitle}
-          </title>
-
-        </head>
-
-        <body style="
-          margin:0;
-          padding:0;
-          background:#f4f4f2;
-          font-family:Arial,Helvetica,sans-serif;
-        ">
-
-          <div style="
-            max-width:600px;
-            margin:40px auto;
-            background:#ffffff;
-            padding:40px;
-          ">
-
-            <div style="
-              margin-bottom:35px;
-            ">
-
-              <h1 style="
-                margin:0;
-                font-size:32px;
-                letter-spacing:-1px;
-                color:#111;
-              ">
-
-                DROP<span style="
-                  font-weight:400;
-                ">RUGBY</span>
-
-              </h1>
-
-              <p style="
-                margin:8px 0 0;
-                color:#888;
-                font-size:13px;
-              ">
-
-                Rugby es una pasión.
-
-              </p>
-
-            </div>
-
-            <p style="
-              font-size:12px;
-              letter-spacing:2px;
-              color:#777;
-              margin:0 0 18px;
-              text-transform:uppercase;
-            ">
-
-              DROPRUGBY · ${safeCategory}
-
-            </p>
-
-            <h2 style="
-              font-size:32px;
-              line-height:1.2;
-              margin:0 0 20px;
-              color:#111;
-            ">
-
-              ${safeTitle}
-
-            </h2>
-
-            ${
-              safeExcerpt
-                ? `
-                  <p style="
-                    font-size:16px;
-                    line-height:1.7;
-                    color:#444;
-                    margin:0 0 25px;
-                  ">
-
-                    ${safeExcerpt}
-
-                  </p>
-                `
-                : ''
-            }
-
-            <div style="
-              margin:30px 0;
-            ">
-
-              <a
-                href="${fullUrl}"
-                style="
-                  display:inline-block;
-                  padding:14px 24px;
-                  background:#111;
-                  color:#fff;
-                  text-decoration:none;
-                  font-weight:bold;
-                  font-size:14px;
-                "
-              >
-
-                LEER LA NOTICIA →
-
-              </a>
-
-            </div>
-
-            <hr style="
-              border:none;
-              border-top:1px solid #ddd;
-              margin:35px 0;
-            ">
-
-            <p style="
-              font-size:13px;
-              line-height:1.6;
-              color:#888;
-              margin:0 0 10px;
-            ">
-
-              Recibís este email porque estás
-              suscripto a la newsletter de
-              DropRugby.
-
-            </p>
-
-            <p style="
-              font-size:13px;
-              color:#888;
-              margin:0 0 20px;
-            ">
-
-              © 2026 DropRugby
-
-            </p>
-
-            <p style="
-              font-size:12px;
-              color:#999;
-            ">
-
-              {{{RESEND_UNSUBSCRIBE_URL}}}
-
-            </p>
-
-          </div>
-
-        </body>
-
-        </html>
-      `,
-
-      send: true
+    await list({
+      prefix: BLOB_PATH
     });
 
-  /* -------------------------------------------------------
-     ERROR DE RESEND
-  ------------------------------------------------------- */
 
-  if (result.error) {
+  const blobs =
+    result.blobs || [];
 
-    console.error(
-      '❌ RESEND BROADCAST ERROR:',
-      result.error
+
+  /*
+   * Buscamos exactamente content.json.
+   */
+
+  const blob =
+    blobs.find(
+      item =>
+        item.pathname ===
+        BLOB_PATH
     );
 
-    throw new Error(
-      result.error.message ||
-      'Resend rechazó el Broadcast.'
-    );
-  }
 
-  console.log(
-    '✅ NEWSLETTER ENVIADO'
-  );
+  return blob || null;
 
-  console.log(
-    'Broadcast ID:',
-    result.data?.id
-  );
-
-  console.log(
-    '========================================'
-  );
-
-  return result.data;
 }
 
-/* =========================================================
-   HANDLER
-========================================================= */
 
-export default async function handler(req, res) {
+async function readContent() {
 
-  if (req.method !== 'POST') {
+  const blob =
+    await getContentBlob();
 
-    return res.status(405).json({
-      error: 'Método no permitido.'
-    });
+
+  /*
+   * Si todavía no existe el archivo,
+   * creamos una estructura inicial.
+   */
+
+  if (!blob) {
+
+    return {
+
+      articles: [],
+
+      fixtures: [],
+
+      trash: [],
+
+      history: [],
+
+      standings: [],
+
+      players: []
+
+    };
+
   }
+
+
+  const response =
+    await fetch(
+      blob.url,
+      {
+        cache: 'no-store'
+      }
+    );
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      'No se pudo leer content.json desde Vercel Blob.'
+    );
+
+  }
+
+
+  const text =
+    await response.text();
+
+
+  if (!text.trim()) {
+
+    return {
+
+      articles: [],
+
+      fixtures: [],
+
+      trash: [],
+
+      history: [],
+
+      standings: [],
+
+      players: []
+
+    };
+
+  }
+
 
   try {
 
-    /* =====================================================
-       CONFIGURACIÓN
-    ===================================================== */
+    const content =
+      JSON.parse(text);
 
-    if (!secret()) {
 
-      return res.status(500).json({
-        error:
-          'Falta configurar ADMIN_SESSION_SECRET.'
-      });
-    }
+    return {
 
-    /* =====================================================
-       BODY
-    ===================================================== */
+      ...content,
 
-    const body =
-      typeof req.body === 'string'
-        ? JSON.parse(req.body)
-        : req.body || {};
+      articles:
+        Array.isArray(content.articles)
+          ? content.articles
+          : [],
 
-    /* =====================================================
-       LOGIN
-    ===================================================== */
+      fixtures:
+        Array.isArray(content.fixtures)
+          ? content.fixtures
+          : [],
 
-    if (body.action === 'login') {
+      trash:
+        Array.isArray(content.trash)
+          ? content.trash
+          : [],
 
-      const password =
-        typeof body.password === 'string'
-          ? body.password
-          : '';
+      history:
+        Array.isArray(content.history)
+          ? content.history
+          : [],
 
-      if (!adminPassword()) {
+      standings:
+        Array.isArray(content.standings)
+          ? content.standings
+          : [],
 
-        return res.status(500).json({
-          error:
-            'Falta configurar ADMIN_PASSWORD.'
-        });
-      }
+      players:
+        Array.isArray(content.players)
+          ? content.players
+          : []
 
-      if (!password) {
+    };
 
-        return res.status(400).json({
-          error:
-            'Ingresá la contraseña.'
-        });
-      }
+  } catch {
 
-      const passwordBuffer =
-        Buffer.from(password);
-
-      const expectedBuffer =
-        Buffer.from(adminPassword());
-
-      let passwordCorrect = false;
-
-      if (
-        passwordBuffer.length ===
-        expectedBuffer.length
-      ) {
-
-        passwordCorrect =
-          crypto.timingSafeEqual(
-            passwordBuffer,
-            expectedBuffer
-          );
-      }
-
-      if (!passwordCorrect) {
-
-        return res.status(401).json({
-          error:
-            'Contraseña incorrecta.'
-        });
-      }
-
-      const session =
-        createSession();
-
-      setSessionCookie(
-        res,
-        session
-      );
-
-      return res.status(200).json({
-        ok: true
-      });
-    }
-
-    /* =====================================================
-       LOGOUT
-    ===================================================== */
-
-    if (body.action === 'logout') {
-
-      clearSessionCookie(res);
-
-      return res.status(200).json({
-        ok: true
-      });
-    }
-
-    /* =====================================================
-       CHECK
-    ===================================================== */
-
-    if (body.action === 'check') {
-
-      const token =
-        getCookie(
-          req,
-          COOKIE
-        );
-
-      return res.status(200).json({
-        authenticated:
-          verifySession(token)
-      });
-    }
-
-    /* =====================================================
-       AUTENTICACIÓN
-    ===================================================== */
-
-    const token =
-      getCookie(
-        req,
-        COOKIE
-      );
-
-    if (!verifySession(token)) {
-
-      return res.status(401).json({
-        error:
-          'No autorizado.'
-      });
-    }
-
-    /* =====================================================
-       LOAD
-    ===================================================== */
-
-    if (body.action === 'load') {
-
-      const data =
-        await readData();
-
-      return res.status(200).json({
-        ok: true,
-        ...data
-      });
-    }
-
-    /* =====================================================
-       SAVE
-    ===================================================== */
-
-    if (body.action === 'save') {
-
-      const articles =
-        Array.isArray(body.articles)
-          ? body.articles
-          : null;
-
-      const fixtures =
-        Array.isArray(body.fixtures)
-          ? body.fixtures
-          : null;
-
-      if (!articles || !fixtures) {
-
-        return res.status(400).json({
-          error:
-            'Datos inválidos.'
-        });
-      }
-
-      console.log(
-        '========================================'
-      );
-
-      console.log(
-        'ADMIN SAVE'
-      );
-
-      console.log(
-        'Artículos recibidos:',
-        articles.length
-      );
-
-      console.log(
-        'Fixtures recibidos:',
-        fixtures.length
-      );
-
-      /* ---------------------------------------------------
-         LEER DATOS ANTERIORES
-      --------------------------------------------------- */
-
-      let previousData;
-
-      try {
-
-        previousData =
-          await readData();
-
-      } catch (error) {
-
-        console.error(
-          'ERROR LEYENDO DATOS ANTERIORES:',
-          error
-        );
-
-        previousData = {
-          articles: [],
-          fixtures: []
-        };
-      }
-
-      const previousArticles =
-        Array.isArray(
-          previousData?.articles
-        )
-          ? previousData.articles
-          : [];
-
-      console.log(
-        'Artículos anteriores:',
-        previousArticles.length
-      );
-
-      /* ---------------------------------------------------
-         CREAR MAPA DE ARTÍCULOS ANTERIORES
-      --------------------------------------------------- */
-
-      const previousIdentifiers =
-        new Set();
-
-      for (
-        const article
-        of previousArticles
-      ) {
-
-        const identifier =
-          getArticleIdentifier(article);
-
-        if (identifier) {
-
-          previousIdentifiers.add(
-            identifier
-          );
-        }
-      }
-
-      /* ---------------------------------------------------
-         DETECTAR NUEVOS
-      --------------------------------------------------- */
-
-      const newArticles =
-        articles.filter(article => {
-
-          const identifier =
-            getArticleIdentifier(article);
-
-          if (!identifier) {
-
-            console.warn(
-              'Artículo sin identificador:',
-              article?.title
-            );
-
-            return false;
-          }
-
-          return !previousIdentifiers.has(
-            identifier
-          );
-        });
-
-      console.log(
-        '========================================'
-      );
-
-      console.log(
-        'ARTÍCULOS NUEVOS DETECTADOS:',
-        newArticles.length
-      );
-
-      console.log(
-        'NUEVAS NOTICIAS:',
-        newArticles.map(article => ({
-          id: article?.id,
-          title: article?.title,
-          slug: article?.slug,
-          url: article?.url
-        }))
-      );
-
-      console.log(
-        '========================================'
-      );
-
-      /* ---------------------------------------------------
-         GUARDAR DATOS
-      --------------------------------------------------- */
-
-      await saveData({
-        articles,
-        fixtures
-      });
-
-      console.log(
-        'Contenido guardado correctamente en Blob.'
-      );
-
-      /* ---------------------------------------------------
-         NEWSLETTER
-      --------------------------------------------------- */
-
-      let newsletterSent = 0;
-      let newsletterErrors = 0;
-
-      const newsletterResults = [];
-
-      for (
-        const article
-        of newArticles
-      ) {
-
-        try {
-
-          console.log(
-            'Intentando enviar newsletter de:',
-            article?.title
-          );
-
-          const newsletter =
-            await sendNewArticleNewsletter(
-              article
-            );
-
-          newsletterSent++;
-
-          newsletterResults.push({
-            title:
-              article?.title || '',
-            ok: true,
-            broadcastId:
-              newsletter?.id || null
-          });
-
-        } catch (error) {
-
-          newsletterErrors++;
-
-          console.error(
-            '❌ ERROR NEWSLETTER:',
-            error
-          );
-
-          newsletterResults.push({
-            title:
-              article?.title || '',
-            ok: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : String(error)
-          });
-        }
-      }
-
-      console.log(
-        '========================================'
-      );
-
-      console.log(
-        'RESULTADO FINAL:'
-      );
-
-      console.log(
-        'Noticias nuevas:',
-        newArticles.length
-      );
-
-      console.log(
-        'Newsletters enviados:',
-        newsletterSent
-      );
-
-      console.log(
-        'Errores newsletter:',
-        newsletterErrors
-      );
-
-      console.log(
-        '========================================'
-      );
-
-      /* ---------------------------------------------------
-         RESPUESTA
-      --------------------------------------------------- */
-
-      return res.status(200).json({
-
-        ok: true,
-
-        articles:
-          articles.length,
-
-        fixtures:
-          fixtures.length,
-
-        newArticles:
-          newArticles.length,
-
-        newsletterSent,
-
-        newsletterErrors,
-
-        newsletterResults
-      });
-    }
-
-    /* =====================================================
-       ACCIÓN DESCONOCIDA
-    ===================================================== */
-
-    return res.status(400).json({
-      error:
-        'Acción no reconocida.'
-    });
-
-  } catch (error) {
-
-    console.error(
-      '❌ ADMIN API ERROR:',
-      error
+    throw new Error(
+      'content.json no contiene JSON válido.'
     );
 
-    return res.status(500).json({
-
-      error:
-        'Error interno del servidor.',
-
-      detail:
-        error instanceof Error
-          ? error.message
-          : String(error)
-    });
   }
+
+}
+
+
+/* =========================================================
+   GUARDAR CONTENT.JSON
+========================================================= */
+
+async function saveContent(content) {
+
+  const cleanContent = {
+
+    ...content,
+
+    articles:
+      Array.isArray(content.articles)
+        ? content.articles
+        : [],
+
+    fixtures:
+      Array.isArray(content.fixtures)
+        ? content.fixtures
+        : [],
+
+    trash:
+      Array.isArray(content.trash)
+        ? content.trash
+        : [],
+
+    history:
+      Array.isArray(content.history)
+        ? content.history
+        : [],
+
+    standings:
+      Array.isArray(content.standings)
+        ? content.standings
+        : [],
+
+    players:
+      Array.isArray(content.players)
+        ? content.players
+        : []
+
+  };
+
+
+  const result =
+    await put(
+      BLOB_PATH,
+
+      JSON.stringify(
+        cleanContent,
+        null,
+        2
+      ),
+
+      {
+        access: 'public',
+
+        addRandomSuffix: false,
+
+        allowOverwrite: true,
+
+        contentType:
+          'application/json; charset=utf-8'
+      }
+    );
+
+
+  return result;
+
+}
+
+
+/* =========================================================
+   VALIDACIÓN
+========================================================= */
+
+function validateArray(
+  value,
+  name
+) {
+
+  if (
+    value !== undefined &&
+    !Array.isArray(value)
+  ) {
+
+    throw new Error(
+      `${name} debe ser un array.`
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   NORMALIZAR NOTICIAS
+========================================================= */
+
+function normalizeArticles(
+  articles
+) {
+
+  return articles.map(
+    article => {
+
+      if (
+        !article ||
+        typeof article !== 'object'
+      ) {
+        return null;
+      }
+
+
+      return {
+
+        ...article,
+
+        id:
+          String(
+            article.id ||
+            crypto
+              .randomBytes(8)
+              .toString('hex')
+          ),
+
+        title:
+          String(
+            article.title || ''
+          ).trim(),
+
+        category:
+          String(
+            article.category ||
+            'Actualidad'
+          ).trim(),
+
+        subcategory:
+          String(
+            article.subcategory ||
+            ''
+          ).trim(),
+
+        author:
+          String(
+            article.author ||
+            'DropRugby'
+          ).trim(),
+
+        date:
+          String(
+            article.date ||
+            ''
+          ).trim(),
+
+        time:
+          String(
+            article.time ||
+            ''
+          ).trim(),
+
+        excerpt:
+          String(
+            article.excerpt ||
+            ''
+          ).trim(),
+
+        content:
+          String(
+            article.content ||
+            ''
+          ),
+
+        featured:
+          Boolean(
+            article.featured
+          ),
+
+        breaking:
+          Boolean(
+            article.breaking
+          ),
+
+        scheduled:
+          Boolean(
+            article.scheduled
+          )
+
+      };
+
+    }
+  ).filter(Boolean);
+
+}
+
+
+/* =========================================================
+   NORMALIZAR PARTIDOS
+========================================================= */
+
+function normalizeFixtures(
+  fixtures
+) {
+
+  return fixtures.map(
+    fixture => {
+
+      if (
+        !fixture ||
+        typeof fixture !== 'object'
+      ) {
+        return null;
+      }
+
+
+      return {
+
+        ...fixture,
+
+        date:
+          String(
+            fixture.date || ''
+          ).trim(),
+
+        competition:
+          String(
+            fixture.competition ||
+            ''
+          ).trim(),
+
+        time:
+          String(
+            fixture.time || ''
+          ).trim(),
+
+        home:
+          String(
+            fixture.home || ''
+          ).trim(),
+
+        away:
+          String(
+            fixture.away || ''
+          ).trim(),
+
+        channel:
+          String(
+            fixture.channel || ''
+          ).trim(),
+
+        venue:
+          String(
+            fixture.venue || ''
+          ).trim()
+
+      };
+
+    }
+  ).filter(Boolean);
+
+}
+
+
+/* =========================================================
+   NORMALIZAR POSICIONES
+========================================================= */
+
+function normalizeStandings(
+  standings
+) {
+
+  return standings.map(
+    team => {
+
+      if (
+        !team ||
+        typeof team !== 'object'
+      ) {
+        return null;
+      }
+
+
+      return {
+
+        ...team,
+
+        team:
+          String(
+            team.team || ''
+          ).trim(),
+
+        pj:
+          Number(team.pj) || 0,
+
+        pg:
+          Number(team.pg) || 0,
+
+        pts:
+          Number(team.pts) || 0
+
+      };
+
+    }
+  ).filter(Boolean);
+
+}
+
+
+/* =========================================================
+   NORMALIZAR JUGADORES
+========================================================= */
+
+function normalizePlayers(
+  players
+) {
+
+  return players.map(
+    player => {
+
+      if (
+        !player ||
+        typeof player !== 'object'
+      ) {
+        return null;
+      }
+
+
+      return {
+
+        ...player,
+
+        name:
+          String(
+            player.name || ''
+          ).trim(),
+
+        club:
+          String(
+            player.club || ''
+          ).trim(),
+
+        points:
+          Number(
+            player.points
+          ) || 0,
+
+        tries:
+          Number(
+            player.tries
+          ) || 0
+
+      };
+
+    }
+  ).filter(Boolean);
+
+}
+
+
+/* =========================================================
+   ACTION: LOGIN
+========================================================= */
+
+async function handleLogin(
+  request,
+  body
+) {
+
+  const username =
+    String(
+      body.username || ''
+    );
+
+  const password =
+    String(
+      body.password || ''
+    );
+
+
+  const expectedUsername =
+    getAdminUsername();
+
+  const expectedPassword =
+    getAdminPassword();
+
+
+  if (!expectedPassword) {
+
+    return error(
+      'ADMIN_PASSWORD no está configurado en Vercel.',
+      500
+    );
+
+  }
+
+
+  const validUsername =
+    username ===
+    expectedUsername;
+
+
+  const validPassword =
+    password ===
+    expectedPassword;
+
+
+  if (
+    !validUsername ||
+    !validPassword
+  ) {
+
+    return error(
+      'Usuario o contraseña incorrectos.',
+      401
+    );
+
+  }
+
+
+  const session =
+    createSession();
+
+
+  return json(
+    {
+      ok: true,
+      authenticated: true
+    },
+    200,
+    {
+      'Set-Cookie':
+        sessionCookie(session)
+    }
+  );
+
+}
+
+
+/* =========================================================
+   ACTION: SESSION
+========================================================= */
+
+async function handleSession(
+  request
+) {
+
+  const authenticated =
+    isAuthenticated(
+      request
+    );
+
+
+  if (!authenticated) {
+
+    return error(
+      'No autenticado.',
+      401
+    );
+
+  }
+
+
+  return json({
+    ok: true,
+    authenticated: true
+  });
+
+}
+
+
+/* =========================================================
+   ACTION: LOGOUT
+========================================================= */
+
+async function handleLogout() {
+
+  return json(
+    {
+      ok: true
+    },
+    200,
+    {
+      'Set-Cookie':
+        deleteSessionCookie()
+    }
+  );
+
+}
+
+
+/* =========================================================
+   ACTION: SAVE
+========================================================= */
+
+async function handleSave(
+  request,
+  body
+) {
+
+  if (
+    !isAuthenticated(
+      request
+    )
+  ) {
+
+    return error(
+      'Sesión expirada. Volvé a iniciar sesión.',
+      401
+    );
+
+  }
+
+
+  /*
+   * Leemos el contenido actual primero.
+   *
+   * Esto es MUY importante porque evita
+   * borrar campos que ya existen en
+   * content.json y que el nuevo panel
+   * todavía no conoce.
+   */
+
+  const current =
+    await readContent();
+
+
+  /*
+   * Solo actualizamos los campos que
+   * realmente llegaron desde admin.html.
+   */
+
+  const next = {
+    ...current
+  };
+
+
+  if (
+    body.articles !== undefined
+  ) {
+
+    validateArray(
+      body.articles,
+      'articles'
+    );
+
+
+    next.articles =
+      normalizeArticles(
+        body.articles
+      );
+
+  }
+
+
+  if (
+    body.fixtures !== undefined
+  ) {
+
+    validateArray(
+      body.fixtures,
+      'fixtures'
+    );
+
+
+    next.fixtures =
+      normalizeFixtures(
+        body.fixtures
+      );
+
+  }
+
+
+  if (
+    body.trash !== undefined
+  ) {
+
+    validateArray(
+      body.trash,
+      'trash'
+    );
+
+
+    next.trash =
+      normalizeArticles(
+        body.trash
+      );
+
+  }
+
+
+  if (
+    body.history !== undefined
+  ) {
+
+    validateArray(
+      body.history,
+      'history'
+    );
+
+
+    /*
+     * No destruimos la información
+     * adicional del historial.
+     */
+
+    next.history =
+      body.history
+        .filter(
+          item =>
+            item &&
+            typeof item === 'object'
+        )
+        .slice(0, 500);
+
+  }
+
+
+  if (
+    body.standings !== undefined
+  ) {
+
+    validateArray(
+      body.standings,
+      'standings'
+    );
+
+
+    next.standings =
+      normalizeStandings(
+        body.standings
+      );
+
+  }
+
+
+  if (
+    body.players !== undefined
+  ) {
+
+    validateArray(
+      body.players,
+      'players'
+    );
+
+
+    next.players =
+      normalizePlayers(
+        body.players
+      );
+
+  }
+
+
+  /*
+   * Guardamos también la fecha de actualización.
+   */
+
+  next.updatedAt =
+    new Date().toISOString();
+
+
+  const saved =
+    await saveContent(
+      next
+    );
+
+
+  return json({
+
+    ok: true,
+
+    saved: true,
+
+    updatedAt:
+      next.updatedAt,
+
+    url:
+      saved.url
+
+  });
+
+}
+
+
+/* =========================================================
+   HANDLER PRINCIPAL
+========================================================= */
+
+export default async function handler(
+  request
+) {
+
+  /*
+   * Solo aceptamos POST.
+   */
+
+  if (
+    request.method !== 'POST'
+  ) {
+
+    return error(
+      'Método no permitido.',
+      405
+    );
+
+  }
+
+
+  try {
+
+    let body = {};
+
+
+    try {
+
+      body =
+        await request.json();
+
+    } catch {
+
+      return error(
+        'El cuerpo de la petición no es JSON válido.',
+        400
+      );
+
+    }
+
+
+    const action =
+      String(
+        body.action || ''
+      ).trim();
+
+
+    switch (action) {
+
+
+      /* -----------------------------------------------
+         LOGIN
+      ------------------------------------------------ */
+
+      case 'login':
+
+        return await handleLogin(
+          request,
+          body
+        );
+
+
+      /* -----------------------------------------------
+         SESSION
+      ------------------------------------------------ */
+
+      case 'session':
+
+        return await handleSession(
+          request
+        );
+
+
+      /* -----------------------------------------------
+         LOGOUT
+      ------------------------------------------------ */
+
+      case 'logout':
+
+        return await handleLogout();
+
+
+      /* -----------------------------------------------
+         SAVE
+      ------------------------------------------------ */
+
+      case 'save':
+
+        return await handleSave(
+          request,
+          body
+        );
+
+
+      /* -----------------------------------------------
+         ACCIÓN DESCONOCIDA
+      ------------------------------------------------ */
+
+      default:
+
+        return error(
+          `Acción desconocida: ${action || '(vacía)'}`,
+          400
+        );
+
+    }
+
+  } catch (err) {
+
+    console.error(
+      '❌ ERROR API ADMIN:',
+      err
+    );
+
+
+    return error(
+      err?.message ||
+      'Error interno del servidor.',
+      500
+    );
+
+  }
+
 }
