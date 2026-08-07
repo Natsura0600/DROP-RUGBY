@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@vercel/blob": "latest",
-    "resend": "latest"
   }
 }
 
