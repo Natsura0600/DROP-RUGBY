@@ -353,7 +353,7 @@ export default async function handler(req, res) {
 
                 <strong>
 
-                  Los Pumas · Super Rugby · URBA
+                  Los Pumas · Internacional · URBA
 
                 </strong>
 
