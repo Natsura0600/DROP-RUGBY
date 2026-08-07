@@ -1,1 +1,140 @@
-import { Resend } from 'resend'; const resend = new Resend(process.env.RESEND_API_KEY); export default async function handler(req, res) { if (req.method !== 'POST') { return res.status(405).json({ error: 'Método no permitido' }); } try { const { email } = req.body || {}; if (!email || typeof email !== 'string') { return res.status(400).json({ error: 'Ingresá un email válido.' }); } const emailClean = email.trim().toLowerCase(); const { data, error } = await resend.emails.send({ from: 'DropRugby <onboarding@resend.dev>', to: [emailClean], subject: 'Bienvenido a DropRugby 🏉', html: ` <!DOCTYPE html> <html lang="es"> <body style="margin:0;padding:0;background:#f4f4f2;font-family:Arial,sans-serif;"> <div style="max-width:600px;margin:40px auto;background:#ffffff;padding:40px;"> <h1 style="margin:0 0 10px;font-size:32px;"> DROP<span style="font-weight:400;">RUGBY</span> </h1> <p style="color:#777;margin-bottom:35px;"> Rugby es una pasión. </p> <h2>¡Gracias por suscribirte! 🏉</h2> <p style="font-size:16px;line-height:1.6;color:#333;"> Ya estás dentro de la newsletter de DropRugby. A partir de ahora recibirás las principales noticias, análisis y novedades del mundo del rugby. </p> <div style="margin:30px 0;padding:20px;background:#f5f5f5;"> <strong>Los Pumas · Super Rugby · URBA</strong> </div> <p style="font-size:14px;color:#888;"> Gracias por ser parte de DropRugby. </p> </div> </body> </html> ` }); if (error) { console.error('RESEND ERROR:', error); return res.status(500).json({ error: 'No se pudo enviar el email.', detail: error.message || 'Error de Resend' }); } return res.status(200).json({ ok: true, id: data?.id }); } catch (error) { console.error('NEWSLETTER ERROR:', error); return res.status(500).json({ error: 'Error interno del servidor.', detail: error instanceof Error ? error.message : String(error) }); } }
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      error: 'Método no permitido'
+    });
+  }
+
+  try {
+    const { email } = req.body || {};
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({
+        error: 'Ingresá un email válido.'
+      });
+    }
+
+    const emailClean = email.trim().toLowerCase();
+
+    /*
+     * 1. Guardar el contacto en Resend
+     */
+    const { data: contact, error: contactError } =
+      await resend.contacts.create({
+        email: emailClean,
+        unsubscribed: false
+      });
+
+    if (contactError) {
+      console.error('RESEND CONTACT ERROR:', contactError);
+
+      return res.status(500).json({
+        error: 'No se pudo guardar la suscripción.',
+        detail: contactError.message || 'Error de Resend'
+      });
+    }
+
+    /*
+     * 2. Enviar email de bienvenida
+     */
+    const { data, error } = await resend.emails.send({
+      from: 'DropRugby <onboarding@resend.dev>',
+      to: [emailClean],
+      subject: 'Bienvenido a DropRugby 🏉',
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+        <body style="
+          margin:0;
+          padding:0;
+          background:#f4f4f2;
+          font-family:Arial,sans-serif;
+        ">
+
+          <div style="
+            max-width:600px;
+            margin:40px auto;
+            background:#ffffff;
+            padding:40px;
+          ">
+
+            <h1 style="
+              margin:0 0 10px;
+              font-size:32px;
+            ">
+              DROP<span style="font-weight:400;">RUGBY</span>
+            </h1>
+
+            <p style="
+              color:#777;
+              margin-bottom:35px;
+            ">
+              Rugby es una pasión.
+            </p>
+
+            <h2>¡Gracias por suscribirte! 🏉</h2>
+
+            <p style="
+              font-size:16px;
+              line-height:1.6;
+              color:#333;
+            ">
+              Ya estás dentro de la newsletter de DropRugby.
+              A partir de ahora recibirás las principales noticias,
+              análisis y novedades del mundo del rugby.
+            </p>
+
+            <div style="
+              margin:30px 0;
+              padding:20px;
+              background:#f5f5f5;
+            ">
+              <strong>
+                Los Pumas · Super Rugby · URBA
+              </strong>
+            </div>
+
+            <p style="
+              font-size:14px;
+              color:#888;
+            ">
+              Gracias por ser parte de DropRugby.
+            </p>
+
+          </div>
+
+        </body>
+        </html>
+      `
+    });
+
+    if (error) {
+      console.error('RESEND EMAIL ERROR:', error);
+
+      return res.status(500).json({
+        error: 'No se pudo enviar el email de bienvenida.',
+        detail: error.message || 'Error de Resend'
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      contactId: contact?.id,
+      emailId: data?.id
+    });
+
+  } catch (error) {
+    console.error('NEWSLETTER ERROR:', error);
+
+    return res.status(500).json({
+      error: 'Error interno del servidor.',
+      detail: error instanceof Error
+        ? error.message
+        : String(error)
+    });
+  }
+}
