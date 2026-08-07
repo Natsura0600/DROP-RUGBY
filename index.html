@@ -176,12 +176,26 @@
         <p class="eyebrow">NEWSLETTER</p>
         <h2>Recibí las principales<br>noticias de rugby.</h2>
       </div>
-      <form class="newsletter-form" onsubmit="event.preventDefault(); this.classList.add('submitted');">
-        <!-- NEWSLETTER PROVIDER FORM HERE (Brevo / Mailchimp / Buttondown) -->
-        <input type="email" placeholder="Tu email" aria-label="Tu email" required>
-        <button type="submit">Suscribirme <span>→</span></button>
-        <small>Suscribite para recibir noticias de Drop</small>
-      </form>
+<form class="newsletter-form" id="newsletter-form">
+
+  <input
+    type="email"
+    id="newsletter-email"
+    placeholder="Tu email"
+    aria-label="Tu email"
+    autocomplete="email"
+    required
+  >
+
+  <button type="submit" id="newsletter-submit">
+    Suscribirme <span>→</span>
+  </button>
+
+  <small id="newsletter-message">
+    Suscribite para recibir noticias de Drop y ser parte de la comunidad
+  </small>
+
+</form>
     </section>
 
   </main>
