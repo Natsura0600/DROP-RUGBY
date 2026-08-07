@@ -548,6 +548,326 @@
     <p class="copyright">© 2026 DropRugby. Todos los derechos reservados.</p>
   </footer>
   
+<style>
+/* =========================================================
+   DROP RUGBY — CARRUSELES DE CATEGORÍAS
+   Solo transforma las secciones de noticias en carruseles.
+========================================================= */
+
+.category-carousel-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.category-cards.dr-carousel {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  gap: 22px !important;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 5px 4px 18px !important;
+}
+
+.category-cards.dr-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.category-cards.dr-carousel > * {
+  flex: 0 0 calc((100% - 44px) / 3) !important;
+  min-width: 0 !important;
+  scroll-snap-align: start;
+}
+
+.dr-carousel-card {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.dr-carousel-card:hover {
+  transform: translateY(-4px);
+}
+
+.dr-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.dr-carousel-arrow {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 50%;
+  background: #fff;
+  color: #111;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+
+.dr-carousel-arrow:hover {
+  background: #111;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.dr-carousel-arrow:disabled {
+  opacity: .35;
+  cursor: default;
+  transform: none;
+}
+
+.dr-carousel-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 3px;
+}
+
+.dr-carousel-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #d2d2d2;
+  cursor: pointer;
+  transition: width .25s ease, background .25s ease;
+}
+
+.dr-carousel-dot.active {
+  width: 22px;
+  border-radius: 8px;
+  background: #111;
+}
+
+@media (max-width: 900px) {
+  .category-cards.dr-carousel > * {
+    flex-basis: calc((100% - 22px) / 2) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .category-cards.dr-carousel {
+    gap: 14px !important;
+    scroll-snap-type: x mandatory;
+  }
+
+  .category-cards.dr-carousel > * {
+    flex-basis: 82% !important;
+  }
+
+  .dr-carousel-controls {
+    margin-bottom: 10px;
+  }
+
+  .dr-carousel-arrow {
+    width: 35px;
+    height: 35px;
+  }
+}
+</style>
+
+<script>
+/* =========================================================
+   CARRUSELES DE:
+   Los Pumas / Internacional / URBA Top 14 / URBA
+========================================================= */
+
+(function () {
+  const carouselIds = [
+    "home-los-pumas",
+    "home-super-rugby",
+    "home-urba-top14",
+    "home-urba"
+  ];
+
+  const states = new Map();
+
+  function getStep(container) {
+    const first = container.children[0];
+    if (!first) return 300;
+
+    const styles = getComputedStyle(container);
+    const gap = parseFloat(styles.columnGap || styles.gap || 0);
+
+    return first.getBoundingClientRect().width + gap;
+  }
+
+  function updateState(container, state) {
+    const max = Math.max(0, container.scrollWidth - container.clientWidth);
+    const atStart = container.scrollLeft <= 3;
+    const atEnd = container.scrollLeft >= max - 3;
+
+    state.prev.disabled = atStart;
+    state.next.disabled = atEnd;
+
+    if (state.dots.length) {
+      const step = getStep(container);
+      const index = Math.round(container.scrollLeft / Math.max(step, 1));
+
+      state.dots.forEach((dot, i) => {
+        dot.classList.toggle("active", i === Math.min(index, state.dots.length - 1));
+      });
+    }
+  }
+
+  function buildCarousel(container) {
+    if (!container || container.dataset.drCarouselReady === "1") {
+      if (container && states.has(container)) {
+        updateState(container, states.get(container));
+      }
+      return;
+    }
+
+    container.dataset.drCarouselReady = "1";
+    container.classList.add("dr-carousel");
+
+    [...container.children].forEach(card => {
+      card.classList.add("dr-carousel-card");
+    });
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "category-carousel-wrap";
+
+    container.parentNode.insertBefore(wrapper, container);
+    wrapper.appendChild(container);
+
+    const controls = document.createElement("div");
+    controls.className = "dr-carousel-controls";
+
+    const prev = document.createElement("button");
+    prev.type = "button";
+    prev.className = "dr-carousel-arrow";
+    prev.setAttribute("aria-label", "Noticias anteriores");
+    prev.innerHTML = "&#8592;";
+
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "dr-carousel-arrow";
+    next.setAttribute("aria-label", "Más noticias");
+    next.innerHTML = "&#8594;";
+
+    controls.append(prev, next);
+    wrapper.insertBefore(controls, container);
+
+    const progress = document.createElement("div");
+    progress.className = "dr-carousel-progress";
+    wrapper.appendChild(progress);
+
+    const state = { prev, next, dots: [], timer: null };
+    states.set(container, state);
+
+    function refreshDots() {
+      progress.innerHTML = "";
+      const cards = [...container.children];
+
+      if (cards.length <= 1) return;
+
+      const step = Math.max(getStep(container), 1);
+      const visible = Math.max(1, Math.floor(container.clientWidth / step));
+      const pages = Math.max(1, Math.ceil((cards.length - visible) / visible) + 1);
+
+      for (let i = 0; i < pages; i++) {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "dr-carousel-dot";
+        dot.setAttribute("aria-label", `Ir al grupo ${i + 1}`);
+
+        dot.addEventListener("click", () => {
+          container.scrollTo({
+            left: Math.min(i * visible * step, container.scrollWidth - container.clientWidth),
+            behavior: "smooth"
+          });
+        });
+
+        progress.appendChild(dot);
+      }
+
+      state.dots = [...progress.children];
+      updateState(container, state);
+    }
+
+    function move(direction) {
+      container.scrollBy({
+        left: direction * getStep(container),
+        behavior: "smooth"
+      });
+    }
+
+    prev.addEventListener("click", () => move(-1));
+    next.addEventListener("click", () => move(1));
+
+    container.addEventListener("scroll", () => updateState(container, state), { passive: true });
+
+    wrapper.addEventListener("mouseenter", () => {
+      if (state.timer) clearInterval(state.timer);
+    });
+
+    wrapper.addEventListener("mouseleave", startAutoplay);
+
+    function startAutoplay() {
+      if (state.timer) clearInterval(state.timer);
+
+      state.timer = setInterval(() => {
+        const max = container.scrollWidth - container.clientWidth;
+
+        if (max <= 5) return;
+
+        if (container.scrollLeft >= max - 5) {
+          container.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          move(1);
+        }
+      }, 5000);
+    }
+
+    container.addEventListener("touchstart", () => {
+      if (state.timer) clearInterval(state.timer);
+    }, { passive: true });
+
+    container.addEventListener("touchend", startAutoplay, { passive: true });
+
+    const observer = new MutationObserver(() => {
+      [...container.children].forEach(card => card.classList.add("dr-carousel-card"));
+      refreshDots();
+      updateState(container, state);
+    });
+
+    observer.observe(container, { childList: true });
+
+    window.addEventListener("resize", refreshDots);
+
+    refreshDots();
+    startAutoplay();
+    updateState(container, state);
+  }
+
+  function init() {
+    carouselIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) buildCarousel(el);
+    });
+  }
+
+  /* Espera a que script.js termine de cargar las noticias */
+  init();
+
+  const pageObserver = new MutationObserver(init);
+  pageObserver.observe(document.body, { childList: true, subtree: true });
+
+  setTimeout(() => pageObserver.disconnect(), 15000);
+})();
+</script>
+
   <script src="assets/js/script.js"></script>
   
 </body>
