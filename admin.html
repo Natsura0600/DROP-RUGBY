@@ -2,11 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>DropRugby — Administración</title>
 
-  <link rel="stylesheet" href="/assets/admin.css">
+  <link
+    rel="stylesheet"
+    href="/assets/css/admin.css"
+  >
 </head>
 
 <body>
@@ -15,7 +22,10 @@
        LOGIN
   ====================================================== -->
 
-  <section id="login-screen" class="login-screen">
+  <div
+    id="login-screen"
+    class="login-screen"
+  >
 
     <div class="login-background"></div>
 
@@ -25,22 +35,27 @@
         DROP<span>RUGBY</span>
       </div>
 
-      <div class="login-kicker">
+      <p class="login-kicker">
         PANEL DE ADMINISTRACIÓN
-      </div>
+      </p>
 
       <div class="login-line"></div>
 
-      <h1>Bienvenido</h1>
+      <h1>
+        Iniciar sesión
+      </h1>
 
       <p class="login-description">
-        Ingresá para administrar el contenido de DropRugby.
+        Accedé al panel de administración de DropRugby.
       </p>
 
       <form id="login-form">
 
         <div class="form-group">
-          <label for="login-user">Usuario</label>
+
+          <label for="login-user">
+            Usuario
+          </label>
 
           <input
             id="login-user"
@@ -50,10 +65,17 @@
             value="admin"
             required
           >
+
         </div>
 
-        <div class="form-group">
-          <label for="login-password">Contraseña</label>
+        <div
+          class="form-group"
+          style="margin-top: 18px;"
+        >
+
+          <label for="login-password">
+            Contraseña
+          </label>
 
           <input
             id="login-password"
@@ -62,6 +84,7 @@
             autocomplete="current-password"
             required
           >
+
         </div>
 
         <button
@@ -72,38 +95,44 @@
           <span class="button-arrow">→</span>
         </button>
 
-        <div id="login-error" class="form-error"></div>
+        <div
+          id="login-error"
+          class="form-error"
+        ></div>
 
       </form>
 
       <div class="login-footer">
-        DropRugby Administration
+        DROPRUGBY ADMINISTRATION
       </div>
 
     </div>
 
-  </section>
+  </div>
 
 
   <!-- =====================================================
-       APP
+       ADMIN APP
   ====================================================== -->
 
-  <div id="admin-app" class="admin-app hidden">
-
-    <!-- MOBILE OVERLAY -->
-    <div id="sidebar-overlay" class="sidebar-overlay"></div>
-
+  <div
+    id="admin-app"
+    class="admin-app hidden"
+  >
 
     <!-- ===================================================
          SIDEBAR
     ==================================================== -->
 
-    <aside id="sidebar" class="sidebar">
+    <aside
+      id="sidebar"
+      class="sidebar"
+    >
 
       <div class="sidebar-top">
 
         <div class="sidebar-brand">
+
           <div class="brand-main">
             DROP<span>RUGBY</span>
           </div>
@@ -111,6 +140,7 @@
           <div class="brand-subtitle">
             ADMINISTRATION
           </div>
+
         </div>
 
         <button
@@ -152,7 +182,10 @@
         >
           <span class="nav-icon">▤</span>
           <span>Noticias</span>
-          <span id="nav-articles-count" class="nav-count">0</span>
+          <span
+            id="nav-articles-count"
+            class="nav-count"
+          >0</span>
         </button>
 
         <button
@@ -162,7 +195,10 @@
         >
           <span class="nav-icon">◷</span>
           <span>Partidos</span>
-          <span id="nav-fixtures-count" class="nav-count">0</span>
+          <span
+            id="nav-fixtures-count"
+            class="nav-count"
+          >0</span>
         </button>
 
         <button
@@ -181,7 +217,10 @@
         >
           <span class="nav-icon">♟</span>
           <span>Jugadores</span>
-          <span id="nav-players-count" class="nav-count">0</span>
+          <span
+            id="nav-players-count"
+            class="nav-count"
+          >0</span>
         </button>
 
         <button
@@ -205,7 +244,10 @@
         >
           <span class="nav-icon">⌫</span>
           <span>Papelera</span>
-          <span id="nav-trash-count" class="nav-count">0</span>
+          <span
+            id="nav-trash-count"
+            class="nav-count"
+          >0</span>
         </button>
 
         <button
@@ -250,11 +292,13 @@
         </button>
 
         <div class="admin-user">
+
           <div class="admin-avatar">
             A
           </div>
 
           <div>
+
             <strong id="admin-username">
               admin
             </strong>
@@ -262,7 +306,9 @@
             <small>
               Administrador
             </small>
+
           </div>
+
         </div>
 
       </div>
@@ -270,13 +316,17 @@
     </aside>
 
 
+    <div
+      id="sidebar-overlay"
+      class="sidebar-overlay"
+    ></div>
+
+
     <!-- ===================================================
          MAIN
     ==================================================== -->
 
     <main class="main-content">
-
-      <!-- HEADER -->
 
       <header class="topbar">
 
@@ -290,6 +340,7 @@
         </button>
 
         <div class="topbar-title">
+
           <span id="page-kicker">
             ADMINISTRATION
           </span>
@@ -297,6 +348,7 @@
           <h2 id="page-title">
             Dashboard
           </h2>
+
         </div>
 
         <div class="topbar-actions">
@@ -324,8 +376,6 @@
       </header>
 
 
-      <!-- CONTENT -->
-
       <div class="content-container">
 
 
@@ -341,6 +391,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 RESUMEN
               </span>
@@ -353,6 +404,7 @@
                 Todo lo que está pasando en DropRugby,
                 desde un solo lugar.
               </p>
+
             </div>
 
             <button
@@ -464,13 +516,12 @@
 
           <div class="dashboard-grid">
 
-            <!-- Últimas noticias -->
-
             <div class="panel-card">
 
               <div class="panel-header">
 
                 <div>
+
                   <span class="section-label">
                     CONTENIDO
                   </span>
@@ -478,6 +529,7 @@
                   <h3>
                     Últimas noticias
                   </h3>
+
                 </div>
 
                 <button
@@ -502,13 +554,12 @@
             </div>
 
 
-            <!-- Actividad -->
-
             <div class="panel-card">
 
               <div class="panel-header">
 
                 <div>
+
                   <span class="section-label">
                     ACTIVIDAD
                   </span>
@@ -516,6 +567,7 @@
                   <h3>
                     Historial reciente
                   </h3>
+
                 </div>
 
                 <button
@@ -542,13 +594,12 @@
           </div>
 
 
-          <!-- Quick actions -->
-
           <div class="panel-card quick-actions-card">
 
             <div class="panel-header">
 
               <div>
+
                 <span class="section-label">
                   ACCIONES RÁPIDAS
                 </span>
@@ -556,6 +607,7 @@
                 <h3>
                   Administrar contenido
                 </h3>
+
               </div>
 
             </div>
@@ -621,6 +673,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 CONTENIDO
               </span>
@@ -632,6 +685,7 @@
               <p>
                 Creá, editá y administrá todas las noticias.
               </p>
+
             </div>
 
             <button
@@ -648,6 +702,7 @@
           <div class="toolbar">
 
             <div class="search-box">
+
               <span>⌕</span>
 
               <input
@@ -655,6 +710,7 @@
                 type="search"
                 placeholder="Buscar noticias..."
               >
+
             </div>
 
             <select id="article-category-filter">
@@ -696,6 +752,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 CALENDARIO
               </span>
@@ -707,6 +764,7 @@
               <p>
                 Administrá partidos, fechas, horarios y resultados.
               </p>
+
             </div>
 
             <button
@@ -723,6 +781,7 @@
           <div class="toolbar">
 
             <div class="search-box">
+
               <span>⌕</span>
 
               <input
@@ -730,6 +789,7 @@
                 type="search"
                 placeholder="Buscar partidos..."
               >
+
             </div>
 
             <select id="fixture-status-filter">
@@ -765,6 +825,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 COMPETICIONES
               </span>
@@ -776,6 +837,7 @@
               <p>
                 Administrá tablas y posiciones de equipos.
               </p>
+
             </div>
 
             <button
@@ -813,6 +875,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 PLANTELES
               </span>
@@ -824,6 +887,7 @@
               <p>
                 Administrá perfiles de jugadores.
               </p>
+
             </div>
 
             <button
@@ -840,6 +904,7 @@
           <div class="toolbar">
 
             <div class="search-box">
+
               <span>⌕</span>
 
               <input
@@ -847,6 +912,7 @@
                 type="search"
                 placeholder="Buscar jugadores..."
               >
+
             </div>
 
           </div>
@@ -872,6 +938,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 REDES
               </span>
@@ -883,6 +950,7 @@
               <p>
                 Administrá publicaciones y enlaces de Instagram.
               </p>
+
             </div>
 
             <button
@@ -916,6 +984,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 SISTEMA
               </span>
@@ -927,6 +996,7 @@
               <p>
                 Recuperá o eliminá definitivamente contenido.
               </p>
+
             </div>
 
             <button
@@ -964,6 +1034,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 SISTEMA
               </span>
@@ -975,6 +1046,7 @@
               <p>
                 Registro de las acciones realizadas desde el panel.
               </p>
+
             </div>
 
             <button
@@ -1012,6 +1084,7 @@
           <div class="section-heading">
 
             <div>
+
               <span class="section-label">
                 SISTEMA
               </span>
@@ -1023,6 +1096,7 @@
               <p>
                 Configuración general del panel.
               </p>
+
             </div>
 
           </div>
@@ -1033,7 +1107,9 @@
             <div class="panel-card">
 
               <div class="panel-header">
+
                 <div>
+
                   <span class="section-label">
                     SITIO
                   </span>
@@ -1041,14 +1117,18 @@
                   <h3>
                     Información general
                   </h3>
+
                 </div>
+
               </div>
+
 
               <form id="settings-form">
 
                 <div class="form-grid">
 
                   <div class="form-group">
+
                     <label for="settings-site-name">
                       Nombre del sitio
                     </label>
@@ -1058,9 +1138,12 @@
                       type="text"
                       placeholder="DropRugby"
                     >
+
                   </div>
 
+
                   <div class="form-group">
+
                     <label for="settings-site-description">
                       Descripción
                     </label>
@@ -1070,6 +1153,7 @@
                       type="text"
                       placeholder="Noticias de rugby"
                     >
+
                   </div>
 
                 </div>
@@ -1089,7 +1173,9 @@
             <div class="panel-card newsletter-panel">
 
               <div class="panel-header">
+
                 <div>
+
                   <span class="section-label">
                     NEWSLETTER
                   </span>
@@ -1097,7 +1183,9 @@
                   <h3>
                     Envío de noticias
                   </h3>
+
                 </div>
+
               </div>
 
               <p>
@@ -1133,16 +1221,19 @@
   <div
     id="article-modal"
     class="modal"
-    aria-hidden="true"
   >
 
-    <div class="modal-backdrop" data-close-modal></div>
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <div class="modal-dialog modal-large">
 
       <div class="modal-header">
 
         <div>
+
           <span class="section-label">
             EDITOR
           </span>
@@ -1150,6 +1241,7 @@
           <h2 id="article-modal-title">
             Nueva noticia
           </h2>
+
         </div>
 
         <button
@@ -1173,6 +1265,7 @@
         <div class="form-grid">
 
           <div class="form-group full">
+
             <label for="article-title">
               Título *
             </label>
@@ -1183,10 +1276,12 @@
               required
               placeholder="Título de la noticia"
             >
+
           </div>
 
 
           <div class="form-group">
+
             <label for="article-category">
               Categoría
             </label>
@@ -1226,10 +1321,12 @@
               </option>
 
             </select>
+
           </div>
 
 
           <div class="form-group">
+
             <label for="article-author">
               Autor
             </label>
@@ -1239,6 +1336,7 @@
               type="text"
               value="DropRugby"
             >
+
           </div>
 
 
@@ -1356,16 +1454,19 @@
   <div
     id="fixture-modal"
     class="modal"
-    aria-hidden="true"
   >
 
-    <div class="modal-backdrop" data-close-modal></div>
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <div class="modal-dialog">
 
       <div class="modal-header">
 
         <div>
+
           <span class="section-label">
             CALENDARIO
           </span>
@@ -1373,6 +1474,7 @@
           <h2 id="fixture-modal-title">
             Nuevo partido
           </h2>
+
         </div>
 
         <button
@@ -1396,6 +1498,7 @@
         <div class="form-grid">
 
           <div class="form-group">
+
             <label for="fixture-date">
               Fecha
             </label>
@@ -1405,9 +1508,12 @@
               type="date"
               required
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-time">
               Hora
             </label>
@@ -1416,9 +1522,12 @@
               id="fixture-time"
               type="time"
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-competition">
               Competición
             </label>
@@ -1428,9 +1537,12 @@
               type="text"
               placeholder="Rugby Championship"
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-venue">
               Estadio
             </label>
@@ -1440,9 +1552,12 @@
               type="text"
               placeholder="Estadio..."
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-home">
               Local
             </label>
@@ -1453,9 +1568,12 @@
               required
               placeholder="Equipo local"
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-away">
               Visitante
             </label>
@@ -1466,9 +1584,12 @@
               required
               placeholder="Equipo visitante"
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-home-score">
               Resultado local
             </label>
@@ -1479,9 +1600,12 @@
               min="0"
               placeholder="-"
             >
+
           </div>
 
+
           <div class="form-group">
+
             <label for="fixture-away-score">
               Resultado visitante
             </label>
@@ -1492,14 +1616,18 @@
               min="0"
               placeholder="-"
             >
+
           </div>
 
+
           <div class="form-group full">
+
             <label for="fixture-status">
               Estado
             </label>
 
             <select id="fixture-status">
+
               <option value="upcoming">
                 Próximo
               </option>
@@ -1507,7 +1635,9 @@
               <option value="finished">
                 Finalizado
               </option>
+
             </select>
+
           </div>
 
         </div>
@@ -1546,16 +1676,19 @@
   <div
     id="team-modal"
     class="modal"
-    aria-hidden="true"
   >
 
-    <div class="modal-backdrop" data-close-modal></div>
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <div class="modal-dialog">
 
       <div class="modal-header">
 
         <div>
+
           <span class="section-label">
             POSICIONES
           </span>
@@ -1563,6 +1696,7 @@
           <h2>
             Equipo
           </h2>
+
         </div>
 
         <button
@@ -1745,16 +1879,19 @@
   <div
     id="player-modal"
     class="modal"
-    aria-hidden="true"
   >
 
-    <div class="modal-backdrop" data-close-modal></div>
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <div class="modal-dialog">
 
       <div class="modal-header">
 
         <div>
+
           <span class="section-label">
             JUGADORES
           </span>
@@ -1762,6 +1899,7 @@
           <h2>
             Jugador
           </h2>
+
         </div>
 
         <button
@@ -1926,16 +2064,19 @@
   <div
     id="instagram-modal"
     class="modal"
-    aria-hidden="true"
   >
 
-    <div class="modal-backdrop" data-close-modal></div>
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <div class="modal-dialog">
 
       <div class="modal-header">
 
         <div>
+
           <span class="section-label">
             INSTAGRAM
           </span>
@@ -1943,6 +2084,7 @@
           <h2>
             Publicación
           </h2>
+
         </div>
 
         <button
@@ -2061,10 +2203,12 @@
   <div
     id="confirm-modal"
     class="modal"
-    aria-hidden="true"
   >
 
-    <div class="modal-backdrop"></div>
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <div class="modal-dialog modal-small">
 
@@ -2073,7 +2217,7 @@
       </div>
 
       <h2 id="confirm-title">
-        ¿Estás seguro?
+        ¿Confirmar acción?
       </h2>
 
       <p id="confirm-message">
@@ -2106,7 +2250,7 @@
 
 
   <!-- =====================================================
-       TOAST
+       TOASTS
   ====================================================== -->
 
   <div
@@ -2115,7 +2259,14 @@
   ></div>
 
 
-  <script src="/assets/admin.js" defer></script>
+  <!-- =====================================================
+       JAVASCRIPT
+  ====================================================== -->
+
+  <script
+    src="/assets/admin.js"
+    defer
+  ></script>
 
 </body>
 </html>
