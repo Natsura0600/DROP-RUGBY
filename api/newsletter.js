@@ -1,3 +1,4 @@
+
 import { Resend } from 'resend';
 
 const resend = new Resend(
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
   try {
 
     /* ===================================================
-       EMAIL
+       OBTENER EMAIL
     =================================================== */
 
     const { email } = req.body || {};
@@ -37,26 +38,26 @@ export default async function handler(req, res) {
       email.trim().toLowerCase();
 
     /* ===================================================
-       VARIABLES DE RESEND
+       VERIFICAR VARIABLES
     =================================================== */
-
-    const segmentId =
-      process.env.RESEND_SEGMENT_ID;
 
     if (!process.env.RESEND_API_KEY) {
       console.error(
-        'Falta RESEND_API_KEY.'
+        'Falta RESEND_API_KEY'
       );
 
       return res.status(500).json({
         error:
-          'El servidor no tiene configurado Resend.'
+          'Resend no está configurado correctamente.'
       });
     }
 
+    const segmentId =
+      process.env.RESEND_SEGMENT_ID;
+
     if (!segmentId) {
       console.error(
-        'Falta RESEND_SEGMENT_ID.'
+        'Falta RESEND_SEGMENT_ID'
       );
 
       return res.status(500).json({
@@ -66,170 +67,174 @@ export default async function handler(req, res) {
     }
 
     /* ===================================================
-       1. CREAR CONTACTO
+       1. INTENTAR CREAR EL CONTACTO
     =================================================== */
 
-    let contact = null;
+    let contactId = null;
 
     const {
       data: createdContact,
-      error: contactError
+      error: createError
     } = await resend.contacts.create({
+
       email: emailClean,
+
       unsubscribed: false
+
     });
 
-    if (!contactError) {
+    /* ===================================================
+       CONTACTO NUEVO
+    =================================================== */
 
-      contact = createdContact;
+    if (!createError) {
+
+      contactId =
+        createdContact?.id;
 
       console.log(
         'CONTACTO CREADO:',
         emailClean
       );
 
-    } else {
+    }
 
-      /*
-       * El contacto puede existir ya.
-       *
-       * En ese caso no hacemos fallar
-       * la suscripción.
-       */
+    /* ===================================================
+       CONTACTO YA EXISTENTE
+    =================================================== */
+
+    else {
 
       console.log(
-        'CONTACT CREATE ERROR:',
-        contactError.message
+        'El contacto ya puede existir:',
+        createError.message
       );
 
       /*
-       * Buscamos el contacto existente.
+       * Resend permite actualizar un contacto
+       * directamente usando su email.
        */
 
       const {
-        data: contacts,
-        error: listError
-      } = await resend.contacts.list();
+        data: updatedContact,
+        error: updateError
+      } = await resend.contacts.update({
 
-      if (listError) {
+        email: emailClean,
 
-        console.error(
-          'CONTACT LIST ERROR:',
-          listError
-        );
+        unsubscribed: false
 
-        return res.status(500).json({
-          error:
-            'No se pudo verificar el contacto.',
-          detail:
-            listError.message ||
-            'Error de Resend'
-        });
-      }
+      });
 
-      contact =
-        contacts?.find(
-          item =>
-            item.email?.toLowerCase() ===
-            emailClean
-        );
-
-      if (!contact) {
+      if (updateError) {
 
         console.error(
           'RESEND CONTACT ERROR:',
-          contactError
+          {
+            message:
+              updateError.message,
+
+            name:
+              updateError.name,
+
+            statusCode:
+              updateError.statusCode
+          }
         );
 
         return res.status(500).json({
+
           error:
             'No se pudo guardar la suscripción.',
+
           detail:
-            contactError.message ||
-            'Error de Resend'
+            updateError.message ||
+            'Error de Resend',
+
+          statusCode:
+            updateError.statusCode || null
         });
       }
 
-      /*
-       * El contacto existe.
-       *
-       * Lo volvemos a suscribir.
-       */
-
-      if (contact.unsubscribed) {
-
-        const {
-          data: updatedContact,
-          error: updateError
-        } = await resend.contacts.update({
-          id: contact.id,
-          unsubscribed: false
-        });
-
-        if (updateError) {
-
-          console.error(
-            'CONTACT UPDATE ERROR:',
-            updateError
-          );
-
-          return res.status(500).json({
-            error:
-              'No se pudo reactivar la suscripción.',
-            detail:
-              updateError.message ||
-              'Error de Resend'
-          });
-        }
-
-        contact = {
-          ...contact,
-          ...updatedContact
-        };
-      }
+      contactId =
+        updatedContact?.id;
 
       console.log(
-        'CONTACTO YA EXISTÍA:',
+        'CONTACTO EXISTENTE ACTUALIZADO:',
         emailClean
       );
     }
 
     /* ===================================================
-       2. AGREGAR AL SEGMENTO
+       VERIFICAR ID
+    =================================================== */
+
+    if (!contactId) {
+
+      console.error(
+        'Resend no devolvió contactId.'
+      );
+
+      return res.status(500).json({
+
+        error:
+          'Resend no devolvió el ID del contacto.',
+
+        detail:
+          'El contacto pudo crearse pero no se recibió su ID.'
+      });
+    }
+
+    /* ===================================================
+       2. AGREGAR CONTACTO AL SEGMENTO
     =================================================== */
 
     const {
+      data: segmentData,
       error: segmentError
-    } = await resend.contacts.segments.add({
-      contactId: contact.id,
-      segmentId
-    });
+    } =
+      await resend.contacts.segments.add({
+
+        contactId,
+
+        segmentId
+
+      });
 
     if (segmentError) {
 
-      /*
-       * Si ya pertenece al segmento,
-       * Resend puede devolver un error.
-       *
-       * En ese caso no queremos romper
-       * toda la suscripción.
-       */
-
       console.error(
-        'SEGMENT ERROR:',
-        segmentError
+        'RESEND SEGMENT ERROR:',
+        {
+          message:
+            segmentError.message,
+
+          name:
+            segmentError.name,
+
+          statusCode:
+            segmentError.statusCode
+        }
       );
 
-      /*
-       * Intentamos igualmente continuar.
-       */
-    } else {
+      return res.status(500).json({
 
-      console.log(
-        'CONTACTO AGREGADO AL SEGMENTO:',
-        emailClean
-      );
+        error:
+          'El contacto se guardó, pero no se pudo agregar al newsletter.',
+
+        detail:
+          segmentError.message ||
+          'Error al agregar al segmento',
+
+        statusCode:
+          segmentError.statusCode || null
+      });
     }
+
+    console.log(
+      'CONTACTO AGREGADO AL SEGMENTO:',
+      emailClean
+    );
 
     /* ===================================================
        3. EMAIL DE BIENVENIDA
@@ -238,138 +243,170 @@ export default async function handler(req, res) {
     const {
       data: emailData,
       error: emailError
-    } = await resend.emails.send({
+    } =
+      await resend.emails.send({
 
-      from:
-        'DropRugby <onboarding@resend.dev>',
+        from:
+          'DropRugby <onboarding@resend.dev>',
 
-      to: [
-        emailClean
-      ],
+        to: [
+          emailClean
+        ],
 
-      subject:
-        'Bienvenido a DropRugby 🏉',
+        subject:
+          'Bienvenido a DropRugby 🏉',
 
-      html: `
-        <!DOCTYPE html>
+        html: `
+          <!DOCTYPE html>
 
-        <html lang="es">
+          <html lang="es">
 
-        <head>
-          <meta charset="UTF-8">
+          <head>
 
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-          >
+            <meta charset="UTF-8">
 
-          <title>
-            Bienvenido a DropRugby
-          </title>
-        </head>
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            >
 
-        <body style="
-          margin:0;
-          padding:0;
-          background:#f4f4f2;
-          font-family:Arial,Helvetica,sans-serif;
-        ">
+            <title>
+              Bienvenido a DropRugby
+            </title>
 
-          <div style="
-            max-width:600px;
-            margin:40px auto;
-            background:#ffffff;
-            padding:40px;
+          </head>
+
+          <body style="
+            margin:0;
+            padding:0;
+            background:#f4f4f2;
+            font-family:Arial,Helvetica,sans-serif;
           ">
 
-            <h1 style="
-              margin:0 0 10px;
-              font-size:32px;
-              letter-spacing:-1px;
-              color:#111;
-            ">
-              DROP<span style="
-                font-weight:400;
-              ">RUGBY</span>
-            </h1>
-
-            <p style="
-              color:#777;
-              margin-bottom:35px;
-              font-size:14px;
-            ">
-              Rugby es una pasión.
-            </p>
-
-            <h2 style="
-              color:#111;
-              font-size:24px;
-            ">
-              ¡Gracias por suscribirte! 🏉
-            </h2>
-
-            <p style="
-              font-size:16px;
-              line-height:1.6;
-              color:#333;
-            ">
-              Ya estás dentro de la newsletter
-              de DropRugby.
-            </p>
-
-            <p style="
-              font-size:16px;
-              line-height:1.6;
-              color:#333;
-            ">
-              A partir de ahora recibirás las
-              principales noticias, análisis y
-              novedades del mundo del rugby.
-            </p>
-
             <div style="
-              margin:30px 0;
-              padding:20px;
-              background:#f5f5f5;
+              max-width:600px;
+              margin:40px auto;
+              background:#ffffff;
+              padding:40px;
             ">
 
-              <strong>
-                Los Pumas · Super Rugby · URBA
-              </strong>
+              <h1 style="
+                margin:0 0 10px;
+                font-size:32px;
+                letter-spacing:-1px;
+                color:#111;
+              ">
+
+                DROP<span style="
+                  font-weight:400;
+                ">RUGBY</span>
+
+              </h1>
+
+              <p style="
+                color:#777;
+                margin-bottom:35px;
+                font-size:14px;
+              ">
+
+                Rugby es una pasión.
+
+              </p>
+
+              <h2 style="
+                color:#111;
+                font-size:24px;
+              ">
+
+                ¡Gracias por suscribirte! 🏉
+
+              </h2>
+
+              <p style="
+                font-size:16px;
+                line-height:1.6;
+                color:#333;
+              ">
+
+                Ya estás dentro de la newsletter
+                de DropRugby.
+
+              </p>
+
+              <p style="
+                font-size:16px;
+                line-height:1.6;
+                color:#333;
+              ">
+
+                A partir de ahora recibirás las
+                principales noticias, análisis y
+                novedades del mundo del rugby.
+
+              </p>
+
+              <div style="
+                margin:30px 0;
+                padding:20px;
+                background:#f5f5f5;
+              ">
+
+                <strong>
+
+                  Los Pumas · Super Rugby · URBA
+
+                </strong>
+
+              </div>
+
+              <p style="
+                font-size:14px;
+                color:#888;
+              ">
+
+                Gracias por ser parte de DropRugby.
+
+              </p>
 
             </div>
 
-            <p style="
-              font-size:14px;
-              color:#888;
-            ">
-              Gracias por ser parte de DropRugby.
-            </p>
+          </body>
 
-          </div>
-
-        </body>
-        </html>
-      `
-    });
+          </html>
+        `
+      });
 
     /* ===================================================
-       ERROR EMAIL
+       ERROR AL ENVIAR BIENVENIDA
     =================================================== */
 
     if (emailError) {
 
       console.error(
         'RESEND EMAIL ERROR:',
-        emailError
+        {
+          message:
+            emailError.message,
+
+          name:
+            emailError.name,
+
+          statusCode:
+            emailError.statusCode
+        }
       );
 
       return res.status(500).json({
+
         error:
           'La suscripción se guardó, pero no se pudo enviar el email de bienvenida.',
+
         detail:
           emailError.message ||
-          'Error de Resend'
+          'Error de Resend',
+
+        statusCode:
+          emailError.statusCode || null
       });
     }
 
@@ -381,14 +418,15 @@ export default async function handler(req, res) {
 
       ok: true,
 
-      contactId:
-        contact?.id || null,
+      contactId,
 
       emailId:
         emailData?.id || null,
 
+      segmentId,
+
       message:
-        'Suscripción realizada correctamente.'
+        '¡Suscripción realizada correctamente!'
     });
 
   } catch (error) {
