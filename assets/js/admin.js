@@ -1,9 +1,9 @@
+
 /* =========================================================
    DROPRUGBY ADMIN JS
    ========================================================= */
 
 "use strict";
-
 
 // =========================================================
 // STATE
@@ -34,20 +34,15 @@ const state = {
   confirmCallback: null
 };
 
-
 // =========================================================
 // HELPERS
 // =========================================================
 
-const $ = (selector) =>
-  document.querySelector(selector);
+const $ = (selector) => document.querySelector(selector);
 
-const $$ = (selector) =>
-  Array.from(document.querySelectorAll(selector));
-
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
 function escapeHTML(value) {
-
   return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -56,9 +51,7 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
-
 function formatDate(value) {
-
   if (!value) {
     return "Sin fecha";
   }
@@ -76,9 +69,7 @@ function formatDate(value) {
   }).format(date);
 }
 
-
 function formatDateTime(value) {
-
   if (!value) {
     return "Sin fecha";
   }
@@ -98,9 +89,7 @@ function formatDateTime(value) {
   }).format(date);
 }
 
-
 function slugify(text) {
-
   return String(text || "")
     .toLowerCase()
     .normalize("NFD")
@@ -109,23 +98,16 @@ function slugify(text) {
     .replace(/^-+|-+$/g, "");
 }
 
+function showToast(title, message = "", type = "success") {
+  const container = $("#toast-container");
 
-function showToast(
-  title,
-  message = "",
-  type = "success"
-) {
+  if (!container) {
+    return;
+  }
 
-  const container =
-    $("#toast-container");
+  const toast = document.createElement("div");
 
-  if (!container) return;
-
-  const toast =
-    document.createElement("div");
-
-  toast.className =
-    `toast ${type}`;
+  toast.className = `toast ${type}`;
 
   toast.innerHTML = `
     <strong>${escapeHTML(title)}</strong>
@@ -136,22 +118,20 @@ function showToast(
 
   setTimeout(() => {
     toast.style.opacity = "0";
-    toast.style.transform =
-      "translateY(10px)";
+    toast.style.transform = "translateY(10px)";
 
     setTimeout(() => {
       toast.remove();
     }, 250);
-
   }, 3500);
 }
 
-
 function openModal(id) {
-
   const modal = $(`#${id}`);
 
-  if (!modal) return;
+  if (!modal) {
+    return;
+  }
 
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
@@ -159,12 +139,12 @@ function openModal(id) {
   document.body.style.overflow = "hidden";
 }
 
-
 function closeModal(id) {
-
   const modal = $(`#${id}`);
 
-  if (!modal) return;
+  if (!modal) {
+    return;
+  }
 
   modal.classList.remove("open");
   modal.setAttribute("aria-hidden", "true");
@@ -174,77 +154,59 @@ function closeModal(id) {
   }
 }
 
-
 function closeAllModals() {
-
-  $$(".modal.open").forEach(
-    (modal) => {
-      modal.classList.remove("open");
-      modal.setAttribute(
-        "aria-hidden",
-        "true"
-      );
-    }
-  );
+  $$(".modal.open").forEach((modal) => {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  });
 
   document.body.style.overflow = "";
 }
 
-
-function confirmAction(
-  title,
-  message,
-  callback
-) {
-
+function confirmAction(title, message, callback) {
   state.confirmCallback = callback;
 
-  $("#confirm-title").textContent =
-    title;
+  const titleElement = $("#confirm-title");
+  const messageElement = $("#confirm-message");
 
-  $("#confirm-message").textContent =
-    message;
+  if (titleElement) {
+    titleElement.textContent = title;
+  }
+
+  if (messageElement) {
+    messageElement.textContent = message;
+  }
 
   openModal("confirm-modal");
 }
-
 
 // =========================================================
 // API
 // =========================================================
 
-async function api(
-  action,
-  data = {},
-  method = "POST"
-) {
-
+async function api(action, data = {}, method = "POST") {
   const options = {
     method,
     credentials: "include",
     headers: {
-      "Content-Type":
-        "application/json"
+      "Content-Type": "application/json"
     }
   };
 
   if (method !== "GET") {
-    options.body =
-      JSON.stringify({
-        action,
-        ...data
-      });
+    options.body = JSON.stringify({
+      action,
+      ...data
+    });
   }
 
   let url = "/api/admin";
 
   if (method === "GET") {
-    url +=
-      `?action=${encodeURIComponent(action)}`;
+    url += `?action=${encodeURIComponent(action)}`;
   }
 
-  const response =
-    await fetch(url, options);
+  const response = await fetch(url, options);
 
   let result;
 
@@ -257,94 +219,83 @@ async function api(
   }
 
   if (!response.ok || result.ok === false) {
-
     if (response.status === 401) {
       logoutLocal();
     }
 
     throw new Error(
-      result.error ||
-      "Ocurrió un error"
+      result.error || "Ocurrió un error"
     );
   }
 
   return result;
 }
 
-
 // =========================================================
 // LOGIN
 // =========================================================
 
-async function login(
-  username,
-  password
-) {
+async function login(username, password) {
+  const button = $("#login-form button[type='submit']");
 
-  const button =
-    $("#login-form button[type='submit']");
+  if (!button) {
+    return;
+  }
 
-  const original =
-    button.innerHTML;
+  const original = button.innerHTML;
 
   button.disabled = true;
-  button.innerHTML =
-    "INGRESANDO...";
+  button.innerHTML = "INGRESANDO...";
 
-  $("#login-error").textContent =
-    "";
+  const loginError = $("#login-error");
+
+  if (loginError) {
+    loginError.textContent = "";
+  }
 
   try {
+    const result = await api("login", {
+      username,
+      password
+    });
 
-    const result =
-      await api(
-        "login",
-        {
-          username,
-          password
-        }
-      );
+    const usernameElement = $("#admin-username");
 
-    $("#admin-username")
-      .textContent =
-      result.user || username;
+    if (usernameElement) {
+      usernameElement.textContent =
+        result.user || username;
+    }
 
     showApp();
 
     await loadContent();
-
   } catch (error) {
-
-    $("#login-error")
-      .textContent =
-      error.message ||
-      "No se pudo iniciar sesión";
-
+    if (loginError) {
+      loginError.textContent =
+        error.message || "No se pudo iniciar sesión";
+    }
   } finally {
-
     button.disabled = false;
-    button.innerHTML =
-      original;
+    button.innerHTML = original;
   }
 }
 
-
 function logoutLocal() {
+  const app = $("#admin-app");
+  const loginScreen = $("#login-screen");
 
-  $("#admin-app")
-    .classList.add("hidden");
+  if (app) {
+    app.classList.add("hidden");
+  }
 
-  $("#login-screen")
-    .classList.remove("hidden");
+  if (loginScreen) {
+    loginScreen.classList.remove("hidden");
+  }
 }
 
-
 async function logout() {
-
   try {
-
     await api("logout");
-
   } catch {
     // Aunque falle la petición,
     // limpiamos la interfaz.
@@ -358,30 +309,29 @@ async function logout() {
   );
 }
 
-
 // =========================================================
 // SESSION CHECK
 // =========================================================
 
 async function checkSession() {
-
   try {
-
-    const result =
-      await api(
-        "session",
-        {},
-        "GET"
-      );
+    const result = await api(
+      "session",
+      {},
+      "GET"
+    );
 
     if (
       result.ok &&
       result.authenticated
     ) {
+      const usernameElement =
+        $("#admin-username");
 
-      $("#admin-username")
-        .textContent =
-        result.user || "admin";
+      if (usernameElement) {
+        usernameElement.textContent =
+          result.user || "admin";
+      }
 
       showApp();
 
@@ -389,69 +339,66 @@ async function checkSession() {
 
       return true;
     }
-
   } catch {
     // Usuario no autenticado
   }
 
-  $("#login-screen")
-    .classList.remove("hidden");
+  const loginScreen = $("#login-screen");
+  const adminApp = $("#admin-app");
 
-  $("#admin-app")
-    .classList.add("hidden");
+  if (loginScreen) {
+    loginScreen.classList.remove("hidden");
+  }
+
+  if (adminApp) {
+    adminApp.classList.add("hidden");
+  }
 
   return false;
 }
-
 
 // =========================================================
 // APP
 // =========================================================
 
 function showApp() {
+  const loginScreen = $("#login-screen");
+  const adminApp = $("#admin-app");
 
-  $("#login-screen")
-    .classList.add("hidden");
+  if (loginScreen) {
+    loginScreen.classList.add("hidden");
+  }
 
-  $("#admin-app")
-    .classList.remove("hidden");
+  if (adminApp) {
+    adminApp.classList.remove("hidden");
+  }
 }
-
 
 // =========================================================
 // LOAD CONTENT
 // =========================================================
 
-async function loadContent(
-  showNotification = false
-) {
-
+async function loadContent(showNotification = false) {
   try {
+    const result = await api(
+      "get",
+      {},
+      "GET"
+    );
 
-    const result =
-      await api(
-        "get",
-        {},
-        "GET"
-      );
-
-    state.content =
-      normalizeContent(
-        result.content
-      );
+    state.content = normalizeContent(
+      result.content
+    );
 
     renderAll();
 
     if (showNotification) {
-
       showToast(
         "Actualizado",
         "El contenido fue actualizado."
       );
     }
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -460,9 +407,7 @@ async function loadContent(
   }
 }
 
-
 function normalizeContent(content) {
-
   const data =
     content &&
     typeof content === "object"
@@ -470,80 +415,65 @@ function normalizeContent(content) {
       : {};
 
   return {
-
     ...data,
 
-    articles:
-      Array.isArray(data.articles)
-        ? data.articles
-        : [],
+    articles: Array.isArray(data.articles)
+      ? data.articles
+      : [],
 
-    fixtures:
-      Array.isArray(data.fixtures)
-        ? data.fixtures
-        : [],
+    fixtures: Array.isArray(data.fixtures)
+      ? data.fixtures
+      : [],
 
-    standings:
-      Array.isArray(data.standings)
-        ? data.standings
-        : [],
+    standings: Array.isArray(data.standings)
+      ? data.standings
+      : [],
 
-    players:
-      Array.isArray(data.players)
-        ? data.players
-        : [],
+    players: Array.isArray(data.players)
+      ? data.players
+      : [],
 
-    instagram:
-      Array.isArray(data.instagram)
-        ? data.instagram
-        : [],
+    instagram: Array.isArray(data.instagram)
+      ? data.instagram
+      : [],
 
-    trash:
-      Array.isArray(data.trash)
-        ? data.trash
-        : [],
+    trash: Array.isArray(data.trash)
+      ? data.trash
+      : [],
 
-    history:
-      Array.isArray(data.history)
-        ? data.history
-        : [],
+    history: Array.isArray(data.history)
+      ? data.history
+      : [],
 
-    settings:
-      data.settings || {}
+    settings: data.settings || {}
   };
 }
-
 
 // =========================================================
 // NAVIGATION
 // =========================================================
 
 function navigate(section) {
+  const target = $(`#section-${section}`);
 
-  const target =
-    $(`#section-${section}`);
+  if (!target) {
+    return;
+  }
 
-  if (!target) return;
+  state.currentSection = section;
 
-  state.currentSection =
-    section;
-
-  $$(".admin-section")
-    .forEach((item) => {
-      item.classList.remove("active");
-    });
+  $$(".admin-section").forEach((item) => {
+    item.classList.remove("active");
+  });
 
   target.classList.add("active");
 
-  $$(".nav-item")
-    .forEach((item) => {
-
-      item.classList.toggle(
-        "active",
-        item.dataset.section === section
-      );
-
-    });
+  $$(".nav-item").forEach((item) => {
+    item.classList.toggle(
+      "active",
+      item.dataset.section === section
+    );
+  });
 
   const titles = {
     dashboard: "Dashboard",
@@ -557,41 +487,47 @@ function navigate(section) {
     settings: "Configuración"
   };
 
-  $("#page-title")
-    .textContent =
-    titles[section] ||
-    "Dashboard";
+  const pageTitle = $("#page-title");
+
+  if (pageTitle) {
+    pageTitle.textContent =
+      titles[section] || "Dashboard";
+  }
 
   closeSidebar();
 }
 
-
 function openSidebar() {
+  const sidebar = $("#sidebar");
+  const overlay = $("#sidebar-overlay");
 
-  $("#sidebar")
-    .classList.add("open");
+  if (sidebar) {
+    sidebar.classList.add("open");
+  }
 
-  $("#sidebar-overlay")
-    .classList.add("open");
+  if (overlay) {
+    overlay.classList.add("open");
+  }
 }
-
 
 function closeSidebar() {
+  const sidebar = $("#sidebar");
+  const overlay = $("#sidebar-overlay");
 
-  $("#sidebar")
-    .classList.remove("open");
+  if (sidebar) {
+    sidebar.classList.remove("open");
+  }
 
-  $("#sidebar-overlay")
-    .classList.remove("open");
+  if (overlay) {
+    overlay.classList.remove("open");
+  }
 }
-
 
 // =========================================================
 // RENDER ALL
 // =========================================================
 
 function renderAll() {
-
   renderStats();
   renderDashboardArticles();
   renderDashboardHistory();
@@ -608,66 +544,87 @@ function renderAll() {
   updateNavCounts();
 }
 
-
 // =========================================================
 // STATS
 // =========================================================
 
 function renderStats() {
+  const articles = $("#stat-articles");
+  const fixtures = $("#stat-fixtures");
+  const teams = $("#stat-teams");
+  const players = $("#stat-players");
 
-  $("#stat-articles")
-    .textContent =
-    state.content.articles.length;
+  if (articles) {
+    articles.textContent =
+      state.content.articles.length;
+  }
 
-  $("#stat-fixtures")
-    .textContent =
-    state.content.fixtures.length;
+  if (fixtures) {
+    fixtures.textContent =
+      state.content.fixtures.length;
+  }
 
-  $("#stat-teams")
-    .textContent =
-    state.content.standings.length;
+  if (teams) {
+    teams.textContent =
+      state.content.standings.length;
+  }
 
-  $("#stat-players")
-    .textContent =
-    state.content.players.length;
+  if (players) {
+    players.textContent =
+      state.content.players.length;
+  }
 }
-
 
 function updateNavCounts() {
+  const articles =
+    $("#nav-articles-count");
 
-  $("#nav-articles-count")
-    .textContent =
-    state.content.articles.length;
+  const fixtures =
+    $("#nav-fixtures-count");
 
-  $("#nav-fixtures-count")
-    .textContent =
-    state.content.fixtures.length;
+  const players =
+    $("#nav-players-count");
 
-  $("#nav-players-count")
-    .textContent =
-    state.content.players.length;
+  const trash =
+    $("#nav-trash-count");
 
-  $("#nav-trash-count")
-    .textContent =
-    state.content.trash.length;
+  if (articles) {
+    articles.textContent =
+      state.content.articles.length;
+  }
+
+  if (fixtures) {
+    fixtures.textContent =
+      state.content.fixtures.length;
+  }
+
+  if (players) {
+    players.textContent =
+      state.content.players.length;
+  }
+
+  if (trash) {
+    trash.textContent =
+      state.content.trash.length;
+  }
 }
-
 
 // =========================================================
 // DASHBOARD
 // =========================================================
 
 function renderDashboardArticles() {
-
   const container =
     $("#dashboard-articles");
 
+  if (!container) {
+    return;
+  }
+
   const articles =
-    state.content.articles
-      .slice(0, 5);
+    state.content.articles.slice(0, 5);
 
   if (!articles.length) {
-
     container.innerHTML = `
       <div class="empty-state small">
         No hay noticias todavía.
@@ -678,62 +635,62 @@ function renderDashboardArticles() {
   }
 
   container.innerHTML =
-    articles.map(article => {
+    articles
+      .map((article) => {
+        const image =
+          article.image
+            ? `background-image:url("${escapeHTML(article.image)}")`
+            : "";
 
-      const image =
-        article.image
-          ? `background-image:url("${escapeHTML(article.image)}")`
-          : "";
+        return `
+          <div class="dashboard-article">
 
-      return `
-        <div class="dashboard-article">
+            <div
+              class="dashboard-article-image"
+              style="${image}"
+            ></div>
 
-          <div
-            class="dashboard-article-image"
-            style="${image}"
-          ></div>
+            <div class="dashboard-article-info">
 
-          <div class="dashboard-article-info">
+              <strong>
+                ${escapeHTML(
+                  article.title ||
+                  "Sin título"
+                )}
+              </strong>
 
-            <strong>
-              ${escapeHTML(
-                article.title ||
-                "Sin título"
-              )}
-            </strong>
+              <small>
+                ${escapeHTML(
+                  article.category ||
+                  "Rugby"
+                )}
+                ·
+                ${formatDate(
+                  article.date ||
+                  article.createdAt
+                )}
+              </small>
 
-            <small>
-              ${escapeHTML(
-                article.category ||
-                "Rugby"
-              )}
-              ·
-              ${formatDate(
-                article.date ||
-                article.createdAt
-              )}
-            </small>
+            </div>
 
           </div>
-
-        </div>
-      `;
-
-    }).join("");
+        `;
+      })
+      .join("");
 }
 
-
 function renderDashboardHistory() {
-
   const container =
     $("#dashboard-history");
 
+  if (!container) {
+    return;
+  }
+
   const history =
-    state.content.history
-      .slice(0, 6);
+    state.content.history.slice(0, 6);
 
   if (!history.length) {
-
     container.innerHTML = `
       <div class="empty-state small">
         No hay actividad.
@@ -744,36 +701,34 @@ function renderDashboardHistory() {
   }
 
   container.innerHTML =
-    history.map(item => {
+    history
+      .map((item) => {
+        return `
+          <div class="activity-item">
 
-      return `
-        <div class="activity-item">
+            <div class="activity-dot"></div>
 
-          <div class="activity-dot"></div>
+            <div class="activity-info">
 
-          <div class="activity-info">
+              <strong>
+                ${escapeHTML(
+                  historyLabel(item)
+                )}
+              </strong>
 
-            <strong>
-              ${escapeHTML(
-                historyLabel(item)
-              )}
-            </strong>
+              <small>
+                ${formatDateTime(item.date)}
+              </small>
 
-            <small>
-              ${formatDateTime(item.date)}
-            </small>
+            </div>
 
           </div>
-
-        </div>
-      `;
-
-    }).join("");
+        `;
+      })
+      .join("");
 }
 
-
 function historyLabel(item) {
-
   const actionNames = {
     create: "Creado",
     edit: "Editado",
@@ -802,15 +757,17 @@ function historyLabel(item) {
   return action;
 }
 
-
 // =========================================================
 // ARTICLES
 // =========================================================
 
 function renderArticles() {
-
   const container =
     $("#articles-table");
+
+  if (!container) {
+    return;
+  }
 
   let articles =
     [...state.content.articles];
@@ -821,36 +778,31 @@ function renderArticles() {
       .toLowerCase();
 
   if (search) {
-
     articles =
-      articles.filter(article => {
-
-        const text =
-          [
-            article.title,
-            article.excerpt,
-            article.category,
-            article.author
-          ]
-            .join(" ")
-            .toLowerCase();
+      articles.filter((article) => {
+        const text = [
+          article.title,
+          article.excerpt,
+          article.category,
+          article.author
+        ]
+          .join(" ")
+          .toLowerCase();
 
         return text.includes(search);
       });
   }
 
   if (state.articleCategory) {
-
     articles =
       articles.filter(
-        article =>
+        (article) =>
           article.category ===
           state.articleCategory
       );
   }
 
   if (!articles.length) {
-
     container.innerHTML = `
       <div class="empty-state">
         No se encontraron noticias.
@@ -861,203 +813,198 @@ function renderArticles() {
   }
 
   container.innerHTML = `
-    <table class="admin-table">
+    <thead>
+      <tr>
+        <th>NOTICIA</th>
+        <th>CATEGORÍA</th>
+        <th>AUTOR</th>
+        <th>FECHA</th>
+        <th>ESTADO</th>
+        <th></th>
+      </tr>
+    </thead>
 
-      <thead>
-        <tr>
-          <th>NOTICIA</th>
-          <th>CATEGORÍA</th>
-          <th>AUTOR</th>
-          <th>FECHA</th>
-          <th>ESTADO</th>
-          <th></th>
-        </tr>
-      </thead>
+    <tbody>
+      ${articles
+        .map(
+          (article) => `
+            <tr>
 
-      <tbody>
+              <td>
+                <div class="table-title">
+                  ${escapeHTML(
+                    article.title ||
+                    "Sin título"
+                  )}
+                </div>
+              </td>
 
-        ${articles.map(article => `
+              <td>
+                <span class="badge">
+                  ${escapeHTML(
+                    article.category ||
+                    "Rugby"
+                  )}
+                </span>
+              </td>
 
-          <tr>
-
-            <td>
-              <div class="table-title">
+              <td>
                 ${escapeHTML(
-                  article.title ||
-                  "Sin título"
+                  article.author ||
+                  "DropRugby"
                 )}
-              </div>
-            </td>
+              </td>
 
-            <td>
-              <span class="badge">
-                ${escapeHTML(
-                  article.category ||
-                  "Rugby"
+              <td>
+                ${formatDate(
+                  article.date ||
+                  article.createdAt
                 )}
-              </span>
-            </td>
+              </td>
 
-            <td>
-              ${escapeHTML(
-                article.author ||
-                "DropRugby"
-              )}
-            </td>
+              <td>
+                ${
+                  article.published === false
+                    ? `
+                      <span class="badge badge-red">
+                        BORRADOR
+                      </span>
+                    `
+                    : `
+                      <span class="badge badge-green">
+                        PUBLICADA
+                      </span>
+                    `
+                }
+              </td>
 
-            <td>
-              ${formatDate(
-                article.date ||
-                article.createdAt
-              )}
-            </td>
+              <td>
+                <div class="table-actions">
 
-            <td>
-              ${
-                article.published === false
-                  ? `
-                    <span class="badge badge-red">
-                      BORRADOR
-                    </span>
-                  `
-                  : `
-                    <span class="badge badge-green">
-                      PUBLICADA
-                    </span>
-                  `
-              }
-            </td>
+                  <button
+                    class="table-action"
+                    title="Editar"
+                    data-edit-article="${escapeHTML(
+                      article.id
+                    )}"
+                  >
+                    ✎
+                  </button>
 
-            <td>
+                  <button
+                    class="table-action"
+                    title="Newsletter"
+                    data-newsletter-article="${escapeHTML(
+                      article.id
+                    )}"
+                  >
+                    ✉
+                  </button>
 
-              <div class="table-actions">
+                  <button
+                    class="table-action danger"
+                    title="Eliminar"
+                    data-delete-article="${escapeHTML(
+                      article.id
+                    )}"
+                  >
+                    ×
+                  </button>
 
-                <button
-                  class="table-action"
-                  title="Editar"
-                  data-edit-article="${escapeHTML(article.id)}"
-                >
-                  ✎
-                </button>
+                </div>
+              </td>
 
-                <button
-                  class="table-action"
-                  title="Newsletter"
-                  data-newsletter-article="${escapeHTML(article.id)}"
-                >
-                  ✉
-                </button>
-
-                <button
-                  class="table-action danger"
-                  title="Eliminar"
-                  data-delete-article="${escapeHTML(article.id)}"
-                >
-                  ×
-                </button>
-
-              </div>
-
-            </td>
-
-          </tr>
-
-        `).join("")}
-
-      </tbody>
-
-    </table>
+            </tr>
+          `
+        )
+        .join("")}
+    </tbody>
   `;
 
   bindDynamicArticleButtons();
 }
 
-
 function bindDynamicArticleButtons() {
-
-  $$("[data-edit-article]")
-    .forEach(button => {
-
+  $$("[data-edit-article]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () => {
-
           openArticleModal(
             button.dataset.editArticle
           );
-
         }
       );
+    }
+  );
 
-    });
-
-
-  $$("[data-delete-article]")
-    .forEach(button => {
-
+  $$("[data-delete-article]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () => {
-
           deleteArticle(
             button.dataset.deleteArticle
           );
-
         }
       );
+    }
+  );
 
-    });
-
-
-  $$("[data-newsletter-article]")
-    .forEach(button => {
-
+  $$("[data-newsletter-article]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () => {
-
           sendArticleNewsletter(
             button.dataset.newsletterArticle
           );
-
         }
       );
-
-    });
+    }
+  );
 }
-
 
 // =========================================================
 // ARTICLE MODAL
 // =========================================================
 
 function resetArticleForm() {
+  const form = $("#article-form");
 
-  $("#article-form").reset();
+  if (form) {
+    form.reset();
+  }
 
-  $("#article-id").value = "";
+  const id = $("#article-id");
+  const author = $("#article-author");
+  const title = $("#article-modal-title");
 
-  $("#article-author").value =
-    "DropRugby";
+  if (id) {
+    id.value = "";
+  }
 
-  $("#article-modal-title")
-    .textContent =
-    "Nueva noticia";
+  if (author) {
+    author.value = "DropRugby";
+  }
+
+  if (title) {
+    title.textContent = "Nueva noticia";
+  }
 }
 
-
 function openArticleModal(id = null) {
-
   resetArticleForm();
 
   if (id) {
-
     const article =
       state.content.articles.find(
-        item => item.id === id
+        (item) => item.id === id
       );
 
-    if (!article) return;
+    if (!article) {
+      return;
+    }
 
     $("#article-id").value =
       article.id || "";
@@ -1088,17 +1035,14 @@ function openArticleModal(id = null) {
     $("#article-featured").checked =
       article.featured === true;
 
-    $("#article-modal-title")
-      .textContent =
+    $("#article-modal-title").textContent =
       "Editar noticia";
   }
 
   openModal("article-modal");
 }
 
-
 async function saveArticle(event) {
-
   event.preventDefault();
 
   const id =
@@ -1120,11 +1064,10 @@ async function saveArticle(event) {
   const tags =
     $("#article-tags").value
       .split(",")
-      .map(tag => tag.trim())
+      .map((tag) => tag.trim())
       .filter(Boolean);
 
   const article = {
-
     id: id || undefined,
 
     title,
@@ -1154,26 +1097,23 @@ async function saveArticle(event) {
 
     published: true,
 
-    date:
-      id
-        ? (
-            state.content.articles.find(
-              item => item.id === id
-            )?.date ||
-            new Date().toISOString()
-          )
-        : new Date().toISOString()
+    date: id
+      ? (
+          state.content.articles.find(
+            (item) => item.id === id
+          )?.date ||
+          new Date().toISOString()
+        )
+      : new Date().toISOString()
   };
 
   try {
-
-    const result =
-      await api(
-        "create-article",
-        {
-          article
-        }
-      );
+    const result = await api(
+      "create-article",
+      {
+        article
+      }
+    );
 
     state.content =
       normalizeContent(
@@ -1192,9 +1132,7 @@ async function saveArticle(event) {
         ? "Los cambios fueron guardados."
         : "La noticia fue publicada."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -1203,23 +1141,21 @@ async function saveArticle(event) {
   }
 }
 
-
 async function deleteArticle(id) {
-
   const article =
     state.content.articles.find(
-      item => item.id === id
+      (item) => item.id === id
     );
 
-  if (!article) return;
+  if (!article) {
+    return;
+  }
 
   confirmAction(
     "¿Eliminar noticia?",
     `La noticia "${article.title}" será enviada a la papelera.`,
     async () => {
-
       try {
-
         const result =
           await api(
             "delete-article",
@@ -1239,42 +1175,37 @@ async function deleteArticle(id) {
           "Noticia eliminada",
           "Fue enviada a la papelera."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
 
-
 async function sendArticleNewsletter(id) {
-
   const article =
     state.content.articles.find(
-      item => item.id === id
+      (item) => item.id === id
     );
 
-  if (!article) return;
+  if (!article) {
+    return;
+  }
 
   confirmAction(
     "Enviar newsletter",
     `¿Querés enviar "${article.title}" a todos los suscriptores?`,
     async () => {
-
       showToast(
         "Enviando...",
         "Preparando newsletter."
       );
 
       try {
-
         const result =
           await api(
             "send-newsletter",
@@ -1287,29 +1218,28 @@ async function sendArticleNewsletter(id) {
           "Newsletter enviado",
           `${result.newsletter?.sent || 0} destinatarios procesados.`
         );
-
       } catch (error) {
-
         showToast(
           "Error de newsletter",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // FIXTURES
 // =========================================================
 
 function renderFixtures() {
-
   const container =
     $("#fixtures-table");
+
+  if (!container) {
+    return;
+  }
 
   let fixtures =
     [...state.content.fixtures];
@@ -1320,38 +1250,33 @@ function renderFixtures() {
       .toLowerCase();
 
   if (search) {
-
     fixtures =
-      fixtures.filter(fixture => {
-
-        const text =
-          [
-            fixture.home,
-            fixture.away,
-            fixture.homeTeam,
-            fixture.awayTeam,
-            fixture.competition,
-            fixture.venue
-          ]
-            .join(" ")
-            .toLowerCase();
+      fixtures.filter((fixture) => {
+        const text = [
+          fixture.home,
+          fixture.away,
+          fixture.homeTeam,
+          fixture.awayTeam,
+          fixture.competition,
+          fixture.venue
+        ]
+          .join(" ")
+          .toLowerCase();
 
         return text.includes(search);
       });
   }
 
   if (state.fixtureStatus) {
-
     fixtures =
       fixtures.filter(
-        fixture =>
+        (fixture) =>
           fixture.status ===
           state.fixtureStatus
       );
   }
 
   if (!fixtures.length) {
-
     container.innerHTML = `
       <div class="empty-state">
         No hay partidos registrados.
@@ -1363,32 +1288,26 @@ function renderFixtures() {
 
   fixtures.sort(
     (a, b) =>
-      String(a.date || "")
-        .localeCompare(
-          String(b.date || "")
-        )
+      String(a.date || "").localeCompare(
+        String(b.date || "")
+      )
   );
 
   container.innerHTML = `
-    <table class="admin-table">
+    <thead>
+      <tr>
+        <th>FECHA</th>
+        <th>PARTIDO</th>
+        <th>COMPETICIÓN</th>
+        <th>RESULTADO</th>
+        <th>ESTADO</th>
+        <th></th>
+      </tr>
+    </thead>
 
-      <thead>
-
-        <tr>
-          <th>FECHA</th>
-          <th>PARTIDO</th>
-          <th>COMPETICIÓN</th>
-          <th>RESULTADO</th>
-          <th>ESTADO</th>
-          <th></th>
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${fixtures.map(fixture => {
-
+    <tbody>
+      ${fixtures
+        .map((fixture) => {
           const home =
             fixture.home ||
             fixture.homeTeam ||
@@ -1413,21 +1332,29 @@ function renderFixtures() {
 
                 ${
                   fixture.time
-                    ? `<small style="display:block;color:#555">${escapeHTML(fixture.time)}</small>`
+                    ? `
+                      <small
+                        style="display:block;color:#777"
+                      >
+                        ${escapeHTML(
+                          fixture.time
+                        )}
+                      </small>
+                    `
                     : ""
                 }
               </td>
 
               <td>
-                <strong style="color:#ddd">
+                <strong>
                   ${escapeHTML(home)}
                 </strong>
 
-                <span style="color:#555">
+                <span>
                   vs
                 </span>
 
-                <strong style="color:#ddd">
+                <strong>
                   ${escapeHTML(away)}
                 </strong>
               </td>
@@ -1443,73 +1370,67 @@ function renderFixtures() {
                 ${
                   finished
                     ? `
-                      <strong style="color:#ddd">
+                      <strong>
                         ${fixture.homeScore ?? "-"}
                         -
                         ${fixture.awayScore ?? "-"}
                       </strong>
                     `
                     : `
-                      <span style="color:#555">
-                        —
-                      </span>
+                      <span>—</span>
                     `
                 }
               </td>
 
               <td>
-
-                <span class="badge ${
-                  finished
-                    ? ""
-                    : "badge-green"
-                }">
-
+                <span
+                  class="badge ${
+                    finished
+                      ? ""
+                      : "badge-green"
+                  }"
+                >
                   ${
                     finished
                       ? "FINALIZADO"
                       : "PRÓXIMO"
                   }
-
                 </span>
-
               </td>
 
               <td>
-
                 <div class="table-actions">
 
                   <button
                     class="table-action"
-                    data-edit-fixture="${escapeHTML(fixture.id)}"
+                    data-edit-fixture="${escapeHTML(
+                      fixture.id
+                    )}"
                   >
                     ✎
                   </button>
 
                   <button
                     class="table-action danger"
-                    data-delete-fixture="${escapeHTML(fixture.id)}"
+                    data-delete-fixture="${escapeHTML(
+                      fixture.id
+                    )}"
                   >
                     ×
                   </button>
 
                 </div>
-
               </td>
 
             </tr>
           `;
-
-        }).join("")}
-
-      </tbody>
-
-    </table>
+        })
+        .join("")}
+    </tbody>
   `;
 
-  $$("[data-edit-fixture]")
-    .forEach(button => {
-
+  $$("[data-edit-fixture]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -1517,12 +1438,11 @@ function renderFixtures() {
             button.dataset.editFixture
           )
       );
+    }
+  );
 
-    });
-
-  $$("[data-delete-fixture]")
-    .forEach(button => {
-
+  $$("[data-delete-fixture]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -1530,38 +1450,38 @@ function renderFixtures() {
             button.dataset.deleteFixture
           )
       );
-
-    });
+    }
+  );
 }
 
-
 function resetFixtureForm() {
+  const form = $("#fixture-form");
 
-  $("#fixture-form").reset();
+  if (form) {
+    form.reset();
+  }
 
   $("#fixture-id").value = "";
 
   $("#fixture-status").value =
     "upcoming";
 
-  $("#fixture-modal-title")
-    .textContent =
+  $("#fixture-modal-title").textContent =
     "Nuevo partido";
 }
 
-
 function openFixtureModal(id = null) {
-
   resetFixtureForm();
 
   if (id) {
-
     const fixture =
       state.content.fixtures.find(
-        item => item.id === id
+        (item) => item.id === id
       );
 
-    if (!fixture) return;
+    if (!fixture) {
+      return;
+    }
 
     $("#fixture-id").value =
       fixture.id || "";
@@ -1597,24 +1517,20 @@ function openFixtureModal(id = null) {
     $("#fixture-status").value =
       fixture.status || "upcoming";
 
-    $("#fixture-modal-title")
-      .textContent =
+    $("#fixture-modal-title").textContent =
       "Editar partido";
   }
 
   openModal("fixture-modal");
 }
 
-
 async function saveFixture(event) {
-
   event.preventDefault();
 
   const id =
     $("#fixture-id").value.trim();
 
   const fixture = {
-
     id: id || undefined,
 
     date:
@@ -1624,16 +1540,24 @@ async function saveFixture(event) {
       $("#fixture-time").value,
 
     competition:
-      $("#fixture-competition").value.trim(),
+      $("#fixture-competition")
+        .value
+        .trim(),
 
     venue:
-      $("#fixture-venue").value.trim(),
+      $("#fixture-venue")
+        .value
+        .trim(),
 
     home:
-      $("#fixture-home").value.trim(),
+      $("#fixture-home")
+        .value
+        .trim(),
 
     away:
-      $("#fixture-away").value.trim(),
+      $("#fixture-away")
+        .value
+        .trim(),
 
     homeScore:
       $("#fixture-home-score").value === ""
@@ -1654,7 +1578,6 @@ async function saveFixture(event) {
   };
 
   try {
-
     const result =
       await api(
         "create-fixture",
@@ -1678,9 +1601,7 @@ async function saveFixture(event) {
         : "Partido creado",
       "Los cambios fueron guardados."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -1689,15 +1610,15 @@ async function saveFixture(event) {
   }
 }
 
-
 async function deleteFixture(id) {
-
   const fixture =
     state.content.fixtures.find(
-      item => item.id === id
+      (item) => item.id === id
     );
 
-  if (!fixture) return;
+  if (!fixture) {
+    return;
+  }
 
   const home =
     fixture.home ||
@@ -1713,9 +1634,7 @@ async function deleteFixture(id) {
     "¿Eliminar partido?",
     `${home} vs ${away} será enviado a la papelera.`,
     async () => {
-
       try {
-
         const result =
           await api(
             "delete-fixture",
@@ -1735,35 +1654,33 @@ async function deleteFixture(id) {
           "Partido eliminado",
           "Fue enviado a la papelera."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // STANDINGS
 // =========================================================
 
 function renderStandings() {
-
   const container =
     $("#standings-table");
+
+  if (!container) {
+    return;
+  }
 
   const teams =
     [...state.content.standings];
 
   if (!teams.length) {
-
     container.innerHTML = `
       <div class="empty-state">
         No hay equipos registrados.
@@ -1780,94 +1697,106 @@ function renderStandings() {
   );
 
   container.innerHTML = `
-    <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>EQUIPO</th>
+        <th>PJ</th>
+        <th>PG</th>
+        <th>PE</th>
+        <th>PP</th>
+        <th>PF</th>
+        <th>PC</th>
+        <th>PTS</th>
+        <th></th>
+      </tr>
+    </thead>
 
-      <thead>
+    <tbody>
+      ${teams
+        .map(
+          (team, index) => `
+            <tr>
 
-        <tr>
-          <th>#</th>
-          <th>EQUIPO</th>
-          <th>PJ</th>
-          <th>PG</th>
-          <th>PE</th>
-          <th>PP</th>
-          <th>PF</th>
-          <th>PC</th>
-          <th>PTS</th>
-          <th></th>
-        </tr>
+              <td>
+                <strong>
+                  ${index + 1}
+                </strong>
+              </td>
 
-      </thead>
+              <td>
+                <strong>
+                  ${escapeHTML(
+                    team.name ||
+                    team.team ||
+                    "Equipo"
+                  )}
+                </strong>
+              </td>
 
-      <tbody>
+              <td>
+                ${team.played || 0}
+              </td>
 
-        ${teams.map((team, index) => `
+              <td>
+                ${team.wins || 0}
+              </td>
 
-          <tr>
+              <td>
+                ${team.draws || 0}
+              </td>
 
-            <td>
-              <strong style="color:#666">
-                ${index + 1}
-              </strong>
-            </td>
+              <td>
+                ${team.losses || 0}
+              </td>
 
-            <td>
-              <strong style="color:#ddd">
-                ${escapeHTML(
-                  team.name ||
-                  team.team ||
-                  "Equipo"
-                )}
-              </strong>
-            </td>
+              <td>
+                ${team.pointsFor || 0}
+              </td>
 
-            <td>${team.played || 0}</td>
-            <td>${team.wins || 0}</td>
-            <td>${team.draws || 0}</td>
-            <td>${team.losses || 0}</td>
-            <td>${team.pointsFor || 0}</td>
-            <td>${team.pointsAgainst || 0}</td>
+              <td>
+                ${team.pointsAgainst || 0}
+              </td>
 
-            <td>
-              <strong style="color:var(--accent)">
-                ${team.points || 0}
-              </strong>
-            </td>
+              <td>
+                <strong>
+                  ${team.points || 0}
+                </strong>
+              </td>
 
-            <td>
+              <td>
+                <div class="table-actions">
 
-              <div class="table-actions">
+                  <button
+                    class="table-action"
+                    data-edit-team="${escapeHTML(
+                      team.id
+                    )}"
+                  >
+                    ✎
+                  </button>
 
-                <button
-                  class="table-action"
-                  data-edit-team="${escapeHTML(team.id)}"
-                >
-                  ✎
-                </button>
+                  <button
+                    class="table-action danger"
+                    data-delete-team="${escapeHTML(
+                      team.id
+                    )}"
+                  >
+                    ×
+                  </button>
 
-                <button
-                  class="table-action danger"
-                  data-delete-team="${escapeHTML(team.id)}"
-                >
-                  ×
-                </button>
+                </div>
+              </td>
 
-              </div>
-
-            </td>
-
-          </tr>
-
-        `).join("")}
-
-      </tbody>
-
-    </table>
+            </tr>
+          `
+        )
+        .join("")}
+    </tbody>
   `;
 
-  $$("[data-edit-team]")
-    .forEach(button => {
-
+  $$("[data-edit-team]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -1875,12 +1804,11 @@ function renderStandings() {
             button.dataset.editTeam
           )
       );
+    }
+  );
 
-    });
-
-  $$("[data-delete-team]")
-    .forEach(button => {
-
+  $$("[data-delete-team]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -1888,14 +1816,16 @@ function renderStandings() {
             button.dataset.deleteTeam
           )
       );
-
-    });
+    }
+  );
 }
 
-
 function resetTeamForm() {
+  const form = $("#team-form");
 
-  $("#team-form").reset();
+  if (form) {
+    form.reset();
+  }
 
   $("#team-id").value = "";
 
@@ -1907,24 +1837,27 @@ function resetTeamForm() {
     "team-points-for",
     "team-points-against",
     "team-points"
-  ].forEach(id => {
-    $(`#${id}`).value = 0;
+  ].forEach((id) => {
+    const element = $(`#${id}`);
+
+    if (element) {
+      element.value = 0;
+    }
   });
 }
 
-
 function openTeamModal(id = null) {
-
   resetTeamForm();
 
   if (id) {
-
     const team =
       state.content.standings.find(
-        item => item.id === id
+        (item) => item.id === id
       );
 
-    if (!team) return;
+    if (!team) {
+      return;
+    }
 
     $("#team-id").value =
       team.id || "";
@@ -1959,20 +1892,19 @@ function openTeamModal(id = null) {
   openModal("team-modal");
 }
 
-
 async function saveTeam(event) {
-
   event.preventDefault();
 
   const id =
     $("#team-id").value.trim();
 
   const team = {
-
     id: id || undefined,
 
     name:
-      $("#team-name").value.trim(),
+      $("#team-name")
+        .value
+        .trim(),
 
     played:
       Number(
@@ -2001,7 +1933,8 @@ async function saveTeam(event) {
 
     pointsAgainst:
       Number(
-        $("#team-points-against").value || 0
+        $("#team-points-against")
+          .value || 0
       ),
 
     points:
@@ -2011,7 +1944,6 @@ async function saveTeam(event) {
   };
 
   try {
-
     const result =
       await api(
         "save-team",
@@ -2035,9 +1967,7 @@ async function saveTeam(event) {
         : "Equipo creado",
       "Los cambios fueron guardados."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -2046,15 +1976,15 @@ async function saveTeam(event) {
   }
 }
 
-
 async function deleteTeam(id) {
-
   const team =
     state.content.standings.find(
-      item => item.id === id
+      (item) => item.id === id
     );
 
-  if (!team) return;
+  if (!team) {
+    return;
+  }
 
   const name =
     team.name ||
@@ -2065,9 +1995,7 @@ async function deleteTeam(id) {
     "¿Eliminar equipo?",
     `${name} será enviado a la papelera.`,
     async () => {
-
       try {
-
         const result =
           await api(
             "delete-team",
@@ -2087,29 +2015,28 @@ async function deleteTeam(id) {
           "Equipo eliminado",
           "Fue enviado a la papelera."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // PLAYERS
 // =========================================================
 
 function renderPlayers() {
-
   const container =
     $("#players-grid");
+
+  if (!container) {
+    return;
+  }
 
   let players =
     [...state.content.players];
@@ -2120,26 +2047,22 @@ function renderPlayers() {
       .toLowerCase();
 
   if (search) {
-
     players =
-      players.filter(player => {
-
-        const text =
-          [
-            player.name,
-            player.position,
-            player.team,
-            player.country
-          ]
-            .join(" ")
-            .toLowerCase();
+      players.filter((player) => {
+        const text = [
+          player.name,
+          player.position,
+          player.team,
+          player.country
+        ]
+          .join(" ")
+          .toLowerCase();
 
         return text.includes(search);
       });
   }
 
   if (!players.length) {
-
     container.innerHTML = `
       <div class="panel-card empty-state">
         No hay jugadores registrados.
@@ -2150,79 +2073,89 @@ function renderPlayers() {
   }
 
   container.innerHTML =
-    players.map(player => {
-
-      const image =
-        player.image
-          ? `
-            <img
-              src="${escapeHTML(player.image)}"
-              alt="${escapeHTML(player.name || "")}"
-              onerror="this.style.display='none'"
-            >
-          `
-          : `
-            <div class="player-placeholder">
-              ♟
-            </div>
-          `;
-
-      return `
-        <article class="player-card">
-
-          <div class="player-image">
-            ${image}
-          </div>
-
-          <div class="player-info">
-
-            <strong>
-              ${escapeHTML(
-                player.name ||
-                "Jugador"
-              )}
-            </strong>
-
-            <span>
-              ${escapeHTML(
-                player.position ||
-                "Sin posición"
-              )}
-              ${
-                player.team
-                  ? ` · ${escapeHTML(player.team)}`
-                  : ""
-              }
-            </span>
-
-            <div class="player-actions">
-
-              <button
-                class="btn btn-secondary"
-                data-edit-player="${escapeHTML(player.id)}"
+    players
+      .map((player) => {
+        const image =
+          player.image
+            ? `
+              <img
+                src="${escapeHTML(
+                  player.image
+                )}"
+                alt="${escapeHTML(
+                  player.name || ""
+                )}"
+                onerror="this.style.display='none'"
               >
-                EDITAR
-              </button>
+            `
+            : `
+              <div class="player-placeholder">
+                ♟
+              </div>
+            `;
 
-              <button
-                class="btn btn-danger"
-                data-delete-player="${escapeHTML(player.id)}"
-              >
-                ELIMINAR
-              </button>
+        return `
+          <article class="player-card">
 
+            <div class="player-image">
+              ${image}
             </div>
 
-          </div>
+            <div class="player-info">
 
-        </article>
-      `;
+              <strong>
+                ${escapeHTML(
+                  player.name ||
+                  "Jugador"
+                )}
+              </strong>
 
-    }).join("");
+              <span>
+                ${escapeHTML(
+                  player.position ||
+                  "Sin posición"
+                )}
 
-  $$("[data-edit-player]")
-    .forEach(button => {
+                ${
+                  player.team
+                    ? ` · ${escapeHTML(
+                        player.team
+                      )}`
+                    : ""
+                }
+              </span>
 
+              <div class="player-actions">
+
+                <button
+                  class="btn btn-secondary"
+                  data-edit-player="${escapeHTML(
+                    player.id
+                  )}"
+                >
+                  EDITAR
+                </button>
+
+                <button
+                  class="btn btn-danger"
+                  data-delete-player="${escapeHTML(
+                    player.id
+                  )}"
+                >
+                  ELIMINAR
+                </button>
+
+              </div>
+
+            </div>
+
+          </article>
+        `;
+      })
+      .join("");
+
+  $$("[data-edit-player]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -2230,12 +2163,11 @@ function renderPlayers() {
             button.dataset.editPlayer
           )
       );
+    }
+  );
 
-    });
-
-  $$("[data-delete-player]")
-    .forEach(button => {
-
+  $$("[data-delete-player]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -2243,31 +2175,32 @@ function renderPlayers() {
             button.dataset.deletePlayer
           )
       );
-
-    });
+    }
+  );
 }
 
-
 function resetPlayerForm() {
+  const form = $("#player-form");
 
-  $("#player-form").reset();
+  if (form) {
+    form.reset();
+  }
 
   $("#player-id").value = "";
 }
 
-
 function openPlayerModal(id = null) {
-
   resetPlayerForm();
 
   if (id) {
-
     const player =
       state.content.players.find(
-        item => item.id === id
+        (item) => item.id === id
       );
 
-    if (!player) return;
+    if (!player) {
+      return;
+    }
 
     $("#player-id").value =
       player.id || "";
@@ -2297,26 +2230,29 @@ function openPlayerModal(id = null) {
   openModal("player-modal");
 }
 
-
 async function savePlayer(event) {
-
   event.preventDefault();
 
   const id =
     $("#player-id").value.trim();
 
   const player = {
-
     id: id || undefined,
 
     name:
-      $("#player-name").value.trim(),
+      $("#player-name")
+        .value
+        .trim(),
 
     position:
-      $("#player-position").value.trim(),
+      $("#player-position")
+        .value
+        .trim(),
 
     team:
-      $("#player-team").value.trim(),
+      $("#player-team")
+        .value
+        .trim(),
 
     number:
       $("#player-number").value === ""
@@ -2326,17 +2262,22 @@ async function savePlayer(event) {
           ),
 
     country:
-      $("#player-country").value.trim(),
+      $("#player-country")
+        .value
+        .trim(),
 
     image:
-      $("#player-image").value.trim(),
+      $("#player-image")
+        .value
+        .trim(),
 
     bio:
-      $("#player-bio").value.trim()
+      $("#player-bio")
+        .value
+        .trim()
   };
 
   try {
-
     const result =
       await api(
         "create-player",
@@ -2360,9 +2301,7 @@ async function savePlayer(event) {
         : "Jugador creado",
       "Los cambios fueron guardados."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -2371,23 +2310,21 @@ async function savePlayer(event) {
   }
 }
 
-
 async function deletePlayer(id) {
-
   const player =
     state.content.players.find(
-      item => item.id === id
+      (item) => item.id === id
     );
 
-  if (!player) return;
+  if (!player) {
+    return;
+  }
 
   confirmAction(
     "¿Eliminar jugador?",
     `${player.name || "El jugador"} será enviado a la papelera.`,
     async () => {
-
       try {
-
         const result =
           await api(
             "delete-player",
@@ -2407,35 +2344,33 @@ async function deletePlayer(id) {
           "Jugador eliminado",
           "Fue enviado a la papelera."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // INSTAGRAM
 // =========================================================
 
 function renderInstagram() {
-
   const container =
     $("#instagram-grid");
+
+  if (!container) {
+    return;
+  }
 
   const posts =
     state.content.instagram;
 
   if (!posts.length) {
-
     container.innerHTML = `
       <div class="panel-card empty-state">
         No hay publicaciones de Instagram.
@@ -2446,80 +2381,84 @@ function renderInstagram() {
   }
 
   container.innerHTML =
-    posts.map(post => {
+    posts
+      .map((post) => {
+        const image =
+          post.image
+            ? `background-image:url("${escapeHTML(post.image)}")`
+            : "";
 
-      const image =
-        post.image
-          ? `background-image:url("${escapeHTML(post.image)}")`
-          : "";
+        return `
+          <article class="instagram-card">
 
-      return `
-        <article class="instagram-card">
+            <div
+              class="instagram-image"
+              style="${image}"
+            ></div>
 
-          <div
-            class="instagram-image"
-            style="${image}"
-          ></div>
+            <div class="instagram-content">
 
-          <div class="instagram-content">
+              <strong>
+                ${escapeHTML(
+                  post.title ||
+                  "Publicación de Instagram"
+                )}
+              </strong>
 
-            <strong>
-              ${escapeHTML(
-                post.title ||
-                "Publicación de Instagram"
-              )}
-            </strong>
+              <p>
+                ${escapeHTML(
+                  post.caption || ""
+                )}
+              </p>
 
-            <p>
-              ${escapeHTML(
-                post.caption ||
-                ""
-              )}
-            </p>
+              ${
+                post.url
+                  ? `
+                    <a
+                      class="instagram-link"
+                      href="${escapeHTML(
+                        post.url
+                      )}"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      VER EN INSTAGRAM ↗
+                    </a>
+                  `
+                  : ""
+              }
 
-            ${
-              post.url
-                ? `
-                  <a
-                    class="instagram-link"
-                    href="${escapeHTML(post.url)}"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    VER EN INSTAGRAM ↗
-                  </a>
-                `
-                : ""
-            }
+              <div class="instagram-actions">
 
-            <div class="instagram-actions">
+                <button
+                  class="btn btn-secondary"
+                  data-edit-instagram="${escapeHTML(
+                    post.id
+                  )}"
+                >
+                  EDITAR
+                </button>
 
-              <button
-                class="btn btn-secondary"
-                data-edit-instagram="${escapeHTML(post.id)}"
-              >
-                EDITAR
-              </button>
+                <button
+                  class="btn btn-danger"
+                  data-delete-instagram="${escapeHTML(
+                    post.id
+                  )}"
+                >
+                  ELIMINAR
+                </button>
 
-              <button
-                class="btn btn-danger"
-                data-delete-instagram="${escapeHTML(post.id)}"
-              >
-                ELIMINAR
-              </button>
+              </div>
 
             </div>
 
-          </div>
+          </article>
+        `;
+      })
+      .join("");
 
-        </article>
-      `;
-
-    }).join("");
-
-  $$("[data-edit-instagram]")
-    .forEach(button => {
-
+  $$("[data-edit-instagram]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -2527,12 +2466,11 @@ function renderInstagram() {
             button.dataset.editInstagram
           )
       );
+    }
+  );
 
-    });
-
-  $$("[data-delete-instagram]")
-    .forEach(button => {
-
+  $$("[data-delete-instagram]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -2540,31 +2478,32 @@ function renderInstagram() {
             button.dataset.deleteInstagram
           )
       );
-
-    });
+    }
+  );
 }
 
-
 function resetInstagramForm() {
+  const form = $("#instagram-form");
 
-  $("#instagram-form").reset();
+  if (form) {
+    form.reset();
+  }
 
   $("#instagram-id").value = "";
 }
 
-
 function openInstagramModal(id = null) {
-
   resetInstagramForm();
 
   if (id) {
-
     const post =
       state.content.instagram.find(
-        item => item.id === id
+        (item) => item.id === id
       );
 
-    if (!post) return;
+    if (!post) {
+      return;
+    }
 
     $("#instagram-id").value =
       post.id || "";
@@ -2585,33 +2524,37 @@ function openInstagramModal(id = null) {
   openModal("instagram-modal");
 }
 
-
 async function saveInstagram(event) {
-
   event.preventDefault();
 
   const id =
     $("#instagram-id").value.trim();
 
   const post = {
-
     id: id || undefined,
 
     title:
-      $("#instagram-title").value.trim(),
+      $("#instagram-title")
+        .value
+        .trim(),
 
     url:
-      $("#instagram-url").value.trim(),
+      $("#instagram-url")
+        .value
+        .trim(),
 
     image:
-      $("#instagram-image").value.trim(),
+      $("#instagram-image")
+        .value
+        .trim(),
 
     caption:
-      $("#instagram-caption").value.trim()
+      $("#instagram-caption")
+        .value
+        .trim()
   };
 
   try {
-
     const result =
       await api(
         "save-instagram",
@@ -2635,9 +2578,7 @@ async function saveInstagram(event) {
         : "Publicación creada",
       "Los cambios fueron guardados."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -2646,23 +2587,21 @@ async function saveInstagram(event) {
   }
 }
 
-
 async function deleteInstagram(id) {
-
   const post =
     state.content.instagram.find(
-      item => item.id === id
+      (item) => item.id === id
     );
 
-  if (!post) return;
+  if (!post) {
+    return;
+  }
 
   confirmAction(
     "¿Eliminar publicación?",
     "La publicación será enviada a la papelera.",
     async () => {
-
       try {
-
         const result =
           await api(
             "delete-instagram",
@@ -2682,35 +2621,33 @@ async function deleteInstagram(id) {
           "Publicación eliminada",
           "Fue enviada a la papelera."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // TRASH
 // =========================================================
 
 function renderTrash() {
-
   const container =
     $("#trash-list");
+
+  if (!container) {
+    return;
+  }
 
   const trash =
     state.content.trash;
 
   if (!trash.length) {
-
     container.innerHTML = `
       <div class="empty-state">
         La papelera está vacía.
@@ -2721,63 +2658,70 @@ function renderTrash() {
   }
 
   container.innerHTML =
-    trash.map(item => {
+    trash
+      .map((item) => {
+        const title =
+          item.item?.title ||
+          item.item?.name ||
+          item.item?.team ||
+          item.item?.player ||
+          "Elemento";
 
-      const title =
-        item.item?.title ||
-        item.item?.name ||
-        item.item?.team ||
-        item.item?.player ||
-        "Elemento";
+        return `
+          <div class="trash-item">
 
-      return `
-        <div class="trash-item">
+            <div class="trash-icon">
+              ⌫
+            </div>
 
-          <div class="trash-icon">
-            ⌫
+            <div class="trash-info">
+
+              <strong>
+                ${escapeHTML(title)}
+              </strong>
+
+              <small>
+                ${escapeHTML(
+                  item.type ||
+                  "contenido"
+                )}
+                · eliminado
+                ${formatDateTime(
+                  item.deletedAt
+                )}
+              </small>
+
+            </div>
+
+            <div class="trash-actions">
+
+              <button
+                class="btn btn-secondary"
+                data-restore="${escapeHTML(
+                  item.id
+                )}"
+              >
+                RESTAURAR
+              </button>
+
+              <button
+                class="btn btn-danger"
+                data-permanent-delete="${escapeHTML(
+                  item.id
+                )}"
+              >
+                ELIMINAR
+              </button>
+
+            </div>
+
           </div>
+        `;
+      })
+      .join("");
 
-          <div class="trash-info">
-
-            <strong>
-              ${escapeHTML(title)}
-            </strong>
-
-            <small>
-              ${escapeHTML(item.type || "contenido")}
-              ·
-              eliminado
-              ${formatDateTime(item.deletedAt)}
-            </small>
-
-          </div>
-
-          <div class="trash-actions">
-
-            <button
-              class="btn btn-secondary"
-              data-restore="${escapeHTML(item.id)}"
-            >
-              RESTAURAR
-            </button>
-
-            <button
-              class="btn btn-danger"
-              data-permanent-delete="${escapeHTML(item.id)}"
-            >
-              ELIMINAR
-            </button>
-
-          </div>
-
-        </div>
-      `;
-
-    }).join("");
-
-  $$("[data-restore]")
-    .forEach(button => {
-
+  $$("[data-restore]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -2785,12 +2729,11 @@ function renderTrash() {
             button.dataset.restore
           )
       );
+    }
+  );
 
-    });
-
-  $$("[data-permanent-delete]")
-    .forEach(button => {
-
+  $$("[data-permanent-delete]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -2798,15 +2741,12 @@ function renderTrash() {
             button.dataset.permanentDelete
           )
       );
-
-    });
+    }
+  );
 }
 
-
 async function restoreTrash(id) {
-
   try {
-
     const result =
       await api(
         "restore",
@@ -2826,9 +2766,7 @@ async function restoreTrash(id) {
       "Contenido restaurado",
       "El elemento volvió a su sección."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -2837,16 +2775,12 @@ async function restoreTrash(id) {
   }
 }
 
-
 async function permanentDelete(id) {
-
   confirmAction(
     "¿Eliminar definitivamente?",
     "Este contenido no podrá recuperarse.",
     async () => {
-
       try {
-
         const result =
           await api(
             "permanent-delete",
@@ -2866,27 +2800,19 @@ async function permanentDelete(id) {
           "Eliminado definitivamente",
           "El contenido fue eliminado."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
 
-
 async function emptyTrash() {
-
-  if (
-    !state.content.trash.length
-  ) {
-
+  if (!state.content.trash.length) {
     showToast(
       "Papelera vacía",
       "No hay elementos para eliminar."
@@ -2899,9 +2825,7 @@ async function emptyTrash() {
     "¿Vaciar papelera?",
     "Todos los elementos serán eliminados definitivamente.",
     async () => {
-
       try {
-
         const result =
           await api(
             "empty-trash"
@@ -2918,35 +2842,33 @@ async function emptyTrash() {
           "Papelera vaciada",
           `${result.deleted || 0} elementos eliminados.`
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // HISTORY
 // =========================================================
 
 function renderHistory() {
-
   const container =
     $("#history-list");
+
+  if (!container) {
+    return;
+  }
 
   const history =
     state.content.history;
 
   if (!history.length) {
-
     container.innerHTML = `
       <div class="empty-state">
         No hay registros en el historial.
@@ -2957,45 +2879,42 @@ function renderHistory() {
   }
 
   container.innerHTML =
-    history.map(item => {
+    history
+      .map((item) => {
+        return `
+          <div class="history-row">
 
-      return `
-        <div class="history-row">
+            <div class="history-dot"></div>
 
-          <div class="history-dot"></div>
+            <div class="history-action">
+              ${escapeHTML(
+                item.action ||
+                "acción"
+              )}
+            </div>
 
-          <div class="history-action">
-            ${escapeHTML(
-              item.action ||
-              "acción"
-            )}
+            <div class="history-description">
+              ${escapeHTML(
+                item.title ||
+                item.type ||
+                "Contenido"
+              )}
+            </div>
+
+            <div class="history-date">
+              ${formatDateTime(
+                item.date
+              )}
+            </div>
+
           </div>
-
-          <div class="history-description">
-            ${escapeHTML(
-              item.title ||
-              item.type ||
-              "Contenido"
-            )}
-          </div>
-
-          <div class="history-date">
-            ${formatDateTime(item.date)}
-          </div>
-
-        </div>
-      `;
-
-    }).join("");
+        `;
+      })
+      .join("");
 }
 
-
 async function clearHistory() {
-
-  if (
-    !state.content.history.length
-  ) {
-
+  if (!state.content.history.length) {
     showToast(
       "Historial vacío",
       "No hay registros."
@@ -3008,9 +2927,7 @@ async function clearHistory() {
     "¿Limpiar historial?",
     "Se eliminarán todos los registros de actividad.",
     async () => {
-
       try {
-
         const result =
           await api(
             "clear-history"
@@ -3027,47 +2944,48 @@ async function clearHistory() {
           "Historial limpiado",
           "Se eliminaron los registros."
         );
-
       } catch (error) {
-
         showToast(
           "Error",
           error.message,
           "error"
         );
       }
-
     }
   );
 }
-
 
 // =========================================================
 // SETTINGS
 // =========================================================
 
 function renderSettings() {
-
   const settings =
-    state.content.settings ||
-    {};
+    state.content.settings || {};
 
-  $("#settings-site-name").value =
-    settings.siteName ||
-    "DropRugby";
+  const siteName =
+    $("#settings-site-name");
 
-  $("#settings-site-description").value =
-    settings.description ||
-    "Noticias de rugby";
+  const description =
+    $("#settings-site-description");
+
+  if (siteName) {
+    siteName.value =
+      settings.siteName ||
+      "DropRugby";
+  }
+
+  if (description) {
+    description.value =
+      settings.description ||
+      "Noticias de rugby";
+  }
 }
 
-
 async function saveSettings(event) {
-
   event.preventDefault();
 
   const settings = {
-
     siteName:
       $("#settings-site-name")
         .value
@@ -3080,7 +2998,6 @@ async function saveSettings(event) {
   };
 
   try {
-
     const result =
       await api(
         "save-settings",
@@ -3098,9 +3015,7 @@ async function saveSettings(event) {
       "Configuración guardada",
       "Los cambios fueron guardados."
     );
-
   } catch (error) {
-
     showToast(
       "Error",
       error.message,
@@ -3109,45 +3024,46 @@ async function saveSettings(event) {
   }
 }
 
-
 // =========================================================
 // EVENTS
 // =========================================================
 
 function bindEvents() {
-
   // LOGIN
 
-  $("#login-form")
-    .addEventListener(
-      "submit",
-      event => {
+  const loginForm =
+    $("#login-form");
 
+  if (loginForm) {
+    loginForm.addEventListener(
+      "submit",
+      (event) => {
         event.preventDefault();
 
         login(
           $("#login-user").value.trim(),
           $("#login-password").value
         );
-
       }
     );
-
+  }
 
   // LOGOUT
 
-  $("#logout-button")
-    .addEventListener(
+  const logoutButton =
+    $("#logout-button");
+
+  if (logoutButton) {
+    logoutButton.addEventListener(
       "click",
       logout
     );
-
+  }
 
   // NAVIGATION
 
-  $$(".nav-item")
-    .forEach(button => {
-
+  $$(".nav-item").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () =>
@@ -3155,244 +3071,300 @@ function bindEvents() {
             button.dataset.section
           )
       );
-
-    });
-
+    }
+  );
 
   // MOBILE
 
-  $("#menu-button")
-    .addEventListener(
+  const menuButton =
+    $("#menu-button");
+
+  if (menuButton) {
+    menuButton.addEventListener(
       "click",
       openSidebar
     );
+  }
 
-  $("#sidebar-close")
-    .addEventListener(
+  const sidebarClose =
+    $("#sidebar-close");
+
+  if (sidebarClose) {
+    sidebarClose.addEventListener(
       "click",
       closeSidebar
     );
+  }
 
-  $("#sidebar-overlay")
-    .addEventListener(
+  const sidebarOverlay =
+    $("#sidebar-overlay");
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener(
       "click",
       closeSidebar
     );
-
+  }
 
   // REFRESH
 
-  $("#refresh-button")
-    .addEventListener(
-      "click",
-      () =>
-        loadContent(true)
-    );
+  const refreshButton =
+    $("#refresh-button");
 
+  if (refreshButton) {
+    refreshButton.addEventListener(
+      "click",
+      () => loadContent(true)
+    );
+  }
 
   // ARTICLE
 
-  $("#new-article-button")
-    .addEventListener(
-      "click",
-      () =>
-        openArticleModal()
-    );
+  const newArticleButton =
+    $("#new-article-button");
 
-  $("#dashboard-new-article")
-    .addEventListener(
+  if (newArticleButton) {
+    newArticleButton.addEventListener(
+      "click",
+      () => openArticleModal()
+    );
+  }
+
+  const dashboardNewArticle =
+    $("#dashboard-new-article");
+
+  if (dashboardNewArticle) {
+    dashboardNewArticle.addEventListener(
       "click",
       () => {
-
         navigate("articles");
         openArticleModal();
-
       }
     );
+  }
 
-  $("#article-form")
-    .addEventListener(
+  const articleForm =
+    $("#article-form");
+
+  if (articleForm) {
+    articleForm.addEventListener(
       "submit",
       saveArticle
     );
-
+  }
 
   // FIXTURE
 
-  $("#new-fixture-button")
-    .addEventListener(
-      "click",
-      () =>
-        openFixtureModal()
-    );
+  const newFixtureButton =
+    $("#new-fixture-button");
 
-  $("#fixture-form")
-    .addEventListener(
+  if (newFixtureButton) {
+    newFixtureButton.addEventListener(
+      "click",
+      () => openFixtureModal()
+    );
+  }
+
+  const fixtureForm =
+    $("#fixture-form");
+
+  if (fixtureForm) {
+    fixtureForm.addEventListener(
       "submit",
       saveFixture
     );
-
+  }
 
   // TEAM
 
-  $("#new-team-button")
-    .addEventListener(
-      "click",
-      () =>
-        openTeamModal()
-    );
+  const newTeamButton =
+    $("#new-team-button");
 
-  $("#team-form")
-    .addEventListener(
+  if (newTeamButton) {
+    newTeamButton.addEventListener(
+      "click",
+      () => openTeamModal()
+    );
+  }
+
+  const teamForm =
+    $("#team-form");
+
+  if (teamForm) {
+    teamForm.addEventListener(
       "submit",
       saveTeam
     );
-
+  }
 
   // PLAYER
 
-  $("#new-player-button")
-    .addEventListener(
-      "click",
-      () =>
-        openPlayerModal()
-    );
+  const newPlayerButton =
+    $("#new-player-button");
 
-  $("#player-form")
-    .addEventListener(
+  if (newPlayerButton) {
+    newPlayerButton.addEventListener(
+      "click",
+      () => openPlayerModal()
+    );
+  }
+
+  const playerForm =
+    $("#player-form");
+
+  if (playerForm) {
+    playerForm.addEventListener(
       "submit",
       savePlayer
     );
-
+  }
 
   // INSTAGRAM
 
-  $("#new-instagram-button")
-    .addEventListener(
-      "click",
-      () =>
-        openInstagramModal()
-    );
+  const newInstagramButton =
+    $("#new-instagram-button");
 
-  $("#instagram-form")
-    .addEventListener(
+  if (newInstagramButton) {
+    newInstagramButton.addEventListener(
+      "click",
+      () => openInstagramModal()
+    );
+  }
+
+  const instagramForm =
+    $("#instagram-form");
+
+  if (instagramForm) {
+    instagramForm.addEventListener(
       "submit",
       saveInstagram
     );
-
+  }
 
   // TRASH
 
-  $("#empty-trash-button")
-    .addEventListener(
+  const emptyTrashButton =
+    $("#empty-trash-button");
+
+  if (emptyTrashButton) {
+    emptyTrashButton.addEventListener(
       "click",
       emptyTrash
     );
-
+  }
 
   // HISTORY
 
-  $("#clear-history-button")
-    .addEventListener(
+  const clearHistoryButton =
+    $("#clear-history-button");
+
+  if (clearHistoryButton) {
+    clearHistoryButton.addEventListener(
       "click",
       clearHistory
     );
-
+  }
 
   // SETTINGS
 
-  $("#settings-form")
-    .addEventListener(
+  const settingsForm =
+    $("#settings-form");
+
+  if (settingsForm) {
+    settingsForm.addEventListener(
       "submit",
       saveSettings
     );
-
+  }
 
   // SEARCH ARTICLES
 
-  $("#article-search")
-    .addEventListener(
-      "input",
-      event => {
+  const articleSearch =
+    $("#article-search");
 
+  if (articleSearch) {
+    articleSearch.addEventListener(
+      "input",
+      (event) => {
         state.articleSearch =
           event.target.value;
 
         renderArticles();
-
       }
     );
+  }
 
+  const articleCategoryFilter =
+    $("#article-category-filter");
 
-  $("#article-category-filter")
-    .addEventListener(
+  if (articleCategoryFilter) {
+    articleCategoryFilter.addEventListener(
       "change",
-      event => {
-
+      (event) => {
         state.articleCategory =
           event.target.value;
 
         renderArticles();
-
       }
     );
-
+  }
 
   // SEARCH FIXTURES
 
-  $("#fixture-search")
-    .addEventListener(
-      "input",
-      event => {
+  const fixtureSearch =
+    $("#fixture-search");
 
+  if (fixtureSearch) {
+    fixtureSearch.addEventListener(
+      "input",
+      (event) => {
         state.fixtureSearch =
           event.target.value;
 
         renderFixtures();
-
       }
     );
+  }
 
+  const fixtureStatusFilter =
+    $("#fixture-status-filter");
 
-  $("#fixture-status-filter")
-    .addEventListener(
+  if (fixtureStatusFilter) {
+    fixtureStatusFilter.addEventListener(
       "change",
-      event => {
-
+      (event) => {
         state.fixtureStatus =
           event.target.value;
 
         renderFixtures();
-
       }
     );
-
+  }
 
   // SEARCH PLAYERS
 
-  $("#player-search")
-    .addEventListener(
-      "input",
-      event => {
+  const playerSearch =
+    $("#player-search");
 
+  if (playerSearch) {
+    playerSearch.addEventListener(
+      "input",
+      (event) => {
         state.playerSearch =
           event.target.value;
 
         renderPlayers();
-
       }
     );
-
+  }
 
   // CLOSE MODALS
 
-  $$("[data-close-modal]")
-    .forEach(element => {
-
+  $$("[data-close-modal]").forEach(
+    (element) => {
       element.addEventListener(
         "click",
-        event => {
-
+        (event) => {
           const modal =
             event.currentTarget.closest(
               ".modal"
@@ -3401,28 +3373,33 @@ function bindEvents() {
           if (modal) {
             closeModal(modal.id);
           }
-
         }
       );
-
-    });
-
+    }
+  );
 
   // CONFIRM
 
-  $("#confirm-cancel")
-    .addEventListener(
+  const confirmCancel =
+    $("#confirm-cancel");
+
+  if (confirmCancel) {
+    confirmCancel.addEventListener(
       "click",
       () =>
-        closeModal("confirm-modal")
+        closeModal(
+          "confirm-modal"
+        )
     );
+  }
 
+  const confirmOk =
+    $("#confirm-ok");
 
-  $("#confirm-ok")
-    .addEventListener(
+  if (confirmOk) {
+    confirmOk.addEventListener(
       "click",
       async () => {
-
         const callback =
           state.confirmCallback;
 
@@ -3436,20 +3413,17 @@ function bindEvents() {
         if (callback) {
           await callback();
         }
-
       }
     );
-
+  }
 
   // QUICK ACTIONS
 
-  $$("[data-quick]")
-    .forEach(button => {
-
+  $$("[data-quick]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () => {
-
           const type =
             button.dataset.quick;
 
@@ -3472,48 +3446,38 @@ function bindEvents() {
             navigate("players");
             openPlayerModal();
           }
-
         }
       );
-
-    });
-
+    }
+  );
 
   // GO TO SECTION
 
-  $$("[data-go-section]")
-    .forEach(button => {
-
+  $$("[data-go-section]").forEach(
+    (button) => {
       button.addEventListener(
         "click",
         () => {
-
           navigate(
             button.dataset.goSection
           );
-
         }
       );
-
-    });
-
+    }
+  );
 
   // ESCAPE
 
   document.addEventListener(
     "keydown",
-    event => {
-
+    (event) => {
       if (event.key === "Escape") {
         closeAllModals();
         closeSidebar();
       }
-
     }
   );
-
 }
-
 
 // =========================================================
 // START
@@ -3522,10 +3486,7 @@ function bindEvents() {
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
-
     bindEvents();
-
     await checkSession();
-
   }
 );
