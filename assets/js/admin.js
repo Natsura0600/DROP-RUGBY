@@ -1,13 +1,13 @@
 /* =========================================================
    DROPRUGBY ADMIN PANEL
-   /assets/admin.js
-   ========================================================= */
+   /assets/js/admin.js
+========================================================= */
 
 "use strict";
 
 /* =========================================================
    STATE
-   ========================================================= */
+========================================================= */
 
 const state = {
   content: {
@@ -34,10 +34,9 @@ const state = {
   confirmCallback: null
 };
 
-
 /* =========================================================
    HELPERS
-   ========================================================= */
+========================================================= */
 
 function $(selector) {
   return document.querySelector(selector);
@@ -115,10 +114,9 @@ function slugify(text) {
     .replace(/^-+|-+$/g, "");
 }
 
-
 /* =========================================================
    TOASTS
-   ========================================================= */
+========================================================= */
 
 function showToast(title, message = "", type = "success") {
   const container = $("#toast-container");
@@ -153,10 +151,9 @@ function showToast(title, message = "", type = "success") {
   }, 3500);
 }
 
-
 /* =========================================================
    MODALS
-   ========================================================= */
+========================================================= */
 
 function openModal(id) {
   const modal = $(`#${id}`);
@@ -213,10 +210,9 @@ function confirmAction(title, message, callback) {
   openModal("confirm-modal");
 }
 
-
 /* =========================================================
    API
-   ========================================================= */
+========================================================= */
 
 async function api(action, data = {}, method = "POST") {
   const options = {
@@ -265,13 +261,13 @@ async function api(action, data = {}, method = "POST") {
   return result;
 }
 
-
 /* =========================================================
    LOGIN
-   ========================================================= */
+========================================================= */
 
 async function login(username, password) {
   const form = $("#login-form");
+
   const button = form
     ? form.querySelector("button[type='submit']")
     : null;
@@ -307,6 +303,7 @@ async function login(username, password) {
     showApp();
 
     await loadContent();
+
   } catch (error) {
     if (errorElement) {
       errorElement.textContent =
@@ -318,6 +315,7 @@ async function login(username, password) {
       error.message || "No se pudo iniciar sesión.",
       "error"
     );
+
   } finally {
     if (button) {
       button.disabled = false;
@@ -343,7 +341,7 @@ async function logout() {
   try {
     await api("logout");
   } catch {
-    // Limpiamos igualmente la sesión visual.
+    // La sesión visual se limpia igualmente.
   }
 
   logoutLocal();
@@ -354,10 +352,9 @@ async function logout() {
   );
 }
 
-
 /* =========================================================
    SESSION
-   ========================================================= */
+========================================================= */
 
 async function checkSession() {
   try {
@@ -385,6 +382,7 @@ async function checkSession() {
 
       return true;
     }
+
   } catch (error) {
     console.warn(
       "Sesión no iniciada:",
@@ -419,10 +417,9 @@ function showApp() {
   }
 }
 
-
 /* =========================================================
    CONTENT
-   ========================================================= */
+========================================================= */
 
 async function loadContent(showNotification = false) {
   try {
@@ -432,9 +429,8 @@ async function loadContent(showNotification = false) {
       "GET"
     );
 
-    state.content = normalizeContent(
-      result.content
-    );
+    state.content =
+      normalizeContent(result.content);
 
     renderAll();
 
@@ -444,6 +440,7 @@ async function loadContent(showNotification = false) {
         "El contenido fue actualizado."
       );
     }
+
   } catch (error) {
     showToast(
       "Error",
@@ -499,10 +496,9 @@ function normalizeContent(content) {
   };
 }
 
-
 /* =========================================================
    NAVIGATION
-   ========================================================= */
+========================================================= */
 
 function navigate(section) {
   const target =
@@ -562,10 +558,9 @@ function closeSidebar() {
   $("#sidebar-overlay")?.classList.remove("open");
 }
 
-
 /* =========================================================
    RENDER ALL
-   ========================================================= */
+========================================================= */
 
 function renderAll() {
   renderStats();
@@ -584,10 +579,9 @@ function renderAll() {
   updateNavCounts();
 }
 
-
 /* =========================================================
    STATS
-   ========================================================= */
+========================================================= */
 
 function renderStats() {
   const articles = $("#stat-articles");
@@ -650,10 +644,9 @@ function updateNavCounts() {
   }
 }
 
-
 /* =========================================================
    DASHBOARD
-   ========================================================= */
+========================================================= */
 
 function renderDashboardArticles() {
   const container =
@@ -796,10 +789,9 @@ function historyLabel(item) {
   return action;
 }
 
-
 /* =========================================================
    ARTICLES
-   ========================================================= */
+========================================================= */
 
 function renderArticles() {
   const container =
@@ -844,9 +836,15 @@ function renderArticles() {
 
   if (!articles.length) {
     container.innerHTML = `
-      <div class="empty-state">
-        No se encontraron noticias.
-      </div>
+      <tbody>
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              No se encontraron noticias.
+            </div>
+          </td>
+        </tr>
+      </tbody>
     `;
 
     return;
@@ -984,10 +982,9 @@ function bindDynamicArticleButtons() {
   });
 }
 
-
 /* =========================================================
    ARTICLE MODAL
-   ========================================================= */
+========================================================= */
 
 function resetArticleForm() {
   const form = $("#article-form");
@@ -1019,7 +1016,9 @@ function openArticleModal(id = null) {
   if (id) {
     const article =
       state.content.articles.find(
-        item => String(item.id) === String(id)
+        item =>
+          String(item.id) ===
+          String(id)
       );
 
     if (!article) {
@@ -1089,7 +1088,9 @@ async function saveArticle(event) {
 
   const existing =
     state.content.articles.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   const article = {
@@ -1146,6 +1147,7 @@ async function saveArticle(event) {
         : "Noticia creada",
       "Los cambios fueron guardados."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -1158,7 +1160,9 @@ async function saveArticle(event) {
 async function deleteArticle(id) {
   const article =
     state.content.articles.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   if (!article) {
@@ -1168,6 +1172,7 @@ async function deleteArticle(id) {
   confirmAction(
     "¿Eliminar noticia?",
     `La noticia "${article.title}" será enviada a la papelera.`,
+
     async () => {
       try {
         const result = await api(
@@ -1184,6 +1189,7 @@ async function deleteArticle(id) {
           "Noticia eliminada",
           "Fue enviada a la papelera."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -1198,7 +1204,9 @@ async function deleteArticle(id) {
 async function sendArticleNewsletter(id) {
   const article =
     state.content.articles.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   if (!article) {
@@ -1208,6 +1216,7 @@ async function sendArticleNewsletter(id) {
   confirmAction(
     "Enviar newsletter",
     `¿Querés enviar "${article.title}" a todos los suscriptores?`,
+
     async () => {
       showToast(
         "Enviando...",
@@ -1226,6 +1235,7 @@ async function sendArticleNewsletter(id) {
           "Newsletter enviado",
           `${result.newsletter?.sent || 0} destinatarios procesados.`
         );
+
       } catch (error) {
         showToast(
           "Error de newsletter",
@@ -1237,10 +1247,9 @@ async function sendArticleNewsletter(id) {
   );
 }
 
-
 /* =========================================================
    FIXTURES
-   ========================================================= */
+========================================================= */
 
 function renderFixtures() {
   const container =
@@ -1311,7 +1320,6 @@ function renderFixtures() {
 
   container.innerHTML = `
     <thead>
-
       <tr>
         <th>FECHA</th>
         <th>PARTIDO</th>
@@ -1320,7 +1328,6 @@ function renderFixtures() {
         <th>ESTADO</th>
         <th></th>
       </tr>
-
     </thead>
 
     <tbody>
@@ -1343,7 +1350,9 @@ function renderFixtures() {
           <tr>
 
             <td>
-              ${formatDate(fixture.date)}
+              ${formatDate(
+                fixture.date
+              )}
 
               ${
                 fixture.time
@@ -1372,7 +1381,8 @@ function renderFixtures() {
 
             <td>
               ${escapeHTML(
-                fixture.competition || "—"
+                fixture.competition ||
+                "—"
               )}
             </td>
 
@@ -1391,7 +1401,6 @@ function renderFixtures() {
             </td>
 
             <td>
-
               <span class="badge ${
                 finished
                   ? ""
@@ -1405,7 +1414,6 @@ function renderFixtures() {
                 }
 
               </span>
-
             </td>
 
             <td>
@@ -1414,6 +1422,7 @@ function renderFixtures() {
 
                 <button
                   class="table-action"
+                  title="Editar"
                   data-edit-fixture="${escapeAttribute(fixture.id)}"
                 >
                   ✎
@@ -1421,6 +1430,7 @@ function renderFixtures() {
 
                 <button
                   class="table-action danger"
+                  title="Eliminar"
                   data-delete-fixture="${escapeAttribute(fixture.id)}"
                 >
                   ×
@@ -1462,7 +1472,8 @@ function resetFixtureForm() {
   }
 
   if ($("#fixture-status")) {
-    $("#fixture-status").value = "upcoming";
+    $("#fixture-status").value =
+      "upcoming";
   }
 
   if ($("#fixture-modal-title")) {
@@ -1477,7 +1488,9 @@ function openFixtureModal(id = null) {
   if (id) {
     const fixture =
       state.content.fixtures.find(
-        item => String(item.id) === String(id)
+        item =>
+          String(item.id) ===
+          String(id)
       );
 
     if (!fixture) {
@@ -1589,6 +1602,7 @@ async function saveFixture(event) {
         : "Partido creado",
       "Los cambios fueron guardados."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -1601,7 +1615,9 @@ async function saveFixture(event) {
 async function deleteFixture(id) {
   const fixture =
     state.content.fixtures.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   if (!fixture) {
@@ -1621,6 +1637,7 @@ async function deleteFixture(id) {
   confirmAction(
     "¿Eliminar partido?",
     `${home} vs ${away} será enviado a la papelera.`,
+
     async () => {
       try {
         const result = await api(
@@ -1637,6 +1654,7 @@ async function deleteFixture(id) {
           "Partido eliminado",
           "Fue enviado a la papelera."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -1648,10 +1666,9 @@ async function deleteFixture(id) {
   );
 }
 
-
 /* =========================================================
    STANDINGS
-   ========================================================= */
+========================================================= */
 
 function renderStandings() {
   const container =
@@ -1688,7 +1705,6 @@ function renderStandings() {
 
   container.innerHTML = `
     <thead>
-
       <tr>
         <th>#</th>
         <th>EQUIPO</th>
@@ -1701,7 +1717,6 @@ function renderStandings() {
         <th>PTS</th>
         <th></th>
       </tr>
-
     </thead>
 
     <tbody>
@@ -1744,6 +1759,7 @@ function renderStandings() {
 
               <button
                 class="table-action"
+                title="Editar"
                 data-edit-team="${escapeAttribute(team.id)}"
               >
                 ✎
@@ -1751,6 +1767,7 @@ function renderStandings() {
 
               <button
                 class="table-action danger"
+                title="Eliminar"
                 data-delete-team="${escapeAttribute(team.id)}"
               >
                 ×
@@ -1799,7 +1816,8 @@ function resetTeamForm() {
     "team-points-against",
     "team-points"
   ].forEach(id => {
-    const element = $(`#${id}`);
+    const element =
+      $(`#${id}`);
 
     if (element) {
       element.value = 0;
@@ -1813,7 +1831,9 @@ function openTeamModal(id = null) {
   if (id) {
     const team =
       state.content.standings.find(
-        item => String(item.id) === String(id)
+        item =>
+          String(item.id) ===
+          String(id)
       );
 
     if (!team) {
@@ -1920,6 +1940,7 @@ async function saveTeam(event) {
         : "Equipo creado",
       "Los cambios fueron guardados."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -1932,7 +1953,9 @@ async function saveTeam(event) {
 async function deleteTeam(id) {
   const team =
     state.content.standings.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   if (!team) {
@@ -1947,6 +1970,7 @@ async function deleteTeam(id) {
   confirmAction(
     "¿Eliminar equipo?",
     `${name} será enviado a la papelera.`,
+
     async () => {
       try {
         const result = await api(
@@ -1963,6 +1987,7 @@ async function deleteTeam(id) {
           "Equipo eliminado",
           "Fue enviado a la papelera."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -1974,10 +1999,9 @@ async function deleteTeam(id) {
   );
 }
 
-
 /* =========================================================
    PLAYERS
-   ========================================================= */
+========================================================= */
 
 function renderPlayers() {
   const container =
@@ -2123,7 +2147,9 @@ function openPlayerModal(id = null) {
   if (id) {
     const player =
       state.content.players.find(
-        item => String(item.id) === String(id)
+        item =>
+          String(item.id) ===
+          String(id)
       );
 
     if (!player) {
@@ -2212,6 +2238,7 @@ async function savePlayer(event) {
         : "Jugador creado",
       "Los cambios fueron guardados."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -2224,7 +2251,9 @@ async function savePlayer(event) {
 async function deletePlayer(id) {
   const player =
     state.content.players.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   if (!player) {
@@ -2234,6 +2263,7 @@ async function deletePlayer(id) {
   confirmAction(
     "¿Eliminar jugador?",
     `${player.name || "El jugador"} será enviado a la papelera.`,
+
     async () => {
       try {
         const result = await api(
@@ -2250,6 +2280,7 @@ async function deletePlayer(id) {
           "Jugador eliminado",
           "Fue enviado a la papelera."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -2261,10 +2292,9 @@ async function deletePlayer(id) {
   );
 }
 
-
 /* =========================================================
    INSTAGRAM
-   ========================================================= */
+========================================================= */
 
 function renderInstagram() {
   const container =
@@ -2388,7 +2418,9 @@ function openInstagramModal(id = null) {
   if (id) {
     const post =
       state.content.instagram.find(
-        item => String(item.id) === String(id)
+        item =>
+          String(item.id) ===
+          String(id)
       );
 
     if (!post) {
@@ -2455,6 +2487,7 @@ async function saveInstagram(event) {
         : "Publicación creada",
       "Los cambios fueron guardados."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -2467,7 +2500,9 @@ async function saveInstagram(event) {
 async function deleteInstagram(id) {
   const post =
     state.content.instagram.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
   if (!post) {
@@ -2477,6 +2512,7 @@ async function deleteInstagram(id) {
   confirmAction(
     "¿Eliminar publicación?",
     "La publicación será enviada a la papelera.",
+
     async () => {
       try {
         const result = await api(
@@ -2493,6 +2529,7 @@ async function deleteInstagram(id) {
           "Publicación eliminada",
           "Fue enviada a la papelera."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -2504,10 +2541,9 @@ async function deleteInstagram(id) {
   );
 }
 
-
 /* =========================================================
    TRASH
-   ========================================================= */
+========================================================= */
 
 function renderTrash() {
   const container =
@@ -2554,7 +2590,8 @@ function renderTrash() {
 
             <small>
               ${escapeHTML(
-                item.type || "contenido"
+                item.type ||
+                "contenido"
               )}
               · eliminado
               ${formatDateTime(
@@ -2620,6 +2657,7 @@ async function restoreTrash(id) {
       "Contenido restaurado",
       "El elemento volvió a su sección."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -2633,6 +2671,7 @@ async function permanentDelete(id) {
   confirmAction(
     "¿Eliminar definitivamente?",
     "Este contenido no podrá recuperarse.",
+
     async () => {
       try {
         const result = await api(
@@ -2649,6 +2688,7 @@ async function permanentDelete(id) {
           "Eliminado definitivamente",
           "El contenido fue eliminado."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -2673,6 +2713,7 @@ async function emptyTrash() {
   confirmAction(
     "¿Vaciar papelera?",
     "Todos los elementos serán eliminados definitivamente.",
+
     async () => {
       try {
         const result = await api(
@@ -2688,6 +2729,7 @@ async function emptyTrash() {
           "Papelera vaciada",
           `${result.deleted || 0} elementos eliminados.`
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -2699,10 +2741,9 @@ async function emptyTrash() {
   );
 }
 
-
 /* =========================================================
    HISTORY
-   ========================================================= */
+========================================================= */
 
 function renderHistory() {
   const container =
@@ -2727,13 +2768,14 @@ function renderHistory() {
 
   container.innerHTML =
     history.map(item => `
-      <div class="history-row">
+      <div class="history-item">
 
         <div class="history-dot"></div>
 
         <div class="history-action">
           ${escapeHTML(
-            item.action || "acción"
+            item.action ||
+            "acción"
           )}
         </div>
 
@@ -2770,6 +2812,7 @@ async function clearHistory() {
   confirmAction(
     "¿Limpiar historial?",
     "Se eliminarán todos los registros de actividad.",
+
     async () => {
       try {
         const result = await api(
@@ -2785,6 +2828,7 @@ async function clearHistory() {
           "Historial limpiado",
           "Se eliminaron los registros."
         );
+
       } catch (error) {
         showToast(
           "Error",
@@ -2796,10 +2840,9 @@ async function clearHistory() {
   );
 }
 
-
 /* =========================================================
    SETTINGS
-   ========================================================= */
+========================================================= */
 
 function renderSettings() {
   const settings =
@@ -2854,6 +2897,7 @@ async function saveSettings(event) {
       "Configuración guardada",
       "Los cambios fueron guardados."
     );
+
   } catch (error) {
     showToast(
       "Error",
@@ -2863,10 +2907,9 @@ async function saveSettings(event) {
   }
 }
 
-
 /* =========================================================
    EVENTS
-   ========================================================= */
+========================================================= */
 
 function bindEvents() {
 
@@ -2885,7 +2928,6 @@ function bindEvents() {
     }
   );
 
-
   /* LOGOUT */
 
   on(
@@ -2893,7 +2935,6 @@ function bindEvents() {
     "click",
     logout
   );
-
 
   /* NAVIGATION */
 
@@ -2907,7 +2948,6 @@ function bindEvents() {
       }
     );
   });
-
 
   /* MOBILE */
 
@@ -2929,7 +2969,6 @@ function bindEvents() {
     closeSidebar
   );
 
-
   /* REFRESH */
 
   on(
@@ -2937,7 +2976,6 @@ function bindEvents() {
     "click",
     () => loadContent(true)
   );
-
 
   /* NEW ARTICLE */
 
@@ -2962,7 +3000,6 @@ function bindEvents() {
     saveArticle
   );
 
-
   /* FIXTURE */
 
   on(
@@ -2976,7 +3013,6 @@ function bindEvents() {
     "submit",
     saveFixture
   );
-
 
   /* TEAM */
 
@@ -2992,7 +3028,6 @@ function bindEvents() {
     saveTeam
   );
 
-
   /* PLAYER */
 
   on(
@@ -3006,7 +3041,6 @@ function bindEvents() {
     "submit",
     savePlayer
   );
-
 
   /* INSTAGRAM */
 
@@ -3022,7 +3056,6 @@ function bindEvents() {
     saveInstagram
   );
 
-
   /* TRASH */
 
   on(
@@ -3030,7 +3063,6 @@ function bindEvents() {
     "click",
     emptyTrash
   );
-
 
   /* HISTORY */
 
@@ -3040,7 +3072,6 @@ function bindEvents() {
     clearHistory
   );
 
-
   /* SETTINGS */
 
   on(
@@ -3048,7 +3079,6 @@ function bindEvents() {
     "submit",
     saveSettings
   );
-
 
   /* ARTICLE SEARCH */
 
@@ -3074,7 +3104,6 @@ function bindEvents() {
     }
   );
 
-
   /* FIXTURE SEARCH */
 
   on(
@@ -3099,7 +3128,6 @@ function bindEvents() {
     }
   );
 
-
   /* PLAYER SEARCH */
 
   on(
@@ -3112,7 +3140,6 @@ function bindEvents() {
       renderPlayers();
     }
   );
-
 
   /* CLOSE MODALS */
 
@@ -3130,7 +3157,6 @@ function bindEvents() {
     );
   });
 
-
   /* CONFIRM CANCEL */
 
   on(
@@ -3138,10 +3164,10 @@ function bindEvents() {
     "click",
     () => {
       state.confirmCallback = null;
+
       closeModal("confirm-modal");
     }
   );
-
 
   /* CONFIRM OK */
 
@@ -3161,7 +3187,6 @@ function bindEvents() {
       }
     }
   );
-
 
   /* QUICK ACTIONS */
 
@@ -3195,7 +3220,6 @@ function bindEvents() {
     );
   });
 
-
   /* GO TO SECTION */
 
   $$("[data-go-section]").forEach(button => {
@@ -3209,7 +3233,6 @@ function bindEvents() {
     );
   });
 
-
   /* ESC */
 
   document.addEventListener(
@@ -3221,7 +3244,6 @@ function bindEvents() {
       }
     }
   );
-
 
   /* CLICK OUTSIDE MODAL */
 
@@ -3240,10 +3262,9 @@ function bindEvents() {
   });
 }
 
-
 /* =========================================================
    START
-   ========================================================= */
+========================================================= */
 
 document.addEventListener(
   "DOMContentLoaded",
