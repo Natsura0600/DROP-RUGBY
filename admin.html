@@ -1,238 +1,24 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DropRugby · Administración</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/admin.css">
+  <title>DropRugby · Admin</title>
 
-<style>
-/* =========================================================
-   DROP RUGBY ADMIN EXTENDED
-   Todo está encapsulado para no tocar la web pública.
-========================================================= */
+  <link rel="stylesheet" href="assets/css/admin.css">
 
-.admin-extra-grid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-  margin-bottom:20px;
-}
-
-.admin-extra-card{
-  background:#fff;
-  border:1px solid #e8e8e8;
-  border-radius:14px;
-  padding:20px;
-}
-
-.admin-extra-card span{
-  display:block;
-  font-size:30px;
-  font-weight:700;
-  margin-bottom:5px;
-}
-
-.admin-extra-card small{
-  color:#777;
-}
-
-.admin-big-number{
-  font-size:32px!important;
-}
-
-.admin-section-card{
-  background:#fff;
-  border:1px solid #e7e7e7;
-  border-radius:14px;
-  padding:22px;
-  margin-bottom:20px;
-}
-
-.admin-section-card h2{
-  margin-top:0;
-}
-
-.admin-tabs{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-bottom:20px;
-}
-
-.admin-tab{
-  border:1px solid #ddd;
-  background:#fff;
-  padding:10px 15px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
-}
-
-.admin-tab.active{
-  background:#111;
-  color:#fff;
-  border-color:#111;
-}
-
-.admin-mini-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:15px;
-}
-
-.admin-mini-card{
-  border:1px solid #e8e8e8;
-  border-radius:10px;
-  padding:16px;
-}
-
-.admin-mini-card strong{
-  display:block;
-  font-size:20px;
-  margin-bottom:5px;
-}
-
-.status-pill{
-  display:inline-flex;
-  align-items:center;
-  padding:5px 9px;
-  border-radius:999px;
-  background:#f0f0f0;
-  font-size:12px;
-  font-weight:700;
-}
-
-.status-featured{
-  background:#fff1b8;
-}
-
-.status-breaking{
-  background:#ffdede;
-  color:#a00000;
-}
-
-.status-scheduled{
-  background:#dfeeff;
-  color:#07519b;
-}
-
-.status-trash{
-  background:#eee;
-  color:#777;
-}
-
-.social-box{
-  background:#f7f7f7;
-  border-radius:12px;
-  padding:18px;
-  margin-top:15px;
-}
-
-.social-box textarea{
-  width:100%;
-  min-height:180px;
-  box-sizing:border-box;
-  resize:vertical;
-  padding:12px;
-  border:1px solid #ddd;
-  border-radius:8px;
-  font-family:inherit;
-}
-
-.data-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-.data-table th,
-.data-table td{
-  text-align:left;
-  padding:11px 9px;
-  border-bottom:1px solid #eee;
-}
-
-.data-table th{
-  font-size:12px;
-  text-transform:uppercase;
-  color:#777;
-}
-
-.danger-btn{
-  border:0;
-  background:#b42318;
-  color:#fff;
-  padding:9px 12px;
-  border-radius:7px;
-  cursor:pointer;
-}
-
-.success-btn{
-  border:0;
-  background:#167c3a;
-  color:#fff;
-  padding:9px 12px;
-  border-radius:7px;
-  cursor:pointer;
-}
-
-.secondary-btn{
-  border:1px solid #ddd;
-  background:#fff;
-  padding:9px 12px;
-  border-radius:7px;
-  cursor:pointer;
-}
-
-.admin-toast{
-  position:fixed;
-  right:25px;
-  bottom:25px;
-  background:#111;
-  color:#fff;
-  padding:13px 18px;
-  border-radius:9px;
-  opacity:0;
-  transform:translateY(15px);
-  pointer-events:none;
-  transition:.25s;
-  z-index:99999;
-}
-
-.admin-toast.show{
-  opacity:1;
-  transform:translateY(0);
-}
-
-@media(max-width:900px){
-  .admin-extra-grid,
-  .admin-mini-grid{
-    grid-template-columns:1fr 1fr;
-  }
-}
-
-@media(max-width:600px){
-  .admin-extra-grid,
-  .admin-mini-grid{
-    grid-template-columns:1fr;
-  }
-}
-</style>
 </head>
 
-<body class="admin-body">
+<body>
 
-<!-- =========================================================
+<!-- =====================================================
      LOGIN
-========================================================= -->
+====================================================== -->
 
-<div id="login-view" class="admin-login">
+<div id="login-screen" class="admin-login">
 
   <div class="admin-login-card">
 
@@ -248,22 +34,26 @@
 
       <label>
         Usuario
+
         <input
           id="login-user"
           autocomplete="username"
           required
           value="admin"
         >
+
       </label>
 
       <label>
         Contraseña
+
         <input
           id="login-pass"
           type="password"
           autocomplete="current-password"
           required
         >
+
       </label>
 
       <button
@@ -277,7 +67,10 @@
         Acceso privado. Las credenciales se configuran en Vercel.
       </p>
 
-      <p id="login-error" class="admin-error"></p>
+      <p
+        id="login-error"
+        class="admin-error"
+      ></p>
 
     </form>
 
@@ -286,13 +79,20 @@
 </div>
 
 
-<!-- =========================================================
-     APP
-========================================================= -->
+<!-- =====================================================
+     APP ADMIN
+====================================================== -->
 
-<div id="app-view" class="admin-app" hidden>
+<div
+  id="admin-app"
+  class="admin-app"
+  style="display:none;"
+>
 
-  <!-- SIDEBAR -->
+
+  <!-- ===================================================
+       SIDEBAR
+  ==================================================== -->
 
   <aside class="admin-sidebar">
 
@@ -306,6 +106,7 @@
 
     </div>
 
+
     <nav>
 
       <button
@@ -315,12 +116,14 @@
         ▦ <span>Dashboard</span>
       </button>
 
+
       <button
         class="admin-nav"
         data-section="articles"
       >
         ▤ <span>Noticias</span>
       </button>
+
 
       <button
         class="admin-nav"
@@ -329,12 +132,14 @@
         ◷ <span>Partidos</span>
       </button>
 
+
       <button
         class="admin-nav"
         data-section="standings"
       >
         🏆 <span>Posiciones</span>
       </button>
+
 
       <button
         class="admin-nav"
@@ -343,12 +148,14 @@
         👤 <span>Jugadores</span>
       </button>
 
+
       <button
         class="admin-nav"
         data-section="social"
       >
         📱 <span>Instagram</span>
       </button>
+
 
       <button
         class="admin-nav"
@@ -357,12 +164,14 @@
         🗑 <span>Papelera</span>
       </button>
 
+
       <button
         class="admin-nav"
         data-section="history"
       >
         🕐 <span>Historial</span>
       </button>
+
 
       <button
         class="admin-nav"
@@ -372,6 +181,7 @@
       </button>
 
     </nav>
+
 
     <div class="admin-sidebar-bottom">
 
@@ -388,9 +198,16 @@
   </aside>
 
 
-  <!-- MAIN -->
+  <!-- ===================================================
+       MAIN
+  ==================================================== -->
 
   <main class="admin-main">
+
+
+    <!-- =================================================
+         TOPBAR
+    ================================================== -->
 
     <header class="admin-topbar">
 
@@ -413,9 +230,9 @@
     </header>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          DASHBOARD
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-dashboard"
@@ -425,43 +242,66 @@
       <div class="admin-extra-grid">
 
         <div class="admin-extra-card">
+
           <span
             id="stat-articles"
             class="admin-big-number"
           >
             0
           </span>
-          <small>Noticias</small>
+
+          <small>
+            Noticias
+          </small>
+
         </div>
 
+
         <div class="admin-extra-card">
+
           <span
             id="stat-fixtures"
             class="admin-big-number"
           >
             0
           </span>
-          <small>Partidos</small>
+
+          <small>
+            Partidos
+          </small>
+
         </div>
 
+
         <div class="admin-extra-card">
+
           <span
             id="stat-featured"
             class="admin-big-number"
           >
             0
           </span>
-          <small>Destacadas</small>
+
+          <small>
+            Destacadas
+          </small>
+
         </div>
 
+
         <div class="admin-extra-card">
+
           <span
             id="stat-breaking"
             class="admin-big-number"
           >
             0
           </span>
-          <small>Último momento</small>
+
+          <small>
+            Último momento
+          </small>
+
         </div>
 
       </div>
@@ -477,6 +317,7 @@
 
         </div>
 
+
         <div class="quick-actions">
 
           <button
@@ -485,17 +326,20 @@
             + Nueva noticia
           </button>
 
+
           <button
             data-action="new-fixture"
           >
             + Nuevo partido
           </button>
 
+
           <button
             data-action="instagram"
           >
             📱 Generar Instagram
           </button>
+
 
           <button
             data-go="standings"
@@ -509,6 +353,7 @@
 
 
       <div class="admin-grid-two">
+
 
         <div class="admin-panel">
 
@@ -569,9 +414,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          NOTICIAS
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-articles"
@@ -592,6 +437,7 @@
 
         </div>
 
+
         <button
           class="admin-primary"
           data-action="new-article"
@@ -610,6 +456,7 @@
             id="article-search"
             placeholder="Buscar por título, categoría…"
           >
+
 
           <select id="article-filter">
 
@@ -679,9 +526,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          PARTIDOS
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-fixtures"
@@ -702,6 +549,7 @@
 
         </div>
 
+
         <button
           class="admin-primary"
           data-action="new-fixture"
@@ -720,6 +568,7 @@
             id="fixture-search"
             placeholder="Buscar equipo…"
           >
+
 
           <select id="fixture-filter">
 
@@ -793,9 +642,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          POSICIONES
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-standings"
@@ -816,6 +665,7 @@
 
         </div>
 
+
         <button
           class="admin-primary"
           id="add-team"
@@ -828,22 +678,26 @@
 
       <div class="admin-section-card">
 
+
+        <!-- SELECTOR DE COMPETICIÓN -->
+
         <div class="form-grid">
 
           <label>
+
             Competición
 
             <select id="standing-competition">
 
-              <option>
+              <option value="URBA TOP 14">
                 URBA TOP 14
               </option>
 
-              <option>
+              <option value="Super Rugby">
                 Super Rugby
               </option>
 
-              <option>
+              <option value="Rugby Championship">
                 Rugby Championship
               </option>
 
@@ -854,50 +708,199 @@
         </div>
 
 
-        <table class="data-table">
+        <!-- INFORMACIÓN -->
 
-          <thead>
+        <div class="standing-info">
 
-            <tr>
+          <p class="admin-muted">
 
-              <th>
-                #
-              </th>
+            Los equipos cargados en esta sección
+            aparecerán en la tabla de posiciones
+            de la página correspondiente.
 
-              <th>
-                Equipo
-              </th>
+          </p>
 
-              <th>
-                PJ
-              </th>
+          <p class="admin-muted">
 
-              <th>
-                PG
-              </th>
+            Para URBA TOP 14 podés agregar el
+            nombre del club y la URL de su escudo.
 
-              <th>
-                PTS
-              </th>
+          </p>
 
-              <th></th>
+        </div>
 
-            </tr>
 
-          </thead>
+        <!-- TABLA -->
 
-          <tbody id="standings-body"></tbody>
+        <div class="admin-table-wrap">
 
-        </table>
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  #
+                </th>
+
+                <th>
+                  Escudo
+                </th>
+
+                <th>
+                  Equipo
+                </th>
+
+                <th>
+                  PJ
+                </th>
+
+                <th>
+                  PG
+                </th>
+
+                <th>
+                  PTS
+                </th>
+
+                <th></th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody id="standings-body"></tbody>
+
+          </table>
+
+        </div>
+
+
+        <!-- FORMULARIO PARA EQUIPO -->
+
+        <div
+          id="standing-editor"
+          class="standing-editor"
+          style="display:none;"
+        >
+
+          <div class="panel-head">
+
+            <h3>
+              Agregar equipo
+            </h3>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <label>
+
+              Equipo
+
+              <input
+                id="standing-team"
+                placeholder="Ej: SIC"
+              >
+
+            </label>
+
+
+            <label>
+
+              Escudo
+
+              <input
+                id="standing-logo"
+                type="url"
+                placeholder="https://.../escudo.png"
+              >
+
+            </label>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <label>
+
+              PJ
+
+              <input
+                id="standing-pj"
+                type="number"
+                min="0"
+                value="0"
+              >
+
+            </label>
+
+
+            <label>
+
+              PG
+
+              <input
+                id="standing-pg"
+                type="number"
+                min="0"
+                value="0"
+              >
+
+            </label>
+
+
+            <label>
+
+              PTS
+
+              <input
+                id="standing-pts"
+                type="number"
+                min="0"
+                value="0"
+              >
+
+            </label>
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="admin-secondary"
+              id="cancel-standing"
+            >
+              Cancelar
+            </button>
+
+
+            <button
+              type="button"
+              class="admin-primary"
+              id="save-standing"
+            >
+              Guardar equipo
+            </button>
+
+          </div>
+
+        </div>
 
       </div>
 
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          JUGADORES
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-players"
@@ -917,6 +920,7 @@
           </h2>
 
         </div>
+
 
         <button
           class="admin-primary"
@@ -958,6 +962,7 @@
 
           </thead>
 
+
           <tbody id="players-body"></tbody>
 
         </table>
@@ -967,9 +972,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          INSTAGRAM
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-social"
@@ -999,6 +1004,7 @@
           Generador de publicación
         </h2>
 
+
         <label>
 
           Seleccionar noticia
@@ -1011,6 +1017,7 @@
         <div class="social-box">
 
           <label>
+
             Caption
 
             <textarea
@@ -1018,6 +1025,7 @@
             ></textarea>
 
           </label>
+
 
           <div class="modal-actions">
 
@@ -1028,12 +1036,14 @@
               Generar caption
             </button>
 
+
             <button
               class="secondary-btn"
               id="copy-instagram"
             >
               Copiar
             </button>
+
 
             <button
               class="secondary-btn"
@@ -1051,9 +1061,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          PAPELERA
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-trash"
@@ -1086,9 +1096,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          HISTORIAL
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-history"
@@ -1121,9 +1131,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =================================================
          DATOS
-    ====================================================== -->
+    ================================================== -->
 
     <section
       id="section-data"
@@ -1148,6 +1158,7 @@
 
 
       <div class="admin-grid-two">
+
 
         <div class="admin-panel">
 
@@ -1196,17 +1207,16 @@
 </div>
 
 
-<!-- =========================================================
-     EDITOR NOTICIA
-========================================================= -->
+<!-- =====================================================
+     MODAL · NOTICIA
+====================================================== -->
 
 <div
-  id="editor-modal"
+  id="article-modal"
   class="admin-modal"
-  hidden
 >
 
-  <div class="admin-modal-card">
+  <div class="admin-modal-content">
 
     <div class="modal-head">
 
@@ -1224,6 +1234,7 @@
         </h2>
 
       </div>
+
 
       <button
         class="modal-close"
@@ -1247,6 +1258,7 @@
 
 
       <label>
+
         Título
 
         <input
@@ -1260,6 +1272,7 @@
       <div class="form-grid">
 
         <label>
+
           Categoría
 
           <select
@@ -1289,6 +1302,7 @@
 
 
         <label>
+
           Subcategoría
 
           <input
@@ -1304,6 +1318,7 @@
       <div class="form-grid">
 
         <label>
+
           Autor
 
           <input
@@ -1316,6 +1331,7 @@
 
 
         <label>
+
           Fecha
 
           <input
@@ -1330,6 +1346,7 @@
 
 
       <label>
+
         Imagen
 
         <input
@@ -1341,6 +1358,7 @@
 
 
       <label>
+
         Bajada
 
         <textarea
@@ -1353,6 +1371,7 @@
 
 
       <label>
+
         Contenido
 
         <textarea
@@ -1367,6 +1386,7 @@
       <div class="form-grid">
 
         <label>
+
           Publicación
 
           <select id="article-status">
@@ -1385,6 +1405,7 @@
 
 
         <label>
+
           Hora
 
           <input
@@ -1432,6 +1453,7 @@
           Cancelar
         </button>
 
+
         <button
           type="submit"
           class="admin-primary"
@@ -1448,17 +1470,16 @@
 </div>
 
 
-<!-- =========================================================
-     PARTIDO
-========================================================= -->
+<!-- =====================================================
+     MODAL · PARTIDO
+====================================================== -->
 
 <div
   id="fixture-modal"
   class="admin-modal"
-  hidden
 >
 
-  <div class="admin-modal-card">
+  <div class="admin-modal-content">
 
     <div class="modal-head">
 
@@ -1473,6 +1494,7 @@
         </h2>
 
       </div>
+
 
       <button
         class="modal-close"
@@ -1496,6 +1518,7 @@
 
 
       <label>
+
         Competición
 
         <select
@@ -1527,6 +1550,7 @@
       <div class="form-grid">
 
         <label>
+
           Local
 
           <input
@@ -1536,7 +1560,9 @@
 
         </label>
 
+
         <label>
+
           Visitante
 
           <input
@@ -1552,6 +1578,7 @@
       <div class="form-grid">
 
         <label>
+
           Fecha
 
           <input
@@ -1562,7 +1589,9 @@
 
         </label>
 
+
         <label>
+
           Hora
 
           <input
@@ -1579,6 +1608,7 @@
       <div class="form-grid">
 
         <label>
+
           Estadio
 
           <input
@@ -1587,7 +1617,9 @@
 
         </label>
 
+
         <label>
+
           Canal
 
           <input
@@ -1610,6 +1642,7 @@
           Cancelar
         </button>
 
+
         <button
           type="submit"
           class="admin-primary"
@@ -1626,2672 +1659,136 @@
 </div>
 
 
+<!-- =====================================================
+     MODAL · JUGADOR
+====================================================== -->
+
 <div
-  id="admin-toast"
-  class="admin-toast"
-></div>
+  id="player-modal"
+  class="admin-modal"
+>
 
+  <div class="admin-modal-content">
 
-<!-- =========================================================
-     JAVASCRIPT
-========================================================= -->
+    <div class="modal-head">
 
-<script src="assets/js/data.js"></script>
+      <div>
 
-<script>
+        <p class="admin-kicker">
+          ESTADÍSTICAS
+        </p>
 
-(() => {
-
-'use strict';
-
-
-/* =========================================================
-   ESTADO
-========================================================= */
-
-const state = {
-
-  articles: [],
-
-  fixtures: [],
-
-  trash: [],
-
-  history: [],
-
-  standings: [],
-
-  players: [],
-
-  editingArticle: null,
-
-  editingFixture: null
-
-};
-
-
-const $ = selector =>
-  document.querySelector(selector);
-
-const $$ = selector =>
-  [...document.querySelectorAll(selector)];
-
-
-const esc = value =>
-  String(value ?? '').replace(
-    /[&<>'"]/g,
-    char => ({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      "'":'&#39;',
-      '"':'&quot;'
-    }[char])
-  );
-
-
-const today = () =>
-  new Date().toISOString().slice(0,10);
-
-
-const formatDate = iso => {
-
-  if (!iso) return '';
-
-  const parts = iso.split('-');
-
-  if (parts.length !== 3) return iso;
-
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-
-};
-
-
-const slugify = value =>
-
-  String(value)
-
-    .normalize('NFD')
-
-    .replace(/[\u0300-\u036f]/g,'')
-
-    .toLowerCase()
-
-    .replace(/[^a-z0-9]+/g,'-')
-
-    .replace(/^-|-$/g,'')
-
-    .slice(0,70);
-
-
-/* =========================================================
-   API
-========================================================= */
-
-async function api(action,payload={}) {
-
-  const response = await fetch(
-    '/api/admin',
-    {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        action,
-        ...payload
-      })
-    }
-  );
-
-  let data = {};
-
-  try {
-
-    data = await response.json();
-
-  } catch {}
-
-  if (!response.ok) {
-
-    throw new Error(
-      data.error ||
-      'Ocurrió un error.'
-    );
-
-  }
-
-  return data;
-
-}
-
-
-/* =========================================================
-   CARGAR CONTENIDO
-========================================================= */
-
-async function loadData(){
-
-  const response = await fetch(
-    '/api/content',
-    {
-      cache:'no-store'
-    }
-  );
-
-  if (!response.ok) {
-
-    throw new Error(
-      'No se pudo conectar con el contenido de Drop Rugby.'
-    );
-
-  }
-
-  const data = await response.json();
-
-
-  state.articles =
-    Array.isArray(data.articles)
-      ? data.articles
-      : [];
-
-
-  state.fixtures =
-    Array.isArray(data.fixtures)
-      ? data.fixtures
-      : [];
-
-
-  state.trash =
-    Array.isArray(data.trash)
-      ? data.trash
-      : [];
-
-
-  state.history =
-    Array.isArray(data.history)
-      ? data.history
-      : [];
-
-
-  state.standings =
-    Array.isArray(data.standings)
-      ? data.standings
-      : [];
-
-
-  state.players =
-    Array.isArray(data.players)
-      ? data.players
-      : [];
-
-}
-
-
-/* =========================================================
-   GUARDAR
-========================================================= */
-
-async function saveData(){
-
-  await api(
-    'save',
-    {
-      articles:state.articles,
-      fixtures:state.fixtures,
-
-      /*
-       * Estos campos son compatibles con una futura
-       * ampliación del backend.
-       */
-      trash:state.trash,
-      history:state.history,
-      standings:state.standings,
-      players:state.players
-    }
-  );
-
-}
-
-
-/* =========================================================
-   NAVEGACIÓN
-========================================================= */
-
-function switchSection(name){
-
-  $$('.admin-section')
-    .forEach(section => {
-
-      section.classList.toggle(
-        'active',
-        section.id === `section-${name}`
-      );
-
-    });
-
-
-  $$('.admin-nav')
-    .forEach(button => {
-
-      button.classList.toggle(
-        'active',
-        button.dataset.section === name
-      );
-
-    });
-
-
-  const titles = {
-
-    dashboard:'Dashboard',
-
-    articles:'Noticias',
-
-    fixtures:'Partidos',
-
-    standings:'Posiciones',
-
-    players:'Jugadores',
-
-    social:'Instagram',
-
-    trash:'Papelera',
-
-    history:'Historial',
-
-    data:'Datos'
-
-  };
-
-
-  $('#section-title').textContent =
-    titles[name] || name;
-
-}
-
-
-/* =========================================================
-   DASHBOARD
-========================================================= */
-
-function renderDashboard(){
-
-  const featured =
-    state.articles.filter(
-      article => article.featured
-    ).length;
-
-
-  const breaking =
-    state.articles.filter(
-      article => article.breaking
-    ).length;
-
-
-  $('#stat-articles').textContent =
-    state.articles.length;
-
-
-  $('#stat-fixtures').textContent =
-    state.fixtures.length;
-
-
-  $('#stat-featured').textContent =
-    featured;
-
-
-  $('#stat-breaking').textContent =
-    breaking;
-
-
-  const recent =
-    state.articles
-
-      .slice()
-
-      .sort(
-        (a,b) =>
-          String(b.date).localeCompare(
-            String(a.date)
-          )
-      )
-
-      .slice(0,5);
-
-
-  $('#dashboard-articles').innerHTML =
-
-    recent.length
-
-      ? recent.map(article => `
-
-        <div class="admin-list-item">
-
-          <div>
-
-            <strong>
-              ${esc(article.title)}
-            </strong>
-
-            <small>
-              ${esc(article.category)}
-              ·
-              ${esc(article.author || 'DropRugby')}
-            </small>
-
-          </div>
-
-          <span class="date">
-            ${formatDate(article.date)}
-          </span>
-
-        </div>
-
-      `).join('')
-
-      : '<p class="admin-muted">No hay noticias.</p>';
-
-
-  const fixtures =
-    state.fixtures
-
-      .slice()
-
-      .sort(
-        (a,b) =>
-          `${a.date}${a.time}`
-          .localeCompare(
-            `${b.date}${b.time}`
-          )
-      )
-
-      .slice(0,5);
-
-
-  $('#dashboard-fixtures').innerHTML =
-
-    fixtures.length
-
-      ? fixtures.map(fixture => `
-
-        <div class="admin-list-item">
-
-          <div>
-
-            <strong>
-              ${esc(fixture.home)}
-              vs.
-              ${esc(fixture.away)}
-            </strong>
-
-            <small>
-              ${esc(fixture.competition)}
-            </small>
-
-          </div>
-
-          <span class="date">
-
-            ${formatDate(fixture.date)}
-
-            <br>
-
-            ${esc(fixture.time)}
-
-          </span>
-
-        </div>
-
-      `).join('')
-
-      : '<p class="admin-muted">No hay partidos.</p>';
-
-
-  $('#dashboard-summary').innerHTML = `
-
-    <div class="admin-mini-grid">
-
-      <div class="admin-mini-card">
-
-        <strong>
-          ${state.articles.filter(a => a.featured).length}
-        </strong>
-
-        <span>
-          Noticias destacadas
-        </span>
+        <h2>
+          Nuevo jugador
+        </h2>
 
       </div>
 
 
-      <div class="admin-mini-card">
-
-        <strong>
-          ${state.articles.filter(a => a.breaking).length}
-        </strong>
-
-        <span>
-          Últimos momentos
-        </span>
-
-      </div>
-
-
-      <div class="admin-mini-card">
-
-        <strong>
-          ${state.trash.length}
-        </strong>
-
-        <span>
-          Noticias en papelera
-        </span>
-
-      </div>
+      <button
+        class="modal-close"
+        data-close
+      >
+        ×
+      </button>
 
     </div>
 
-  `;
 
-}
+    <form
+      id="player-form"
+      class="editor-form"
+    >
 
+      <label>
 
-/* =========================================================
-   ESTADO NOTICIA
-========================================================= */
+        Nombre
 
-function articleStatus(article){
-
-  if (article.deleted)
-    return `<span class="status-pill status-trash">PAPELERA</span>`;
-
-
-  if (article.scheduled)
-    return `<span class="status-pill status-scheduled">PROGRAMADA</span>`;
-
-
-  if (article.breaking)
-    return `<span class="status-pill status-breaking">ÚLTIMO MOMENTO</span>`;
-
-
-  if (article.featured)
-    return `<span class="status-pill status-featured">DESTACADA</span>`;
-
-
-  return `<span class="status-pill">PUBLICADA</span>`;
-
-}
-
-
-/* =========================================================
-   NOTICIAS
-========================================================= */
-
-function renderArticles(){
-
-  const search =
-    ($('#article-search')?.value || '')
-      .toLowerCase();
-
-
-  const category =
-    $('#article-filter')?.value ||
-    'TODAS';
-
-
-  const rows =
-    state.articles
-
-      .slice()
-
-      .sort(
-        (a,b) =>
-          String(b.date)
-            .localeCompare(
-              String(a.date)
-            )
-      )
-
-      .filter(article => {
-
-        const matchesCategory =
-          category === 'TODAS' ||
-          article.category === category;
-
-
-        const text =
-          `${article.title}
-            ${article.category}
-            ${article.subcategory || ''}`
-            .toLowerCase();
-
-
-        return (
-          matchesCategory &&
-          (!search || text.includes(search))
-        );
-
-      });
-
-
-  $('#articles-table').innerHTML =
-
-    rows.length
-
-      ? rows.map(article => `
-
-        <tr>
-
-          <td>
-
-            <strong>
-              ${esc(article.title)}
-            </strong>
-
-            <br>
-
-            <small>
-              ${esc(article.author || 'DropRugby')}
-            </small>
-
-          </td>
-
-
-          <td>
-
-            ${esc(article.category)}
-
-            <br>
-
-            <small>
-              ${esc(article.subcategory || 'Actualidad')}
-            </small>
-
-          </td>
-
-
-          <td>
-
-            ${formatDate(article.date)}
-
-            ${
-              article.time
-                ? `<br><small>${esc(article.time)}</small>`
-                : ''
-            }
-
-          </td>
-
-
-          <td>
-            ${articleStatus(article)}
-          </td>
-
-
-          <td>
-
-            <div class="row-actions">
-
-              <button
-                data-edit-article="${esc(article.id)}"
-              >
-                Editar
-              </button>
-
-              <button
-                data-instagram-article="${esc(article.id)}"
-              >
-                Instagram
-              </button>
-
-              <button
-                data-delete-article="${esc(article.id)}"
-              >
-                Papelera
-              </button>
-
-            </div>
-
-          </td>
-
-        </tr>
-
-      `).join('')
-
-      :
-
-      `
-
-      <tr>
-
-        <td
-          colspan="5"
-          class="empty-row"
+        <input
+          id="player-name"
+          required
         >
-          No hay noticias con esos filtros.
-        </td>
 
-      </tr>
+      </label>
 
-      `;
 
-}
+      <label>
 
+        Club
 
-/* =========================================================
-   EDITOR
-========================================================= */
-
-function openArticle(id=null){
-
-  state.editingArticle = id;
-
-
-  const article =
-    id
-      ? state.articles.find(
-          item => item.id === id
-        )
-      : null;
-
-
-  $('#modal-kicker').textContent =
-    article
-      ? 'EDITAR PUBLICACIÓN'
-      : 'NUEVA PUBLICACIÓN';
-
-
-  $('#modal-title').textContent =
-    article
-      ? 'Editar noticia'
-      : 'Nueva noticia';
-
-
-  $('#article-id').value =
-    article?.id || '';
-
-
-  $('#article-title').value =
-    article?.title || '';
-
-
-  $('#article-category').value =
-    article?.category || 'Los Pumas';
-
-
-  $('#article-subcategory').value =
-    article?.subcategory || 'Actualidad';
-
-
-  $('#article-author').value =
-    article?.author || 'DropRugby';
-
-
-  $('#article-date').value =
-    article?.date || today();
-
-
-  $('#article-time').value =
-    article?.time || '12:00';
-
-
-  $('#article-image').value =
-    article?.imageUrl ||
-    article?.imageClass ||
-    '';
-
-
-  $('#article-excerpt').value =
-    article?.excerpt || '';
-
-
-  $('#article-content').value =
-    article?.content || '';
-
-
-  $('#article-featured').checked =
-    !!article?.featured;
-
-
-  $('#article-breaking').checked =
-    !!article?.breaking;
-
-
-  $('#article-status').value =
-    article?.scheduled
-      ? 'scheduled'
-      : 'published';
-
-
-  $('#editor-modal').hidden = false;
-
-}
-
-
-/* =========================================================
-   GUARDAR NOTICIA
-========================================================= */
-
-async function saveArticle(event){
-
-  event.preventDefault();
-
-
-  const title =
-    $('#article-title')
-      .value
-      .trim();
-
-
-  const id =
-    $('#article-id').value ||
-    `${slugify(title)}-${Date.now().toString().slice(-5)}`;
-
-
-  const article = {
-
-    id,
-
-    title,
-
-    category:
-      $('#article-category').value,
-
-    subcategory:
-      $('#article-subcategory')
-        .value
-        .trim(),
-
-    date:
-      $('#article-date').value,
-
-    time:
-      $('#article-time').value,
-
-    author:
-      $('#article-author')
-        .value
-        .trim(),
-
-    excerpt:
-      $('#article-excerpt')
-        .value
-        .trim(),
-
-    content:
-      $('#article-content')
-        .value
-        .trim(),
-
-    featured:
-      $('#article-featured')
-        .checked,
-
-    breaking:
-      $('#article-breaking')
-        .checked,
-
-    scheduled:
-      $('#article-status').value === 'scheduled',
-
-    url:
-      `article.html?id=${encodeURIComponent(id)}`
-
-  };
-
-
-  const image =
-    $('#article-image')
-      .value
-      .trim();
-
-
-  if (
-    /^(https?:\/\/|\/|\.\/|\.\.\/)/i
-      .test(image)
-  ){
-
-    article.imageUrl = image;
-
-  } else {
-
-    article.imageClass = image;
-
-  }
-
-
-  /*
-   * Guardar historial local del objeto.
-   */
-
-  const oldArticle =
-    state.articles.find(
-      item => item.id === id
-    );
-
-
-  if (oldArticle){
-
-    state.history.unshift({
-
-      type:'article-update',
-
-      date:new Date().toISOString(),
-
-      articleId:id,
-
-      title:title,
-
-      previous:oldArticle
-
-    });
-
-  } else {
-
-    state.history.unshift({
-
-      type:'article-create',
-
-      date:new Date().toISOString(),
-
-      articleId:id,
-
-      title:title
-
-    });
-
-  }
-
-
-  /*
-   * Solo una noticia puede ser principal.
-   */
-
-  if (article.featured){
-
-    state.articles.forEach(
-      item => item.featured = false
-    );
-
-  }
-
-
-  const index =
-    state.articles.findIndex(
-      item => item.id === id
-    );
-
-
-  if (index >= 0){
-
-    state.articles[index] = article;
-
-  } else {
-
-    state.articles.push(article);
-
-  }
-
-
-  try {
-
-    await saveData();
-
-    closeModals();
-
-    renderAll();
-
-    switchSection('articles');
-
-    toast(
-      article.scheduled
-        ? 'Noticia programada correctamente.'
-        : 'Noticia publicada correctamente.'
-    );
-
-  } catch(error){
-
-    alert(error.message);
-
-  }
-
-}
-
-
-/* =========================================================
-   PAPELERA
-========================================================= */
-
-async function deleteArticle(id){
-
-  const article =
-    state.articles.find(
-      item => item.id === id
-    );
-
-
-  if (!article) return;
-
-
-  if (
-    !confirm(
-      '¿Enviar esta noticia a la papelera?'
-    )
-  ) return;
-
-
-  state.trash.push({
-
-    ...article,
-
-    deletedAt:
-      new Date().toISOString()
-
-  });
-
-
-  state.articles =
-    state.articles.filter(
-      item => item.id !== id
-    );
-
-
-  state.history.unshift({
-
-    type:'article-trash',
-
-    date:new Date().toISOString(),
-
-    articleId:id,
-
-    title:article.title
-
-  });
-
-
-  try {
-
-    await saveData();
-
-    renderAll();
-
-    toast(
-      'Noticia enviada a la papelera.'
-    );
-
-  } catch(error){
-
-    alert(error.message);
-
-  }
-
-}
-
-
-async function restoreArticle(index){
-
-  const article =
-    state.trash[index];
-
-
-  if (!article) return;
-
-
-  delete article.deletedAt;
-
-
-  state.articles.push(article);
-
-
-  state.trash.splice(index,1);
-
-
-  state.history.unshift({
-
-    type:'article-restore',
-
-    date:new Date().toISOString(),
-
-    articleId:article.id,
-
-    title:article.title
-
-  });
-
-
-  try {
-
-    await saveData();
-
-    renderAll();
-
-    toast(
-      'Noticia restaurada.'
-    );
-
-  } catch(error){
-
-    alert(error.message);
-
-  }
-
-}
-
-
-/* =========================================================
-   RENDER PAPELERA
-========================================================= */
-
-function renderTrash(){
-
-  if (!state.trash.length){
-
-    $('#trash-list').innerHTML =
-      '<p class="admin-muted">La papelera está vacía.</p>';
-
-    return;
-
-  }
-
-
-  $('#trash-list').innerHTML =
-    state.trash.map(
-      (article,index) => `
-
-        <div class="admin-list-item">
-
-          <div>
-
-            <strong>
-              ${esc(article.title)}
-            </strong>
-
-            <small>
-              Eliminada:
-              ${
-                article.deletedAt
-                  ? new Date(
-                      article.deletedAt
-                    ).toLocaleString('es-AR')
-                  : '—'
-              }
-            </small>
-
-          </div>
-
-          <button
-            class="success-btn"
-            data-restore="${index}"
-          >
-            Restaurar
-          </button>
-
-        </div>
-
-      `
-    ).join('');
-
-}
-
-
-/* =========================================================
-   HISTORIAL
-========================================================= */
-
-function renderHistory(){
-
-  if (!state.history.length){
-
-    $('#history-list').innerHTML =
-      '<p class="admin-muted">Todavía no hay cambios registrados.</p>';
-
-    return;
-
-  }
-
-
-  $('#history-list').innerHTML =
-
-    state.history
-      .slice(0,50)
-      .map(item => `
-
-        <div class="admin-list-item">
-
-          <div>
-
-            <strong>
-              ${esc(item.title || item.articleId)}
-            </strong>
-
-            <small>
-              ${esc(
-                item.type === 'article-create'
-                  ? 'Creada'
-                  : item.type === 'article-update'
-                    ? 'Editada'
-                    : item.type === 'article-trash'
-                      ? 'Enviada a papelera'
-                      : 'Restaurada'
-              )}
-            </small>
-
-          </div>
-
-          <span class="date">
-
-            ${
-              item.date
-                ? new Date(
-                    item.date
-                  ).toLocaleString('es-AR')
-                : ''
-            }
-
-          </span>
-
-        </div>
-
-      `)
-      .join('');
-
-}
-
-
-/* =========================================================
-   PARTIDOS
-========================================================= */
-
-function renderFixtures(){
-
-  const search =
-    ($('#fixture-search')?.value || '')
-      .toLowerCase();
-
-
-  const competition =
-    $('#fixture-filter')?.value ||
-    'TODAS';
-
-
-  const rows =
-
-    state.fixtures
-
-      .map(
-        (fixture,index) => ({
-          ...fixture,
-          _index:index
-        })
-      )
-
-      .sort(
-        (a,b) =>
-          `${a.date}${a.time}`
-            .localeCompare(
-              `${b.date}${b.time}`
-            )
-      )
-
-      .filter(fixture => {
-
-        const matchesCompetition =
-          competition === 'TODAS' ||
-          fixture.competition === competition;
-
-
-        const text =
-          `${fixture.home}
-            ${fixture.away}
-            ${fixture.competition}`
-            .toLowerCase();
-
-
-        return (
-          matchesCompetition &&
-          (!search || text.includes(search))
-        );
-
-      });
-
-
-  $('#fixtures-table').innerHTML =
-
-    rows.length
-
-      ? rows.map(fixture => `
-
-        <tr>
-
-          <td>
-            <strong>
-              ${formatDate(fixture.date)}
-            </strong>
-          </td>
-
-          <td>
-            ${esc(fixture.competition)}
-          </td>
-
-          <td>
-
-            <strong>
-              ${esc(fixture.home)}
-              —
-              ${esc(fixture.away)}
-            </strong>
-
-            ${
-              fixture.venue
-                ? `<br><small>${esc(fixture.venue)}</small>`
-                : ''
-            }
-
-          </td>
-
-          <td>
-            ${esc(fixture.time)}
-          </td>
-
-          <td>
-            ${esc(fixture.channel || '—')}
-          </td>
-
-          <td>
-
-            <div class="row-actions">
-
-              <button
-                data-edit-fixture="${fixture._index}"
-              >
-                Editar
-              </button>
-
-              <button
-                data-delete-fixture="${fixture._index}"
-              >
-                Eliminar
-              </button>
-
-            </div>
-
-          </td>
-
-        </tr>
-
-      `).join('')
-
-      :
-
-      `
-
-      <tr>
-
-        <td
-          colspan="6"
-          class="empty-row"
+        <input
+          id="player-club"
+          required
         >
-          No hay partidos.
 
-        </td>
+      </label>
 
-      </tr>
 
-      `;
+      <div class="form-grid">
 
-}
+        <label>
 
+          Puntos
 
-function openFixture(index=null){
-
-  const fixture =
-    index !== null
-      ? state.fixtures[index]
-      : null;
-
-
-  state.editingFixture = index;
-
-
-  $('#fixture-modal-title').textContent =
-    fixture
-      ? 'Editar partido'
-      : 'Nuevo partido';
-
-
-  $('#fixture-index').value =
-    index === null
-      ? ''
-      : index;
-
-
-  $('#fixture-competition').value =
-    fixture?.competition ||
-    'Los Pumas';
-
-
-  $('#fixture-home').value =
-    fixture?.home || '';
-
-
-  $('#fixture-away').value =
-    fixture?.away || '';
-
-
-  $('#fixture-date').value =
-    fixture?.date || today();
-
-
-  $('#fixture-time').value =
-    fixture?.time || '16:00';
-
-
-  $('#fixture-venue').value =
-    fixture?.venue || '';
-
-
-  $('#fixture-channel').value =
-    fixture?.channel || 'ESPN';
-
-
-  $('#fixture-modal').hidden = false;
-
-}
-
-
-async function saveFixture(event){
-
-  event.preventDefault();
-
-
-  const index =
-    $('#fixture-index').value;
-
-
-  const fixture = {
-
-    date:
-      $('#fixture-date').value,
-
-    competition:
-      $('#fixture-competition').value,
-
-    time:
-      $('#fixture-time').value,
-
-    home:
-      $('#fixture-home').value.trim(),
-
-    away:
-      $('#fixture-away').value.trim(),
-
-    channel:
-      $('#fixture-channel')
-        .value
-        .trim(),
-
-    venue:
-      $('#fixture-venue')
-        .value
-        .trim()
-
-  };
-
-
-  if (index === ''){
-
-    state.fixtures.push(fixture);
-
-  } else {
-
-    state.fixtures[
-      Number(index)
-    ] = fixture;
-
-  }
-
-
-  try {
-
-    await saveData();
-
-    closeModals();
-
-    renderAll();
-
-    switchSection('fixtures');
-
-    toast(
-      'Partido guardado correctamente.'
-    );
-
-  } catch(error){
-
-    alert(error.message);
-
-  }
-
-}
-
-
-async function deleteFixture(index){
-
-  if (
-    !confirm(
-      '¿Eliminar este partido?'
-    )
-  ) return;
-
-
-  state.fixtures.splice(
-    Number(index),
-    1
-  );
-
-
-  try {
-
-    await saveData();
-
-    renderAll();
-
-    toast(
-      'Partido eliminado.'
-    );
-
-  } catch(error){
-
-    alert(error.message);
-
-  }
-
-}
-
-
-/* =========================================================
-   POSICIONES
-========================================================= */
-
-function renderStandings(){
-
-  if (!state.standings.length){
-
-    state.standings = [
-
-      {
-        team:'SIC',
-        pj:0,
-        pg:0,
-        pts:0
-      },
-
-      {
-        team:'Alumni',
-        pj:0,
-        pg:0,
-        pts:0
-      },
-
-      {
-        team:'Newman',
-        pj:0,
-        pg:0,
-        pts:0
-      }
-
-    ];
-
-  }
-
-
-  $('#standings-body').innerHTML =
-
-    state.standings
-      .map(
-        (team,index) => `
-
-          <tr>
-
-            <td>
-              ${index + 1}
-            </td>
-
-            <td>
-              <input
-                value="${esc(team.team || '')}"
-                data-standing-team="${index}"
-              >
-            </td>
-
-            <td>
-              <input
-                type="number"
-                value="${team.pj || 0}"
-                data-standing-pj="${index}"
-              >
-            </td>
-
-            <td>
-              <input
-                type="number"
-                value="${team.pg || 0}"
-                data-standing-pg="${index}"
-              >
-            </td>
-
-            <td>
-              <input
-                type="number"
-                value="${team.pts || 0}"
-                data-standing-pts="${index}"
-              >
-            </td>
-
-            <td>
-
-              <button
-                class="danger-btn"
-                data-delete-team="${index}"
-              >
-                ×
-              </button>
-
-            </td>
-
-          </tr>
-
-        `
-      )
-      .join('');
-
-}
-
-
-/* =========================================================
-   JUGADORES
-========================================================= */
-
-function renderPlayers(){
-
-  $('#players-body').innerHTML =
-
-    state.players
-      .map(
-        (player,index) => `
-
-          <tr>
-
-            <td>
-              <input
-                value="${esc(player.name || '')}"
-                data-player-name="${index}"
-              >
-            </td>
-
-            <td>
-              <input
-                value="${esc(player.club || '')}"
-                data-player-club="${index}"
-              >
-            </td>
-
-            <td>
-              <input
-                type="number"
-                value="${player.points || 0}"
-                data-player-points="${index}"
-              >
-            </td>
-
-            <td>
-              <input
-                type="number"
-                value="${player.tries || 0}"
-                data-player-tries="${index}"
-              >
-            </td>
-
-            <td>
-
-              <button
-                class="danger-btn"
-                data-delete-player="${index}"
-              >
-                ×
-              </button>
-
-            </td>
-
-          </tr>
-
-        `
-      )
-      .join('');
-
-
-}
-
-
-/* =========================================================
-   INSTAGRAM
-========================================================= */
-
-function loadInstagramArticles(){
-
-  $('#instagram-article').innerHTML =
-
-    state.articles
-      .map(
-        article => `
-
-          <option
-            value="${esc(article.id)}"
+          <input
+            id="player-points"
+            type="number"
+            min="0"
+            value="0"
           >
-            ${esc(article.title)}
-          </option>
 
-        `
-      )
-      .join('');
+        </label>
 
-}
 
+        <label>
 
-function generateInstagram(){
+          Tries
 
-  const id =
-    $('#instagram-article').value;
+          <input
+            id="player-tries"
+            type="number"
+            min="0"
+            value="0"
+          >
 
+        </label>
 
-  const article =
-    state.articles.find(
-      item => item.id === id
-    );
+      </div>
 
 
-  if (!article) return;
+      <div class="modal-actions">
 
+        <button
+          type="button"
+          class="admin-secondary"
+          data-close
+        >
+          Cancelar
+        </button>
 
-  const hashtags =
 
-    `#rugby #rugbyargentino #DropRugby #${slugify(article.category).replace(/-/g,'')}`;
+        <button
+          type="submit"
+          class="admin-primary"
+        >
+          Guardar jugador
+        </button>
 
+      </div>
 
-  const caption =
+    </form>
 
-`${article.title}
+  </div>
 
-${article.excerpt || ''}
+</div>
 
-Leé la noticia completa en Drop Rugby.
 
-Seguinos para más contenido del rugby argentino.
+<!-- =====================================================
+     JAVASCRIPT
+====================================================== -->
 
-${hashtags}`;
-
-
-  $('#instagram-caption').value =
-    caption;
-
-}
-
-
-/* =========================================================
-   MODALES
-========================================================= */
-
-function closeModals(){
-
-  $('#editor-modal').hidden = true;
-
-  $('#fixture-modal').hidden = true;
-
-}
-
-
-/* =========================================================
-   EXPORTAR
-========================================================= */
-
-function exportData(){
-
-  const backup = {
-
-    articles:state.articles,
-
-    fixtures:state.fixtures,
-
-    trash:state.trash,
-
-    history:state.history,
-
-    standings:state.standings,
-
-    players:state.players,
-
-    exportedAt:
-      new Date().toISOString()
-
-  };
-
-
-  const blob =
-    new Blob(
-      [
-        JSON.stringify(
-          backup,
-          null,
-          2
-        )
-      ],
-      {
-        type:'application/json'
-      }
-    );
-
-
-  const link =
-    document.createElement('a');
-
-
-  link.href =
-    URL.createObjectURL(blob);
-
-
-  link.download =
-    'droprugby-backup.json';
-
-
-  link.click();
-
-
-  URL.revokeObjectURL(
-    link.href
-  );
-
-}
-
-
-/* =========================================================
-   IMPORTAR
-========================================================= */
-
-function importData(file){
-
-  if (!file) return;
-
-
-  const reader =
-    new FileReader();
-
-
-  reader.onload =
-    async () => {
-
-      try {
-
-        const data =
-          JSON.parse(
-            reader.result
-          );
-
-
-        if (
-          !Array.isArray(
-            data.articles
-          ) ||
-          !Array.isArray(
-            data.fixtures
-          )
-        ){
-
-          throw new Error(
-            'Backup inválido.'
-          );
-
-        }
-
-
-        state.articles =
-          data.articles;
-
-
-        state.fixtures =
-          data.fixtures;
-
-
-        state.trash =
-          Array.isArray(data.trash)
-            ? data.trash
-            : [];
-
-
-        state.history =
-          Array.isArray(data.history)
-            ? data.history
-            : [];
-
-
-        state.standings =
-          Array.isArray(data.standings)
-            ? data.standings
-            : [];
-
-
-        state.players =
-          Array.isArray(data.players)
-            ? data.players
-            : [];
-
-
-        await saveData();
-
-        renderAll();
-
-        toast(
-          'Backup importado correctamente.'
-        );
-
-      } catch(error){
-
-        alert(
-          error.message ||
-          'No se pudo importar el backup.'
-        );
-
-      }
-
-    };
-
-
-  reader.readAsText(file);
-
-}
-
-
-/* =========================================================
-   RENDER GENERAL
-========================================================= */
-
-function renderAll(){
-
-  renderDashboard();
-
-  renderArticles();
-
-  renderFixtures();
-
-  renderStandings();
-
-  renderPlayers();
-
-  renderTrash();
-
-  renderHistory();
-
-  loadInstagramArticles();
-
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-function toast(message){
-
-  const element =
-    $('#admin-toast');
-
-
-  element.textContent =
-    message;
-
-
-  element.classList.add(
-    'show'
-  );
-
-
-  clearTimeout(
-    window.__dropToast
-  );
-
-
-  window.__dropToast =
-    setTimeout(
-      () =>
-        element.classList.remove(
-          'show'
-        ),
-      2800
-    );
-
-}
-
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-async function login(event){
-
-  event.preventDefault();
-
-
-  const button =
-    $('#login-form button');
-
-
-  button.disabled = true;
-
-
-  $('#login-error')
-    .textContent = '';
-
-
-  try {
-
-    await api(
-      'login',
-      {
-        username:
-          $('#login-user')
-            .value
-            .trim(),
-
-        password:
-          $('#login-pass')
-            .value
-      }
-    );
-
-
-    await loadData();
-
-    showApp();
-
-  } catch(error){
-
-    $('#login-error')
-      .textContent =
-        error.message;
-
-  } finally {
-
-    button.disabled = false;
-
-  }
-
-}
-
-
-async function logout(){
-
-  try {
-
-    await api('logout');
-
-  } finally {
-
-    location.reload();
-
-  }
-
-}
-
-
-function showApp(){
-
-  $('#login-view').hidden = true;
-
-  $('#app-view').hidden = false;
-
-  renderAll();
-
-}
-
-
-/* =========================================================
-   EVENTOS
-========================================================= */
-
-$('#login-form')
-  .addEventListener(
-    'submit',
-    login
-  );
-
-
-$('#logout-btn')
-  .addEventListener(
-    'click',
-    logout
-  );
-
-
-$$('.admin-nav')
-  .forEach(button => {
-
-    button.addEventListener(
-      'click',
-      () =>
-        switchSection(
-          button.dataset.section
-        )
-    );
-
-  });
-
-
-$$('[data-go]')
-  .forEach(button => {
-
-    button.addEventListener(
-      'click',
-      () =>
-        switchSection(
-          button.dataset.go
-        )
-    );
-
-  });
-
-
-$$('[data-action="new-article"]')
-  .forEach(button => {
-
-    button.addEventListener(
-      'click',
-      () =>
-        openArticle()
-    );
-
-  });
-
-
-$$('[data-action="new-fixture"]')
-  .forEach(button => {
-
-    button.addEventListener(
-      'click',
-      () =>
-        openFixture()
-    );
-
-  });
-
-
-$$('[data-action="instagram"]')
-  .forEach(button => {
-
-    button.addEventListener(
-      'click',
-      () => {
-
-        switchSection(
-          'social'
-        );
-
-        generateInstagram();
-
-      }
-    );
-
-  });
-
-
-$('#article-form')
-  .addEventListener(
-    'submit',
-    saveArticle
-  );
-
-
-$('#fixture-form')
-  .addEventListener(
-    'submit',
-    saveFixture
-  );
-
-
-$$('[data-close]')
-  .forEach(button => {
-
-    button.addEventListener(
-      'click',
-      closeModals
-    );
-
-  });
-
-
-$('#article-search')
-  .addEventListener(
-    'input',
-    renderArticles
-  );
-
-
-$('#article-filter')
-  .addEventListener(
-    'change',
-    renderArticles
-  );
-
-
-$('#fixture-search')
-  .addEventListener(
-    'input',
-    renderFixtures
-  );
-
-
-$('#fixture-filter')
-  .addEventListener(
-    'change',
-    renderFixtures
-  );
-
-
-$('#export-data')
-  .addEventListener(
-    'click',
-    exportData
-  );
-
-
-$('#import-data')
-  .addEventListener(
-    'change',
-    event =>
-      importData(
-        event.target.files[0]
-      )
-  );
-
-
-$('#generate-instagram')
-  .addEventListener(
-    'click',
-    generateInstagram
-  );
-
-
-$('#copy-instagram')
-  .addEventListener(
-    'click',
-    async () => {
-
-      await navigator.clipboard.writeText(
-        $('#instagram-caption').value
-      );
-
-      toast(
-        'Caption copiado.'
-      );
-
-    }
-  );
-
-
-$('#open-instagram')
-  .addEventListener(
-    'click',
-    () => {
-
-      window.open(
-        'https://www.instagram.com/drop_rugby/',
-        '_blank'
-      );
-
-    }
-  );
-
-
-$('#instagram-article')
-  .addEventListener(
-    'change',
-    generateInstagram
-  );
-
-
-/* =========================================================
-   CLICKS DINÁMICOS
-========================================================= */
-
-document.addEventListener(
-  'click',
-  async event => {
-
-    const editArticle =
-      event.target.closest(
-        '[data-edit-article]'
-      );
-
-
-    const deleteArticleButton =
-      event.target.closest(
-        '[data-delete-article]'
-      );
-
-
-    const instagramArticle =
-      event.target.closest(
-        '[data-instagram-article]'
-      );
-
-
-    const editFixture =
-      event.target.closest(
-        '[data-edit-fixture]'
-      );
-
-
-    const deleteFixtureButton =
-      event.target.closest(
-        '[data-delete-fixture]'
-      );
-
-
-    const restore =
-      event.target.closest(
-        '[data-restore]'
-      );
-
-
-    const deleteTeam =
-      event.target.closest(
-        '[data-delete-team]'
-      );
-
-
-    const deletePlayer =
-      event.target.closest(
-        '[data-delete-player]'
-      );
-
-
-    if (editArticle){
-
-      openArticle(
-        editArticle.dataset.editArticle
-      );
-
-      return;
-
-    }
-
-
-    if (deleteArticleButton){
-
-      await deleteArticle(
-        deleteArticleButton.dataset.deleteArticle
-      );
-
-      return;
-
-    }
-
-
-    if (instagramArticle){
-
-      $('#instagram-article').value =
-        instagramArticle.dataset.instagramArticle;
-
-      switchSection(
-        'social'
-      );
-
-      generateInstagram();
-
-      return;
-
-    }
-
-
-    if (editFixture){
-
-      openFixture(
-        Number(
-          editFixture.dataset.editFixture
-        )
-      );
-
-      return;
-
-    }
-
-
-    if (deleteFixtureButton){
-
-      await deleteFixture(
-        Number(
-          deleteFixtureButton.dataset.deleteFixture
-        )
-      );
-
-      return;
-
-    }
-
-
-    if (restore){
-
-      await restoreArticle(
-        Number(
-          restore.dataset.restore
-        )
-      );
-
-      return;
-
-    }
-
-
-    if (deleteTeam){
-
-      state.standings.splice(
-        Number(
-          deleteTeam.dataset.deleteTeam
-        ),
-        1
-      );
-
-      renderStandings();
-
-      await saveData();
-
-      return;
-
-    }
-
-
-    if (deletePlayer){
-
-      state.players.splice(
-        Number(
-          deletePlayer.dataset.deletePlayer
-        ),
-        1
-      );
-
-      renderPlayers();
-
-      await saveData();
-
-      return;
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   POSICIONES — AGREGAR
-========================================================= */
-
-$('#add-team')
-  .addEventListener(
-    'click',
-    async () => {
-
-      state.standings.push({
-
-        team:'Nuevo equipo',
-
-        pj:0,
-
-        pg:0,
-
-        pts:0
-
-      });
-
-
-      renderStandings();
-
-      await saveData();
-
-      toast(
-        'Equipo agregado.'
-      );
-
-    }
-  );
-
-
-/* =========================================================
-   JUGADORES — AGREGAR
-========================================================= */
-
-$('#add-player')
-  .addEventListener(
-    'click',
-    async () => {
-
-      state.players.push({
-
-        name:'Nuevo jugador',
-
-        club:'',
-
-        points:0,
-
-        tries:0
-
-      });
-
-
-      renderPlayers();
-
-      await saveData();
-
-      toast(
-        'Jugador agregado.'
-      );
-
-    }
-  );
-
-
-/* =========================================================
-   ACTUALIZAR POSICIONES / JUGADORES
-========================================================= */
-
-document.addEventListener(
-  'change',
-  async event => {
-
-    const element =
-      event.target;
-
-
-    if (
-      element.dataset.standingTeam
-      !== undefined
-    ){
-
-      const index =
-        Number(
-          element.dataset.standingTeam
-        );
-
-
-      state.standings[index].team =
-        element.value;
-
-    }
-
-
-    if (
-      element.dataset.standingPj
-      !== undefined
-    ){
-
-      const index =
-        Number(
-          element.dataset.standingPj
-        );
-
-
-      state.standings[index].pj =
-        Number(element.value);
-
-    }
-
-
-    if (
-      element.dataset.standingPg
-      !== undefined
-    ){
-
-      const index =
-        Number(
-          element.dataset.standingPg
-        );
-
-
-      state.standings[index].pg =
-        Number(element.value);
-
-    }
-
-
-    if (
-      element.dataset.standingPts
-      !== undefined
-    ){
-
-      const index =
-        Number(
-          element.dataset.standingPts
-        );
-
-
-      state.standings[index].pts =
-        Number(element.value);
-
-    }
-
-
-    if (
-      element.dataset.playerName
-      !== undefined
-    ){
-
-      state.players[
-        Number(element.dataset.playerName)
-      ].name =
-        element.value;
-
-    }
-
-
-    if (
-      element.dataset.playerClub
-      !== undefined
-    ){
-
-      state.players[
-        Number(element.dataset.playerClub)
-      ].club =
-        element.value;
-
-    }
-
-
-    if (
-      element.dataset.playerPoints
-      !== undefined
-    ){
-
-      state.players[
-        Number(element.dataset.playerPoints)
-      ].points =
-        Number(element.value);
-
-    }
-
-
-    if (
-      element.dataset.playerTries
-      !== undefined
-    ){
-
-      state.players[
-        Number(element.dataset.playerTries)
-      ].tries =
-        Number(element.value);
-
-    }
-
-
-    if (
-      element.dataset.standingTeam !== undefined ||
-      element.dataset.standingPj !== undefined ||
-      element.dataset.standingPg !== undefined ||
-      element.dataset.standingPts !== undefined ||
-      element.dataset.playerName !== undefined ||
-      element.dataset.playerClub !== undefined ||
-      element.dataset.playerPoints !== undefined ||
-      element.dataset.playerTries !== undefined
-    ){
-
-      try {
-
-        await saveData();
-
-        toast(
-          'Datos actualizados.'
-        );
-
-      } catch(error){
-
-        alert(
-          error.message
-        );
-
-      }
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   INICIO
-========================================================= */
-
-(async () => {
-
-  try {
-
-    await api(
-      'session'
-    );
-
-    await loadData();
-
-    showApp();
-
-  } catch {
-
-    /*
-     * Usuario no autenticado:
-     * dejamos visible el login.
-     */
-
-  }
-
-})();
-
-
-})();
-</script>
+<script src="assets/js/admin.js"></script>
 
 </body>
 </html>
+```
