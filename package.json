@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-    "@vercel/blob": "latest"
-  }
+"dependencies": {
+  "@vercel/blob": "latest",
+  "resend": "latest"
 }
