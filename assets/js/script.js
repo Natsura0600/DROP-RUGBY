@@ -1,506 +1,524 @@
+/*
+=========================================================
+DropRugby V6
+Script principal
+=========================================================
 
-/* ==========================================================================
-   DropRugby V6 — script.js
+Funciones:
 
-   Funciones:
-   - Menú mobile
-   - Animaciones al scroll
-   - Buscador global
-   - Noticias dinámicas
-   - Filtros por categoría
-   - Calendario dinámico
-   - Preview del calendario en home
-   - Fallback a articles.json / fixtures.json
-   - Integración con /api/content
-   - Newsletter /api/newsletter
+- Menú mobile
+- Animaciones
+- Noticias dinámicas
+- Categorías
+- Calendario
+- Preview calendario
+- Buscador
+- Newsletter
+- Tabla URBA Top 14
 
-   Para páginas dentro de /noticias/:
-   definir ANTES de este script:
+window.ASSET_BASE debe definirse ANTES de este script
+en páginas dentro de /noticias/.
 
-   <script>
-     window.ASSET_BASE = "../";
-   </script>
-   ========================================================================== */
+Ejemplo:
 
-const BASE = window.ASSET_BASE || "";
+<script>
+  window.ASSET_BASE = "../";
+</script>
+
+<script src="../script.js"></script>
+
+=========================================================
+*/
 
 
-/* ==========================================================================
+const BASE =
+  window.ASSET_BASE || "";
+
+
+/* =========================================================
+   CACHE GENERAL
+========================================================= */
+
+let CONTENT_CACHE = null;
+
+
+/* =========================================================
    MENÚ MOBILE
-   ========================================================================== */
+========================================================= */
 
-function setupMobileMenu() {
-  const menuBtn = document.querySelector(".menu-btn");
-  const mobileNav = document.querySelector(".mobile-nav");
+const menuBtn =
+  document.querySelector(
+    ".menu-btn"
+  );
 
-  if (!menuBtn || !mobileNav) return;
+const mobileNav =
+  document.querySelector(
+    ".mobile-nav"
+  );
 
-  menuBtn.addEventListener("click", () => {
-    const open = mobileNav.classList.toggle("open");
 
-    menuBtn.setAttribute(
-      "aria-expanded",
-      open ? "true" : "false"
-    );
-  });
+if (
+  menuBtn &&
+  mobileNav
+) {
 
-  mobileNav.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      mobileNav.classList.remove("open");
+  menuBtn.addEventListener(
+    "click",
+    () => {
+
+      const open =
+        mobileNav.classList.toggle(
+          "open"
+        );
 
       menuBtn.setAttribute(
         "aria-expanded",
-        "false"
+        String(open)
       );
-    });
-  });
-}
 
-
-/* ==========================================================================
-   ANIMACIONES AL SCROLL
-   ========================================================================== */
-
-let revealObserver = null;
-
-function setupRevealObserver() {
-  if (!("IntersectionObserver" in window)) {
-    document
-      .querySelectorAll(".reveal")
-      .forEach((el) => {
-        el.classList.add("visible");
-      });
-
-    return;
-  }
-
-  revealObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-
-        entry.target.classList.add("visible");
-
-        revealObserver.unobserve(entry.target);
-      });
-    },
-    {
-      threshold: 0.12
     }
   );
 
-  observeReveals();
-}
 
-function observeReveals(root = document) {
-  if (!revealObserver) return;
+  mobileNav
+    .querySelectorAll("a")
+    .forEach(link => {
 
-  root
-    .querySelectorAll(".reveal:not(.visible)")
-    .forEach((el) => {
-      revealObserver.observe(el);
-    });
-}
+      link.addEventListener(
+        "click",
+        () => {
 
+          mobileNav.classList.remove(
+            "open"
+          );
 
-/* ==========================================================================
-   NEWSLETTER
-   ========================================================================== */
+          menuBtn.setAttribute(
+            "aria-expanded",
+            "false"
+          );
 
-function setupNewsletter() {
-  const forms = document.querySelectorAll(
-    ".newsletter-form, #newsletter-form"
-  );
-
-  forms.forEach((form) => {
-    if (form.dataset.newsletterReady === "true") {
-      return;
-    }
-
-    form.dataset.newsletterReady = "true";
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const emailInput =
-        form.querySelector("#newsletter-email") ||
-        form.querySelector('input[type="email"]');
-
-      const submitButton =
-        form.querySelector("#newsletter-submit") ||
-        form.querySelector('button[type="submit"]');
-
-      const message =
-        form.querySelector("#newsletter-message") ||
-        form.querySelector(".newsletter-message");
-
-      if (!emailInput || !submitButton) {
-        return;
-      }
-
-      const email = emailInput.value.trim();
-
-      if (!email) {
-        if (message) {
-          message.textContent =
-            "Ingresá tu email.";
         }
+      );
 
-        return;
-      }
+    });
 
-      submitButton.disabled = true;
-      submitButton.innerHTML = "Enviando...";
+}
 
-      if (message) {
-        message.textContent =
-          "Procesando suscripción...";
-      }
 
-      try {
-        const response = await fetch(
-          BASE + "api/newsletter",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              email
-            })
+/* =========================================================
+   ANIMACIONES SCROLL
+========================================================= */
+
+let observer = null;
+
+
+if (
+  "IntersectionObserver"
+  in window
+) {
+
+  observer =
+    new IntersectionObserver(
+      entries => {
+
+        entries.forEach(
+          entry => {
+
+            if (
+              entry.isIntersecting
+            ) {
+
+              entry.target.classList.add(
+                "visible"
+              );
+
+              observer.unobserve(
+                entry.target
+              );
+
+            }
+
           }
         );
 
-        let result = {};
+      },
+      {
+        threshold: 0.12
+      }
+    );
 
-        try {
-          result = await response.json();
-        } catch {
-          result = {};
-        }
+}
 
-        if (!response.ok) {
-          throw new Error(
-            result.error ||
-              "No se pudo completar la suscripción."
-          );
-        }
 
-        if (message) {
-          message.textContent =
-            "¡Listo! Revisá tu email 🏉";
-        }
+function observeReveals(
+  root = document
+) {
 
-        emailInput.value = "";
+  if (!observer) return;
 
-        form.classList.add("submitted");
-      } catch (error) {
-        console.error(
-          "Newsletter:",
-          error
+  root
+    .querySelectorAll(
+      ".reveal:not(.visible)"
+    )
+    .forEach(
+      element =>
+        observer.observe(
+          element
+        )
+    );
+
+}
+
+
+observeReveals();
+
+
+/* =========================================================
+   NEWSLETTER
+========================================================= */
+
+document
+  .querySelectorAll(
+    ".newsletter-form"
+  )
+  .forEach(form => {
+
+    form.addEventListener(
+      "submit",
+      event => {
+
+        event.preventDefault();
+
+        form.classList.add(
+          "submitted"
         );
 
-        if (message) {
-          message.textContent =
-            error.message ||
-            "Ocurrió un error. Intentá nuevamente.";
-        }
-      } finally {
-        submitButton.disabled = false;
-
-        submitButton.innerHTML =
-          'Suscribirme <span>→</span>';
       }
-    });
+    );
+
   });
+
+
+/* =========================================================
+   CARGA GENERAL DE CONTENIDO
+========================================================= */
+
+async function loadContent() {
+
+  if (CONTENT_CACHE) {
+    return CONTENT_CACHE;
+  }
+
+
+  /*
+   * Primero intentamos la API.
+   */
+
+  try {
+
+    const response =
+      await fetch(
+        BASE + "api/content",
+        {
+          cache: "no-store"
+        }
+      );
+
+
+    if (
+      !response.ok
+    ) {
+      throw new Error(
+        "API unavailable"
+      );
+    }
+
+
+    const data =
+      await response.json();
+
+
+    CONTENT_CACHE = {
+
+      articles:
+        Array.isArray(
+          data.articles
+        )
+          ? data.articles
+          : [],
+
+      fixtures:
+        Array.isArray(
+          data.fixtures
+        )
+          ? data.fixtures
+          : [],
+
+      standings:
+        Array.isArray(
+          data.standings
+        )
+          ? data.standings
+          : [],
+
+      players:
+        Array.isArray(
+          data.players
+        )
+          ? data.players
+          : [],
+
+      history:
+        Array.isArray(
+          data.history
+        )
+          ? data.history
+          : []
+
+    };
+
+
+    return CONTENT_CACHE;
+
+
+  } catch (error) {
+
+    console.warn(
+      "No se pudo cargar /api/content. Usando fallback.",
+      error
+    );
+
+  }
+
+
+  /*
+   * Fallback local.
+   */
+
+  const localArticles =
+    localStorage.getItem(
+      "droprugby_articles"
+    );
+
+  const localFixtures =
+    localStorage.getItem(
+      "droprugby_fixtures"
+    );
+
+  const localStandings =
+    localStorage.getItem(
+      "droprugby_standings"
+    );
+
+
+  let articles = [];
+
+  let fixtures = [];
+
+  let standings = [];
+
+
+  if (localArticles) {
+
+    try {
+
+      articles =
+        JSON.parse(
+          localArticles
+        );
+
+    } catch {}
+
+  }
+
+
+  if (localFixtures) {
+
+    try {
+
+      fixtures =
+        JSON.parse(
+          localFixtures
+        );
+
+    } catch {}
+
+  }
+
+
+  if (localStandings) {
+
+    try {
+
+      standings =
+        JSON.parse(
+          localStandings
+        );
+
+    } catch {}
+
+  }
+
+
+  /*
+   * Datos globales de fallback.
+   */
+
+  if (
+    window.DROP_RUGBY_DATA
+  ) {
+
+    if (
+      !articles.length &&
+      Array.isArray(
+        window.DROP_RUGBY_DATA.articles
+      )
+    ) {
+
+      articles =
+        window.DROP_RUGBY_DATA.articles;
+
+    }
+
+
+    if (
+      !fixtures.length &&
+      Array.isArray(
+        window.DROP_RUGBY_DATA.fixtures
+      )
+    ) {
+
+      fixtures =
+        window.DROP_RUGBY_DATA.fixtures;
+
+    }
+
+
+    if (
+      !standings.length &&
+      Array.isArray(
+        window.DROP_RUGBY_DATA.standings
+      )
+    ) {
+
+      standings =
+        window.DROP_RUGBY_DATA.standings;
+
+    }
+
+  }
+
+
+  /*
+   * Intentar articles.json.
+   */
+
+  if (!articles.length) {
+
+    try {
+
+      const response =
+        await fetch(
+          BASE +
+          "data/articles.json"
+        );
+
+      if (response.ok) {
+
+        articles =
+          await response.json();
+
+      }
+
+    } catch {}
+
+  }
+
+
+  /*
+   * Intentar fixtures.json.
+   */
+
+  if (!fixtures.length) {
+
+    try {
+
+      const response =
+        await fetch(
+          BASE +
+          "data/fixtures.json"
+        );
+
+      if (response.ok) {
+
+        fixtures =
+          await response.json();
+
+      }
+
+    } catch {}
+
+  }
+
+
+  CONTENT_CACHE = {
+
+    articles:
+      Array.isArray(articles)
+        ? articles
+        : [],
+
+    fixtures:
+      Array.isArray(fixtures)
+        ? fixtures
+        : [],
+
+    standings:
+      Array.isArray(standings)
+        ? standings
+        : [],
+
+    players: [],
+
+    history: []
+
+  };
+
+
+  return CONTENT_CACHE;
 }
 
 
-/* ==========================================================================
-   CACHE DE DATOS
-   ========================================================================== */
-
-let ARTICLES_CACHE = null;
-let FIXTURES_CACHE = null;
-
-
-/* ==========================================================================
-   CARGAR NOTICIAS
-
-   Prioridad:
-   1. /api/content
-   2. localStorage
-   3. DROP_RUGBY_DATA
-   4. data/articles.json
-   ========================================================================== */
+/* =========================================================
+   HELPERS
+========================================================= */
 
 async function loadArticles() {
-  if (Array.isArray(ARTICLES_CACHE)) {
-    return ARTICLES_CACHE;
-  }
 
-  /* -----------------------------------------
-     1. API
-     ----------------------------------------- */
+  const data =
+    await loadContent();
 
-  try {
-    const response = await fetch(
-      BASE + "api/content",
-      {
-        cache: "no-store"
-      }
-    );
-
-    if (response.ok) {
-      const data =
-        await response.json();
-
-      if (Array.isArray(data.articles)) {
-        ARTICLES_CACHE = data.articles;
-
-        return ARTICLES_CACHE;
-      }
-    }
-  } catch (error) {
-    console.warn(
-      "No se pudo cargar /api/content:",
-      error
-    );
-  }
-
-
-  /* -----------------------------------------
-     2. localStorage
-     ----------------------------------------- */
-
-  try {
-    const local =
-      localStorage.getItem(
-        "droprugby_articles"
-      );
-
-    if (local) {
-      const parsed =
-        JSON.parse(local);
-
-      if (Array.isArray(parsed)) {
-        ARTICLES_CACHE = parsed;
-
-        return ARTICLES_CACHE;
-      }
-    }
-  } catch (error) {
-    console.warn(
-      "No se pudo leer localStorage:",
-      error
-    );
-  }
-
-
-  /* -----------------------------------------
-     3. DROP_RUGBY_DATA
-     ----------------------------------------- */
-
-  if (
-    window.DROP_RUGBY_DATA &&
-    Array.isArray(
-      window.DROP_RUGBY_DATA.articles
-    )
-  ) {
-    ARTICLES_CACHE =
-      window.DROP_RUGBY_DATA.articles;
-
-    return ARTICLES_CACHE;
-  }
-
-
-  /* -----------------------------------------
-     4. articles.json
-     ----------------------------------------- */
-
-  try {
-    const response = await fetch(
-      BASE + "data/articles.json",
-      {
-        cache: "no-store"
-      }
-    );
-
-    if (response.ok) {
-      const data =
-        await response.json();
-
-      if (Array.isArray(data)) {
-        ARTICLES_CACHE = data;
-
-        return ARTICLES_CACHE;
-      }
-
-      if (
-        data &&
-        Array.isArray(data.articles)
-      ) {
-        ARTICLES_CACHE =
-          data.articles;
-
-        return ARTICLES_CACHE;
-      }
-    }
-  } catch (error) {
-    console.error(
-      "No se pudo cargar data/articles.json:",
-      error
-    );
-  }
-
-
-  ARTICLES_CACHE = [];
-
-  return ARTICLES_CACHE;
+  return data.articles;
 }
 
-
-/* ==========================================================================
-   CARGAR PARTIDOS
-
-   Prioridad:
-   1. /api/content
-   2. localStorage
-   3. DROP_RUGBY_DATA
-   4. data/fixtures.json
-   ========================================================================== */
 
 async function loadFixtures() {
-  if (Array.isArray(FIXTURES_CACHE)) {
-    return FIXTURES_CACHE;
-  }
 
+  const data =
+    await loadContent();
 
-  /* -----------------------------------------
-     1. API
-     ----------------------------------------- */
-
-  try {
-    const response = await fetch(
-      BASE + "api/content",
-      {
-        cache: "no-store"
-      }
-    );
-
-    if (response.ok) {
-      const data =
-        await response.json();
-
-      if (Array.isArray(data.fixtures)) {
-        FIXTURES_CACHE = data.fixtures;
-
-        return FIXTURES_CACHE;
-      }
-    }
-  } catch (error) {
-    console.warn(
-      "No se pudo cargar el calendario dinámico:",
-      error
-    );
-  }
-
-
-  /* -----------------------------------------
-     2. localStorage
-     ----------------------------------------- */
-
-  try {
-    const local =
-      localStorage.getItem(
-        "droprugby_fixtures"
-      );
-
-    if (local) {
-      const parsed =
-        JSON.parse(local);
-
-      if (Array.isArray(parsed)) {
-        FIXTURES_CACHE = parsed;
-
-        return FIXTURES_CACHE;
-      }
-    }
-  } catch (error) {
-    console.warn(
-      "No se pudo leer fixtures de localStorage:",
-      error
-    );
-  }
-
-
-  /* -----------------------------------------
-     3. DROP_RUGBY_DATA
-     ----------------------------------------- */
-
-  if (
-    window.DROP_RUGBY_DATA &&
-    Array.isArray(
-      window.DROP_RUGBY_DATA.fixtures
-    )
-  ) {
-    FIXTURES_CACHE =
-      window.DROP_RUGBY_DATA.fixtures;
-
-    return FIXTURES_CACHE;
-  }
-
-
-  /* -----------------------------------------
-     4. fixtures.json
-     ----------------------------------------- */
-
-  try {
-    const response = await fetch(
-      BASE + "data/fixtures.json",
-      {
-        cache: "no-store"
-      }
-    );
-
-    if (response.ok) {
-      const data =
-        await response.json();
-
-      if (Array.isArray(data)) {
-        FIXTURES_CACHE = data;
-
-        return FIXTURES_CACHE;
-      }
-
-      if (
-        data &&
-        Array.isArray(data.fixtures)
-      ) {
-        FIXTURES_CACHE =
-          data.fixtures;
-
-        return FIXTURES_CACHE;
-      }
-    }
-  } catch (error) {
-    console.error(
-      "No se pudo cargar data/fixtures.json:",
-      error
-    );
-  }
-
-
-  FIXTURES_CACHE = [];
-
-  return FIXTURES_CACHE;
+  return data.fixtures;
 }
 
 
-/* ==========================================================================
-   UTILIDADES
-   ========================================================================== */
+async function loadStandings() {
+
+  const data =
+    await loadContent();
+
+  return data.standings;
+}
+
 
 const MESES = [
   "ENE",
@@ -517,6 +535,7 @@ const MESES = [
   "DIC"
 ];
 
+
 const DIAS = [
   "DOMINGO",
   "LUNES",
@@ -529,154 +548,113 @@ const DIAS = [
 
 
 function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(
-      /[&<>'"]/g,
-      (char) => ({
+
+  return String(
+    value ?? ""
+  ).replace(
+    /[&<>'"]/g,
+    character =>
+      ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         "'": "&#39;",
         '"': "&quot;"
-      })[char]
-    );
+      }[character])
+  );
+
 }
 
 
-function formatDateShort(iso) {
+function formatDateShort(
+  iso
+) {
+
   if (!iso) return "";
 
-  const parts =
-    String(iso).split("-");
+  const [
+    y,
+    m,
+    d
+  ] =
+    iso
+      .split("-")
+      .map(Number);
 
-  if (parts.length !== 3) {
-    return iso;
-  }
 
-  const year =
-    Number(parts[0]);
-
-  const month =
-    Number(parts[1]);
-
-  const day =
-    Number(parts[2]);
-
-  if (
-    !year ||
-    !month ||
-    !day
-  ) {
-    return iso;
-  }
-
-  return `${String(day).padStart(
-    2,
-    "0"
-  )} ${MESES[month - 1]} ${year}`;
+  return `${String(d).padStart(2, "0")} ${MESES[m - 1]} ${y}`;
 }
 
 
-function formatDateAdmin(iso) {
-  if (!iso) return "";
+function dateFromISO(
+  iso
+) {
 
-  const parts =
-    String(iso).split("-");
+  const [
+    y,
+    m,
+    d
+  ] =
+    iso
+      .split("-")
+      .map(Number);
 
-  if (parts.length !== 3) {
-    return iso;
-  }
-
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
-
-
-function dateFromISO(iso) {
-  const parts =
-    String(iso).split("-");
-
-  if (parts.length !== 3) {
-    return new Date();
-  }
-
-  const year =
-    Number(parts[0]);
-
-  const month =
-    Number(parts[1]);
-
-  const day =
-    Number(parts[2]);
 
   return new Date(
-    year,
-    month - 1,
-    day
+    y,
+    m - 1,
+    d
   );
 }
 
 
-function isoFromDate(date) {
-  return [
-    date.getFullYear(),
-    String(
-      date.getMonth() + 1
-    ).padStart(2, "0"),
-    String(
-      date.getDate()
-    ).padStart(2, "0")
-  ].join("-");
+function isoFromDate(
+  date
+) {
+
+  return `${date.getFullYear()}-${String(
+    date.getMonth() + 1
+  ).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
 }
 
 
-function normalizeCategory(value) {
-  return String(
-    value || ""
-  )
-    .trim()
-    .toUpperCase();
-}
-
-
-function articleURL(article) {
-  if (!article || !article.url) {
-    return "#";
-  }
-
-  return BASE + article.url;
-}
-
-
-/* ==========================================================================
-   TARJETA DE NOTICIA
-   ========================================================================== */
+/* =========================================================
+   STORY CARD
+========================================================= */
 
 function storyCardHTML(
   article,
   options = {}
 ) {
+
   const featuredClass =
     options.featured
       ? "story-featured"
       : "";
 
+
   const category =
     escapeHTML(
       article.category ||
-      "ACTUALIDAD"
+      ""
     );
+
 
   const subcategory =
     escapeHTML(
       article.subcategory ||
-      "Actualidad"
+      ""
     );
+
 
   const title =
     escapeHTML(
       article.title ||
-      "Sin título"
+      ""
     );
+
 
   const excerpt =
     escapeHTML(
@@ -684,60 +662,84 @@ function storyCardHTML(
       ""
     );
 
+
   const author =
     escapeHTML(
       article.author ||
       "DropRugby"
     );
 
-  const date =
-    formatDateShort(
-      article.date
-    ).toUpperCase();
+
+  const articleURL =
+    BASE +
+    (
+      article.url ||
+      `article.html?id=${encodeURIComponent(article.id || "")}`
+    );
 
 
-  let visual = "";
+  const visual =
+    article.imageUrl
 
+      ? `
 
-  if (article.imageUrl) {
-    visual = `
-      <div class="story-image photo-not-clickable">
-        <img
-          src="${escapeHTML(article.imageUrl)}"
-          alt=""
-          loading="lazy"
+        <div
+          class="story-image photo-not-clickable"
         >
-      </div>
-    `;
-  } else {
-    visual = `
-      <div
-        class="story-image ph-image photo-not-clickable ${
-          escapeHTML(
-            article.imageClass ||
-            "img-tone-1"
-          )
-        }"
-      ></div>
-    `;
-  }
+
+          <img
+            src="${escapeHTML(article.imageUrl)}"
+            alt=""
+            loading="lazy"
+          >
+
+        </div>
+
+      `
+
+      : `
+
+        <div
+          class="
+            story-image
+            ph-image
+            photo-not-clickable
+            ${escapeHTML(
+              article.imageClass ||
+              "img-tone-1"
+            )}
+          "
+        ></div>
+
+      `;
 
 
   return `
-    <article class="story ${featuredClass} reveal">
+
+    <article
+      class="
+        story
+        ${featuredClass}
+        reveal
+      "
+    >
 
       ${visual}
 
       <div class="story-body">
 
         <p class="category">
-          ${category} · ${subcategory}
+          ${category.toUpperCase()}
+          ·
+          ${subcategory.toUpperCase()}
         </p>
 
         <h3>
-          <a href="${articleURL(article)}">
+
+          <a href="${articleURL}">
             ${title}
           </a>
+
         </h3>
 
         <p>
@@ -745,21 +747,31 @@ function storyCardHTML(
         </p>
 
         <div class="meta">
-          Por ${author} · ${date}
+
+          Por ${author}
+
+          ·
+
+          ${formatDateShort(
+            article.date
+          ).toUpperCase()}
+
         </div>
 
       </div>
 
     </article>
+
   `;
 }
 
 
-/* ==========================================================================
+/* =========================================================
    HOME
-   ========================================================================== */
+========================================================= */
 
 async function renderHome() {
+
   const grid =
     document.getElementById(
       "home-top-stories"
@@ -770,7 +782,7 @@ async function renderHome() {
       "home-los-pumas"
     );
 
-  const srEl =
+  const superRugbyEl =
     document.getElementById(
       "home-super-rugby"
     );
@@ -793,11 +805,7 @@ async function renderHome() {
 
   if (
     !grid &&
-    !heroEl &&
-    !pumasEl &&
-    !srEl &&
-    !urbaTop14El &&
-    !urbaEl
+    !heroEl
   ) {
     return;
   }
@@ -806,111 +814,131 @@ async function renderHome() {
   const articles =
     (await loadArticles())
       .slice()
-      .filter(
-        (article) =>
-          article &&
-          article.title
-      )
       .sort(
         (a, b) =>
-          String(b.date || "")
+          (b.date || "")
             .localeCompare(
-              String(a.date || "")
+              a.date || ""
             )
       );
 
 
   const featured =
     articles.find(
-      (article) =>
-        article.featured === true
+      article =>
+        article.featured
     ) ||
     articles[0];
 
-
-  /* -----------------------------------------
-     HERO
-     ----------------------------------------- */
 
   if (
     heroEl &&
     featured
   ) {
-    const title =
-      escapeHTML(
-        featured.title
-      );
 
-    const category =
-      escapeHTML(
-        featured.category ||
-        "ACTUALIDAD"
-      );
+    const heroVisual =
+      featured.imageUrl
 
+        ? `
 
-    let heroVisual = "";
-
-
-    if (featured.imageUrl) {
-      heroVisual = `
-        <div class="hero-image photo-not-clickable">
-
-          <img
-            src="${escapeHTML(
-              featured.imageUrl
-            )}"
-            alt=""
-            loading="eager"
+          <div
+            class="
+              hero-image
+              photo-not-clickable
+            "
           >
 
-          <div class="image-overlay"></div>
+            <img
+              src="${escapeHTML(
+                featured.imageUrl
+              )}"
+              alt=""
+              loading="eager"
+            >
 
-          <div class="hero-card-caption">
-            <span>
-              TOP STORY · ${category}
-            </span>
+            <div
+              class="image-overlay"
+            ></div>
 
-            <h2>
-              ${title}
-            </h2>
-          </div>
+            <div
+              class="hero-card-caption"
+            >
 
-        </div>
-      `;
-    } else {
-      heroVisual = `
-        <div
-          class="hero-image ${
-            escapeHTML(
-              featured.imageClass ||
-              "img-tone-1"
-            )
-          } photo-not-clickable ph-image"
-        >
+              <span>
+                TOP STORY ·
+                ${escapeHTML(
+                  featured.category ||
+                  ""
+                ).toUpperCase()}
+              </span>
 
-          <div class="image-overlay"></div>
+              <h2>
+                ${escapeHTML(
+                  featured.title ||
+                  ""
+                )}
+              </h2>
 
-          <div class="hero-card-caption">
-
-            <span>
-              TOP STORY · ${category}
-            </span>
-
-            <h2>
-              ${title}
-            </h2>
+            </div>
 
           </div>
 
-        </div>
-      `;
-    }
+        `
+
+        : `
+
+          <div
+            class="
+              hero-image
+              ${
+                escapeHTML(
+                  featured.imageClass ||
+                  "img-tone-1"
+                )
+              }
+              photo-not-clickable
+              ph-image
+            "
+          >
+
+            <div
+              class="image-overlay"
+            ></div>
+
+            <div
+              class="hero-card-caption"
+            >
+
+              <span>
+                TOP STORY ·
+                ${escapeHTML(
+                  featured.category ||
+                  ""
+                ).toUpperCase()}
+              </span>
+
+              <h2>
+                ${escapeHTML(
+                  featured.title ||
+                  ""
+                )}
+              </h2>
+
+            </div>
+
+          </div>
+
+        `;
 
 
     heroEl.innerHTML = `
-      <div class="hero-card-inner">
+
+      <div
+        class="hero-card-inner"
+      >
         ${heroVisual}
       </div>
+
     `;
 
 
@@ -921,25 +949,31 @@ async function renderHome() {
 
 
     if (heroLink) {
+
       heroLink.href =
-        articleURL(featured);
+        BASE +
+        (
+          featured.url ||
+          `article.html?id=${encodeURIComponent(
+            featured.id || ""
+          )}`
+        );
+
     }
+
   }
 
 
-  /* -----------------------------------------
-     ÚLTIMAS NOTICIAS
-     ----------------------------------------- */
-
   const rest =
     articles.filter(
-      (article) =>
+      article =>
         !featured ||
         article.id !== featured.id
     );
 
 
   if (grid) {
+
     grid.innerHTML =
       rest
         .slice(0, 3)
@@ -954,55 +988,51 @@ async function renderHome() {
             )
         )
         .join("");
+
   }
 
 
-  /* -----------------------------------------
-     CATEGORÍAS
-     ----------------------------------------- */
-
   function renderCategory(
-    categoryName,
+    name,
     element,
     amount = 3
   ) {
-    if (!element) return;
 
-    const normalized =
-      normalizeCategory(
-        categoryName
-      );
+    if (!element) return;
 
 
     const items =
       articles
         .filter(
-          (article) =>
-            normalizeCategory(
-              article.category
-            ) === normalized
+          article =>
+            article.category === name
         )
-        .slice(0, amount);
-
-
-    if (!items.length) {
-      element.innerHTML = `
-        <p class="empty-state">
-          Todavía no hay noticias publicadas
-          en esta categoría.
-        </p>
-      `;
-
-      return;
-    }
+        .slice(
+          0,
+          amount
+        );
 
 
     element.innerHTML =
-      items
-        .map((article) =>
-          storyCardHTML(article)
-        )
-        .join("");
+      items.length
+
+        ? items
+            .map(
+              article =>
+                storyCardHTML(
+                  article
+                )
+            )
+            .join("")
+
+        : `
+
+          <p class="empty-state">
+            Todavía no hay noticias
+            publicadas en esta categoría.
+          </p>
+
+        `;
   }
 
 
@@ -1011,15 +1041,18 @@ async function renderHome() {
     pumasEl
   );
 
+
   renderCategory(
     "Super Rugby",
-    srEl
+    superRugbyEl
   );
+
 
   renderCategory(
     "URBA TOP 14",
     urbaTop14El
   );
+
 
   renderCategory(
     "URBA",
@@ -1031,40 +1064,35 @@ async function renderHome() {
 }
 
 
-/* ==========================================================================
+/* =========================================================
    PÁGINA DE CATEGORÍA
-   ========================================================================== */
+========================================================= */
 
 async function renderCategoryPage(
   categoryName
 ) {
+
   const grid =
     document.getElementById(
       "category-grid"
     );
 
+
   if (!grid) return;
-
-
-  const normalizedCategory =
-    normalizeCategory(
-      categoryName
-    );
 
 
   const articles =
     (await loadArticles())
       .filter(
-        (article) =>
-          normalizeCategory(
-            article.category
-          ) === normalizedCategory
+        article =>
+          article.category ===
+          categoryName
       )
       .sort(
         (a, b) =>
-          String(b.date || "")
+          (b.date || "")
             .localeCompare(
-              String(a.date || "")
+              a.date || ""
             )
       );
 
@@ -1075,116 +1103,116 @@ async function renderCategoryPage(
     );
 
 
-  let activeFilter = "TODAS";
+  let activeFilter =
+    "TODAS";
 
 
   function paint() {
+
     const filtered =
       activeFilter === "TODAS"
+
         ? articles
+
         : articles.filter(
-            (article) =>
-              normalizeCategory(
-                article.subcategory
-              ) ===
-              normalizeCategory(
-                activeFilter
-              )
+            article =>
+              String(
+                article.subcategory ||
+                ""
+              ).toUpperCase() ===
+              activeFilter
           );
 
 
-    if (!filtered.length) {
-      grid.innerHTML = `
-        <p class="empty-state">
-          No hay noticias para este filtro todavía.
-        </p>
-      `;
-
-      return;
-    }
-
-
     grid.innerHTML =
-      filtered
-        .map((article) =>
-          storyCardHTML(article)
-        )
-        .join("");
+      filtered.length
+
+        ? filtered
+            .map(
+              article =>
+                storyCardHTML(
+                  article
+                )
+            )
+            .join("")
+
+        : `
+
+          <p class="empty-state">
+            No hay noticias para
+            este filtro todavía.
+          </p>
+
+        `;
 
 
     observeReveals();
   }
 
 
-  chips.forEach((chip) => {
-    chip.addEventListener(
-      "click",
-      () => {
-        chips.forEach(
-          (item) =>
-            item.classList.remove(
-              "active"
-            )
-        );
+  chips.forEach(
+    chip => {
 
-        chip.classList.add(
-          "active"
-        );
+      chip.addEventListener(
+        "click",
+        () => {
 
-        activeFilter =
-          chip.dataset.filter ||
-          "TODAS";
+          chips.forEach(
+            button =>
+              button.classList.remove(
+                "active"
+              )
+          );
 
-        paint();
-      }
-    );
-  });
+
+          chip.classList.add(
+            "active"
+          );
+
+
+          activeFilter =
+            chip.dataset.filter;
+
+
+          paint();
+
+        }
+      );
+
+    }
+  );
 
 
   paint();
 }
 
 
-/* ==========================================================================
+/* =========================================================
    CALENDARIO
-   ========================================================================== */
+========================================================= */
 
 async function renderCalendar() {
+
   const listEl =
     document.getElementById(
       "calendar-list"
     );
 
+
   if (!listEl) return;
 
 
   const fixtures =
-    (await loadFixtures())
-      .filter(
-        (fixture) =>
-          fixture &&
-          fixture.date
-      )
-      .slice()
-      .sort(
-        (a, b) =>
-          (
-            String(a.date || "") +
-            String(a.time || "")
-          ).localeCompare(
-            String(b.date || "") +
-            String(b.time || "")
-          )
-      );
+    await loadFixtures();
 
 
-  const competitionButtons =
+  const compBtns =
     document.querySelectorAll(
       ".competition-select .filter-chip"
     );
 
 
-  const dateButtons =
+  const dateBtns =
     document.querySelectorAll(
       ".date-filter-bar .date-chip"
     );
@@ -1196,19 +1224,19 @@ async function renderCalendar() {
     );
 
 
-  const prevButton =
+  const prevBtn =
     document.getElementById(
       "day-prev"
     );
 
 
-  const nextButton =
+  const nextBtn =
     document.getElementById(
       "day-next"
     );
 
 
-  const todayButton =
+  const todayBtn =
     document.getElementById(
       "day-today"
     );
@@ -1218,7 +1246,8 @@ async function renderCalendar() {
     "TODAS";
 
 
-  let mode = "dia";
+  let mode =
+    "dia";
 
 
   let currentDate =
@@ -1233,60 +1262,112 @@ async function renderCalendar() {
   );
 
 
-  /* -----------------------------------------
-     Si hoy no tiene partidos,
-     arrancamos desde el próximo fixture.
-     ----------------------------------------- */
-
   const availableDates =
     fixtures
       .map(
-        (fixture) =>
+        fixture =>
           fixture.date
       )
       .filter(Boolean)
       .sort();
 
 
-  const todayISO =
-    isoFromDate(
-      currentDate
-    );
-
-
   if (
     availableDates.length &&
     !fixtures.some(
-      (fixture) =>
+      fixture =>
         fixture.date ===
-        todayISO
+        isoFromDate(
+          currentDate
+        )
     )
   ) {
+
     currentDate =
       dateFromISO(
         availableDates[0]
       );
+
   }
 
 
-  /* -----------------------------------------
-     Rango de fechas
-     ----------------------------------------- */
+  function groupByDateAndCompetition(
+    items
+  ) {
+
+    const grouped = {};
+
+
+    items.forEach(
+      fixture => {
+
+        if (
+          !grouped[fixture.date]
+        ) {
+
+          grouped[
+            fixture.date
+          ] = {};
+
+        }
+
+
+        if (
+          !grouped[
+            fixture.date
+          ][
+            fixture.competition
+          ]
+        ) {
+
+          grouped[
+            fixture.date
+          ][
+            fixture.competition
+          ] = [];
+
+        }
+
+
+        grouped[
+          fixture.date
+        ][
+          fixture.competition
+        ].push(
+          fixture
+        );
+
+      }
+    );
+
+
+    return grouped;
+  }
+
 
   function getRangeDates() {
-    if (mode === "semana") {
+
+    if (
+      mode === "semana"
+    ) {
+
       const start =
-        new Date(currentDate);
+        new Date(
+          currentDate
+        );
+
 
       const day =
         start.getDay();
 
+
       const diffToMonday =
         (day + 6) % 7;
 
+
       start.setDate(
         start.getDate() -
-          diffToMonday
+        diffToMonday
       );
 
 
@@ -1295,64 +1376,68 @@ async function renderCalendar() {
           length: 7
         },
         (_, index) => {
+
           const date =
-            new Date(start);
+            new Date(
+              start
+            );
+
 
           date.setDate(
             start.getDate() +
-              index
+            index
           );
+
 
           return isoFromDate(
             date
           );
+
         }
       );
+
     }
 
 
-    if (mode === "finde") {
-      const date =
-        new Date(currentDate);
+    if (
+      mode === "finde"
+    ) {
+
+      const start =
+        new Date(
+          currentDate
+        );
+
 
       const day =
-        date.getDay();
+        start.getDay();
 
 
-      /*
-       * Si estamos lunes-viernes,
-       * buscamos el próximo sábado.
-       *
-       * Si estamos sábado/domingo,
-       * usamos ese fin de semana.
-       */
-
-      let diffToSaturday =
+      const diffToSaturday =
         (6 - day + 7) % 7;
 
 
-      if (
-        day === 0
-      ) {
-        diffToSaturday = -1;
-      }
-
-
       const saturday =
-        new Date(date);
+        new Date(
+          start
+        );
+
 
       saturday.setDate(
-        saturday.getDate() +
-          diffToSaturday
+        start.getDate() +
+        diffToSaturday
       );
 
 
       const sunday =
-        new Date(saturday);
+        new Date(
+          saturday
+        );
+
 
       sunday.setDate(
-        sunday.getDate() +
-          1
+        saturday.getDate() +
+        1
       );
 
 
@@ -1364,23 +1449,32 @@ async function renderCalendar() {
           sunday
         )
       ];
+
     }
 
 
-    if (mode === "manana") {
+    if (
+      mode === "manana"
+    ) {
+
       const tomorrow =
-        new Date(currentDate);
+        new Date(
+          currentDate
+        );
+
 
       tomorrow.setDate(
         tomorrow.getDate() +
-          1
+        1
       );
+
 
       return [
         isoFromDate(
           tomorrow
         )
       ];
+
     }
 
 
@@ -1392,102 +1486,67 @@ async function renderCalendar() {
   }
 
 
-  /* -----------------------------------------
-     Etiqueta de navegación
-     ----------------------------------------- */
-
   function updateDayLabel() {
-    if (!dayLabel) return;
 
+    if (
+      mode === "dia"
+    ) {
 
-    if (mode === "dia") {
       dayLabel.textContent =
         `${DIAS[currentDate.getDay()]} · ${formatDateShort(
-          isoFromDate(currentDate)
+          isoFromDate(
+            currentDate
+          )
         )}`;
 
-      return;
     }
 
+    else if (
+      mode === "manana"
+    ) {
 
-    if (mode === "manana") {
       const tomorrow =
-        new Date(currentDate);
+        new Date(
+          currentDate
+        );
+
 
       tomorrow.setDate(
         tomorrow.getDate() +
-          1
+        1
       );
 
 
       dayLabel.textContent =
         `${DIAS[tomorrow.getDay()]} · ${formatDateShort(
-          isoFromDate(tomorrow)
+          isoFromDate(
+            tomorrow
+          )
         )}`;
 
-      return;
     }
 
+    else if (
+      mode === "finde"
+    ) {
 
-    if (mode === "finde") {
       dayLabel.textContent =
         "FIN DE SEMANA";
 
-      return;
     }
 
+    else {
 
-    if (mode === "semana") {
       dayLabel.textContent =
         "TODA LA SEMANA";
+
     }
+
   }
 
-
-  /* -----------------------------------------
-     Agrupar
-     ----------------------------------------- */
-
-  function groupByDateAndCompetition(
-    items
-  ) {
-    const grouped = {};
-
-
-    items.forEach(
-      (fixture) => {
-        if (!grouped[fixture.date]) {
-          grouped[fixture.date] = {};
-        }
-
-
-        if (
-          !grouped[fixture.date][
-            fixture.competition
-          ]
-        ) {
-          grouped[fixture.date][
-            fixture.competition
-          ] = [];
-        }
-
-
-        grouped[fixture.date][
-          fixture.competition
-        ].push(fixture);
-      }
-    );
-
-
-    return grouped;
-  }
-
-
-  /* -----------------------------------------
-     Render calendario
-     ----------------------------------------- */
 
   function paint() {
+
     updateDayLabel();
 
 
@@ -1497,7 +1556,7 @@ async function renderCalendar() {
 
     let filtered =
       fixtures.filter(
-        (fixture) =>
+        fixture =>
           dates.includes(
             fixture.date
           )
@@ -1508,16 +1567,17 @@ async function renderCalendar() {
       activeCompetition !==
       "TODAS"
     ) {
+
       filtered =
         filtered.filter(
-          (fixture) =>
-            normalizeCategory(
-              fixture.competition
-            ) ===
-            normalizeCategory(
-              activeCompetition
-            )
+          fixture =>
+            String(
+              fixture.competition ||
+              ""
+            ).toUpperCase() ===
+            activeCompetition
         );
+
     }
 
 
@@ -1528,18 +1588,24 @@ async function renderCalendar() {
 
 
     const sortedDates =
-      Object.keys(grouped)
-        .sort();
+      Object.keys(
+        grouped
+      ).sort();
 
 
-    if (!sortedDates.length) {
+    if (
+      !sortedDates.length
+    ) {
+
       listEl.innerHTML = `
+
         <p class="empty-state">
           No hay partidos cargados
           para este filtro.
           Probá con otra competición
           o fecha.
         </p>
+
       `;
 
       return;
@@ -1549,7 +1615,8 @@ async function renderCalendar() {
     listEl.innerHTML =
       sortedDates
         .map(
-          (date) => {
+          date => {
+
             const dt =
               dateFromISO(
                 date
@@ -1560,16 +1627,17 @@ async function renderCalendar() {
               grouped[date];
 
 
-            const competitionHTML =
+            const competitionsHTML =
               Object.keys(
                 competitions
               )
                 .sort()
                 .map(
-                  (competition) => {
-                    const matches =
+                  competitionName => {
+
+                    const rows =
                       competitions[
-                        competition
+                        competitionName
                       ]
                         .slice()
                         .sort(
@@ -1581,103 +1649,119 @@ async function renderCalendar() {
                                 b.time || ""
                               )
                             )
-                        );
-
-
-                    const rows =
-                      matches
+                        )
                         .map(
-                          (fixture) => `
+                          fixture => `
+
                             <div class="match-row">
 
                               <div class="match-time">
                                 ${escapeHTML(
                                   fixture.time ||
-                                    ""
+                                  ""
                                 )}
                               </div>
 
                               <div class="match-teams">
+
                                 ${escapeHTML(
                                   fixture.home ||
-                                    ""
+                                  ""
                                 )}
-                                <span>vs.</span>
+
+                                vs.
+
                                 ${escapeHTML(
                                   fixture.away ||
-                                    ""
+                                  ""
                                 )}
+
                               </div>
 
                               <div class="match-channel">
+
                                 ${escapeHTML(
                                   fixture.channel ||
-                                    "—"
+                                  ""
                                 )}
+
                               </div>
 
                             </div>
+
                           `
                         )
                         .join("");
 
 
                     return `
+
                       <div class="competition-block">
 
                         <div class="competition-name">
+
                           ${escapeHTML(
-                            competition
+                            competitionName
                           ).toUpperCase()}
+
                         </div>
 
                         ${rows}
 
                       </div>
+
                     `;
+
                   }
                 )
                 .join("");
 
 
             return `
+
               <div class="day-block">
 
                 <div class="day-block-header">
 
                   <span class="dow">
-                    ${DIAS[dt.getDay()]}
+
+                    ${DIAS[
+                      dt.getDay()
+                    ]}
+
                   </span>
 
                   <span class="full-date">
+
                     ${formatDateShort(
                       date
                     )}
+
                   </span>
 
                 </div>
 
-                ${competitionHTML}
+                ${competitionsHTML}
 
               </div>
+
             `;
+
           }
         )
         .join("");
   }
 
 
-  /* -----------------------------------------
-     Filtro competición
-     ----------------------------------------- */
+  compBtns.forEach(
+    button => {
 
-  competitionButtons.forEach(
-    (button) => {
       button.addEventListener(
         "click",
         () => {
-          competitionButtons.forEach(
-            (item) =>
+
+          compBtns.forEach(
+            item =>
               item.classList.remove(
                 "active"
               )
@@ -1690,28 +1774,27 @@ async function renderCalendar() {
 
 
           activeCompetition =
-            button.dataset.filter ||
-            "TODAS";
+            button.dataset.filter;
 
 
           paint();
+
         }
       );
+
     }
   );
 
 
-  /* -----------------------------------------
-     Filtro fecha
-     ----------------------------------------- */
+  dateBtns.forEach(
+    button => {
 
-  dateButtons.forEach(
-    (button) => {
       button.addEventListener(
         "click",
         () => {
-          dateButtons.forEach(
-            (item) =>
+
+          dateBtns.forEach(
+            item =>
               item.classList.remove(
                 "active"
               )
@@ -1724,83 +1807,72 @@ async function renderCalendar() {
 
 
           mode =
-            button.dataset.mode ||
-            "dia";
+            button.dataset.mode;
 
 
           paint();
+
         }
       );
+
     }
   );
 
 
-  /* -----------------------------------------
-     Anterior
-     ----------------------------------------- */
+  if (prevBtn) {
 
-  if (prevButton) {
-    prevButton.addEventListener(
+    prevBtn.addEventListener(
       "click",
       () => {
-        if (
-          mode === "semana"
-        ) {
-          currentDate.setDate(
-            currentDate.getDate() -
-              7
-          );
-        } else {
-          currentDate.setDate(
-            currentDate.getDate() -
-              1
-          );
-        }
+
+        currentDate.setDate(
+          currentDate.getDate() -
+          (
+            mode === "semana"
+              ? 7
+              : 1
+          )
+        );
 
 
         paint();
+
       }
     );
+
   }
 
 
-  /* -----------------------------------------
-     Siguiente
-     ----------------------------------------- */
+  if (nextBtn) {
 
-  if (nextButton) {
-    nextButton.addEventListener(
+    nextBtn.addEventListener(
       "click",
       () => {
-        if (
-          mode === "semana"
-        ) {
-          currentDate.setDate(
-            currentDate.getDate() +
-              7
-          );
-        } else {
-          currentDate.setDate(
-            currentDate.getDate() +
-              1
-          );
-        }
+
+        currentDate.setDate(
+          currentDate.getDate() +
+          (
+            mode === "semana"
+              ? 7
+              : 1
+          )
+        );
 
 
         paint();
+
       }
     );
+
   }
 
 
-  /* -----------------------------------------
-     HOY
-     ----------------------------------------- */
+  if (todayBtn) {
 
-  if (todayButton) {
-    todayButton.addEventListener(
+    todayBtn.addEventListener(
       "click",
       () => {
+
         currentDate =
           new Date();
 
@@ -1813,23 +1885,25 @@ async function renderCalendar() {
         );
 
 
-        mode = "dia";
+        mode =
+          "dia";
 
 
-        dateButtons.forEach(
-          (button) => {
+        dateBtns.forEach(
+          button =>
             button.classList.toggle(
               "active",
               button.dataset.mode ===
-                "dia"
-            );
-          }
+              "dia"
+            )
         );
 
 
         paint();
+
       }
     );
+
   }
 
 
@@ -1837,26 +1911,23 @@ async function renderCalendar() {
 }
 
 
-/* ==========================================================================
-   PREVIEW CALENDARIO HOME
-   ========================================================================== */
+/* =========================================================
+   CALENDARIO HOME
+========================================================= */
 
 async function renderCalendarPreview() {
+
   const element =
     document.getElementById(
       "home-calendar-preview"
     );
+
 
   if (!element) return;
 
 
   const fixtures =
     (await loadFixtures())
-      .filter(
-        (fixture) =>
-          fixture &&
-          fixture.date
-      )
       .slice()
       .sort(
         (a, b) =>
@@ -1871,14 +1942,22 @@ async function renderCalendarPreview() {
 
 
   const upcoming =
-    fixtures.slice(0, 6);
+    fixtures.slice(
+      0,
+      6
+    );
 
 
-  if (!upcoming.length) {
+  if (
+    !upcoming.length
+  ) {
+
     element.innerHTML = `
+
       <p class="empty-state">
         No hay próximos partidos cargados.
       </p>
+
     `;
 
     return;
@@ -1888,25 +1967,31 @@ async function renderCalendarPreview() {
   element.innerHTML =
     upcoming
       .map(
-        (fixture) => `
+        fixture => `
+
           <div class="match-row">
 
             <div class="match-time">
+
               ${escapeHTML(
-                fixture.time || ""
+                fixture.time ||
+                ""
               )}
+
             </div>
 
             <div class="match-teams">
 
               ${escapeHTML(
-                fixture.home || ""
+                fixture.home ||
+                ""
               )}
 
-              <span>vs.</span>
+              vs.
 
               ${escapeHTML(
-                fixture.away || ""
+                fixture.away ||
+                ""
               )}
 
               <span
@@ -1915,52 +2000,265 @@ async function renderCalendarPreview() {
                   font-weight:400;
                 "
               >
-                — ${escapeHTML(
+
+                —
+                ${escapeHTML(
                   fixture.competition ||
-                    ""
+                  ""
                 )}
+
               </span>
 
             </div>
 
             <div class="match-channel">
+
               ${escapeHTML(
                 fixture.channel ||
-                  "—"
+                ""
               )}
+
             </div>
 
           </div>
+
         `
       )
       .join("");
 }
 
 
-/* ==========================================================================
+/* =========================================================
+   TABLA URBA TOP 14
+========================================================= */
+
+async function renderURBAStandings() {
+
+  const container =
+    document.getElementById(
+      "urba-standings"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  let standings =
+    await loadStandings();
+
+
+  standings =
+    standings
+      .slice()
+      .sort(
+        (a, b) =>
+          Number(b.pts || 0) -
+          Number(a.pts || 0)
+      );
+
+
+  if (
+    !standings.length
+  ) {
+
+    container.innerHTML = `
+
+      <div class="standings-empty">
+
+        <p>
+          Todavía no hay una tabla
+          de posiciones cargada.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  container.innerHTML = `
+
+    <div class="standings-table">
+
+      <div class="standings-header">
+
+        <div>
+          POS.
+        </div>
+
+        <div>
+          CLUB
+        </div>
+
+        <div>
+          PJ
+        </div>
+
+        <div>
+          PG
+        </div>
+
+        <div>
+          PTS
+        </div>
+
+      </div>
+
+
+      ${standings
+        .map(
+          (club, index) => `
+
+            <div
+              class="
+                standings-row
+                ${
+                  index < 4
+                    ? "standings-top"
+                    : ""
+                }
+              "
+            >
+
+              <div
+                class="standing-position"
+              >
+
+                ${index + 1}
+
+              </div>
+
+
+              <div
+                class="standing-club"
+              >
+
+                ${
+                  club.logo
+
+                    ? `
+
+                      <img
+                        src="${escapeHTML(
+                          club.logo
+                        )}"
+                        alt="${escapeHTML(
+                          club.team ||
+                          ""
+                        )}"
+                        loading="lazy"
+                      >
+
+                    `
+
+                    : `
+
+                      <div
+                        class="
+                          standing-logo-placeholder
+                        "
+                      >
+
+                        ${escapeHTML(
+                          String(
+                            club.team ||
+                            "?"
+                          )
+                            .charAt(0)
+                            .toUpperCase()
+                        )}
+
+                      </div>
+
+                    `
+                }
+
+
+                <strong>
+
+                  ${escapeHTML(
+                    club.team ||
+                    "Club"
+                  )}
+
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                ${Number(
+                  club.pj || 0
+                )}
+
+              </div>
+
+
+              <div>
+
+                ${Number(
+                  club.pg || 0
+                )}
+
+              </div>
+
+
+              <div
+                class="standing-points"
+              >
+
+                ${Number(
+                  club.pts || 0
+                )}
+
+              </div>
+
+            </div>
+
+          `
+        )
+        .join("")}
+
+    </div>
+
+  `;
+}
+
+
+/* =========================================================
    BUSCADOR GLOBAL
-   ========================================================================== */
+========================================================= */
 
 function setupSearch() {
+
   const openButtons =
     document.querySelectorAll(
       ".search-btn"
     );
+
 
   const overlay =
     document.getElementById(
       "search-overlay"
     );
 
+
   const closeButton =
     document.getElementById(
       "search-close"
     );
 
+
   const input =
     document.getElementById(
       "search-input"
     );
+
 
   const results =
     document.getElementById(
@@ -1978,87 +2276,98 @@ function setupSearch() {
   }
 
 
-  let articlesForSearch = [];
+  let articlesForSearch =
+    [];
 
 
   async function ensureData() {
+
     if (
-      articlesForSearch.length
+      !articlesForSearch.length
     ) {
-      return;
+
+      articlesForSearch =
+        await loadArticles();
+
     }
 
-
-    articlesForSearch =
-      await loadArticles();
   }
 
 
   openButtons.forEach(
-    (button) => {
+    button => {
+
       button.addEventListener(
         "click",
         async () => {
+
           overlay.classList.add(
             "open"
           );
 
+
           input.focus();
 
+
           await ensureData();
+
         }
       );
+
     }
   );
 
 
-  if (closeButton) {
-    closeButton.addEventListener(
-      "click",
-      () => {
-        overlay.classList.remove(
-          "open"
-        );
-      }
-    );
-  }
+  closeButton?.addEventListener(
+    "click",
+    () =>
+      overlay.classList.remove(
+        "open"
+      )
+  );
 
 
   overlay.addEventListener(
     "click",
-    (event) => {
+    event => {
+
       if (
         event.target ===
         overlay
       ) {
+
         overlay.classList.remove(
           "open"
         );
+
       }
+
     }
   );
 
 
   document.addEventListener(
     "keydown",
-    (event) => {
+    event => {
+
       if (
         event.key ===
         "Escape"
       ) {
+
         overlay.classList.remove(
           "open"
         );
+
       }
+
     }
   );
 
 
   input.addEventListener(
     "input",
-    async () => {
-      await ensureData();
-
+    () => {
 
       const query =
         input.value
@@ -2067,217 +2376,326 @@ function setupSearch() {
 
 
       if (!query) {
-        results.innerHTML = "";
+
+        results.innerHTML =
+          "";
 
         return;
+
       }
 
 
       const matches =
         articlesForSearch.filter(
-          (article) => {
+          article => {
+
             const title =
               String(
-                article.title || ""
+                article.title ||
+                ""
               ).toLowerCase();
+
 
             const category =
               String(
-                article.category || ""
+                article.category ||
+                ""
               ).toLowerCase();
+
 
             const subcategory =
               String(
                 article.subcategory ||
-                  ""
+                ""
               ).toLowerCase();
+
 
             const excerpt =
               String(
-                article.excerpt || ""
+                article.excerpt ||
+                ""
               ).toLowerCase();
 
 
             return (
               title.includes(query) ||
               category.includes(query) ||
-              subcategory.includes(
-                query
-              ) ||
+              subcategory.includes(query) ||
               excerpt.includes(query)
             );
+
           }
         );
 
 
-      if (!matches.length) {
-        results.innerHTML = `
-          <p class="search-empty">
-            Sin resultados para
-            "${escapeHTML(
-              input.value
-            )}".
-          </p>
-        `;
+      results.innerHTML =
+        matches.length
+
+          ? matches
+              .map(
+                article => `
+
+                  <a
+                    class="search-result"
+                    href="${BASE}${escapeHTML(
+                      article.url ||
+                      `article.html?id=${encodeURIComponent(
+                        article.id ||
+                        ""
+                      )}`
+                    )}"
+                  >
+
+                    <p class="category">
+
+                      ${escapeHTML(
+                        article.category ||
+                        ""
+                      ).toUpperCase()}
+
+                      ·
+
+                      ${escapeHTML(
+                        article.subcategory ||
+                        ""
+                      ).toUpperCase()}
+
+                    </p>
+
+                    <h3>
+
+                      ${escapeHTML(
+                        article.title ||
+                        ""
+                      )}
+
+                    </h3>
+
+                  </a>
+
+                `
+              )
+              .join("")
+
+          : `
+
+            <p class="search-empty">
+
+              Sin resultados para
+              "${escapeHTML(
+                input.value
+              )}".
+
+            </p>
+
+          `;
+
+    }
+  );
+}
+
+
+/* =========================================================
+   NEWSLETTER REAL
+========================================================= */
+
+function setupNewsletter() {
+
+  const newsletterForm =
+    document.getElementById(
+      "newsletter-form"
+    );
+
+
+  if (!newsletterForm) {
+    return;
+  }
+
+
+  newsletterForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      const emailInput =
+        document.getElementById(
+          "newsletter-email"
+        );
+
+
+      const submitButton =
+        document.getElementById(
+          "newsletter-submit"
+        );
+
+
+      const message =
+        document.getElementById(
+          "newsletter-message"
+        );
+
+
+      const email =
+        emailInput?.value
+          .trim() || "";
+
+
+      if (!email) {
+
+        if (message) {
+
+          message.textContent =
+            "Ingresá tu email.";
+
+        }
 
         return;
       }
 
 
-      results.innerHTML =
-        matches
-          .slice(0, 20)
-          .map(
-            (article) => `
-              <a
-                class="search-result"
-                href="${articleURL(
-                  article
-                )}"
-              >
+      submitButton.disabled =
+        true;
 
-                <p class="category">
-                  ${escapeHTML(
-                    article.category ||
-                      "ACTUALIDAD"
-                  ).toUpperCase()}
-                  ·
-                  ${escapeHTML(
-                    article.subcategory ||
-                      "ACTUALIDAD"
-                  ).toUpperCase()}
-                </p>
 
-                <h3>
-                  ${escapeHTML(
-                    article.title ||
-                      ""
-                  )}
-                </h3>
+      submitButton.innerHTML =
+        "Enviando...";
 
-              </a>
-            `
-          )
-          .join("");
+
+      if (message) {
+
+        message.textContent =
+          "Procesando suscripción...";
+
+      }
+
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/newsletter",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  email
+                })
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            result.error ||
+            "No se pudo completar la suscripción."
+          );
+
+        }
+
+
+        if (message) {
+
+          message.textContent =
+            "¡Listo! Revisá tu email 🏉";
+
+        }
+
+
+        if (emailInput) {
+
+          emailInput.value =
+            "";
+
+        }
+
+
+        newsletterForm.classList.add(
+          "submitted"
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Newsletter:",
+          error
+        );
+
+
+        if (message) {
+
+          message.textContent =
+            error.message ||
+            "Ocurrió un error. Intentá nuevamente.";
+
+        }
+
+
+      } finally {
+
+        submitButton.disabled =
+          false;
+
+
+        submitButton.innerHTML =
+          'Suscribirme <span>→</span>';
+
+      }
+
     }
   );
 }
 
 
-/* ==========================================================================
-   ACTUALIZACIÓN DE DATOS
-   ========================================================================== */
-
-function setupDataUpdateListener() {
-  window.addEventListener(
-    "droprugby:data-updated",
-    () => {
-      ARTICLES_CACHE = null;
-      FIXTURES_CACHE = null;
-
-      renderHome();
-      renderCalendarPreview();
-      renderCalendar();
-    }
-  );
-}
-
-
-/* ==========================================================================
+/* =========================================================
    INIT
-   ========================================================================== */
+========================================================= */
 
 document.addEventListener(
   "DOMContentLoaded",
-  async () => {
-    setupMobileMenu();
-
-    setupRevealObserver();
-
-    setupNewsletter();
+  () => {
 
     setupSearch();
 
-    setupDataUpdateListener();
+    setupNewsletter();
+
+    renderHome();
+
+    renderCalendarPreview();
+
+    renderCalendar();
+
+    renderURBAStandings();
 
 
-    /* -----------------------------------------
-       Home
-       ----------------------------------------- */
-
-    try {
-      await renderHome();
-    } catch (error) {
-      console.error(
-        "Error renderizando home:",
-        error
-      );
-    }
-
-
-    /* -----------------------------------------
-       Calendario preview
-       ----------------------------------------- */
-
-    try {
-      await renderCalendarPreview();
-    } catch (error) {
-      console.error(
-        "Error renderizando preview calendario:",
-        error
-      );
-    }
-
-
-    /* -----------------------------------------
-       Calendario completo
-       ----------------------------------------- */
-
-    try {
-      await renderCalendar();
-    } catch (error) {
-      console.error(
-        "Error renderizando calendario:",
-        error
-      );
-    }
-
-
-    /* -----------------------------------------
-       Página de categoría
-       ----------------------------------------- */
-
-    const categoryGrid =
+    const categoryElement =
       document.getElementById(
         "category-grid"
       );
 
 
-    if (categoryGrid) {
-      const category =
-        categoryGrid.dataset.category;
+    if (
+      categoryElement
+    ) {
 
+      renderCategoryPage(
+        categoryElement.dataset.category
+      );
 
-      if (category) {
-        try {
-          await renderCategoryPage(
-            category
-          );
-        } catch (error) {
-          console.error(
-            "Error renderizando categoría:",
-            error
-          );
-        }
-      }
     }
 
-
-    /* -----------------------------------------
-       Reveals finales
-       ----------------------------------------- */
-
-    observeReveals();
   }
 );
-
