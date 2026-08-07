@@ -246,8 +246,8 @@ export default async function handler(req, res) {
     } =
       await resend.emails.send({
 
-        from:
-          'DropRugby <onboarding@resend.dev>',
+        from: 
+          'DropRugby <newsletter@droprugby.com>',
 
         to: [
           emailClean
