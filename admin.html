@@ -1,1282 +1,1516 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>DropRugby · Admin</title>
 
-  <link rel="stylesheet" href="assets/css/admin.css">
-
+  <link
+    rel="stylesheet"
+    href="assets/admin.css"
+  >
 </head>
 
 <body>
 
-<!-- =====================================================
-     LOGIN
-====================================================== -->
+  <!-- =====================================================
+       LOGIN
+  ====================================================== -->
 
-<div id="login-screen" class="admin-login">
+  <div
+    id="login-screen"
+    class="login-screen"
+  >
 
-  <div class="admin-login-card">
+    <div class="login-card">
 
-    <div class="brand-name">
-      DROP<span>RUGBY</span>
+      <div class="login-logo">
+
+        <div class="brand-name">
+          DROP<span>RUGBY</span>
+        </div>
+
+        <p class="admin-kicker">
+          PANEL DE ADMINISTRACIÓN
+        </p>
+
+      </div>
+
+
+      <form id="login-form">
+
+        <label>
+          Usuario
+
+          <input
+            id="login-user"
+            type="text"
+            autocomplete="username"
+            required
+            value="admin"
+          >
+        </label>
+
+
+        <label>
+          Contraseña
+
+          <input
+            id="login-pass"
+            type="password"
+            autocomplete="current-password"
+            required
+          >
+        </label>
+
+
+        <button
+          class="admin-primary login-button"
+          type="submit"
+        >
+          Iniciar sesión →
+        </button>
+
+
+        <p class="admin-login-hint">
+          Acceso privado. Las credenciales se configuran en Vercel.
+        </p>
+
+
+        <p
+          id="login-error"
+          class="admin-error"
+        ></p>
+
+      </form>
+
     </div>
-
-    <p class="admin-kicker">
-      PANEL DE ADMINISTRACIÓN
-    </p>
-
-    <form id="login-form">
-
-      <label>
-        Usuario
-
-        <input
-          id="login-user"
-          autocomplete="username"
-          required
-          value="admin"
-        >
-
-      </label>
-
-      <label>
-        Contraseña
-
-        <input
-          id="login-pass"
-          type="password"
-          autocomplete="current-password"
-          required
-        >
-
-      </label>
-
-      <button
-        class="admin-primary"
-        type="submit"
-      >
-        Iniciar sesión →
-      </button>
-
-      <p class="admin-login-hint">
-        Acceso privado. Las credenciales se configuran en Vercel.
-      </p>
-
-      <p
-        id="login-error"
-        class="admin-error"
-      ></p>
-
-    </form>
 
   </div>
 
-</div>
+
+  <!-- =====================================================
+       APP
+  ====================================================== -->
+
+  <div
+    id="admin-app"
+    class="admin-app"
+    style="display:none;"
+  >
 
 
-<!-- =====================================================
-     APP ADMIN
-====================================================== -->
+    <!-- ===================================================
+         SIDEBAR
+    ==================================================== -->
 
-<div
-  id="admin-app"
-  class="admin-app"
-  style="display:none;"
->
+    <aside class="admin-sidebar">
 
+      <div class="admin-logo">
 
-  <!-- ===================================================
-       SIDEBAR
-  ==================================================== -->
-
-  <aside class="admin-sidebar">
-
-    <div class="admin-logo">
-
-      <div class="brand-name">
-        DROP<span>RUGBY</span>
-      </div>
-
-      <small>ADMIN</small>
-
-    </div>
-
-
-    <nav>
-
-      <button
-        class="admin-nav active"
-        data-section="dashboard"
-      >
-        ▦ <span>Dashboard</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="articles"
-      >
-        ▤ <span>Noticias</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="fixtures"
-      >
-        ◷ <span>Partidos</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="standings"
-      >
-        🏆 <span>Posiciones</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="players"
-      >
-        👤 <span>Jugadores</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="social"
-      >
-        📱 <span>Instagram</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="trash"
-      >
-        🗑 <span>Papelera</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="history"
-      >
-        🕐 <span>Historial</span>
-      </button>
-
-
-      <button
-        class="admin-nav"
-        data-section="data"
-      >
-        ⇅ <span>Datos</span>
-      </button>
-
-    </nav>
-
-
-    <div class="admin-sidebar-bottom">
-
-      <a href="index.html">
-        ← Ver web
-      </a>
-
-      <button id="logout-btn">
-        Cerrar sesión
-      </button>
-
-    </div>
-
-  </aside>
-
-
-  <!-- ===================================================
-       MAIN
-  ==================================================== -->
-
-  <main class="admin-main">
-
-
-    <!-- =================================================
-         TOPBAR
-    ================================================== -->
-
-    <header class="admin-topbar">
-
-      <div>
-
-        <p class="admin-kicker">
-          DROP RUGBY · ADMIN
-        </p>
-
-        <h1 id="section-title">
-          Dashboard
-        </h1>
-
-      </div>
-
-      <span class="admin-status">
-        ● Contenido online · Vercel
-      </span>
-
-    </header>
-
-
-    <!-- =================================================
-         DASHBOARD
-    ================================================== -->
-
-    <section
-      id="section-dashboard"
-      class="admin-section active"
-    >
-
-      <div class="admin-extra-grid">
-
-        <div class="admin-extra-card">
-
-          <span
-            id="stat-articles"
-            class="admin-big-number"
-          >
-            0
-          </span>
-
-          <small>
-            Noticias
-          </small>
-
+        <div class="brand-name">
+          DROP<span>RUGBY</span>
         </div>
 
-
-        <div class="admin-extra-card">
-
-          <span
-            id="stat-fixtures"
-            class="admin-big-number"
-          >
-            0
-          </span>
-
-          <small>
-            Partidos
-          </small>
-
-        </div>
-
-
-        <div class="admin-extra-card">
-
-          <span
-            id="stat-featured"
-            class="admin-big-number"
-          >
-            0
-          </span>
-
-          <small>
-            Destacadas
-          </small>
-
-        </div>
-
-
-        <div class="admin-extra-card">
-
-          <span
-            id="stat-breaking"
-            class="admin-big-number"
-          >
-            0
-          </span>
-
-          <small>
-            Último momento
-          </small>
-
-        </div>
+        <small>
+          ADMIN
+        </small>
 
       </div>
 
 
-      <div class="admin-panel">
+      <nav class="admin-nav-list">
 
-        <div class="panel-head">
 
-          <h2>
-            Acciones rápidas
-          </h2>
+        <button
+          class="admin-nav active"
+          data-section="dashboard"
+        >
+          <span>▦</span>
+          <span>Dashboard</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="articles"
+        >
+          <span>▤</span>
+          <span>Noticias</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="fixtures"
+        >
+          <span>◷</span>
+          <span>Partidos</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="standings"
+        >
+          <span>🏆</span>
+          <span>Posiciones</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="players"
+        >
+          <span>👤</span>
+          <span>Jugadores</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="social"
+        >
+          <span>📱</span>
+          <span>Instagram</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="trash"
+        >
+          <span>🗑</span>
+          <span>Papelera</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="history"
+        >
+          <span>🕐</span>
+          <span>Historial</span>
+        </button>
+
+
+        <button
+          class="admin-nav"
+          data-section="data"
+        >
+          <span>⇅</span>
+          <span>Datos</span>
+        </button>
+
+
+      </nav>
+
+
+      <div class="admin-sidebar-bottom">
+
+        <a href="index.html">
+          ← Ver web
+        </a>
+
+
+        <button id="logout-btn">
+          Cerrar sesión
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- ===================================================
+         MAIN
+    ==================================================== -->
+
+    <main class="admin-main">
+
+
+      <!-- TOPBAR -->
+
+      <header class="admin-topbar">
+
+        <div>
+
+          <p class="admin-kicker">
+            DROP RUGBY · ADMIN
+          </p>
+
+          <h1 id="section-title">
+            Dashboard
+          </h1>
 
         </div>
 
 
-        <div class="quick-actions">
+        <span class="admin-status">
+          <span class="status-dot"></span>
+          Contenido online · Vercel
+        </span>
+
+      </header>
+
+
+
+      <!-- =================================================
+           DASHBOARD
+      ================================================== -->
+
+      <section
+        id="section-dashboard"
+        class="admin-section active"
+      >
+
+        <div class="admin-extra-grid">
+
+
+          <div class="admin-extra-card">
+
+            <span
+              id="stat-articles"
+              class="admin-big-number"
+            >
+              0
+            </span>
+
+            <small>
+              Noticias
+            </small>
+
+          </div>
+
+
+          <div class="admin-extra-card">
+
+            <span
+              id="stat-fixtures"
+              class="admin-big-number"
+            >
+              0
+            </span>
+
+            <small>
+              Partidos
+            </small>
+
+          </div>
+
+
+          <div class="admin-extra-card">
+
+            <span
+              id="stat-featured"
+              class="admin-big-number"
+            >
+              0
+            </span>
+
+            <small>
+              Destacadas
+            </small>
+
+          </div>
+
+
+          <div class="admin-extra-card">
+
+            <span
+              id="stat-breaking"
+              class="admin-big-number"
+            >
+              0
+            </span>
+
+            <small>
+              Último momento
+            </small>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="admin-panel">
+
+          <div class="panel-head">
+
+            <div>
+              <p class="admin-muted">
+                Herramientas
+              </p>
+
+              <h2>
+                Acciones rápidas
+              </h2>
+            </div>
+
+          </div>
+
+
+          <div class="quick-actions">
+
+            <button
+              data-action="new-article"
+              class="quick-button"
+            >
+              <strong>+</strong>
+              Nueva noticia
+            </button>
+
+
+            <button
+              data-action="new-fixture"
+              class="quick-button"
+            >
+              <strong>+</strong>
+              Nuevo partido
+            </button>
+
+
+            <button
+              data-action="instagram"
+              class="quick-button"
+            >
+              📱
+              Generar Instagram
+            </button>
+
+
+            <button
+              data-go="standings"
+              class="quick-button"
+            >
+              🏆
+              Posiciones
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-grid-two">
+
+
+          <div class="admin-panel">
+
+            <div class="panel-head">
+
+              <div>
+
+                <p class="admin-muted">
+                  Editorial
+                </p>
+
+                <h2>
+                  Publicaciones recientes
+                </h2>
+
+              </div>
+
+
+              <button
+                class="admin-link"
+                data-go="articles"
+              >
+                Ver todas →
+              </button>
+
+            </div>
+
+
+            <div
+              id="dashboard-articles"
+              class="dashboard-list"
+            ></div>
+
+          </div>
+
+
+          <div class="admin-panel">
+
+            <div class="panel-head">
+
+              <div>
+
+                <p class="admin-muted">
+                  Agenda
+                </p>
+
+                <h2>
+                  Próximos partidos
+                </h2>
+
+              </div>
+
+
+              <button
+                class="admin-link"
+                data-go="fixtures"
+              >
+                Ver todos →
+              </button>
+
+            </div>
+
+
+            <div
+              id="dashboard-fixtures"
+              class="dashboard-list"
+            ></div>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="admin-section-card">
+
+          <div class="panel-head">
+
+            <div>
+
+              <p class="admin-muted">
+                Estadísticas
+              </p>
+
+              <h2>
+                Resumen editorial
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="dashboard-summary"
+            class="dashboard-summary"
+          ></div>
+
+        </div>
+
+
+      </section>
+
+
+
+      <!-- =================================================
+           NOTICIAS
+      ================================================== -->
+
+      <section
+        id="section-articles"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Contenido editorial
+            </p>
+
+            <h2>
+              Noticias
+            </h2>
+
+          </div>
+
 
           <button
+            class="admin-primary"
             data-action="new-article"
           >
             + Nueva noticia
           </button>
 
+        </div>
+
+
+        <div class="admin-panel">
+
+          <div class="table-tools">
+
+            <input
+              id="article-search"
+              placeholder="Buscar por título, categoría…"
+            >
+
+
+            <select id="article-filter">
+
+              <option value="TODAS">
+                Todas las categorías
+              </option>
+
+              <option>
+                Los Pumas
+              </option>
+
+              <option>
+                Super Rugby
+              </option>
+
+              <option>
+                URBA TOP 14
+              </option>
+
+              <option>
+                URBA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="admin-table-wrap">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Noticia
+                  </th>
+
+                  <th>
+                    Categoría
+                  </th>
+
+                  <th>
+                    Fecha
+                  </th>
+
+                  <th>
+                    Estado
+                  </th>
+
+                  <th>
+                    Acciones
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="articles-table"></tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           FIXTURES
+      ================================================== -->
+
+      <section
+        id="section-fixtures"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Agenda deportiva
+            </p>
+
+            <h2>
+              Partidos
+            </h2>
+
+          </div>
+
 
           <button
+            class="admin-primary"
             data-action="new-fixture"
           >
             + Nuevo partido
           </button>
 
-
-          <button
-            data-action="instagram"
-          >
-            📱 Generar Instagram
-          </button>
-
-
-          <button
-            data-go="standings"
-          >
-            🏆 Posiciones
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-grid-two">
-
-
-        <div class="admin-panel">
-
-          <div class="panel-head">
-
-            <h2>
-              Publicaciones recientes
-            </h2>
-
-            <button
-              class="admin-link"
-              data-go="articles"
-            >
-              Ver todas →
-            </button>
-
-          </div>
-
-          <div id="dashboard-articles"></div>
-
         </div>
 
 
         <div class="admin-panel">
 
-          <div class="panel-head">
+          <div class="table-tools">
 
-            <h2>
-              Próximos partidos
-            </h2>
-
-            <button
-              class="admin-link"
-              data-go="fixtures"
+            <input
+              id="fixture-search"
+              placeholder="Buscar equipo…"
             >
-              Ver todos →
-            </button>
 
-          </div>
 
-          <div id="dashboard-fixtures"></div>
+            <select id="fixture-filter">
 
-        </div>
-
-      </div>
-
-
-      <div class="admin-section-card">
-
-        <h2>
-          Resumen editorial
-        </h2>
-
-        <div id="dashboard-summary"></div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         NOTICIAS
-    ================================================== -->
-
-    <section
-      id="section-articles"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Contenido editorial
-          </p>
-
-          <h2>
-            Noticias
-          </h2>
-
-        </div>
-
-
-        <button
-          class="admin-primary"
-          data-action="new-article"
-        >
-          + Nueva noticia
-        </button>
-
-      </div>
-
-
-      <div class="admin-panel">
-
-        <div class="table-tools">
-
-          <input
-            id="article-search"
-            placeholder="Buscar por título, categoría…"
-          >
-
-
-          <select id="article-filter">
-
-            <option value="TODAS">
-              Todas las categorías
-            </option>
-
-            <option>
-              Los Pumas
-            </option>
-
-            <option>
-              Super Rugby
-            </option>
-
-            <option>
-              URBA TOP 14
-            </option>
-
-            <option>
-              URBA
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="admin-table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  Noticia
-                </th>
-
-                <th>
-                  Categoría
-                </th>
-
-                <th>
-                  Fecha
-                </th>
-
-                <th>
-                  Estado
-                </th>
-
-                <th></th>
-
-              </tr>
-
-            </thead>
-
-            <tbody id="articles-table"></tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         PARTIDOS
-    ================================================== -->
-
-    <section
-      id="section-fixtures"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Agenda deportiva
-          </p>
-
-          <h2>
-            Partidos
-          </h2>
-
-        </div>
-
-
-        <button
-          class="admin-primary"
-          data-action="new-fixture"
-        >
-          + Nuevo partido
-        </button>
-
-      </div>
-
-
-      <div class="admin-panel">
-
-        <div class="table-tools">
-
-          <input
-            id="fixture-search"
-            placeholder="Buscar equipo…"
-          >
-
-
-          <select id="fixture-filter">
-
-            <option value="TODAS">
-              Todas las competiciones
-            </option>
-
-            <option>
-              Los Pumas
-            </option>
-
-            <option>
-              Super Rugby
-            </option>
-
-            <option>
-              URBA TOP 14
-            </option>
-
-            <option>
-              URBA
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="admin-table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  Fecha
-                </th>
-
-                <th>
-                  Competición
-                </th>
-
-                <th>
-                  Partido
-                </th>
-
-                <th>
-                  Hora
-                </th>
-
-                <th>
-                  Canal
-                </th>
-
-                <th></th>
-
-              </tr>
-
-            </thead>
-
-            <tbody id="fixtures-table"></tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         POSICIONES
-    ================================================== -->
-
-    <section
-      id="section-standings"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Competencias
-          </p>
-
-          <h2>
-            Tablas de posiciones
-          </h2>
-
-        </div>
-
-
-        <button
-          class="admin-primary"
-          id="add-team"
-        >
-          + Agregar equipo
-        </button>
-
-      </div>
-
-
-      <div class="admin-section-card">
-
-
-        <!-- SELECTOR DE COMPETICIÓN -->
-
-        <div class="form-grid">
-
-          <label>
-
-            Competición
-
-            <select id="standing-competition">
-
-              <option value="URBA TOP 14">
-                URBA TOP 14
+              <option value="TODAS">
+                Todas las competiciones
               </option>
 
-              <option value="Super Rugby">
+              <option>
+                Los Pumas
+              </option>
+
+              <option>
                 Super Rugby
               </option>
 
-              <option value="Rugby Championship">
-                Rugby Championship
+              <option>
+                URBA TOP 14
+              </option>
+
+              <option>
+                URBA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="admin-table-wrap">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Fecha
+                  </th>
+
+                  <th>
+                    Competición
+                  </th>
+
+                  <th>
+                    Partido
+                  </th>
+
+                  <th>
+                    Hora
+                  </th>
+
+                  <th>
+                    Canal
+                  </th>
+
+                  <th>
+                    Acciones
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="fixtures-table"></tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           POSICIONES
+      ================================================== -->
+
+      <section
+        id="section-standings"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Competencias
+            </p>
+
+            <h2>
+              Tablas de posiciones
+            </h2>
+
+          </div>
+
+
+          <button
+            class="admin-primary"
+            id="add-team"
+          >
+            + Agregar equipo
+          </button>
+
+        </div>
+
+
+        <div class="admin-section-card">
+
+          <div class="form-grid competition-selector">
+
+            <label>
+
+              Competición
+
+              <select id="standing-competition">
+
+                <option>
+                  URBA TOP 14
+                </option>
+
+                <option>
+                  Super Rugby
+                </option>
+
+                <option>
+                  Rugby Championship
+                </option>
+
+              </select>
+
+            </label>
+
+          </div>
+
+
+          <div class="admin-table-wrap">
+
+            <table class="data-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    #
+                  </th>
+
+                  <th>
+                    Equipo
+                  </th>
+
+                  <th>
+                    PJ
+                  </th>
+
+                  <th>
+                    PG
+                  </th>
+
+                  <th>
+                    PTS
+                  </th>
+
+                  <th>
+                    Acciones
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="standings-body"></tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           JUGADORES
+      ================================================== -->
+
+      <section
+        id="section-players"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Estadísticas
+            </p>
+
+            <h2>
+              Jugadores
+            </h2>
+
+          </div>
+
+
+          <button
+            class="admin-primary"
+            id="add-player"
+          >
+            + Agregar jugador
+          </button>
+
+        </div>
+
+
+        <div class="admin-section-card">
+
+          <div class="admin-table-wrap">
+
+            <table class="data-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Jugador
+                  </th>
+
+                  <th>
+                    Club
+                  </th>
+
+                  <th>
+                    Puntos
+                  </th>
+
+                  <th>
+                    Tries
+                  </th>
+
+                  <th>
+                    Acciones
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="players-body"></tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           INSTAGRAM
+      ================================================== -->
+
+      <section
+        id="section-social"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Difusión
+            </p>
+
+            <h2>
+              Instagram
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-section-card">
+
+          <h2>
+            Generador de publicación
+          </h2>
+
+
+          <label>
+
+            Seleccionar noticia
+
+            <select id="instagram-article"></select>
+
+          </label>
+
+
+          <div class="social-box">
+
+            <label>
+
+              Caption
+
+              <textarea
+                id="instagram-caption"
+                rows="10"
+                placeholder="El caption aparecerá acá..."
+              ></textarea>
+
+            </label>
+
+
+            <div class="modal-actions">
+
+              <button
+                class="admin-primary"
+                id="generate-instagram"
+                type="button"
+              >
+                Generar caption
+              </button>
+
+
+              <button
+                class="secondary-btn"
+                id="copy-instagram"
+                type="button"
+              >
+                Copiar
+              </button>
+
+
+              <button
+                class="secondary-btn"
+                id="open-instagram"
+                type="button"
+              >
+                Abrir Instagram
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           PAPELERA
+      ================================================== -->
+
+      <section
+        id="section-trash"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Recuperación
+            </p>
+
+            <h2>
+              Papelera
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-section-card">
+
+          <div id="trash-list"></div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           HISTORIAL
+      ================================================== -->
+
+      <section
+        id="section-history"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Cambios
+            </p>
+
+            <h2>
+              Historial
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-section-card">
+
+          <div id="history-list"></div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           DATOS
+      ================================================== -->
+
+      <section
+        id="section-data"
+        class="admin-section"
+      >
+
+        <div class="section-toolbar">
+
+          <div>
+
+            <p class="admin-muted">
+              Mantenimiento
+            </p>
+
+            <h2>
+              Datos y respaldo
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-grid-two">
+
+
+          <div class="admin-panel">
+
+            <p class="admin-muted">
+              BACKUP
+            </p>
+
+            <h2>
+              Exportar
+            </h2>
+
+            <p>
+              Descargá todo el contenido de DropRugby.
+            </p>
+
+
+            <button
+              class="admin-primary"
+              id="export-data"
+              type="button"
+            >
+              Exportar JSON
+            </button>
+
+          </div>
+
+
+          <div class="admin-panel">
+
+            <p class="admin-muted">
+              RESTAURACIÓN
+            </p>
+
+            <h2>
+              Importar
+            </h2>
+
+            <p>
+              Restaurá un backup anterior.
+            </p>
+
+
+            <input
+              id="import-data"
+              type="file"
+              accept="application/json"
+            >
+
+          </div>
+
+
+        </div>
+
+      </section>
+
+
+    </main>
+
+  </div>
+
+
+
+  <!-- =====================================================
+       MODAL · NOTICIA
+  ====================================================== -->
+
+  <div
+    id="article-modal"
+    class="admin-modal"
+  >
+
+    <div class="admin-modal-content">
+
+
+      <div class="modal-head">
+
+        <div>
+
+          <p
+            class="admin-kicker"
+            id="modal-kicker"
+          >
+            NUEVA PUBLICACIÓN
+          </p>
+
+          <h2 id="modal-title">
+            Nueva noticia
+          </h2>
+
+        </div>
+
+
+        <button
+          class="modal-close"
+          data-close
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form
+        id="article-form"
+        class="editor-form"
+      >
+
+        <input
+          type="hidden"
+          id="article-id"
+        >
+
+
+        <label>
+          Título
+
+          <input
+            id="article-title"
+            required
+          >
+        </label>
+
+
+        <div class="form-grid">
+
+
+          <label>
+            Categoría
+
+            <select
+              id="article-category"
+              required
+            >
+
+              <option>
+                Los Pumas
+              </option>
+
+              <option>
+                Super Rugby
+              </option>
+
+              <option>
+                URBA TOP 14
+              </option>
+
+              <option>
+                URBA
               </option>
 
             </select>
 
           </label>
 
-        </div>
 
+          <label>
+            Subcategoría
 
-        <!-- INFORMACIÓN -->
-
-        <div class="standing-info">
-
-          <p class="admin-muted">
-
-            Los equipos cargados en esta sección
-            aparecerán en la tabla de posiciones
-            de la página correspondiente.
-
-          </p>
-
-          <p class="admin-muted">
-
-            Para URBA TOP 14 podés agregar el
-            nombre del club y la URL de su escudo.
-
-          </p>
-
-        </div>
-
-
-        <!-- TABLA -->
-
-        <div class="admin-table-wrap">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  #
-                </th>
-
-                <th>
-                  Escudo
-                </th>
-
-                <th>
-                  Equipo
-                </th>
-
-                <th>
-                  PJ
-                </th>
-
-                <th>
-                  PG
-                </th>
-
-                <th>
-                  PTS
-                </th>
-
-                <th></th>
-
-              </tr>
-
-            </thead>
-
-
-            <tbody id="standings-body"></tbody>
-
-          </table>
-
-        </div>
-
-
-        <!-- FORMULARIO PARA EQUIPO -->
-
-        <div
-          id="standing-editor"
-          class="standing-editor"
-          style="display:none;"
-        >
-
-          <div class="panel-head">
-
-            <h3>
-              Agregar equipo
-            </h3>
-
-          </div>
-
-
-          <div class="form-grid">
-
-            <label>
-
-              Equipo
-
-              <input
-                id="standing-team"
-                placeholder="Ej: SIC"
-              >
-
-            </label>
-
-
-            <label>
-
-              Escudo
-
-              <input
-                id="standing-logo"
-                type="url"
-                placeholder="https://.../escudo.png"
-              >
-
-            </label>
-
-          </div>
-
-
-          <div class="form-grid">
-
-            <label>
-
-              PJ
-
-              <input
-                id="standing-pj"
-                type="number"
-                min="0"
-                value="0"
-              >
-
-            </label>
-
-
-            <label>
-
-              PG
-
-              <input
-                id="standing-pg"
-                type="number"
-                min="0"
-                value="0"
-              >
-
-            </label>
-
-
-            <label>
-
-              PTS
-
-              <input
-                id="standing-pts"
-                type="number"
-                min="0"
-                value="0"
-              >
-
-            </label>
-
-          </div>
-
-
-          <div class="modal-actions">
-
-            <button
-              type="button"
-              class="admin-secondary"
-              id="cancel-standing"
+            <input
+              id="article-subcategory"
+              placeholder="Fixture, Análisis, Actualidad…"
             >
-              Cancelar
-            </button>
 
+          </label>
 
-            <button
-              type="button"
-              class="admin-primary"
-              id="save-standing"
-            >
-              Guardar equipo
-            </button>
-
-          </div>
 
         </div>
 
-      </div>
 
-    </section>
+        <div class="form-grid">
 
 
-    <!-- =================================================
-         JUGADORES
-    ================================================== -->
+          <label>
+            Autor
 
-    <section
-      id="section-players"
-      class="admin-section"
-    >
+            <input
+              id="article-author"
+              value="DropRugby"
+              required
+            >
 
-      <div class="section-toolbar">
+          </label>
+
+
+          <label>
+            Fecha
+
+            <input
+              id="article-date"
+              type="date"
+              required
+            >
+
+          </label>
+
+
+        </div>
+
+
+        <label>
+          Imagen
+
+          <input
+            id="article-image"
+            placeholder="URL o clase visual"
+          >
+
+        </label>
+
+
+        <label>
+          Bajada
+
+          <textarea
+            id="article-excerpt"
+            rows="4"
+            required
+          ></textarea>
+
+        </label>
+
+
+        <label>
+          Contenido
+
+          <textarea
+            id="article-content"
+            rows="12"
+            placeholder="Podés utilizar HTML simple..."
+          ></textarea>
+
+        </label>
+
+
+        <div class="form-grid">
+
+
+          <label>
+            Publicación
+
+            <select id="article-status">
+
+              <option value="published">
+                Publicar ahora
+              </option>
+
+              <option value="scheduled">
+                Programar
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+            Hora
+
+            <input
+              id="article-time"
+              type="time"
+              value="12:00"
+            >
+
+          </label>
+
+
+        </div>
+
+
+        <label class="check">
+
+          <input
+            id="article-featured"
+            type="checkbox"
+          >
+
+          <span>
+            ⭐ Noticia destacada
+          </span>
+
+        </label>
+
+
+        <label class="check">
+
+          <input
+            id="article-breaking"
+            type="checkbox"
+          >
+
+          <span>
+            🔴 Último momento
+          </span>
+
+        </label>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="admin-secondary"
+            data-close
+          >
+            Cancelar
+          </button>
+
+
+          <button
+            type="submit"
+            class="admin-primary"
+          >
+            Guardar noticia
+          </button>
+
+        </div>
+
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =====================================================
+       MODAL · PARTIDO
+  ====================================================== -->
+
+  <div
+    id="fixture-modal"
+    class="admin-modal"
+  >
+
+    <div class="admin-modal-content">
+
+
+      <div class="modal-head">
 
         <div>
 
-          <p class="admin-muted">
-            Estadísticas
+          <p class="admin-kicker">
+            AGENDA
           </p>
 
-          <h2>
-            Jugadores
+          <h2 id="fixture-modal-title">
+            Nuevo partido
           </h2>
 
         </div>
 
 
         <button
-          class="admin-primary"
-          id="add-player"
+          class="modal-close"
+          data-close
+          type="button"
         >
-          + Agregar jugador
+          ×
         </button>
 
       </div>
 
 
-      <div class="admin-section-card">
-
-        <table class="data-table">
-
-          <thead>
-
-            <tr>
-
-              <th>
-                Jugador
-              </th>
-
-              <th>
-                Club
-              </th>
-
-              <th>
-                Puntos
-              </th>
-
-              <th>
-                Tries
-              </th>
-
-              <th></th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody id="players-body"></tbody>
-
-        </table>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         INSTAGRAM
-    ================================================== -->
-
-    <section
-      id="section-social"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Difusión
-          </p>
-
-          <h2>
-            Instagram
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-section-card">
-
-        <h2>
-          Generador de publicación
-        </h2>
-
-
-        <label>
-
-          Seleccionar noticia
-
-          <select id="instagram-article"></select>
-
-        </label>
-
-
-        <div class="social-box">
-
-          <label>
-
-            Caption
-
-            <textarea
-              id="instagram-caption"
-            ></textarea>
-
-          </label>
-
-
-          <div class="modal-actions">
-
-            <button
-              class="admin-primary"
-              id="generate-instagram"
-            >
-              Generar caption
-            </button>
-
-
-            <button
-              class="secondary-btn"
-              id="copy-instagram"
-            >
-              Copiar
-            </button>
-
-
-            <button
-              class="secondary-btn"
-              id="open-instagram"
-            >
-              Abrir Instagram
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         PAPELERA
-    ================================================== -->
-
-    <section
-      id="section-trash"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Recuperación
-          </p>
-
-          <h2>
-            Papelera
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-section-card">
-
-        <div id="trash-list"></div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         HISTORIAL
-    ================================================== -->
-
-    <section
-      id="section-history"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Cambios
-          </p>
-
-          <h2>
-            Historial
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-section-card">
-
-        <div id="history-list"></div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =================================================
-         DATOS
-    ================================================== -->
-
-    <section
-      id="section-data"
-      class="admin-section"
-    >
-
-      <div class="section-toolbar">
-
-        <div>
-
-          <p class="admin-muted">
-            Mantenimiento
-          </p>
-
-          <h2>
-            Datos y respaldo
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-grid-two">
-
-
-        <div class="admin-panel">
-
-          <h2>
-            Exportar
-          </h2>
-
-          <p>
-            Descargá todo el contenido de Drop Rugby.
-          </p>
-
-          <button
-            class="admin-primary"
-            id="export-data"
-          >
-            Exportar JSON
-          </button>
-
-        </div>
-
-
-        <div class="admin-panel">
-
-          <h2>
-            Importar
-          </h2>
-
-          <p>
-            Restaurá un backup anterior.
-          </p>
-
-          <input
-            id="import-data"
-            type="file"
-            accept="application/json"
-          >
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-</div>
-
-
-<!-- =====================================================
-     MODAL · NOTICIA
-====================================================== -->
-
-<div
-  id="article-modal"
-  class="admin-modal"
->
-
-  <div class="admin-modal-content">
-
-    <div class="modal-head">
-
-      <div>
-
-        <p
-          class="admin-kicker"
-          id="modal-kicker"
-        >
-          NUEVA PUBLICACIÓN
-        </p>
-
-        <h2 id="modal-title">
-          Nueva noticia
-        </h2>
-
-      </div>
-
-
-      <button
-        class="modal-close"
-        data-close
+      <form
+        id="fixture-form"
+        class="editor-form"
       >
-        ×
-      </button>
-
-    </div>
-
-
-    <form
-      id="article-form"
-      class="editor-form"
-    >
-
-      <input
-        type="hidden"
-        id="article-id"
-      >
-
-
-      <label>
-
-        Título
 
         <input
-          id="article-title"
-          required
+          type="hidden"
+          id="fixture-index"
         >
 
-      </label>
-
-
-      <div class="form-grid">
 
         <label>
-
-          Categoría
+          Competición
 
           <select
-            id="article-category"
+            id="fixture-competition"
             required
           >
 
@@ -1301,494 +1535,410 @@
         </label>
 
 
-        <label>
+        <div class="form-grid">
 
-          Subcategoría
 
-          <input
-            id="article-subcategory"
-            placeholder="Fixture, Análisis, Actualidad…"
+          <label>
+            Local
+
+            <input
+              id="fixture-home"
+              required
+            >
+
+          </label>
+
+
+          <label>
+            Visitante
+
+            <input
+              id="fixture-away"
+              required
+            >
+
+          </label>
+
+
+        </div>
+
+
+        <div class="form-grid">
+
+
+          <label>
+            Fecha
+
+            <input
+              id="fixture-date"
+              type="date"
+              required
+            >
+
+          </label>
+
+
+          <label>
+            Hora
+
+            <input
+              id="fixture-time"
+              type="time"
+              required
+            >
+
+          </label>
+
+
+        </div>
+
+
+        <div class="form-grid">
+
+
+          <label>
+            Estadio
+
+            <input
+              id="fixture-venue"
+            >
+
+          </label>
+
+
+          <label>
+            Canal
+
+            <input
+              id="fixture-channel"
+              value="ESPN"
+            >
+
+          </label>
+
+
+        </div>
+
+
+        <div class="modal-actions">
+
+
+          <button
+            type="button"
+            class="admin-secondary"
+            data-close
           >
-
-        </label>
-
-      </div>
+            Cancelar
+          </button>
 
 
-      <div class="form-grid">
-
-        <label>
-
-          Autor
-
-          <input
-            id="article-author"
-            value="DropRugby"
-            required
+          <button
+            type="submit"
+            class="admin-primary"
           >
+            Guardar partido
+          </button>
 
-        </label>
 
+        </div>
 
-        <label>
 
-          Fecha
-
-          <input
-            id="article-date"
-            type="date"
-            required
-          >
-
-        </label>
-
-      </div>
-
-
-      <label>
-
-        Imagen
-
-        <input
-          id="article-image"
-          placeholder="URL o clase visual"
-        >
-
-      </label>
-
-
-      <label>
-
-        Bajada
-
-        <textarea
-          id="article-excerpt"
-          rows="3"
-          required
-        ></textarea>
-
-      </label>
-
-
-      <label>
-
-        Contenido
-
-        <textarea
-          id="article-content"
-          rows="12"
-          placeholder="Podés utilizar HTML simple: <p>, <h2>, <blockquote>..."
-        ></textarea>
-
-      </label>
-
-
-      <div class="form-grid">
-
-        <label>
-
-          Publicación
-
-          <select id="article-status">
-
-            <option value="published">
-              Publicar ahora
-            </option>
-
-            <option value="scheduled">
-              Programar
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          Hora
-
-          <input
-            id="article-time"
-            type="time"
-            value="12:00"
-          >
-
-        </label>
-
-      </div>
-
-
-      <label class="check">
-
-        <input
-          id="article-featured"
-          type="checkbox"
-        >
-
-        ⭐ Noticia destacada
-
-      </label>
-
-
-      <label class="check">
-
-        <input
-          id="article-breaking"
-          type="checkbox"
-        >
-
-        🔴 Último momento
-
-      </label>
-
-
-      <div class="modal-actions">
-
-        <button
-          type="button"
-          class="admin-secondary"
-          data-close
-        >
-          Cancelar
-        </button>
-
-
-        <button
-          type="submit"
-          class="admin-primary"
-        >
-          Guardar noticia
-        </button>
-
-      </div>
-
-    </form>
-
-  </div>
-
-</div>
-
-
-<!-- =====================================================
-     MODAL · PARTIDO
-====================================================== -->
-
-<div
-  id="fixture-modal"
-  class="admin-modal"
->
-
-  <div class="admin-modal-content">
-
-    <div class="modal-head">
-
-      <div>
-
-        <p class="admin-kicker">
-          AGENDA
-        </p>
-
-        <h2 id="fixture-modal-title">
-          Nuevo partido
-        </h2>
-
-      </div>
-
-
-      <button
-        class="modal-close"
-        data-close
-      >
-        ×
-      </button>
+      </form>
 
     </div>
 
-
-    <form
-      id="fixture-form"
-      class="editor-form"
-    >
-
-      <input
-        type="hidden"
-        id="fixture-index"
-      >
+  </div>
 
 
-      <label>
 
-        Competición
+  <!-- =====================================================
+       MODAL · EQUIPO
+  ====================================================== -->
 
-        <select
-          id="fixture-competition"
-          required
-        >
+  <div
+    id="team-modal"
+    class="admin-modal"
+  >
 
-          <option>
-            Los Pumas
-          </option>
+    <div class="admin-modal-content">
 
-          <option>
-            Super Rugby
-          </option>
 
-          <option>
+      <div class="modal-head">
+
+        <div>
+
+          <p class="admin-kicker">
             URBA TOP 14
-          </option>
+          </p>
 
-          <option>
-            URBA
-          </option>
+          <h2>
+            Agregar equipo
+          </h2>
 
-        </select>
+        </div>
 
-      </label>
-
-
-      <div class="form-grid">
-
-        <label>
-
-          Local
-
-          <input
-            id="fixture-home"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Visitante
-
-          <input
-            id="fixture-away"
-            required
-          >
-
-        </label>
-
-      </div>
-
-
-      <div class="form-grid">
-
-        <label>
-
-          Fecha
-
-          <input
-            id="fixture-date"
-            type="date"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Hora
-
-          <input
-            id="fixture-time"
-            type="time"
-            required
-          >
-
-        </label>
-
-      </div>
-
-
-      <div class="form-grid">
-
-        <label>
-
-          Estadio
-
-          <input
-            id="fixture-venue"
-          >
-
-        </label>
-
-
-        <label>
-
-          Canal
-
-          <input
-            id="fixture-channel"
-            value="ESPN"
-          >
-
-        </label>
-
-      </div>
-
-
-      <div class="modal-actions">
 
         <button
-          type="button"
-          class="admin-secondary"
+          class="modal-close"
           data-close
+          type="button"
         >
-          Cancelar
-        </button>
-
-
-        <button
-          type="submit"
-          class="admin-primary"
-        >
-          Guardar partido
+          ×
         </button>
 
       </div>
 
-    </form>
 
-  </div>
-
-</div>
-
-
-<!-- =====================================================
-     MODAL · JUGADOR
-====================================================== -->
-
-<div
-  id="player-modal"
-  class="admin-modal"
->
-
-  <div class="admin-modal-content">
-
-    <div class="modal-head">
-
-      <div>
-
-        <p class="admin-kicker">
-          ESTADÍSTICAS
-        </p>
-
-        <h2>
-          Nuevo jugador
-        </h2>
-
-      </div>
-
-
-      <button
-        class="modal-close"
-        data-close
+      <form
+        id="team-form"
+        class="editor-form"
       >
-        ×
-      </button>
-
-    </div>
-
-
-    <form
-      id="player-form"
-      class="editor-form"
-    >
-
-      <label>
-
-        Nombre
-
-        <input
-          id="player-name"
-          required
-        >
-
-      </label>
-
-
-      <label>
-
-        Club
-
-        <input
-          id="player-club"
-          required
-        >
-
-      </label>
-
-
-      <div class="form-grid">
 
         <label>
+          Nombre del club
 
+          <input
+            id="team-name"
+            required
+            placeholder="Ej: SIC"
+          >
+
+        </label>
+
+
+        <label>
+          Escudo
+
+          <input
+            id="team-logo"
+            placeholder="URL del escudo"
+          >
+
+        </label>
+
+
+        <div class="form-grid">
+
+
+          <label>
+            PJ
+
+            <input
+              id="team-pj"
+              type="number"
+              min="0"
+              value="0"
+            >
+
+          </label>
+
+
+          <label>
+            PG
+
+            <input
+              id="team-pg"
+              type="number"
+              min="0"
+              value="0"
+            >
+
+          </label>
+
+
+        </div>
+
+
+        <label>
           Puntos
 
           <input
-            id="player-points"
+            id="team-pts"
             type="number"
             min="0"
             value="0"
+          >
+
+        </label>
+
+
+        <div class="modal-actions">
+
+
+          <button
+            type="button"
+            class="admin-secondary"
+            data-close
+          >
+            Cancelar
+          </button>
+
+
+          <button
+            type="submit"
+            class="admin-primary"
+          >
+            Guardar equipo
+          </button>
+
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =====================================================
+       MODAL · JUGADOR
+  ====================================================== -->
+
+  <div
+    id="player-modal"
+    class="admin-modal"
+  >
+
+    <div class="admin-modal-content">
+
+
+      <div class="modal-head">
+
+        <div>
+
+          <p class="admin-kicker">
+            ESTADÍSTICAS
+          </p>
+
+          <h2>
+            Nuevo jugador
+          </h2>
+
+        </div>
+
+
+        <button
+          class="modal-close"
+          data-close
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form
+        id="player-form"
+        class="editor-form"
+      >
+
+        <label>
+          Jugador
+
+          <input
+            id="player-name"
+            required
+            placeholder="Nombre del jugador"
           >
 
         </label>
 
 
         <label>
-
-          Tries
+          Club
 
           <input
-            id="player-tries"
-            type="number"
-            min="0"
-            value="0"
+            id="player-club"
+            placeholder="Club"
           >
 
         </label>
 
-      </div>
+
+        <div class="form-grid">
 
 
-      <div class="modal-actions">
+          <label>
+            Puntos
 
-        <button
-          type="button"
-          class="admin-secondary"
-          data-close
-        >
-          Cancelar
-        </button>
+            <input
+              id="player-points"
+              type="number"
+              min="0"
+              value="0"
+            >
+
+          </label>
 
 
-        <button
-          type="submit"
-          class="admin-primary"
-        >
-          Guardar jugador
-        </button>
+          <label>
+            Tries
 
-      </div>
+            <input
+              id="player-tries"
+              type="number"
+              min="0"
+              value="0"
+            >
 
-    </form>
+          </label>
+
+
+        </div>
+
+
+        <div class="modal-actions">
+
+
+          <button
+            type="button"
+            class="admin-secondary"
+            data-close
+          >
+            Cancelar
+          </button>
+
+
+          <button
+            type="submit"
+            class="admin-primary"
+          >
+            Guardar jugador
+          </button>
+
+
+        </div>
+
+      </form>
+
+    </div>
 
   </div>
 
-</div>
 
 
-<!-- =====================================================
-     JAVASCRIPT
-====================================================== -->
+  <!-- =====================================================
+       TOAST
+  ====================================================== -->
 
-<script src="assets/js/admin.js"></script>
+  <div
+    id="admin-toast"
+    class="admin-toast"
+  ></div>
+
+
+
+  <!-- =====================================================
+       JS
+  ====================================================== -->
+
+  <script
+    src="assets/admin.js"
+    defer
+  ></script>
 
 </body>
 </html>
-```
