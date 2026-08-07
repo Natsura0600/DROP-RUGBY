@@ -33,13 +33,15 @@ const DEFAULT_CONTENT = {
 // ============================================================
 
 function getSecret() {
-  if (!process.env.ADMIN_SESSION_SECRET) {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+
+  if (!secret) {
     throw new Error(
       "Falta ADMIN_SESSION_SECRET en Environment Variables"
     );
   }
 
-  return process.env.ADMIN_SESSION_SECRET;
+  return secret;
 }
 
 function parseCookies(req) {
@@ -62,6 +64,47 @@ function parseCookies(req) {
   });
 
   return cookies;
+}
+
+function json(res, status, data) {
+  return res.status(status).json(data);
+}
+
+// ============================================================
+// BODY
+// ============================================================
+
+async function getBody(req) {
+  if (
+    req.body &&
+    typeof req.body === "object" &&
+    !Buffer.isBuffer(req.body)
+  ) {
+    return req.body;
+  }
+
+  return new Promise((resolve, reject) => {
+    let raw = "";
+
+    req.on("data", (chunk) => {
+      raw += chunk;
+    });
+
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(raw));
+      } catch {
+        reject(new Error("JSON inválido"));
+      }
+    });
+
+    req.on("error", reject);
+  });
 }
 
 // ============================================================
@@ -160,49 +203,56 @@ function clearCookie(res) {
   );
 }
 
-// ============================================================
-// RESPUESTAS
-// ============================================================
+function requireAuth(req, res) {
+  const cookies = parseCookies(req);
 
-function json(res, status, data) {
-  return res.status(status).json(data);
+  const session = verifySession(
+    cookies[COOKIE_NAME]
+  );
+
+  if (!session) {
+    json(res, 401, {
+      ok: false,
+      error: "No autorizado",
+    });
+
+    return null;
+  }
+
+  return session;
 }
 
 // ============================================================
-// BODY
+// LOGIN
 // ============================================================
 
-async function getBody(req) {
-  if (
-    req.body &&
-    typeof req.body === "object" &&
-    !Buffer.isBuffer(req.body)
-  ) {
-    return req.body;
+function checkLogin(username, password) {
+  const adminUser =
+    process.env.ADMIN_USER || "admin";
+
+  const adminPassword =
+    process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    throw new Error(
+      "Falta ADMIN_PASSWORD en Environment Variables"
+    );
   }
 
-  return new Promise((resolve, reject) => {
-    let raw = "";
+  return (
+    username === adminUser &&
+    password === adminPassword
+  );
+}
 
-    req.on("data", (chunk) => {
-      raw += chunk;
-    });
+// ============================================================
+// IDS
+// ============================================================
 
-    req.on("end", () => {
-      if (!raw) {
-        resolve({});
-        return;
-      }
-
-      try {
-        resolve(JSON.parse(raw));
-      } catch {
-        reject(new Error("JSON inválido"));
-      }
-    });
-
-    req.on("error", reject);
-  });
+function createId(prefix = "item") {
+  return `${prefix}_${Date.now()}_${crypto
+    .randomBytes(4)
+    .toString("hex")}`;
 }
 
 // ============================================================
@@ -310,16 +360,6 @@ async function saveContent(content) {
 }
 
 // ============================================================
-// IDS
-// ============================================================
-
-function createId(prefix = "item") {
-  return `${prefix}_${Date.now()}_${crypto
-    .randomBytes(4)
-    .toString("hex")}`;
-}
-
-// ============================================================
 // HISTORIAL
 // ============================================================
 
@@ -338,12 +378,14 @@ function addHistory(
     action,
     type,
     itemId: item?.id || null,
+
     title:
       item?.title ||
       item?.name ||
       item?.team ||
       item?.player ||
       null,
+
     date: new Date().toISOString(),
   });
 
@@ -374,49 +416,20 @@ function moveToTrash(
 }
 
 // ============================================================
-// AUTENTICACIÓN
+// SEGURIDAD HTML
 // ============================================================
 
-function requireAuth(req, res) {
-  const cookies = parseCookies(req);
-
-  const session = verifySession(
-    cookies[COOKIE_NAME]
-  );
-
-  if (!session) {
-    json(res, 401, {
-      ok: false,
-      error: "No autorizado",
-    });
-
-    return null;
-  }
-
-  return session;
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-// ============================================================
-// LOGIN
-// ============================================================
-
-function checkLogin(username, password) {
-  const adminUser =
-    process.env.ADMIN_USER || "admin";
-
-  const adminPassword =
-    process.env.ADMIN_PASSWORD;
-
-  if (!adminPassword) {
-    throw new Error(
-      "Falta ADMIN_PASSWORD en Environment Variables"
-    );
-  }
-
-  return (
-    username === adminUser &&
-    password === adminPassword
-  );
+function escapeAttribute(value) {
+  return escapeHtml(value);
 }
 
 // ============================================================
@@ -504,26 +517,32 @@ async function sendNewsletter({
     i < emails.length;
     i += chunkSize
   ) {
-    const chunk = emails.slice(
-      i,
-      i + chunkSize
-    );
+    const chunk =
+      emails.slice(
+        i,
+        i + chunkSize
+      );
 
     const response =
       await fetch(
         "https://api.resend.com/emails",
         {
           method: "POST",
+
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization:
+              `Bearer ${apiKey}`,
+
             "Content-Type":
               "application/json",
           },
+
           body: JSON.stringify({
             from,
             to: chunk,
             subject,
             html,
+
             text:
               text ||
               "Nueva noticia de DropRugby.",
@@ -602,9 +621,7 @@ export default async function handler(
       const action =
         req.query?.action;
 
-      // ------------------------------------------------------
-      // CHECK SESSION
-      // ------------------------------------------------------
+      // SESSION
 
       if (
         action === "session" ||
@@ -633,9 +650,7 @@ export default async function handler(
         });
       }
 
-      // ------------------------------------------------------
       // CONTENIDO
-      // ------------------------------------------------------
 
       const session =
         requireAuth(req, res);
@@ -682,10 +697,7 @@ export default async function handler(
             body.password || ""
           );
 
-        if (
-          !username ||
-          !password
-        ) {
+        if (!username || !password) {
           return json(res, 400, {
             ok: false,
             error:
@@ -735,7 +747,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // TODO LO DEMÁS REQUIERE LOGIN
+      // AUTH PARA TODO LO DEMÁS
       // ======================================================
 
       const session =
@@ -744,7 +756,7 @@ export default async function handler(
       if (!session) return;
 
       // ======================================================
-      // GET / LOAD
+      // LOAD
       // ======================================================
 
       if (
@@ -769,25 +781,45 @@ export default async function handler(
         action === "save-all" ||
         action === "update"
       ) {
-        let content;
-
-        if (body.content) {
-          content = body.content;
-        } else {
-          content = {
-            articles: body.articles,
-            fixtures: body.fixtures,
-            standings: body.standings,
-            players: body.players,
-            instagram: body.instagram,
-            trash: body.trash,
-            history: body.history,
-            settings: body.settings,
-          };
-        }
-
         const current =
           await loadContent();
+
+        const content =
+          body.content
+            ? body.content
+            : {
+                articles:
+                  body.articles ??
+                  current.articles,
+
+                fixtures:
+                  body.fixtures ??
+                  current.fixtures,
+
+                standings:
+                  body.standings ??
+                  current.standings,
+
+                players:
+                  body.players ??
+                  current.players,
+
+                instagram:
+                  body.instagram ??
+                  current.instagram,
+
+                trash:
+                  body.trash ??
+                  current.trash,
+
+                history:
+                  body.history ??
+                  current.history,
+
+                settings:
+                  body.settings ??
+                  current.settings,
+              };
 
         const merged = {
           ...current,
@@ -813,7 +845,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // CREAR / EDITAR NOTICIA
+      // ARTÍCULOS
       // ======================================================
 
       if (
@@ -836,7 +868,14 @@ export default async function handler(
             source.title || "",
 
           slug:
-            source.slug || "",
+            source.slug ||
+            String(
+              source.title || ""
+            )
+              .toLowerCase()
+              .trim()
+              .replace(/[^\w\s-]/g, "")
+              .replace(/\s+/g, "-"),
 
           excerpt:
             source.excerpt || "",
@@ -863,18 +902,24 @@ export default async function handler(
             new Date().toISOString(),
 
           featured:
-            source.featured ??
-            false,
+            source.featured ?? false,
 
           published:
-            source.published ??
-            true,
+            source.published ?? true,
 
           tags:
             Array.isArray(
               source.tags
             )
               ? source.tags
+              : typeof source.tags ===
+                "string"
+              ? source.tags
+                  .split(",")
+                  .map((tag) =>
+                    tag.trim()
+                  )
+                  .filter(Boolean)
               : [],
 
           createdAt:
@@ -885,22 +930,15 @@ export default async function handler(
             new Date().toISOString(),
         };
 
-        const existingIndex =
+        const index =
           content.articles.findIndex(
             (item) =>
-              item.id ===
-              article.id
+              item.id === article.id
           );
 
-        if (
-          existingIndex >= 0
-        ) {
-          content.articles[
-            existingIndex
-          ] = {
-            ...content.articles[
-              existingIndex
-            ],
+        if (index >= 0) {
+          content.articles[index] = {
+            ...content.articles[index],
             ...article,
             updatedAt:
               new Date().toISOString(),
@@ -938,9 +976,7 @@ export default async function handler(
         });
       }
 
-      // ======================================================
-      // ELIMINAR NOTICIA
-      // ======================================================
+      // DELETE ARTICLE
 
       if (
         action === "delete-article" ||
@@ -999,7 +1035,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // CREAR / EDITAR PARTIDO
+      // PARTIDOS
       // ======================================================
 
       if (
@@ -1011,8 +1047,7 @@ export default async function handler(
           await loadContent();
 
         const fixture = {
-          ...(body.fixture ||
-            body),
+          ...(body.fixture || body),
         };
 
         delete fixture.action;
@@ -1036,12 +1071,8 @@ export default async function handler(
           );
 
         if (index >= 0) {
-          content.fixtures[
-            index
-          ] = {
-            ...content.fixtures[
-              index
-            ],
+          content.fixtures[index] = {
+            ...content.fixtures[index],
             ...fixture,
           };
 
@@ -1077,9 +1108,7 @@ export default async function handler(
         });
       }
 
-      // ======================================================
-      // ELIMINAR PARTIDO
-      // ======================================================
+      // DELETE FIXTURE
 
       if (
         action === "delete-fixture" ||
@@ -1138,7 +1167,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // EQUIPOS / TABLA
+      // EQUIPOS
       // ======================================================
 
       if (
@@ -1151,8 +1180,7 @@ export default async function handler(
           await loadContent();
 
         const team = {
-          ...(body.team ||
-            body),
+          ...(body.team || body),
         };
 
         delete team.action;
@@ -1168,12 +1196,8 @@ export default async function handler(
           );
 
         if (index >= 0) {
-          content.standings[
-            index
-          ] = {
-            ...content.standings[
-              index
-            ],
+          content.standings[index] = {
+            ...content.standings[index],
             ...team,
           };
 
@@ -1184,9 +1208,7 @@ export default async function handler(
             team
           );
         } else {
-          content.standings.push(
-            team
-          );
+          content.standings.push(team);
 
           addHistory(
             content,
@@ -1209,9 +1231,7 @@ export default async function handler(
         });
       }
 
-      // ======================================================
-      // ELIMINAR EQUIPO
-      // ======================================================
+      // DELETE TEAM
 
       if (
         action === "delete-team" ||
@@ -1282,8 +1302,7 @@ export default async function handler(
           await loadContent();
 
         const player = {
-          ...(body.player ||
-            body),
+          ...(body.player || body),
         };
 
         delete player.action;
@@ -1303,12 +1322,8 @@ export default async function handler(
           );
 
         if (index >= 0) {
-          content.players[
-            index
-          ] = {
-            ...content.players[
-              index
-            ],
+          content.players[index] = {
+            ...content.players[index],
             ...player,
           };
 
@@ -1344,9 +1359,7 @@ export default async function handler(
         });
       }
 
-      // ======================================================
-      // ELIMINAR JUGADOR
-      // ======================================================
+      // DELETE PLAYER
 
       if (
         action === "delete-player" ||
@@ -1438,12 +1451,8 @@ export default async function handler(
           );
 
         if (index >= 0) {
-          content.instagram[
-            index
-          ] = {
-            ...content.instagram[
-              index
-            ],
+          content.instagram[index] = {
+            ...content.instagram[index],
             ...post,
           };
 
@@ -1479,9 +1488,7 @@ export default async function handler(
         });
       }
 
-      // ======================================================
-      // ELIMINAR INSTAGRAM
-      // ======================================================
+      // DELETE INSTAGRAM
 
       if (
         action === "delete-instagram" ||
@@ -1540,7 +1547,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // RESTAURAR PAPELERA
+      // RESTAURAR
       // ======================================================
 
       if (
@@ -1581,33 +1588,15 @@ export default async function handler(
           deleted.item;
 
         if (type === "article") {
-          content.articles.unshift(
-            item
-          );
-        } else if (
-          type === "fixture"
-        ) {
-          content.fixtures.push(
-            item
-          );
-        } else if (
-          type === "team"
-        ) {
-          content.standings.push(
-            item
-          );
-        } else if (
-          type === "player"
-        ) {
-          content.players.push(
-            item
-          );
-        } else if (
-          type === "instagram"
-        ) {
-          content.instagram.unshift(
-            item
-          );
+          content.articles.unshift(item);
+        } else if (type === "fixture") {
+          content.fixtures.push(item);
+        } else if (type === "team") {
+          content.standings.push(item);
+        } else if (type === "player") {
+          content.players.push(item);
+        } else if (type === "instagram") {
+          content.instagram.unshift(item);
         }
 
         addHistory(
@@ -1634,8 +1623,7 @@ export default async function handler(
       // ======================================================
 
       if (
-        action ===
-          "permanent-delete" ||
+        action === "permanent-delete" ||
         action === "delete-trash"
       ) {
         const content =
@@ -1724,7 +1712,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // BORRAR HISTORIAL
+      // LIMPIAR HISTORIAL
       // ======================================================
 
       if (
@@ -1798,120 +1786,139 @@ export default async function handler(
               )}`
             : siteUrl;
 
+        const safeTitle =
+          escapeHtml(article.title);
+
+        const safeExcerpt =
+          escapeHtml(
+            article.excerpt ||
+              ""
+          );
+
+        const safeImage =
+          escapeAttribute(
+            article.image ||
+              ""
+          );
+
+        const safeUrl =
+          escapeAttribute(
+            articleUrl
+          );
+
+        const imageHtml =
+          article.image
+            ? `
+              <img
+                src="${safeImage}"
+                alt="${safeTitle}"
+                style="
+                  width:100%;
+                  max-width:650px;
+                  display:block;
+                  margin:0 auto 25px;
+                  border-radius:8px;
+                "
+              >
+            `
+            : "";
+
         const html = `
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(
-          article.title
-        )}</title>
+<title>${safeTitle}</title>
 </head>
 
 <body style="
   margin:0;
   padding:0;
-  background:#050505;
-  color:#ffffff;
+  background:#111111;
   font-family:Arial,Helvetica,sans-serif;
+  color:#ffffff;
 ">
 
 <div style="
-  max-width:680px;
+  max-width:700px;
   margin:0 auto;
-  background:#111111;
+  padding:40px 20px;
 ">
 
-${
-  article.image
-    ? `
-<div>
-  <img
-    src="${escapeAttribute(
-      article.image
-    )}"
-    alt="${escapeAttribute(
-      article.title
-    )}"
+  <div style="
+    font-size:28px;
+    font-weight:900;
+    margin-bottom:35px;
+  ">
+    DROP<span style="color:#c9ff00;">RUGBY</span>
+  </div>
+
+  ${imageHtml}
+
+  <div style="
+    font-size:12px;
+    font-weight:bold;
+    letter-spacing:2px;
+    color:#c9ff00;
+    margin-bottom:12px;
+  ">
+    NUEVA NOTICIA
+  </div>
+
+  <h1 style="
+    font-size:32px;
+    line-height:1.15;
+    margin:0 0 20px;
+    color:#ffffff;
+  ">
+    ${safeTitle}
+  </h1>
+
+  ${
+    safeExcerpt
+      ? `
+        <p style="
+          font-size:17px;
+          line-height:1.6;
+          color:#cccccc;
+        ">
+          ${safeExcerpt}
+        </p>
+      `
+      : ""
+  }
+
+  <a
+    href="${safeUrl}"
     style="
-      display:block;
-      width:100%;
-      height:auto;
+      display:inline-block;
+      margin-top:20px;
+      padding:15px 24px;
+      background:#c9ff00;
+      color:#000000;
+      text-decoration:none;
+      font-weight:800;
+      border-radius:5px;
     "
   >
-</div>
-`
-    : ""
-}
+    LEER NOTICIA →
+  </a>
 
-<div style="padding:35px;">
-
-<div style="
-  font-size:12px;
-  color:#c9ff00;
-  font-weight:bold;
-  text-transform:uppercase;
-  margin-bottom:15px;
-">
-${escapeHtml(
-  article.category ||
-    "Rugby"
-)}
-</div>
-
-<h1 style="
-  font-size:30px;
-  line-height:1.15;
-  margin:0 0 20px;
-  color:#ffffff;
-">
-${escapeHtml(
-  article.title
-)}
-</h1>
-
-${
-  article.excerpt
-    ? `
-<p style="
-  font-size:17px;
-  line-height:1.6;
-  color:#cccccc;
-">
-${escapeHtml(
-  article.excerpt
-)}
-</p>
-`
-    : ""
-}
-
-<a
-  href="${escapeAttribute(
-    articleUrl
-  )}"
-  style="
-    display:inline-block;
-    margin-top:15px;
-    padding:14px 22px;
-    background:#c9ff00;
-    color:#000000;
-    text-decoration:none;
-    font-weight:bold;
-    border-radius:5px;
-  "
->
-  LEER NOTICIA
-</a>
-
-</div>
+  <div style="
+    margin-top:50px;
+    padding-top:20px;
+    border-top:1px solid #333333;
+    font-size:12px;
+    color:#777777;
+  ">
+    DropRugby · Noticias de rugby
+  </div>
 
 </div>
 
 </body>
 </html>
-`;
+        `;
 
         const result =
           await sendNewsletter({
@@ -1954,9 +1961,14 @@ ${escapeHtml(
 
         const result =
           await sendNewsletter({
-            subject: body.subject,
-            html: body.html,
-            text: body.text,
+            subject:
+              body.subject,
+
+            html:
+              body.html,
+
+            text:
+              body.text,
           });
 
         return json(res, 200, {
@@ -1977,8 +1989,7 @@ ${escapeHtml(
           await loadContent();
 
         const settings =
-          body.settings ||
-          {};
+          body.settings || {};
 
         content.settings = {
           ...content.settings,
@@ -2000,6 +2011,7 @@ ${escapeHtml(
           ok: true,
           settings:
             saved.content.settings,
+
           content:
             saved.content,
         });
@@ -2118,11 +2130,16 @@ ${escapeHtml(
       });
     }
 
+    // ========================================================
+    // MÉTODO NO PERMITIDO
+    // ========================================================
+
     return json(res, 405, {
       ok: false,
       error:
         "Método no permitido",
     });
+
   } catch (error) {
     console.error(
       "❌ ERROR API ADMIN:",
@@ -2136,21 +2153,4 @@ ${escapeHtml(
         "Error interno del servidor",
     });
   }
-}
-
-// ============================================================
-// SEGURIDAD HTML
-// ============================================================
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeAttribute(value) {
-  return escapeHtml(value);
 }
