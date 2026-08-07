@@ -3,7 +3,7 @@
 // /api/admin.js
 // ============================================================
 
-import { list, put, del } from "@vercel/blob";
+import { list, put } from "@vercel/blob";
 import crypto from "node:crypto";
 
 // ============================================================
@@ -12,7 +12,7 @@ import crypto from "node:crypto";
 
 const BLOB_PATH = "droprugby/content.json";
 const COOKIE_NAME = "droprugby_session";
-const MAX_AGE = 60 * 60 * 24 * 7; // 7 días
+const MAX_AGE = 60 * 60 * 24 * 7;
 
 const DEFAULT_CONTENT = {
   articles: [],
@@ -34,7 +34,9 @@ const DEFAULT_CONTENT = {
 
 function getSecret() {
   if (!process.env.ADMIN_SESSION_SECRET) {
-    throw new Error("Falta ADMIN_SESSION_SECRET en Environment Variables");
+    throw new Error(
+      "Falta ADMIN_SESSION_SECRET en Environment Variables"
+    );
   }
 
   return process.env.ADMIN_SESSION_SECRET;
@@ -52,15 +54,22 @@ function parseCookies(req) {
     const key = item.slice(0, index).trim();
     const value = item.slice(index + 1).trim();
 
-    cookies[key] = decodeURIComponent(value);
+    try {
+      cookies[key] = decodeURIComponent(value);
+    } catch {
+      cookies[key] = value;
+    }
   });
 
   return cookies;
 }
 
+// ============================================================
+// SESIONES
+// ============================================================
+
 function createSession(username) {
   const timestamp = Math.floor(Date.now() / 1000);
-
   const payload = `${username}.${timestamp}`;
 
   const signature = crypto
@@ -68,18 +77,25 @@ function createSession(username) {
     .update(payload)
     .digest("hex");
 
-  return Buffer.from(`${payload}.${signature}`).toString("base64url");
+  return Buffer.from(
+    `${payload}.${signature}`
+  ).toString("base64url");
 }
 
 function verifySession(token) {
   try {
     if (!token) return null;
 
-    const decoded = Buffer.from(token, "base64url").toString("utf8");
+    const decoded = Buffer.from(
+      token,
+      "base64url"
+    ).toString("utf8");
 
     const parts = decoded.split(".");
 
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3) {
+      return null;
+    }
 
     const username = parts[0];
     const timestamp = Number(parts[1]);
@@ -95,6 +111,10 @@ function verifySession(token) {
       return null;
     }
 
+    if (timestamp > now + 60) {
+      return null;
+    }
+
     const payload = `${username}.${timestamp}`;
 
     const expected = crypto
@@ -106,12 +126,12 @@ function verifySession(token) {
       return null;
     }
 
-    if (
-      !crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expected)
-      )
-    ) {
+    const valid = crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expected)
+    );
+
+    if (!valid) {
       return null;
     }
 
@@ -127,7 +147,9 @@ function verifySession(token) {
 function setCookie(res, token) {
   res.setHeader(
     "Set-Cookie",
-    `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${MAX_AGE}`
+    `${COOKIE_NAME}=${encodeURIComponent(
+      token
+    )}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${MAX_AGE}`
   );
 }
 
@@ -138,12 +160,24 @@ function clearCookie(res) {
   );
 }
 
+// ============================================================
+// RESPUESTAS
+// ============================================================
+
 function json(res, status, data) {
-  res.status(status).json(data);
+  return res.status(status).json(data);
 }
 
+// ============================================================
+// BODY
+// ============================================================
+
 async function getBody(req) {
-  if (req.body && typeof req.body === "object") {
+  if (
+    req.body &&
+    typeof req.body === "object" &&
+    !Buffer.isBuffer(req.body)
+  ) {
     return req.body;
   }
 
@@ -197,7 +231,9 @@ async function loadContent() {
   const response = await fetch(blob.url);
 
   if (!response.ok) {
-    throw new Error("No se pudo leer content.json");
+    throw new Error(
+      `No se pudo leer content.json (${response.status})`
+    );
   }
 
   const data = await response.json();
@@ -253,7 +289,8 @@ function normalizeContent(data) {
 async function saveContent(content) {
   const normalized = normalizeContent(content);
 
-  normalized.updatedAt = new Date().toISOString();
+  normalized.updatedAt =
+    new Date().toISOString();
 
   const blob = await put(
     BLOB_PATH,
@@ -273,7 +310,7 @@ async function saveContent(content) {
 }
 
 // ============================================================
-// ID
+// IDS
 // ============================================================
 
 function createId(prefix = "item") {
@@ -286,7 +323,12 @@ function createId(prefix = "item") {
 // HISTORIAL
 // ============================================================
 
-function addHistory(content, action, type, item = null) {
+function addHistory(
+  content,
+  action,
+  type,
+  item = null
+) {
   if (!Array.isArray(content.history)) {
     content.history = [];
   }
@@ -305,15 +347,19 @@ function addHistory(content, action, type, item = null) {
     date: new Date().toISOString(),
   });
 
-  // Mantener como máximo 300 registros
-  content.history = content.history.slice(0, 300);
+  content.history =
+    content.history.slice(0, 300);
 }
 
 // ============================================================
 // PAPELERA
 // ============================================================
 
-function moveToTrash(content, type, item) {
+function moveToTrash(
+  content,
+  type,
+  item
+) {
   if (!Array.isArray(content.trash)) {
     content.trash = [];
   }
@@ -334,7 +380,9 @@ function moveToTrash(content, type, item) {
 function requireAuth(req, res) {
   const cookies = parseCookies(req);
 
-  const session = verifySession(cookies[COOKIE_NAME]);
+  const session = verifySession(
+    cookies[COOKIE_NAME]
+  );
 
   if (!session) {
     json(res, 401, {
@@ -372,7 +420,7 @@ function checkLogin(username, password) {
 }
 
 // ============================================================
-// NEWSLETTER - RESEND
+// RESEND
 // ============================================================
 
 async function sendNewsletter({
@@ -380,7 +428,8 @@ async function sendNewsletter({
   html,
   text,
 }) {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey =
+    process.env.RESEND_API_KEY;
 
   if (!apiKey) {
     throw new Error(
@@ -401,16 +450,16 @@ async function sendNewsletter({
     );
   }
 
-  // Obtener contactos
-  const contactsResponse = await fetch(
-    `https://api.resend.com/audiences/${audienceId}/contacts`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    }
-  );
+  const contactsResponse =
+    await fetch(
+      `https://api.resend.com/audiences/${audienceId}/contacts`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      }
+    );
 
   const contactsData =
     await contactsResponse.json();
@@ -426,26 +475,28 @@ async function sendNewsletter({
     contactsData?.data || [];
 
   const emails = contacts
-    .filter((contact) => {
-      return (
+    .filter(
+      (contact) =>
         contact.email &&
         contact.unsubscribed !== true
-      );
-    })
-    .map((contact) => contact.email);
+    )
+    .map(
+      (contact) => contact.email
+    );
 
   if (!emails.length) {
     return {
       sent: 0,
-      message: "No hay suscriptores activos",
+      total: 0,
+      errors: [],
+      message:
+        "No hay suscriptores activos",
     };
   }
 
   let sent = 0;
   const errors = [];
 
-  // Resend permite enviar a múltiples destinatarios.
-  // Se hace por bloques para evitar requests gigantes.
   const chunkSize = 50;
 
   for (
@@ -458,27 +509,30 @@ async function sendNewsletter({
       i + chunkSize
     );
 
-    const response = await fetch(
-      "https://api.resend.com/emails",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from,
-          to: chunk,
-          subject,
-          html,
-          text:
-            text ||
-            "Nueva noticia de DropRugby.",
-        }),
-      }
-    );
+    const response =
+      await fetch(
+        "https://api.resend.com/emails",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            from,
+            to: chunk,
+            subject,
+            html,
+            text:
+              text ||
+              "Nueva noticia de DropRugby.",
+          }),
+        }
+      );
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     if (!response.ok) {
       errors.push(
@@ -498,19 +552,27 @@ async function sendNewsletter({
 }
 
 // ============================================================
-// HANDLER PRINCIPAL
+// HANDLER
 // ============================================================
 
-export default async function handler(req, res) {
+export default async function handler(
+  req,
+  res
+) {
   try {
-    // --------------------------------------------------------
+    // ========================================================
     // CORS
-    // --------------------------------------------------------
+    // ========================================================
 
-    res.setHeader(
-      "Access-Control-Allow-Origin",
-      req.headers.origin || "*"
-    );
+    const origin =
+      req.headers.origin;
+
+    if (origin) {
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        origin
+      );
+    }
 
     res.setHeader(
       "Access-Control-Allow-Credentials",
@@ -532,31 +594,30 @@ export default async function handler(req, res) {
       return;
     }
 
-    // --------------------------------------------------------
+    // ========================================================
     // GET
-    // --------------------------------------------------------
+    // ========================================================
 
     if (req.method === "GET") {
       const action =
-        req.query?.action ||
-        req.url?.split("?")[1]
-          ?.split("&")
-          ?.find((x) =>
-            x.startsWith("action=")
-          )
-          ?.split("=")[1];
+        req.query?.action;
 
-      // Comprobar sesión
+      // ------------------------------------------------------
+      // CHECK SESSION
+      // ------------------------------------------------------
+
       if (
         action === "session" ||
         action === "check-session" ||
         action === "me"
       ) {
-        const cookies = parseCookies(req);
+        const cookies =
+          parseCookies(req);
 
-        const session = verifySession(
-          cookies[COOKIE_NAME]
-        );
+        const session =
+          verifySession(
+            cookies[COOKIE_NAME]
+          );
 
         if (!session) {
           return json(res, 401, {
@@ -572,12 +633,17 @@ export default async function handler(req, res) {
         });
       }
 
-      // Todo el contenido
-      const session = requireAuth(req, res);
+      // ------------------------------------------------------
+      // CONTENIDO
+      // ------------------------------------------------------
+
+      const session =
+        requireAuth(req, res);
 
       if (!session) return;
 
-      const content = await loadContent();
+      const content =
+        await loadContent();
 
       return json(res, 200, {
         ok: true,
@@ -585,12 +651,13 @@ export default async function handler(req, res) {
       });
     }
 
-    // --------------------------------------------------------
+    // ========================================================
     // POST
-    // --------------------------------------------------------
+    // ========================================================
 
     if (req.method === "POST") {
-      const body = await getBody(req);
+      const body =
+        await getBody(req);
 
       const action =
         body.action ||
@@ -606,12 +673,19 @@ export default async function handler(req, res) {
         action === "authenticate"
       ) {
         const username =
-          String(body.username || "").trim();
+          String(
+            body.username || ""
+          ).trim();
 
         const password =
-          String(body.password || "");
+          String(
+            body.password || ""
+          );
 
-        if (!username || !password) {
+        if (
+          !username ||
+          !password
+        ) {
           return json(res, 400, {
             ok: false,
             error:
@@ -619,7 +693,12 @@ export default async function handler(req, res) {
           });
         }
 
-        if (!checkLogin(username, password)) {
+        if (
+          !checkLogin(
+            username,
+            password
+          )
+        ) {
           return json(res, 401, {
             ok: false,
             error:
@@ -655,13 +734,17 @@ export default async function handler(req, res) {
         });
       }
 
-      // Todo lo demás necesita sesión
-      const session = requireAuth(req, res);
+      // ======================================================
+      // TODO LO DEMÁS REQUIERE LOGIN
+      // ======================================================
+
+      const session =
+        requireAuth(req, res);
 
       if (!session) return;
 
       // ======================================================
-      // OBTENER CONTENIDO
+      // GET / LOAD
       // ======================================================
 
       if (
@@ -678,7 +761,7 @@ export default async function handler(req, res) {
       }
 
       // ======================================================
-      // GUARDAR TODO
+      // SAVE ALL
       // ======================================================
 
       if (
@@ -718,16 +801,19 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(merged);
+          await saveContent(
+            merged
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
       // ======================================================
-      // CREAR NOTICIA
+      // CREAR / EDITAR NOTICIA
       // ======================================================
 
       if (
@@ -738,69 +824,61 @@ export default async function handler(req, res) {
         const content =
           await loadContent();
 
+        const source =
+          body.article || body;
+
         const article = {
           id:
-            body.article?.id ||
-            body.id ||
+            source.id ||
             createId("article"),
 
           title:
-            body.article?.title ||
-            body.title ||
-            "",
+            source.title || "",
 
           slug:
-            body.article?.slug ||
-            body.slug ||
-            "",
+            source.slug || "",
 
           excerpt:
-            body.article?.excerpt ||
-            body.excerpt ||
-            "",
+            source.excerpt || "",
 
           content:
-            body.article?.content ||
-            body.contentText ||
-            body.text ||
+            source.content ||
+            source.contentText ||
+            source.text ||
             "",
 
           image:
-            body.article?.image ||
-            body.image ||
-            "",
+            source.image || "",
 
           category:
-            body.article?.category ||
-            body.category ||
+            source.category ||
             "Rugby",
 
           author:
-            body.article?.author ||
-            body.author ||
+            source.author ||
             "DropRugby",
 
           date:
-            body.article?.date ||
-            body.date ||
+            source.date ||
             new Date().toISOString(),
 
           featured:
-            body.article?.featured ??
-            body.featured ??
+            source.featured ??
             false,
 
           published:
-            body.article?.published ??
-            body.published ??
+            source.published ??
             true,
 
           tags:
-            body.article?.tags ||
-            body.tags ||
-            [],
+            Array.isArray(
+              source.tags
+            )
+              ? source.tags
+              : [],
 
           createdAt:
+            source.createdAt ||
             new Date().toISOString(),
 
           updatedAt:
@@ -810,10 +888,13 @@ export default async function handler(req, res) {
         const existingIndex =
           content.articles.findIndex(
             (item) =>
-              item.id === article.id
+              item.id ===
+              article.id
           );
 
-        if (existingIndex >= 0) {
+        if (
+          existingIndex >= 0
+        ) {
           content.articles[
             existingIndex
           ] = {
@@ -845,12 +926,15 @@ export default async function handler(req, res) {
         }
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           article,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -871,13 +955,15 @@ export default async function handler(req, res) {
 
         const index =
           content.articles.findIndex(
-            (item) => item.id === id
+            (item) =>
+              item.id === id
           );
 
         if (index === -1) {
           return json(res, 404, {
             ok: false,
-            error: "Noticia no encontrada",
+            error:
+              "Noticia no encontrada",
           });
         }
 
@@ -901,11 +987,14 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -921,10 +1010,10 @@ export default async function handler(req, res) {
         const content =
           await loadContent();
 
-        const fixture =
-          body.fixture || {
-            ...body,
-          };
+        const fixture = {
+          ...(body.fixture ||
+            body),
+        };
 
         delete fixture.action;
 
@@ -942,12 +1031,17 @@ export default async function handler(req, res) {
         const index =
           content.fixtures.findIndex(
             (item) =>
-              item.id === fixture.id
+              item.id ===
+              fixture.id
           );
 
         if (index >= 0) {
-          content.fixtures[index] = {
-            ...content.fixtures[index],
+          content.fixtures[
+            index
+          ] = {
+            ...content.fixtures[
+              index
+            ],
             ...fixture,
           };
 
@@ -971,12 +1065,15 @@ export default async function handler(req, res) {
         }
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           fixture,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -997,13 +1094,15 @@ export default async function handler(req, res) {
 
         const index =
           content.fixtures.findIndex(
-            (item) => item.id === id
+            (item) =>
+              item.id === id
           );
 
         if (index === -1) {
           return json(res, 404, {
             ok: false,
-            error: "Partido no encontrado",
+            error:
+              "Partido no encontrado",
           });
         }
 
@@ -1027,16 +1126,19 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
       // ======================================================
-      // CREAR / EDITAR EQUIPO / POSICIONES
+      // EQUIPOS / TABLA
       // ======================================================
 
       if (
@@ -1048,10 +1150,10 @@ export default async function handler(req, res) {
         const content =
           await loadContent();
 
-        const team =
-          body.team || {
-            ...body,
-          };
+        const team = {
+          ...(body.team ||
+            body),
+        };
 
         delete team.action;
 
@@ -1066,8 +1168,12 @@ export default async function handler(req, res) {
           );
 
         if (index >= 0) {
-          content.standings[index] = {
-            ...content.standings[index],
+          content.standings[
+            index
+          ] = {
+            ...content.standings[
+              index
+            ],
             ...team,
           };
 
@@ -1078,7 +1184,9 @@ export default async function handler(req, res) {
             team
           );
         } else {
-          content.standings.push(team);
+          content.standings.push(
+            team
+          );
 
           addHistory(
             content,
@@ -1089,12 +1197,15 @@ export default async function handler(req, res) {
         }
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           team,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1115,13 +1226,15 @@ export default async function handler(req, res) {
 
         const index =
           content.standings.findIndex(
-            (item) => item.id === id
+            (item) =>
+              item.id === id
           );
 
         if (index === -1) {
           return json(res, 404, {
             ok: false,
-            error: "Equipo no encontrado",
+            error:
+              "Equipo no encontrado",
           });
         }
 
@@ -1145,16 +1258,19 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
       // ======================================================
-      // CREAR / EDITAR JUGADOR
+      // JUGADORES
       // ======================================================
 
       if (
@@ -1165,10 +1281,10 @@ export default async function handler(req, res) {
         const content =
           await loadContent();
 
-        const player =
-          body.player || {
-            ...body,
-          };
+        const player = {
+          ...(body.player ||
+            body),
+        };
 
         delete player.action;
 
@@ -1182,12 +1298,17 @@ export default async function handler(req, res) {
         const index =
           content.players.findIndex(
             (item) =>
-              item.id === player.id
+              item.id ===
+              player.id
           );
 
         if (index >= 0) {
-          content.players[index] = {
-            ...content.players[index],
+          content.players[
+            index
+          ] = {
+            ...content.players[
+              index
+            ],
             ...player,
           };
 
@@ -1198,7 +1319,9 @@ export default async function handler(req, res) {
             player
           );
         } else {
-          content.players.push(player);
+          content.players.push(
+            player
+          );
 
           addHistory(
             content,
@@ -1209,12 +1332,15 @@ export default async function handler(req, res) {
         }
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           player,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1235,13 +1361,15 @@ export default async function handler(req, res) {
 
         const index =
           content.players.findIndex(
-            (item) => item.id === id
+            (item) =>
+              item.id === id
           );
 
         if (index === -1) {
           return json(res, 404, {
             ok: false,
-            error: "Jugador no encontrado",
+            error:
+              "Jugador no encontrado",
           });
         }
 
@@ -1265,11 +1393,14 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1285,12 +1416,11 @@ export default async function handler(req, res) {
         const content =
           await loadContent();
 
-        const post =
-          body.post ||
-          body.instagram ||
-          {
-            ...body,
-          };
+        const post = {
+          ...(body.post ||
+            body.instagram ||
+            body),
+        };
 
         delete post.action;
 
@@ -1308,8 +1438,12 @@ export default async function handler(req, res) {
           );
 
         if (index >= 0) {
-          content.instagram[index] = {
-            ...content.instagram[index],
+          content.instagram[
+            index
+          ] = {
+            ...content.instagram[
+              index
+            ],
             ...post,
           };
 
@@ -1333,12 +1467,15 @@ export default async function handler(req, res) {
         }
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           post,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1359,7 +1496,8 @@ export default async function handler(req, res) {
 
         const index =
           content.instagram.findIndex(
-            (item) => item.id === id
+            (item) =>
+              item.id === id
           );
 
         if (index === -1) {
@@ -1390,16 +1528,19 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
       // ======================================================
-      // PAPELERA - RESTAURAR
+      // RESTAURAR PAPELERA
       // ======================================================
 
       if (
@@ -1433,19 +1574,40 @@ export default async function handler(req, res) {
             1
           );
 
-        const type = deleted.type;
-        const item = deleted.item;
+        const type =
+          deleted.type;
+
+        const item =
+          deleted.item;
 
         if (type === "article") {
-          content.articles.unshift(item);
-        } else if (type === "fixture") {
-          content.fixtures.push(item);
-        } else if (type === "team") {
-          content.standings.push(item);
-        } else if (type === "player") {
-          content.players.push(item);
-        } else if (type === "instagram") {
-          content.instagram.unshift(item);
+          content.articles.unshift(
+            item
+          );
+        } else if (
+          type === "fixture"
+        ) {
+          content.fixtures.push(
+            item
+          );
+        } else if (
+          type === "team"
+        ) {
+          content.standings.push(
+            item
+          );
+        } else if (
+          type === "player"
+        ) {
+          content.players.push(
+            item
+          );
+        } else if (
+          type === "instagram"
+        ) {
+          content.instagram.unshift(
+            item
+          );
         }
 
         addHistory(
@@ -1456,20 +1618,24 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
       // ======================================================
-      // PAPELERA - ELIMINAR DEFINITIVAMENTE
+      // ELIMINAR DEFINITIVAMENTE
       // ======================================================
 
       if (
-        action === "permanent-delete" ||
+        action ===
+          "permanent-delete" ||
         action === "delete-trash"
       ) {
         const content =
@@ -1507,11 +1673,14 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1536,17 +1705,21 @@ export default async function handler(req, res) {
           "empty-trash",
           "trash",
           {
-            name: `${count} elementos`,
+            name:
+              `${count} elementos`,
           }
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           deleted: count,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1563,27 +1736,34 @@ export default async function handler(req, res) {
         content.history = [];
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
       // ======================================================
-      // NEWSLETTER DE UNA NOTICIA
+      // NEWSLETTER DE NOTICIA
       // ======================================================
 
       if (
         action === "send-newsletter" ||
         action === "newsletter" ||
-        action === "send-newsletter-article"
+        action ===
+          "send-newsletter-article"
       ) {
         let article =
           body.article || null;
 
-        if (!article && body.articleId) {
+        if (
+          !article &&
+          body.articleId
+        ) {
           const content =
             await loadContent();
 
@@ -1624,74 +1804,108 @@ export default async function handler(req, res) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(article.title)}</title>
+<title>${escapeHtml(
+          article.title
+        )}</title>
 </head>
 
-<body style="margin:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#ffffff;">
+<body style="
+  margin:0;
+  padding:0;
+  background:#050505;
+  color:#ffffff;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
-<div style="max-width:650px;margin:0 auto;background:#111111;">
+<div style="
+  max-width:680px;
+  margin:0 auto;
+  background:#111111;
+">
 
-  <div style="padding:30px;text-align:center;border-bottom:1px solid #292929;">
-    <h1 style="margin:0;font-size:28px;letter-spacing:2px;">
-      DROP<span style="color:#c9ff00;">RUGBY</span>
-    </h1>
-  </div>
-
-  ${
-    article.image
-      ? `
+${
+  article.image
+    ? `
+<div>
   <img
-    src="${escapeAttribute(article.image)}"
-    alt="${escapeAttribute(article.title)}"
-    style="display:block;width:100%;height:auto;"
+    src="${escapeAttribute(
+      article.image
+    )}"
+    alt="${escapeAttribute(
+      article.title
+    )}"
+    style="
+      display:block;
+      width:100%;
+      height:auto;
+    "
   >
-  `
-      : ""
-  }
+</div>
+`
+    : ""
+}
 
-  <div style="padding:35px;">
+<div style="padding:35px;">
 
-    <div style="font-size:12px;color:#c9ff00;font-weight:bold;text-transform:uppercase;margin-bottom:15px;">
-      ${escapeHtml(
-        article.category || "Rugby"
-      )}
-    </div>
+<div style="
+  font-size:12px;
+  color:#c9ff00;
+  font-weight:bold;
+  text-transform:uppercase;
+  margin-bottom:15px;
+">
+${escapeHtml(
+  article.category ||
+    "Rugby"
+)}
+</div>
 
-    <h2 style="font-size:30px;line-height:1.15;margin:0 0 20px;">
-      ${escapeHtml(article.title)}
-    </h2>
+<h1 style="
+  font-size:30px;
+  line-height:1.15;
+  margin:0 0 20px;
+  color:#ffffff;
+">
+${escapeHtml(
+  article.title
+)}
+</h1>
 
-    ${
-      article.excerpt
-        ? `
-    <p style="font-size:17px;line-height:1.6;color:#cccccc;">
-      ${escapeHtml(article.excerpt)}
-    </p>
-    `
-        : ""
-    }
+${
+  article.excerpt
+    ? `
+<p style="
+  font-size:17px;
+  line-height:1.6;
+  color:#cccccc;
+">
+${escapeHtml(
+  article.excerpt
+)}
+</p>
+`
+    : ""
+}
 
-    <a
-      href="${escapeAttribute(articleUrl)}"
-      style="
-        display:inline-block;
-        margin-top:15px;
-        padding:14px 22px;
-        background:#c9ff00;
-        color:#000000;
-        text-decoration:none;
-        font-weight:bold;
-        border-radius:5px;
-      "
-    >
-      LEER NOTICIA
-    </a>
+<a
+  href="${escapeAttribute(
+    articleUrl
+  )}"
+  style="
+    display:inline-block;
+    margin-top:15px;
+    padding:14px 22px;
+    background:#c9ff00;
+    color:#000000;
+    text-decoration:none;
+    font-weight:bold;
+    border-radius:5px;
+  "
+>
+  LEER NOTICIA
+</a>
 
-  </div>
-
-  <div style="padding:25px;text-align:center;border-top:1px solid #292929;color:#777;font-size:12px;">
-    DropRugby · Noticias de rugby
-  </div>
+</div>
 
 </div>
 
@@ -1762,12 +1976,14 @@ export default async function handler(req, res) {
         const content =
           await loadContent();
 
+        const settings =
+          body.settings ||
+          {};
+
         content.settings = {
           ...content.settings,
-          ...(body.settings || body),
+          ...settings,
         };
-
-        delete content.settings.action;
 
         addHistory(
           content,
@@ -1776,13 +1992,16 @@ export default async function handler(req, res) {
         );
 
         const saved =
-          await saveContent(content);
+          await saveContent(
+            content
+          );
 
         return json(res, 200, {
           ok: true,
           settings:
             saved.content.settings,
-          content: saved.content,
+          content:
+            saved.content,
         });
       }
 
@@ -1792,13 +2011,14 @@ export default async function handler(req, res) {
 
       return json(res, 400, {
         ok: false,
-        error: `Acción desconocida: ${action}`,
+        error:
+          `Acción desconocida: ${action}`,
       });
     }
 
-    // --------------------------------------------------------
+    // ========================================================
     // DELETE
-    // --------------------------------------------------------
+    // ========================================================
 
     if (req.method === "DELETE") {
       const session =
@@ -1855,7 +2075,8 @@ export default async function handler(req, res) {
 
       const index =
         collection.findIndex(
-          (item) => item.id === id
+          (item) =>
+            item.id === id
         );
 
       if (index === -1) {
@@ -1867,7 +2088,10 @@ export default async function handler(req, res) {
       }
 
       const [item] =
-        collection.splice(index, 1);
+        collection.splice(
+          index,
+          1
+        );
 
       moveToTrash(
         content,
@@ -1883,17 +2107,21 @@ export default async function handler(req, res) {
       );
 
       const saved =
-        await saveContent(content);
+        await saveContent(
+          content
+        );
 
       return json(res, 200, {
         ok: true,
-        content: saved.content,
+        content:
+          saved.content,
       });
     }
 
     return json(res, 405, {
       ok: false,
-      error: "Método no permitido",
+      error:
+        "Método no permitido",
     });
   } catch (error) {
     console.error(
