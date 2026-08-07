@@ -1,466 +1,2027 @@
 /* ==========================================================================
-   DropRugby V4 — script.js
-   Menú mobile, animaciones al scroll, buscador global, filtros de categoría,
-   calendario dinámico y render de noticias desde data/articles.json.
+   DropRugby V5 — script.js
+   Sistema dinámico de noticias, calendario, buscador, newsletter y navegación.
 
-   window.ASSET_BASE debe definirse ANTES de este script en páginas dentro
-   de /noticias/ (ej: "../") para que las rutas a data/ y noticias/ funcionen.
-   ========================================================================== */
+   Los datos principales vienen de:
+   /api/content
 
-const BASE = window.ASSET_BASE || "";
+   Fallback:
+   window.DROP_RUGBY_DATA
+   /data/articles.json
+   /data/fixtures.json
 
-/* ---------- Menú mobile ---------- */
-const menuBtn = document.querySelector(".menu-btn");
-const mobileNav = document.querySelector(".mobile-nav");
-if (menuBtn && mobileNav) {
-  menuBtn.addEventListener("click", () => {
-    const open = mobileNav.classList.toggle("open");
-    menuBtn.setAttribute("aria-expanded", open);
-  });
-  mobileNav.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      mobileNav.classList.remove("open");
-      menuBtn.setAttribute("aria-expanded", "false");
-    });
-  });
-}
+   Las noticias creadas desde el admin utilizan:
+   article.html?id=ID
+========================================================================== */
 
-/* ---------- Animaciones al hacer scroll ---------- */
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("visible");
-      observer.unobserve(entry.target);
+(() => {
+  "use strict";
+
+  /* =========================================================
+     CONFIGURACIÓN
+  ========================================================= */
+
+  const BASE = window.ASSET_BASE || "";
+
+  let ARTICLES_CACHE = null;
+  let FIXTURES_CACHE = null;
+
+  /* =========================================================
+     UTILIDADES
+  ========================================================= */
+
+  const $ = (selector, root = document) =>
+    root.querySelector(selector);
+
+  const $$ = (selector, root = document) =>
+    [...root.querySelectorAll(selector)];
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;"
+    }[char]));
+  }
+
+  function safeURL(value) {
+    return String(value ?? "")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "%3C")
+      .replace(/>/g, "%3E");
+  }
+
+  function slugify(text) {
+    return String(text || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 70);
+  }
+
+  const MESES = [
+    "ENE", "FEB", "MAR", "ABR",
+    "MAY", "JUN", "JUL", "AGO",
+    "SEP", "OCT", "NOV", "DIC"
+  ];
+
+  const DIAS = [
+    "DOMINGO",
+    "LUNES",
+    "MARTES",
+    "MIÉRCOLES",
+    "JUEVES",
+    "VIERNES",
+    "SÁBADO"
+  ];
+
+  function formatDateShort(iso) {
+    if (!iso) return "";
+
+    const parts = String(iso).split("-").map(Number);
+
+    if (parts.length !== 3 || parts.some(Number.isNaN)) {
+      return "";
     }
-  });
-}, { threshold: 0.12 });
 
-function observeReveals(root = document) {
-  root.querySelectorAll(".reveal:not(.visible)").forEach(el => observer.observe(el));
-}
-observeReveals();
+    const [year, month, day] = parts;
 
-/* ---------- Newsletter (placeholder hasta conectar proveedor real) ---------- */
-document.querySelectorAll(".newsletter-form").forEach(form => {
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    form.classList.add("submitted");
-  });
-});
-
-/* ---------- Carga de datos ---------- */
-let ARTICLES_CACHE = null;
-async function loadArticles() {
-  if (ARTICLES_CACHE) return ARTICLES_CACHE;
-  try {
-    const res = await fetch(BASE + "api/content", { cache: "no-store" });
-    if (!res.ok) throw new Error("API unavailable");
-    const data = await res.json();
-    ARTICLES_CACHE = Array.isArray(data.articles) ? data.articles : [];
-    return ARTICLES_CACHE;
-  } catch (_) {}
-  const local = localStorage.getItem("droprugby_articles");
-  if (local) { try { ARTICLES_CACHE = JSON.parse(local); return ARTICLES_CACHE; } catch (_) {} }
-  if (window.DROP_RUGBY_DATA?.articles) { ARTICLES_CACHE = window.DROP_RUGBY_DATA.articles; return ARTICLES_CACHE; }
-  try { const res = await fetch(BASE + "data/articles.json"); ARTICLES_CACHE = await res.json(); }
-  catch (_) { ARTICLES_CACHE = []; }
-  return ARTICLES_CACHE;
-}
-
-let FIXTURES_CACHE = null;
-async function loadFixtures() {
-  if (FIXTURES_CACHE) return FIXTURES_CACHE;
-  try {
-    const res = await fetch(BASE + "api/content", { cache: "no-store" });
-    if (!res.ok) throw new Error("API unavailable");
-    const data = await res.json();
-    FIXTURES_CACHE = Array.isArray(data.fixtures) ? data.fixtures : [];
-    return FIXTURES_CACHE;
-  } catch (_) {}
-  const local = localStorage.getItem("droprugby_fixtures");
-  if (local) { try { FIXTURES_CACHE = JSON.parse(local); return FIXTURES_CACHE; } catch (_) {} }
-  if (window.DROP_RUGBY_DATA?.fixtures) { FIXTURES_CACHE = window.DROP_RUGBY_DATA.fixtures; return FIXTURES_CACHE; }
-  try { const res = await fetch(BASE + "data/fixtures.json"); FIXTURES_CACHE = await res.json(); }
-  catch (_) { FIXTURES_CACHE = []; }
-  return FIXTURES_CACHE;
-}
-
-/* ---------- Utilidades ---------- */
-const MESES = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
-const DIAS = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
-
-function formatDateShort(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return `${String(d).padStart(2,"0")} ${MESES[m-1]} ${y}`;
-}
-function dateFromISO(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-function isoFromDate(dt) {
-  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
-}
-
-function storyCardHTML(article, opts = {}) {
-  const featuredClass = opts.featured ? "story-featured" : "";
-  const visual = article.imageUrl
-    ? `<div class="story-image photo-not-clickable"><img src="${String(article.imageUrl).replace(/"/g, '&quot;')}" alt="" loading="lazy"></div>`
-    : `<div class="story-image ph-image photo-not-clickable ${article.imageClass || 'img-tone-1'}"></div>`;
-  return `
-    <article class="story ${featuredClass} reveal">
-      ${visual}
-      <div class="story-body">
-        <p class="category">${article.category.toUpperCase()} · ${article.subcategory.toUpperCase()}</p>
-        <h3><a href="${BASE}${article.url}">${article.title}</a></h3>
-        <p>${article.excerpt}</p>
-        <div class="meta">Por ${article.author} · ${formatDateShort(article.date).toUpperCase()}</div>
-      </div>
-    </article>`;
-}
-
-/* ---------- Render: portada ---------- */
-async function renderHome() {
-  const grid = document.getElementById("home-top-stories");
-  const pumasEl = document.getElementById("home-los-pumas");
-  const srEl = document.getElementById("home-super-rugby");
-  const urbaTop14El = document.getElementById("home-urba-top14");
-  const urbaEl = document.getElementById("home-urba");
-  const heroEl = document.getElementById("home-hero");
-  if (!grid && !heroEl) return;
-
-  const articles = (await loadArticles()).slice().sort((a,b) => b.date.localeCompare(a.date));
-  const featured = articles.find(a => a.featured) || articles[0];
-
-  if (heroEl && featured) {
-    const heroVisual = featured.imageUrl
-      ? `<div class="hero-image photo-not-clickable"><img src="${String(featured.imageUrl).replace(/"/g, '&quot;')}" alt="" loading="eager"><div class="image-overlay"></div><div class="hero-card-caption"><span>TOP STORY · ${featured.category.toUpperCase()}</span><h2>${featured.title}</h2></div></div>`
-      : `<div class="hero-image ${featured.imageClass || 'img-tone-1'} photo-not-clickable ph-image"><div class="image-overlay"></div><div class="hero-card-caption"><span>TOP STORY · ${featured.category.toUpperCase()}</span><h2>${featured.title}</h2></div></div>`;
-    heroEl.innerHTML = `<div class="hero-card-inner">${heroVisual}</div>`;
-    const heroLink = document.getElementById("home-hero-link");
-    if (heroLink) heroLink.href = BASE + featured.url;
+    return `${String(day).padStart(2, "0")} ${MESES[month - 1] || ""} ${year}`;
   }
 
-  const rest = articles.filter(a => a.id !== (featured && featured.id));
-  if (grid) {
-    grid.innerHTML = rest.slice(0, 3).map((a, i) => storyCardHTML(a, { featured: i === 0 })).join("");
+  function dateFromISO(iso) {
+    const [year, month, day] = String(iso)
+      .split("-")
+      .map(Number);
+
+    return new Date(year, month - 1, day);
   }
 
-  const byCategory = (name, el, n = 3) => {
-    if (!el) return;
-    const items = articles.filter(a => a.category === name).slice(0, n);
-    el.innerHTML = items.length
-      ? items.map(a => storyCardHTML(a)).join("")
-      : `<p class="empty-state">Todavía no hay noticias publicadas en esta categoría.</p>`;
-  };
-  byCategory("Los Pumas", pumasEl);
-  byCategory("Super Rugby", srEl);
-  byCategory("URBA TOP 14", urbaTop14El);
-  byCategory("URBA", urbaEl);
+  function isoFromDate(date) {
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0")
+    ].join("-");
+  }
 
-  observeReveals();
-}
+  function normalizeCategory(value) {
+    return String(value || "")
+      .trim()
+      .toUpperCase();
+  }
 
-/* ---------- Render: página de categoría con filtros ---------- */
-async function renderCategoryPage(categoryName) {
-  const grid = document.getElementById("category-grid");
-  if (!grid) return;
-  const articles = (await loadArticles())
-    .filter(a => a.category === categoryName)
-    .sort((a,b) => b.date.localeCompare(a.date));
+  /* =========================================================
+     MENÚ MOBILE
+  ========================================================= */
 
-  const chips = document.querySelectorAll(".filter-bar .filter-chip");
-  let activeFilter = "TODAS";
+  function setupMobileMenu() {
+    const menuBtn = $(".menu-btn");
+    const mobileNav = $(".mobile-nav");
 
-  function paint() {
-    const filtered = activeFilter === "TODAS"
-      ? articles
-      : articles.filter(a => a.subcategory.toUpperCase() === activeFilter);
-    grid.innerHTML = filtered.length
-      ? filtered.map(a => storyCardHTML(a)).join("")
-      : `<p class="empty-state">No hay noticias para este filtro todavía.</p>`;
+    if (!menuBtn || !mobileNav) return;
+
+    menuBtn.addEventListener("click", () => {
+      const open = mobileNav.classList.toggle("open");
+
+      menuBtn.setAttribute(
+        "aria-expanded",
+        String(open)
+      );
+    });
+
+    $$("a", mobileNav).forEach(link => {
+      link.addEventListener("click", () => {
+        mobileNav.classList.remove("open");
+
+        menuBtn.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+      });
+    });
+  }
+
+  /* =========================================================
+     ANIMACIONES REVEAL
+  ========================================================= */
+
+  let revealObserver = null;
+
+  function setupRevealObserver() {
+    if (!("IntersectionObserver" in window)) {
+      $$(".reveal").forEach(el =>
+        el.classList.add("visible")
+      );
+      return;
+    }
+
+    revealObserver = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.12
+      }
+    );
+
     observeReveals();
   }
 
-  chips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      chips.forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      activeFilter = chip.dataset.filter;
-      paint();
-    });
-  });
+  function observeReveals(root = document) {
+    if (!revealObserver) return;
 
-  paint();
-}
-
-/* ---------- Render: calendario ---------- */
-async function renderCalendar() {
-  const listEl = document.getElementById("calendar-list");
-  if (!listEl) return;
-  const fixtures = await loadFixtures();
-
-  const compBtns = document.querySelectorAll(".competition-select .filter-chip");
-  const dateBtns = document.querySelectorAll(".date-filter-bar .date-chip");
-  const dayLabel = document.getElementById("day-nav-label");
-  const prevBtn = document.getElementById("day-prev");
-  const nextBtn = document.getElementById("day-next");
-  const todayBtn = document.getElementById("day-today");
-
-  let activeCompetition = "TODAS";
-  let mode = "dia"; // dia | manana | finde | semana
-  let currentDate = new Date();
-  currentDate.setHours(0,0,0,0);
-
-  // Usar la fecha del fixture más próximo si "hoy" no tiene partidos, para que la demo se vea poblada
-  const availableDates = fixtures.map(f => f.date).sort();
-  if (availableDates.length && !fixtures.some(f => f.date === isoFromDate(currentDate))) {
-    currentDate = dateFromISO(availableDates[0]);
+    root
+      .querySelectorAll(".reveal:not(.visible)")
+      .forEach(el => revealObserver.observe(el));
   }
 
-  function groupByDateAndCompetition(items) {
-    const byDate = {};
-    items.forEach(f => {
-      byDate[f.date] = byDate[f.date] || {};
-      byDate[f.date][f.competition] = byDate[f.date][f.competition] || [];
-      byDate[f.date][f.competition].push(f);
-    });
-    return byDate;
-  }
+  /* =========================================================
+     CARGA DE CONTENIDO
+  ========================================================= */
 
-  function getRangeDates() {
-    if (mode === "semana") {
-      const start = new Date(currentDate);
-      const day = start.getDay();
-      const diffToMonday = (day + 6) % 7;
-      start.setDate(start.getDate() - diffToMonday);
-      return Array.from({length: 7}, (_, i) => {
-        const d = new Date(start); d.setDate(start.getDate() + i); return isoFromDate(d);
-      });
-    }
-    if (mode === "finde") {
-      const start = new Date(currentDate);
-      const day = start.getDay();
-      const diffToSat = (6 - day + 7) % 7;
-      const sat = new Date(start); sat.setDate(start.getDate() + diffToSat);
-      const sun = new Date(sat); sun.setDate(sat.getDate() + 1);
-      return [isoFromDate(sat), isoFromDate(sun)];
-    }
-    if (mode === "manana") {
-      const d = new Date(currentDate); d.setDate(d.getDate() + 1);
-      return [isoFromDate(d)];
-    }
-    return [isoFromDate(currentDate)];
-  }
-
-  function updateDayLabel() {
-    if (mode === "dia") {
-      dayLabel.textContent = `${DIAS[currentDate.getDay()]} · ${formatDateShort(isoFromDate(currentDate))}`;
-    } else if (mode === "manana") {
-      const d = new Date(currentDate); d.setDate(d.getDate()+1);
-      dayLabel.textContent = `${DIAS[d.getDay()]} · ${formatDateShort(isoFromDate(d))}`;
-    } else if (mode === "finde") {
-      dayLabel.textContent = "FIN DE SEMANA";
-    } else {
-      dayLabel.textContent = "TODA LA SEMANA";
-    }
-  }
-
-  function paint() {
-    updateDayLabel();
-    const dates = getRangeDates();
-    let filtered = fixtures.filter(f => dates.includes(f.date));
-    if (activeCompetition !== "TODAS") {
-      filtered = filtered.filter(f => f.competition.toUpperCase() === activeCompetition);
-    }
-    const grouped = groupByDateAndCompetition(filtered);
-    const sortedDates = Object.keys(grouped).sort();
-
-    if (!sortedDates.length) {
-      listEl.innerHTML = `<p class="empty-state">No hay partidos cargados para este filtro. Probá con otra competición o fecha.</p>`;
-      return;
-    }
-
-    listEl.innerHTML = sortedDates.map(date => {
-      const dt = dateFromISO(date);
-      const comps = grouped[date];
-      const compsHTML = Object.keys(comps).sort().map(compName => {
-        const rows = comps[compName].sort((a,b) => a.time.localeCompare(b.time)).map(f => `
-          <div class="match-row">
-            <div class="match-time">${f.time}</div>
-            <div class="match-teams">${f.home} vs. ${f.away}</div>
-            <div class="match-channel">${f.channel}</div>
-          </div>`).join("");
-        return `
-          <div class="competition-block">
-            <div class="competition-name">${compName.toUpperCase()}</div>
-            ${rows}
-          </div>`;
-      }).join("");
-
-      return `
-        <div class="day-block">
-          <div class="day-block-header">
-            <span class="dow">${DIAS[dt.getDay()]}</span>
-            <span class="full-date">${formatDateShort(date)}</span>
-          </div>
-          ${compsHTML}
-        </div>`;
-    }).join("");
-  }
-
-  compBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      compBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      activeCompetition = btn.dataset.filter;
-      paint();
-    });
-  });
-
-  dateBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      dateBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      mode = btn.dataset.mode;
-      paint();
-    });
-  });
-
-  if (prevBtn) prevBtn.addEventListener("click", () => {
-    currentDate.setDate(currentDate.getDate() - (mode === "semana" ? 7 : 1));
-    paint();
-  });
-  if (nextBtn) nextBtn.addEventListener("click", () => {
-    currentDate.setDate(currentDate.getDate() + (mode === "semana" ? 7 : 1));
-    paint();
-  });
-  if (todayBtn) todayBtn.addEventListener("click", () => {
-    currentDate = new Date(); currentDate.setHours(0,0,0,0);
-    mode = "dia";
-    dateBtns.forEach(b => b.classList.toggle("active", b.dataset.mode === "dia"));
-    paint();
-  });
-
-  paint();
-}
-
-/* ---------- Render: preview del calendario en la home ---------- */
-async function renderCalendarPreview() {
-  const el = document.getElementById("home-calendar-preview");
-  if (!el) return;
-  const fixtures = (await loadFixtures()).slice().sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
-  const upcoming = fixtures.slice(0, 6);
-  el.innerHTML = upcoming.map(f => `
-    <div class="match-row">
-      <div class="match-time">${f.time}</div>
-      <div class="match-teams">${f.home} vs. ${f.away} <span style="color:var(--muted-light); font-weight:400;">— ${f.competition}</span></div>
-      <div class="match-channel">${f.channel}</div>
-    </div>`).join("");
-}
-
-/* ---------- Buscador global ---------- */
-function setupSearch() {
-  const openBtns = document.querySelectorAll(".search-btn");
-  const overlay = document.getElementById("search-overlay");
-  const closeBtn = document.getElementById("search-close");
-  const input = document.getElementById("search-input");
-  const resultsEl = document.getElementById("search-results");
-  if (!overlay || !openBtns.length) return;
-
-  let articlesForSearch = [];
-
-  async function ensureData() {
-    if (!articlesForSearch.length) articlesForSearch = await loadArticles();
-  }
-
-  openBtns.forEach(btn => btn.addEventListener("click", async () => {
-    overlay.classList.add("open");
-    input.focus();
-    await ensureData();
-  }));
-  closeBtn.addEventListener("click", () => overlay.classList.remove("open"));
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") overlay.classList.remove("open"); });
-
-  input.addEventListener("input", () => {
-    const q = input.value.trim().toLowerCase();
-    if (!q) { resultsEl.innerHTML = ""; return; }
-    const matches = articlesForSearch.filter(a =>
-      a.title.toLowerCase().includes(q) ||
-      a.category.toLowerCase().includes(q) ||
-      a.subcategory.toLowerCase().includes(q) ||
-      a.excerpt.toLowerCase().includes(q)
-    );
-    resultsEl.innerHTML = matches.length
-      ? matches.map(a => `
-          <a class="search-result" href="${BASE}${a.url}">
-            <p class="category">${a.category.toUpperCase()} · ${a.subcategory.toUpperCase()}</p>
-            <h3>${a.title}</h3>
-          </a>`).join("")
-      : `<p class="search-empty">Sin resultados para "${input.value}".</p>`;
-  });
-}
-
-/* ---------- Init ---------- */
-document.addEventListener("DOMContentLoaded", () => {
-  setupSearch();
-  renderHome();
-  renderCalendarPreview();
-  renderCalendar();
-  const catEl = document.getElementById("category-grid");
-  if (catEl) renderCategoryPage(catEl.dataset.category);
-});
-
-const newsletterForm = document.getElementById('newsletter-form');
-
-if (newsletterForm) {
-  newsletterForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const emailInput = document.getElementById('newsletter-email');
-    const submitButton = document.getElementById('newsletter-submit');
-    const message = document.getElementById('newsletter-message');
-
-    const email = emailInput.value.trim();
-
-    if (!email) {
-      message.textContent = 'Ingresá tu email.';
-      return;
-    }
-
-    submitButton.disabled = true;
-    submitButton.innerHTML = 'Enviando...';
-
-    message.textContent = 'Procesando suscripción...';
-
+  async function loadContent() {
     try {
-      const response = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const result = await response.json();
+      const response = await fetch(
+        `${BASE}api/content`,
+        {
+          cache: "no-store"
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(result.error || 'No se pudo completar la suscripción.');
+        throw new Error("API unavailable");
       }
 
-      message.textContent = '¡Listo! Revisá tu email 🏉';
-      emailInput.value = '';
+      const data = await response.json();
 
-      newsletterForm.classList.add('submitted');
+      return {
+        articles: Array.isArray(data.articles)
+          ? data.articles
+          : [],
+
+        fixtures: Array.isArray(data.fixtures)
+          ? data.fixtures
+          : []
+      };
 
     } catch (error) {
-      console.error('Newsletter:', error);
+      console.warn(
+        "No se pudo cargar /api/content:",
+        error
+      );
 
-      message.textContent =
-        error.message || 'Ocurrió un error. Intentá nuevamente.';
-    } finally {
-      submitButton.disabled = false;
-      submitButton.innerHTML = 'Suscribirme <span>→</span>';
+      return null;
     }
-  });
-}
+  }
+
+  async function loadArticles() {
+    if (ARTICLES_CACHE) {
+      return ARTICLES_CACHE;
+    }
+
+    /* -----------------------------------------
+       1. API PRINCIPAL
+    ----------------------------------------- */
+
+    const content = await loadContent();
+
+    if (content && Array.isArray(content.articles)) {
+      ARTICLES_CACHE = content.articles;
+      return ARTICLES_CACHE;
+    }
+
+    /* -----------------------------------------
+       2. localStorage
+    ----------------------------------------- */
+
+    try {
+      const local =
+        localStorage.getItem(
+          "droprugby_articles"
+        );
+
+      if (local) {
+        const parsed = JSON.parse(local);
+
+        if (Array.isArray(parsed)) {
+          ARTICLES_CACHE = parsed;
+          return ARTICLES_CACHE;
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "No se pudo leer localStorage:",
+        error
+      );
+    }
+
+    /* -----------------------------------------
+       3. DATA.JS
+    ----------------------------------------- */
+
+    if (
+      window.DROP_RUGBY_DATA &&
+      Array.isArray(
+        window.DROP_RUGBY_DATA.articles
+      )
+    ) {
+      ARTICLES_CACHE =
+        window.DROP_RUGBY_DATA.articles;
+
+      return ARTICLES_CACHE;
+    }
+
+    /* -----------------------------------------
+       4. JSON LOCAL
+    ----------------------------------------- */
+
+    try {
+      const response = await fetch(
+        `${BASE}data/articles.json`,
+        {
+          cache: "no-store"
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        ARTICLES_CACHE =
+          Array.isArray(data)
+            ? data
+            : [];
+
+        return ARTICLES_CACHE;
+      }
+
+    } catch (error) {
+      console.warn(
+        "No se pudo cargar articles.json:",
+        error
+      );
+    }
+
+    ARTICLES_CACHE = [];
+
+    return ARTICLES_CACHE;
+  }
+
+  async function loadFixtures() {
+    if (FIXTURES_CACHE) {
+      return FIXTURES_CACHE;
+    }
+
+    /* -----------------------------------------
+       1. API PRINCIPAL
+    ----------------------------------------- */
+
+    const content = await loadContent();
+
+    if (content && Array.isArray(content.fixtures)) {
+      FIXTURES_CACHE = content.fixtures;
+      return FIXTURES_CACHE;
+    }
+
+    /* -----------------------------------------
+       2. localStorage
+    ----------------------------------------- */
+
+    try {
+      const local =
+        localStorage.getItem(
+          "droprugby_fixtures"
+        );
+
+      if (local) {
+        const parsed = JSON.parse(local);
+
+        if (Array.isArray(parsed)) {
+          FIXTURES_CACHE = parsed;
+          return FIXTURES_CACHE;
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "No se pudo leer fixtures de localStorage:",
+        error
+      );
+    }
+
+    /* -----------------------------------------
+       3. DATA.JS
+    ----------------------------------------- */
+
+    if (
+      window.DROP_RUGBY_DATA &&
+      Array.isArray(
+        window.DROP_RUGBY_DATA.fixtures
+      )
+    ) {
+      FIXTURES_CACHE =
+        window.DROP_RUGBY_DATA.fixtures;
+
+      return FIXTURES_CACHE;
+    }
+
+    /* -----------------------------------------
+       4. JSON LOCAL
+    ----------------------------------------- */
+
+    try {
+      const response = await fetch(
+        `${BASE}data/fixtures.json`,
+        {
+          cache: "no-store"
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        FIXTURES_CACHE =
+          Array.isArray(data)
+            ? data
+            : [];
+
+        return FIXTURES_CACHE;
+      }
+
+    } catch (error) {
+      console.warn(
+        "No se pudo cargar fixtures.json:",
+        error
+      );
+    }
+
+    FIXTURES_CACHE = [];
+
+    return FIXTURES_CACHE;
+  }
+
+  /* =========================================================
+     GENERADOR DE URL DE NOTICIAS
+  ========================================================= */
+
+  function articleURL(article) {
+    if (!article) {
+      return "#";
+    }
+
+    /*
+      Las noticias nuevas creadas desde el admin
+      ya vienen con:
+
+      article.html?id=...
+
+      Las antiguas pueden tener una URL manual.
+    */
+
+    if (article.url) {
+      return `${BASE}${article.url}`;
+    }
+
+    if (article.id) {
+      return `${BASE}article.html?id=${encodeURIComponent(
+        article.id
+      )}`;
+    }
+
+    return "#";
+  }
+
+  /* =========================================================
+     TARJETA DE NOTICIA
+  ========================================================= */
+
+  function storyCardHTML(article, options = {}) {
+    const featuredClass =
+      options.featured
+        ? "story-featured"
+        : "";
+
+    const category =
+      escapeHTML(
+        article.category || "RUGBY"
+      );
+
+    const subcategory =
+      escapeHTML(
+        article.subcategory || "ACTUALIDAD"
+      );
+
+    const title =
+      escapeHTML(
+        article.title || "Sin título"
+      );
+
+    const excerpt =
+      escapeHTML(
+        article.excerpt || ""
+      );
+
+    const author =
+      escapeHTML(
+        article.author || "DropRugby"
+      );
+
+    const date =
+      formatDateShort(article.date);
+
+    let visual = "";
+
+    if (article.imageUrl) {
+
+      visual = `
+        <div class="story-image photo-not-clickable">
+          <img
+            src="${safeURL(article.imageUrl)}"
+            alt=""
+            loading="lazy"
+          >
+        </div>
+      `;
+
+    } else {
+
+      visual = `
+        <div class="story-image ph-image photo-not-clickable ${
+          escapeHTML(
+            article.imageClass || "img-tone-1"
+          )
+        }"></div>
+      `;
+    }
+
+    return `
+      <article class="story ${featuredClass} reveal">
+
+        ${visual}
+
+        <div class="story-body">
+
+          <p class="category">
+            ${category} · ${subcategory}
+          </p>
+
+          <h3>
+            <a href="${articleURL(article)}">
+              ${title}
+            </a>
+          </h3>
+
+          <p>
+            ${excerpt}
+          </p>
+
+          <div class="meta">
+            Por ${author} · ${escapeHTML(
+              date
+            )}
+          </div>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+  /* =========================================================
+     HERO DE HOME
+  ========================================================= */
+
+  async function renderHomeHero(featured) {
+    const heroEl = $("#home-hero");
+
+    if (!heroEl || !featured) {
+      return;
+    }
+
+    const category =
+      escapeHTML(
+        featured.category || "RUGBY"
+      );
+
+    const title =
+      escapeHTML(
+        featured.title || "Sin título"
+      );
+
+    let heroVisual = "";
+
+    if (featured.imageUrl) {
+
+      heroVisual = `
+        <div class="hero-image photo-not-clickable">
+
+          <img
+            src="${safeURL(featured.imageUrl)}"
+            alt=""
+            loading="eager"
+          >
+
+          <div class="image-overlay"></div>
+
+          <div class="hero-card-caption">
+            <span>
+              TOP STORY · ${category}
+            </span>
+
+            <h2>
+              ${title}
+            </h2>
+          </div>
+
+        </div>
+      `;
+
+    } else {
+
+      heroVisual = `
+        <div class="hero-image ${
+          escapeHTML(
+            featured.imageClass ||
+            "img-tone-1"
+          )
+        } photo-not-clickable ph-image">
+
+          <div class="image-overlay"></div>
+
+          <div class="hero-card-caption">
+
+            <span>
+              TOP STORY · ${category}
+            </span>
+
+            <h2>
+              ${title}
+            </h2>
+
+          </div>
+
+        </div>
+      `;
+    }
+
+    heroEl.innerHTML = `
+      <div class="hero-card-inner">
+        ${heroVisual}
+      </div>
+    `;
+
+    const heroLink =
+      $("#home-hero-link");
+
+    if (heroLink) {
+      heroLink.href =
+        articleURL(featured);
+    }
+  }
+
+  /* =========================================================
+     HOME
+  ========================================================= */
+
+  async function renderHome() {
+
+    const grid =
+      $("#home-top-stories");
+
+    const pumasEl =
+      $("#home-los-pumas");
+
+    const superRugbyEl =
+      $("#home-super-rugby");
+
+    const urbaTop14El =
+      $("#home-urba-top14");
+
+    const urbaEl =
+      $("#home-urba");
+
+    const heroEl =
+      $("#home-hero");
+
+    if (
+      !grid &&
+      !pumasEl &&
+      !superRugbyEl &&
+      !urbaTop14El &&
+      !urbaEl &&
+      !heroEl
+    ) {
+      return;
+    }
+
+    const articles =
+      (await loadArticles())
+        .slice()
+        .sort((a, b) =>
+          String(b.date || "").localeCompare(
+            String(a.date || "")
+          )
+        );
+
+    if (!articles.length) {
+      if (grid) {
+        grid.innerHTML = `
+          <p class="empty-state">
+            Todavía no hay noticias publicadas.
+          </p>
+        `;
+      }
+
+      return;
+    }
+
+    /* -----------------------------------------
+       NOTICIA DESTACADA
+    ----------------------------------------- */
+
+    const featured =
+      articles.find(
+        article => article.featured
+      ) || articles[0];
+
+    await renderHomeHero(featured);
+
+    /* -----------------------------------------
+       ÚLTIMAS NOTICIAS
+    ----------------------------------------- */
+
+    const rest =
+      articles.filter(
+        article =>
+          article.id !== featured.id
+      );
+
+    if (grid) {
+
+      grid.innerHTML =
+        rest
+          .slice(0, 3)
+          .map((article, index) =>
+            storyCardHTML(
+              article,
+              {
+                featured:
+                  index === 0
+              }
+            )
+          )
+          .join("");
+
+    }
+
+    /* -----------------------------------------
+       CATEGORÍAS
+    ----------------------------------------- */
+
+    function renderCategory(
+      categoryName,
+      element
+    ) {
+
+      if (!element) return;
+
+      const items =
+        articles
+          .filter(
+            article =>
+              normalizeCategory(
+                article.category
+              ) ===
+              normalizeCategory(
+                categoryName
+              )
+          )
+          .slice(0, 3);
+
+      if (!items.length) {
+
+        element.innerHTML = `
+          <p class="empty-state">
+            Todavía no hay noticias publicadas
+            en esta categoría.
+          </p>
+        `;
+
+        return;
+      }
+
+      element.innerHTML =
+        items
+          .map(article =>
+            storyCardHTML(article)
+          )
+          .join("");
+    }
+
+    renderCategory(
+      "Los Pumas",
+      pumasEl
+    );
+
+    renderCategory(
+      "Super Rugby",
+      superRugbyEl
+    );
+
+    renderCategory(
+      "URBA TOP 14",
+      urbaTop14El
+    );
+
+    renderCategory(
+      "URBA",
+      urbaEl
+    );
+
+    observeReveals();
+  }
+
+  /* =========================================================
+     PÁGINAS DE CATEGORÍA
+  ========================================================= */
+
+  async function renderCategoryPage(
+    categoryName
+  ) {
+
+    const grid =
+      $("#category-grid");
+
+    if (!grid) return;
+
+    const articles =
+      (await loadArticles())
+        .filter(article =>
+          normalizeCategory(
+            article.category
+          ) ===
+          normalizeCategory(
+            categoryName
+          )
+        )
+        .sort((a, b) =>
+          String(b.date || "").localeCompare(
+            String(a.date || "")
+          )
+        );
+
+    const chips =
+      $$(".filter-bar .filter-chip");
+
+    let activeFilter = "TODAS";
+
+    function paint() {
+
+      const filtered =
+        activeFilter === "TODAS"
+          ? articles
+          : articles.filter(article =>
+              normalizeCategory(
+                article.subcategory
+              ) ===
+              normalizeCategory(
+                activeFilter
+              )
+            );
+
+      if (!filtered.length) {
+
+        grid.innerHTML = `
+          <p class="empty-state">
+            No hay noticias para este filtro todavía.
+          </p>
+        `;
+
+        return;
+      }
+
+      grid.innerHTML =
+        filtered
+          .map(article =>
+            storyCardHTML(article)
+          )
+          .join("");
+
+      observeReveals();
+    }
+
+    chips.forEach(chip => {
+
+      chip.addEventListener(
+        "click",
+        () => {
+
+          chips.forEach(
+            item =>
+              item.classList.remove(
+                "active"
+              )
+          );
+
+          chip.classList.add(
+            "active"
+          );
+
+          activeFilter =
+            chip.dataset.filter ||
+            "TODAS";
+
+          paint();
+        }
+      );
+
+    });
+
+    paint();
+  }
+
+  /* =========================================================
+     CALENDARIO
+  ========================================================= */
+
+  async function renderCalendar() {
+
+    const listEl =
+      $("#calendar-list");
+
+    if (!listEl) return;
+
+    const fixtures =
+      await loadFixtures();
+
+    const competitionButtons =
+      $(
+        ".competition-select .filter-chip"
+      );
+
+    const dateButtons =
+      $(
+        ".date-filter-bar .date-chip"
+      );
+
+    const dayLabel =
+      $("#day-nav-label");
+
+    const prevBtn =
+      $("#day-prev");
+
+    const nextBtn =
+      $("#day-next");
+
+    const todayBtn =
+      $("#day-today");
+
+    let activeCompetition =
+      "TODAS";
+
+    let mode =
+      "dia";
+
+    let currentDate =
+      new Date();
+
+    currentDate.setHours(
+      0,
+      0,
+      0,
+      0
+    );
+
+    /* -----------------------------------------
+       FECHA INICIAL
+    ----------------------------------------- */
+
+    const availableDates =
+      fixtures
+        .map(
+          fixture => fixture.date
+        )
+        .filter(Boolean)
+        .sort();
+
+    if (
+      availableDates.length &&
+      !fixtures.some(
+        fixture =>
+          fixture.date ===
+          isoFromDate(currentDate)
+      )
+    ) {
+
+      currentDate =
+        dateFromISO(
+          availableDates[0]
+        );
+
+    }
+
+    /* -----------------------------------------
+       AGRUPAR
+    ----------------------------------------- */
+
+    function groupByDateAndCompetition(
+      items
+    ) {
+
+      const grouped = {};
+
+      items.forEach(fixture => {
+
+        if (!grouped[fixture.date]) {
+          grouped[fixture.date] = {};
+        }
+
+        if (
+          !grouped[fixture.date][
+            fixture.competition
+          ]
+        ) {
+
+          grouped[fixture.date][
+            fixture.competition
+          ] = [];
+
+        }
+
+        grouped[fixture.date][
+          fixture.competition
+        ].push(fixture);
+
+      });
+
+      return grouped;
+    }
+
+    /* -----------------------------------------
+       RANGOS
+    ----------------------------------------- */
+
+    function getRangeDates() {
+
+      if (mode === "semana") {
+
+        const start =
+          new Date(currentDate);
+
+        const day =
+          start.getDay();
+
+        const diffToMonday =
+          (day + 6) % 7;
+
+        start.setDate(
+          start.getDate() -
+          diffToMonday
+        );
+
+        return Array.from(
+          { length: 7 },
+          (_, index) => {
+
+            const date =
+              new Date(start);
+
+            date.setDate(
+              start.getDate() +
+              index
+            );
+
+            return isoFromDate(
+              date
+            );
+          }
+        );
+      }
+
+      if (mode === "finde") {
+
+        const start =
+          new Date(currentDate);
+
+        const day =
+          start.getDay();
+
+        const diffToSaturday =
+          (6 - day + 7) % 7;
+
+        const saturday =
+          new Date(start);
+
+        saturday.setDate(
+          saturday.getDate() +
+          diffToSaturday
+        );
+
+        const sunday =
+          new Date(saturday);
+
+        sunday.setDate(
+          sunday.getDate() + 1
+        );
+
+        return [
+          isoFromDate(saturday),
+          isoFromDate(sunday)
+        ];
+      }
+
+      if (mode === "manana") {
+
+        const tomorrow =
+          new Date(currentDate);
+
+        tomorrow.setDate(
+          tomorrow.getDate() + 1
+        );
+
+        return [
+          isoFromDate(
+            tomorrow
+          )
+        ];
+      }
+
+      return [
+        isoFromDate(currentDate)
+      ];
+    }
+
+    /* -----------------------------------------
+       LABEL
+    ----------------------------------------- */
+
+    function updateDayLabel() {
+
+      if (!dayLabel) return;
+
+      if (mode === "dia") {
+
+        dayLabel.textContent =
+          `${DIAS[currentDate.getDay()]} · ${formatDateShort(
+            isoFromDate(currentDate)
+          )}`;
+
+      } else if (
+        mode === "manana"
+      ) {
+
+        const tomorrow =
+          new Date(currentDate);
+
+        tomorrow.setDate(
+          tomorrow.getDate() + 1
+        );
+
+        dayLabel.textContent =
+          `${DIAS[tomorrow.getDay()]} · ${formatDateShort(
+            isoFromDate(tomorrow)
+          )}`;
+
+      } else if (
+        mode === "finde"
+      ) {
+
+        dayLabel.textContent =
+          "FIN DE SEMANA";
+
+      } else {
+
+        dayLabel.textContent =
+          "TODA LA SEMANA";
+      }
+    }
+
+    /* -----------------------------------------
+       PINTAR CALENDARIO
+    ----------------------------------------- */
+
+    function paint() {
+
+      updateDayLabel();
+
+      const dates =
+        getRangeDates();
+
+      let filtered =
+        fixtures.filter(
+          fixture =>
+            dates.includes(
+              fixture.date
+            )
+        );
+
+      if (
+        activeCompetition !==
+        "TODAS"
+      ) {
+
+        filtered =
+          filtered.filter(
+            fixture =>
+              normalizeCategory(
+                fixture.competition
+              ) ===
+              normalizeCategory(
+                activeCompetition
+              )
+          );
+
+      }
+
+      const grouped =
+        groupByDateAndCompetition(
+          filtered
+        );
+
+      const sortedDates =
+        Object.keys(grouped)
+          .sort();
+
+      if (!sortedDates.length) {
+
+        listEl.innerHTML = `
+          <p class="empty-state">
+            No hay partidos cargados
+            para este filtro.
+            Probá con otra competición
+            o fecha.
+          </p>
+        `;
+
+        return;
+      }
+
+      listEl.innerHTML =
+        sortedDates.map(date => {
+
+          const dateObject =
+            dateFromISO(date);
+
+          const competitions =
+            grouped[date];
+
+          const competitionsHTML =
+            Object.keys(
+              competitions
+            )
+              .sort()
+              .map(
+                competitionName => {
+
+                  const rows =
+                    competitions[
+                      competitionName
+                    ]
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          String(
+                            a.time || ""
+                          ).localeCompare(
+                            String(
+                              b.time || ""
+                            )
+                          )
+                      )
+                      .map(
+                        fixture => `
+                          <div class="match-row">
+
+                            <div class="match-time">
+                              ${escapeHTML(
+                                fixture.time
+                              )}
+                            </div>
+
+                            <div class="match-teams">
+                              ${escapeHTML(
+                                fixture.home
+                              )}
+                              vs.
+                              ${escapeHTML(
+                                fixture.away
+                              )}
+                            </div>
+
+                            <div class="match-channel">
+                              ${escapeHTML(
+                                fixture.channel ||
+                                "—"
+                              )}
+                            </div>
+
+                          </div>
+                        `
+                      )
+                      .join("");
+
+                  return `
+                    <div class="competition-block">
+
+                      <div class="competition-name">
+                        ${escapeHTML(
+                          competitionName
+                        ).toUpperCase()}
+                      </div>
+
+                      ${rows}
+
+                    </div>
+                  `;
+                }
+              )
+              .join("");
+
+          return `
+            <div class="day-block">
+
+              <div class="day-block-header">
+
+                <span class="dow">
+                  ${DIAS[
+                    dateObject.getDay()
+                  ]}
+                </span>
+
+                <span class="full-date">
+                  ${formatDateShort(date)}
+                </span>
+
+              </div>
+
+              ${competitionsHTML}
+
+            </div>
+          `;
+
+        }).join("");
+    }
+
+    /* -----------------------------------------
+       COMPETICIONES
+    ----------------------------------------- */
+
+    competitionButtons.forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            competitionButtons.forEach(
+              item =>
+                item.classList.remove(
+                  "active"
+                )
+            );
+
+            button.classList.add(
+              "active"
+            );
+
+            activeCompetition =
+              button.dataset.filter ||
+              "TODAS";
+
+            paint();
+          }
+        );
+      }
+    );
+
+    /* -----------------------------------------
+       FECHAS
+    ----------------------------------------- */
+
+    dateButtons.forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            dateButtons.forEach(
+              item =>
+                item.classList.remove(
+                  "active"
+                )
+            );
+
+            button.classList.add(
+              "active"
+            );
+
+            mode =
+              button.dataset.mode ||
+              "dia";
+
+            paint();
+          }
+        );
+      }
+    );
+
+    /* -----------------------------------------
+       ANTERIOR
+    ----------------------------------------- */
+
+    if (prevBtn) {
+
+      prevBtn.addEventListener(
+        "click",
+        () => {
+
+          currentDate.setDate(
+            currentDate.getDate() -
+            (
+              mode === "semana"
+                ? 7
+                : 1
+            )
+          );
+
+          paint();
+        }
+      );
+
+    }
+
+    /* -----------------------------------------
+       SIGUIENTE
+    ----------------------------------------- */
+
+    if (nextBtn) {
+
+      nextBtn.addEventListener(
+        "click",
+        () => {
+
+          currentDate.setDate(
+            currentDate.getDate() +
+            (
+              mode === "semana"
+                ? 7
+                : 1
+            )
+          );
+
+          paint();
+        }
+      );
+
+    }
+
+    /* -----------------------------------------
+       HOY
+    ----------------------------------------- */
+
+    if (todayBtn) {
+
+      todayBtn.addEventListener(
+        "click",
+        () => {
+
+          currentDate =
+            new Date();
+
+          currentDate.setHours(
+            0,
+            0,
+            0,
+            0
+          );
+
+          mode = "dia";
+
+          dateButtons.forEach(
+            button =>
+              button.classList.toggle(
+                "active",
+                button.dataset.mode ===
+                "dia"
+              )
+          );
+
+          paint();
+        }
+      );
+
+    }
+
+    paint();
+  }
+
+  /* =========================================================
+     PREVIEW CALENDARIO HOME
+  ========================================================= */
+
+  async function renderCalendarPreview() {
+
+    const element =
+      $("#home-calendar-preview");
+
+    if (!element) return;
+
+    const fixtures =
+      (await loadFixtures())
+        .slice()
+        .sort(
+          (a, b) =>
+            (
+              String(a.date || "") +
+              String(a.time || "")
+            ).localeCompare(
+              String(b.date || "") +
+              String(b.time || "")
+            )
+        );
+
+    const upcoming =
+      fixtures.slice(0, 6);
+
+    if (!upcoming.length) {
+
+      element.innerHTML = `
+        <p class="empty-state">
+          No hay próximos partidos cargados.
+        </p>
+      `;
+
+      return;
+    }
+
+    element.innerHTML =
+      upcoming
+        .map(
+          fixture => `
+            <div class="match-row">
+
+              <div class="match-time">
+                ${escapeHTML(
+                  fixture.time
+                )}
+              </div>
+
+              <div class="match-teams">
+
+                ${escapeHTML(
+                  fixture.home
+                )}
+
+                vs.
+
+                ${escapeHTML(
+                  fixture.away
+                )}
+
+                <span
+                  style="
+                    color:var(--muted-light);
+                    font-weight:400;
+                  "
+                >
+                  —
+                  ${escapeHTML(
+                    fixture.competition
+                  )}
+                </span>
+
+              </div>
+
+              <div class="match-channel">
+                ${escapeHTML(
+                  fixture.channel ||
+                  "—"
+                )}
+              </div>
+
+            </div>
+          `
+        )
+        .join("");
+  }
+
+  /* =========================================================
+     BUSCADOR GLOBAL
+  ========================================================= */
+
+  function setupSearch() {
+
+    const openButtons =
+      $$(".search-btn");
+
+    const overlay =
+      $("#search-overlay");
+
+    const closeButton =
+      $("#search-close");
+
+    const input =
+      $("#search-input");
+
+    const results =
+      $("#search-results");
+
+    if (
+      !overlay ||
+      !openButtons.length ||
+      !input ||
+      !results
+    ) {
+      return;
+    }
+
+    let articlesForSearch = [];
+
+    async function ensureSearchData() {
+
+      if (
+        articlesForSearch.length
+      ) {
+        return;
+      }
+
+      articlesForSearch =
+        await loadArticles();
+    }
+
+    openButtons.forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          async () => {
+
+            overlay.classList.add(
+              "open"
+            );
+
+            input.focus();
+
+            await ensureSearchData();
+
+          }
+        );
+
+      }
+    );
+
+    if (closeButton) {
+
+      closeButton.addEventListener(
+        "click",
+        () => {
+          overlay.classList.remove(
+            "open"
+          );
+        }
+      );
+
+    }
+
+    overlay.addEventListener(
+      "click",
+      event => {
+
+        if (
+          event.target === overlay
+        ) {
+          overlay.classList.remove(
+            "open"
+          );
+        }
+
+      }
+    );
+
+    document.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "Escape"
+        ) {
+          overlay.classList.remove(
+            "open"
+          );
+        }
+
+      }
+    );
+
+    input.addEventListener(
+      "input",
+      () => {
+
+        const query =
+          input.value
+            .trim()
+            .toLowerCase();
+
+        if (!query) {
+
+          results.innerHTML = "";
+
+          return;
+        }
+
+        const matches =
+          articlesForSearch.filter(
+            article => {
+
+              const searchable = [
+                article.title,
+                article.category,
+                article.subcategory,
+                article.excerpt,
+                article.author
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+              return searchable.includes(
+                query
+              );
+            }
+          );
+
+        if (!matches.length) {
+
+          results.innerHTML = `
+            <p class="search-empty">
+              Sin resultados para
+              "${escapeHTML(
+                input.value
+              )}".
+            </p>
+          `;
+
+          return;
+        }
+
+        results.innerHTML =
+          matches
+            .map(
+              article => `
+                <a
+                  class="search-result"
+                  href="${articleURL(
+                    article
+                  )}"
+                >
+
+                  <p class="category">
+                    ${escapeHTML(
+                      article.category ||
+                      "RUGBY"
+                    ).toUpperCase()}
+                    ·
+                    ${escapeHTML(
+                      article.subcategory ||
+                      "ACTUALIDAD"
+                    ).toUpperCase()}
+                  </p>
+
+                  <h3>
+                    ${escapeHTML(
+                      article.title
+                    )}
+                  </h3>
+
+                </a>
+              `
+            )
+            .join("");
+      }
+    );
+  }
+
+  /* =========================================================
+     NEWSLETTER
+  ========================================================= */
+
+  function setupNewsletter() {
+
+    const forms =
+      $$(".newsletter-form");
+
+    forms.forEach(form => {
+
+      /*
+        Evitamos agregar dos listeners
+        si el HTML utiliza ambas clases.
+      */
+
+      if (
+        form.dataset.newsletterReady ===
+        "true"
+      ) {
+        return;
+      }
+
+      form.dataset.newsletterReady =
+        "true";
+
+      form.addEventListener(
+        "submit",
+        async event => {
+
+          event.preventDefault();
+
+          const emailInput =
+            form.querySelector(
+              "#newsletter-email"
+            ) ||
+            form.querySelector(
+              'input[type="email"]'
+            );
+
+          const submitButton =
+            form.querySelector(
+              "#newsletter-submit"
+            ) ||
+            form.querySelector(
+              'button[type="submit"]'
+            );
+
+          const message =
+            form.querySelector(
+              "#newsletter-message"
+            ) ||
+            form.querySelector(
+              "small"
+            );
+
+          if (!emailInput) {
+            return;
+          }
+
+          const email =
+            emailInput.value.trim();
+
+          if (!email) {
+
+            if (message) {
+              message.textContent =
+                "Ingresá tu email.";
+            }
+
+            return;
+          }
+
+          const validEmail =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+              .test(email);
+
+          if (!validEmail) {
+
+            if (message) {
+              message.textContent =
+                "Ingresá un email válido.";
+            }
+
+            return;
+          }
+
+          if (submitButton) {
+
+            submitButton.disabled =
+              true;
+
+            submitButton.innerHTML =
+              "Enviando...";
+          }
+
+          if (message) {
+
+            message.textContent =
+              "Procesando suscripción...";
+          }
+
+          try {
+
+            const response =
+              await fetch(
+                `${BASE}api/newsletter`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type":
+                      "application/json"
+                  },
+                  body: JSON.stringify({
+                    email
+                  })
+                }
+              );
+
+            let result = {};
+
+            try {
+              result =
+                await response.json();
+            } catch {
+              result = {};
+            }
+
+            if (!response.ok) {
+
+              throw new Error(
+                result.error ||
+                "No se pudo completar la suscripción."
+              );
+            }
+
+            if (message) {
+
+              message.textContent =
+                "¡Listo! Revisá tu email 🏉";
+            }
+
+            emailInput.value = "";
+
+            form.classList.add(
+              "submitted"
+            );
+
+          } catch (error) {
+
+            console.error(
+              "Newsletter:",
+              error
+            );
+
+            if (message) {
+
+              message.textContent =
+                error.message ||
+                "Ocurrió un error. Intentá nuevamente.";
+            }
+
+          } finally {
+
+            if (submitButton) {
+
+              submitButton.disabled =
+                false;
+
+              submitButton.innerHTML =
+                `Suscribirme <span>→</span>`;
+            }
+          }
+        }
+      );
+    });
+  }
+
+  /* =========================================================
+     ACTUALIZACIÓN DE DATOS
+  ========================================================= */
+
+  function setupDataRefresh() {
+
+    window.addEventListener(
+      "droprugby:data-updated",
+      () => {
+
+        ARTICLES_CACHE = null;
+        FIXTURES_CACHE = null;
+
+        renderHome();
+        renderCalendarPreview();
+        renderCalendar();
+
+        const categoryGrid =
+          $("#category-grid");
+
+        if (categoryGrid) {
+
+          renderCategoryPage(
+            categoryGrid.dataset.category
+          );
+        }
+
+      }
+    );
+  }
+
+  /* =========================================================
+     INICIALIZACIÓN
+  ========================================================= */
+
+  async function init() {
+
+    setupMobileMenu();
+
+    setupRevealObserver();
+
+    setupSearch();
+
+    setupNewsletter();
+
+    setupDataRefresh();
+
+    /*
+      Cargamos todo en paralelo.
+    */
+
+    await Promise.allSettled([
+      renderHome(),
+      renderCalendarPreview(),
+      renderCalendar()
+    ]);
+
+    const categoryGrid =
+      $("#category-grid");
+
+    if (
+      categoryGrid &&
+      categoryGrid.dataset.category
+    ) {
+
+      await renderCategoryPage(
+        categoryGrid.dataset.category
+      );
+    }
+
+    observeReveals();
+  }
+
+  /* =========================================================
+     DOM READY
+  ========================================================= */
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      init,
+      {
+        once: true
+      }
+    );
+
+  } else {
+
+    init();
+
+  }
+
+})();
