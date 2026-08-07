@@ -8,6 +8,11 @@
     content="width=device-width, initial-scale=1.0"
   >
 
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  >
+
   <title>DropRugby — Administración</title>
 
   <link
@@ -117,7 +122,8 @@
 
   <div
     id="admin-app"
-    class="admin-app hidden"
+    class="admin-app"
+    hidden
   >
 
     <!-- ===================================================
@@ -182,10 +188,13 @@
         >
           <span class="nav-icon">▤</span>
           <span>Noticias</span>
+
           <span
             id="nav-articles-count"
             class="nav-count"
-          >0</span>
+          >
+            0
+          </span>
         </button>
 
         <button
@@ -195,10 +204,13 @@
         >
           <span class="nav-icon">◷</span>
           <span>Partidos</span>
+
           <span
             id="nav-fixtures-count"
             class="nav-count"
-          >0</span>
+          >
+            0
+          </span>
         </button>
 
         <button
@@ -217,10 +229,13 @@
         >
           <span class="nav-icon">♟</span>
           <span>Jugadores</span>
+
           <span
             id="nav-players-count"
             class="nav-count"
-          >0</span>
+          >
+            0
+          </span>
         </button>
 
         <button
@@ -244,10 +259,13 @@
         >
           <span class="nav-icon">⌫</span>
           <span>Papelera</span>
+
           <span
             id="nav-trash-count"
             class="nav-count"
-          >0</span>
+          >
+            0
+          </span>
         </button>
 
         <button
@@ -276,6 +294,7 @@
         <a
           href="/"
           target="_blank"
+          rel="noopener"
           class="sidebar-site-link"
         >
           <span>↗</span>
@@ -365,6 +384,7 @@
           <a
             href="/"
             target="_blank"
+            rel="noopener"
             class="view-site-button"
           >
             VER SITIO
@@ -377,7 +397,6 @@
 
 
       <div class="content-container">
-
 
         <!-- =================================================
              DASHBOARD
@@ -714,15 +733,41 @@
             </div>
 
             <select id="article-category-filter">
-              <option value="">Todas las categorías</option>
-              <option value="Internacional">Internacional</option>
-              <option value="Argentina">Argentina</option>
-              <option value="Rugby Championship">Rugby Championship</option>
-              <option value="Los Pumas">Los Pumas</option>
-              <option value="Mundial">Mundial</option>
-              <option value="Clubes">Clubes</option>
-              <option value="Mercado">Mercado</option>
-              <option value="Rugby">Rugby</option>
+              <option value="">
+                Todas las categorías
+              </option>
+
+              <option value="Internacional">
+                Internacional
+              </option>
+
+              <option value="Argentina">
+                Argentina
+              </option>
+
+              <option value="Rugby Championship">
+                Rugby Championship
+              </option>
+
+              <option value="Los Pumas">
+                Los Pumas
+              </option>
+
+              <option value="Mundial">
+                Mundial
+              </option>
+
+              <option value="Clubes">
+                Clubes
+              </option>
+
+              <option value="Mercado">
+                Mercado
+              </option>
+
+              <option value="Rugby">
+                Rugby
+              </option>
             </select>
 
           </div>
@@ -793,9 +838,19 @@
             </div>
 
             <select id="fixture-status-filter">
-              <option value="">Todos</option>
-              <option value="upcoming">Próximos</option>
-              <option value="finished">Finalizados</option>
+
+              <option value="">
+                Todos
+              </option>
+
+              <option value="upcoming">
+                Próximos
+              </option>
+
+              <option value="finished">
+                Finalizados
+              </option>
+
             </select>
 
           </div>
@@ -1215,1056 +1270,30 @@
 
 
   <!-- =====================================================
-       ARTICLE MODAL
+       MODAL ROOT
   ====================================================== -->
 
   <div
-    id="article-modal"
-    class="modal"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal
-    ></div>
-
-    <div class="modal-dialog modal-large">
-
-      <div class="modal-header">
-
-        <div>
-
-          <span class="section-label">
-            EDITOR
-          </span>
-
-          <h2 id="article-modal-title">
-            Nueva noticia
-          </h2>
-
-        </div>
-
-        <button
-          class="modal-close"
-          type="button"
-          data-close-modal
-        >
-          ×
-        </button>
-
-      </div>
-
-
-      <form id="article-form">
-
-        <input
-          id="article-id"
-          type="hidden"
-        >
-
-        <div class="form-grid">
-
-          <div class="form-group full">
-
-            <label for="article-title">
-              Título *
-            </label>
-
-            <input
-              id="article-title"
-              type="text"
-              required
-              placeholder="Título de la noticia"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="article-category">
-              Categoría
-            </label>
-
-            <select id="article-category">
-
-              <option value="Rugby">
-                Rugby
-              </option>
-
-              <option value="Los Pumas">
-                Los Pumas
-              </option>
-
-              <option value="Internacional">
-                Internacional
-              </option>
-
-              <option value="Argentina">
-                Argentina
-              </option>
-
-              <option value="Rugby Championship">
-                Rugby Championship
-              </option>
-
-              <option value="Mundial">
-                Mundial
-              </option>
-
-              <option value="Clubes">
-                Clubes
-              </option>
-
-              <option value="Mercado">
-                Mercado
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="article-author">
-              Autor
-            </label>
-
-            <input
-              id="article-author"
-              type="text"
-              value="DropRugby"
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="article-image">
-              URL de imagen
-            </label>
-
-            <input
-              id="article-image"
-              type="url"
-              placeholder="https://..."
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="article-excerpt">
-              Bajada
-            </label>
-
-            <textarea
-              id="article-excerpt"
-              rows="3"
-              placeholder="Resumen de la noticia..."
-            ></textarea>
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="article-content">
-              Contenido *
-            </label>
-
-            <textarea
-              id="article-content"
-              rows="12"
-              required
-              placeholder="Escribí la noticia..."
-            ></textarea>
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="article-tags">
-              Tags
-            </label>
-
-            <input
-              id="article-tags"
-              type="text"
-              placeholder="rugby, los pumas, mundial"
-            >
-
-          </div>
-
-
-          <div class="checkbox-group">
-
-            <label class="checkbox-label">
-
-              <input
-                id="article-featured"
-                type="checkbox"
-              >
-
-              <span>
-                Noticia destacada
-              </span>
-
-            </label>
-
-          </div>
-
-        </div>
-
-
-        <div class="modal-actions">
-
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-close-modal
-          >
-            CANCELAR
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            GUARDAR NOTICIA
-          </button>
-
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
+    id="modal-root"
+    class="modal-root"
+    hidden
+  ></div>
 
 
   <!-- =====================================================
-       FIXTURE MODAL
-  ====================================================== -->
-
-  <div
-    id="fixture-modal"
-    class="modal"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal
-    ></div>
-
-    <div class="modal-dialog">
-
-      <div class="modal-header">
-
-        <div>
-
-          <span class="section-label">
-            CALENDARIO
-          </span>
-
-          <h2 id="fixture-modal-title">
-            Nuevo partido
-          </h2>
-
-        </div>
-
-        <button
-          class="modal-close"
-          type="button"
-          data-close-modal
-        >
-          ×
-        </button>
-
-      </div>
-
-
-      <form id="fixture-form">
-
-        <input
-          id="fixture-id"
-          type="hidden"
-        >
-
-        <div class="form-grid">
-
-          <div class="form-group">
-
-            <label for="fixture-date">
-              Fecha
-            </label>
-
-            <input
-              id="fixture-date"
-              type="date"
-              required
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-time">
-              Hora
-            </label>
-
-            <input
-              id="fixture-time"
-              type="time"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-competition">
-              Competición
-            </label>
-
-            <input
-              id="fixture-competition"
-              type="text"
-              placeholder="Rugby Championship"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-venue">
-              Estadio
-            </label>
-
-            <input
-              id="fixture-venue"
-              type="text"
-              placeholder="Estadio..."
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-home">
-              Local
-            </label>
-
-            <input
-              id="fixture-home"
-              type="text"
-              required
-              placeholder="Equipo local"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-away">
-              Visitante
-            </label>
-
-            <input
-              id="fixture-away"
-              type="text"
-              required
-              placeholder="Equipo visitante"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-home-score">
-              Resultado local
-            </label>
-
-            <input
-              id="fixture-home-score"
-              type="number"
-              min="0"
-              placeholder="-"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="fixture-away-score">
-              Resultado visitante
-            </label>
-
-            <input
-              id="fixture-away-score"
-              type="number"
-              min="0"
-              placeholder="-"
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="fixture-status">
-              Estado
-            </label>
-
-            <select id="fixture-status">
-
-              <option value="upcoming">
-                Próximo
-              </option>
-
-              <option value="finished">
-                Finalizado
-              </option>
-
-            </select>
-
-          </div>
-
-        </div>
-
-
-        <div class="modal-actions">
-
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-close-modal
-          >
-            CANCELAR
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            GUARDAR PARTIDO
-          </button>
-
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       TEAM MODAL
-  ====================================================== -->
-
-  <div
-    id="team-modal"
-    class="modal"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal
-    ></div>
-
-    <div class="modal-dialog">
-
-      <div class="modal-header">
-
-        <div>
-
-          <span class="section-label">
-            POSICIONES
-          </span>
-
-          <h2>
-            Equipo
-          </h2>
-
-        </div>
-
-        <button
-          class="modal-close"
-          type="button"
-          data-close-modal
-        >
-          ×
-        </button>
-
-      </div>
-
-
-      <form id="team-form">
-
-        <input
-          id="team-id"
-          type="hidden"
-        >
-
-        <div class="form-grid">
-
-          <div class="form-group full">
-
-            <label for="team-name">
-              Equipo *
-            </label>
-
-            <input
-              id="team-name"
-              type="text"
-              required
-              placeholder="Nombre del equipo"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="team-played">
-              PJ
-            </label>
-
-            <input
-              id="team-played"
-              type="number"
-              min="0"
-              value="0"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="team-wins">
-              PG
-            </label>
-
-            <input
-              id="team-wins"
-              type="number"
-              min="0"
-              value="0"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="team-draws">
-              PE
-            </label>
-
-            <input
-              id="team-draws"
-              type="number"
-              min="0"
-              value="0"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="team-losses">
-              PP
-            </label>
-
-            <input
-              id="team-losses"
-              type="number"
-              min="0"
-              value="0"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="team-points-for">
-              PF
-            </label>
-
-            <input
-              id="team-points-for"
-              type="number"
-              value="0"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="team-points-against">
-              PC
-            </label>
-
-            <input
-              id="team-points-against"
-              type="number"
-              value="0"
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="team-points">
-              Puntos
-            </label>
-
-            <input
-              id="team-points"
-              type="number"
-              value="0"
-            >
-
-          </div>
-
-        </div>
-
-
-        <div class="modal-actions">
-
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-close-modal
-          >
-            CANCELAR
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            GUARDAR EQUIPO
-          </button>
-
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       PLAYER MODAL
-  ====================================================== -->
-
-  <div
-    id="player-modal"
-    class="modal"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal
-    ></div>
-
-    <div class="modal-dialog">
-
-      <div class="modal-header">
-
-        <div>
-
-          <span class="section-label">
-            JUGADORES
-          </span>
-
-          <h2>
-            Jugador
-          </h2>
-
-        </div>
-
-        <button
-          class="modal-close"
-          type="button"
-          data-close-modal
-        >
-          ×
-        </button>
-
-      </div>
-
-
-      <form id="player-form">
-
-        <input
-          id="player-id"
-          type="hidden"
-        >
-
-        <div class="form-grid">
-
-          <div class="form-group">
-
-            <label for="player-name">
-              Nombre *
-            </label>
-
-            <input
-              id="player-name"
-              type="text"
-              required
-              placeholder="Nombre completo"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="player-position">
-              Posición
-            </label>
-
-            <input
-              id="player-position"
-              type="text"
-              placeholder="Wing, Hooker..."
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="player-team">
-              Equipo
-            </label>
-
-            <input
-              id="player-team"
-              type="text"
-              placeholder="Equipo"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="player-number">
-              Número
-            </label>
-
-            <input
-              id="player-number"
-              type="number"
-              min="1"
-              max="99"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="player-country">
-              País
-            </label>
-
-            <input
-              id="player-country"
-              type="text"
-              placeholder="Argentina"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="player-image">
-              Foto URL
-            </label>
-
-            <input
-              id="player-image"
-              type="url"
-              placeholder="https://..."
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="player-bio">
-              Biografía
-            </label>
-
-            <textarea
-              id="player-bio"
-              rows="5"
-              placeholder="Información del jugador..."
-            ></textarea>
-
-          </div>
-
-        </div>
-
-
-        <div class="modal-actions">
-
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-close-modal
-          >
-            CANCELAR
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            GUARDAR JUGADOR
-          </button>
-
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       INSTAGRAM MODAL
-  ====================================================== -->
-
-  <div
-    id="instagram-modal"
-    class="modal"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal
-    ></div>
-
-    <div class="modal-dialog">
-
-      <div class="modal-header">
-
-        <div>
-
-          <span class="section-label">
-            INSTAGRAM
-          </span>
-
-          <h2>
-            Publicación
-          </h2>
-
-        </div>
-
-        <button
-          class="modal-close"
-          type="button"
-          data-close-modal
-        >
-          ×
-        </button>
-
-      </div>
-
-
-      <form id="instagram-form">
-
-        <input
-          id="instagram-id"
-          type="hidden"
-        >
-
-        <div class="form-grid">
-
-          <div class="form-group full">
-
-            <label for="instagram-title">
-              Título
-            </label>
-
-            <input
-              id="instagram-title"
-              type="text"
-              placeholder="Título de publicación"
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="instagram-url">
-              URL de Instagram
-            </label>
-
-            <input
-              id="instagram-url"
-              type="url"
-              placeholder="https://www.instagram.com/p/..."
-              required
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="instagram-image">
-              Imagen URL
-            </label>
-
-            <input
-              id="instagram-image"
-              type="url"
-              placeholder="https://..."
-            >
-
-          </div>
-
-
-          <div class="form-group full">
-
-            <label for="instagram-caption">
-              Descripción
-            </label>
-
-            <textarea
-              id="instagram-caption"
-              rows="5"
-              placeholder="Descripción..."
-            ></textarea>
-
-          </div>
-
-        </div>
-
-
-        <div class="modal-actions">
-
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-close-modal
-          >
-            CANCELAR
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            GUARDAR PUBLICACIÓN
-          </button>
-
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       CONFIRM MODAL
-  ====================================================== -->
-
-  <div
-    id="confirm-modal"
-    class="modal"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal
-    ></div>
-
-    <div class="modal-dialog modal-small">
-
-      <div class="confirm-icon">
-        !
-      </div>
-
-      <h2 id="confirm-title">
-        ¿Confirmar acción?
-      </h2>
-
-      <p id="confirm-message">
-        Esta acción no se puede deshacer.
-      </p>
-
-      <div class="modal-actions">
-
-        <button
-          id="confirm-cancel"
-          type="button"
-          class="btn btn-secondary"
-        >
-          CANCELAR
-        </button>
-
-        <button
-          id="confirm-ok"
-          type="button"
-          class="btn btn-danger"
-        >
-          CONFIRMAR
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       TOASTS
+       TOAST
   ====================================================== -->
 
   <div
     id="toast-container"
     class="toast-container"
+    aria-live="polite"
+    aria-atomic="true"
   ></div>
 
 
-  <!-- =====================================================
-       JAVASCRIPT
-  ====================================================== -->
-
   <script
-    src="/assets/admin.js"
+    src="/assets/js/admin.js"
     defer
   ></script>
 
