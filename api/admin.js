@@ -6,7 +6,9 @@ const BLOB_PATH = 'droprugby/content.json';
 const COOKIE = 'droprugby_session';
 const MAX_AGE = 60 * 60 * 24 * 7;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
 /* =========================================================
    CONFIGURACIÓN
@@ -40,7 +42,9 @@ function verifySession(token) {
 
   const parts = token.split('.');
 
-  if (parts.length !== 2) return false;
+  if (parts.length !== 2) {
+    return false;
+  }
 
   const [timestamp, signature] = parts;
 
@@ -50,9 +54,6 @@ function verifySession(token) {
     return false;
   }
 
-  /*
-   * La sesión dura 7 días
-   */
   if (
     Date.now() - timestampNumber >
     MAX_AGE * 1000
@@ -76,7 +77,8 @@ function verifySession(token) {
 }
 
 function getCookie(req, name) {
-  const cookieHeader = req.headers.cookie || '';
+  const cookieHeader =
+    req.headers.cookie || '';
 
   const cookies = cookieHeader
     .split(';')
@@ -85,7 +87,9 @@ function getCookie(req, name) {
   for (const cookie of cookies) {
     const index = cookie.indexOf('=');
 
-    if (index === -1) continue;
+    if (index === -1) {
+      continue;
+    }
 
     const key = cookie.slice(0, index);
     const value = cookie.slice(index + 1);
@@ -182,9 +186,7 @@ async function saveData(data) {
 }
 
 /* =========================================================
-   HTML ESCAPE
-   Evita romper el email si un título contiene
-   caracteres especiales.
+   ESCAPE HTML
 ========================================================= */
 
 function escapeHtml(value) {
@@ -197,36 +199,99 @@ function escapeHtml(value) {
 }
 
 /* =========================================================
+   IDENTIFICADOR DEL ARTÍCULO
+========================================================= */
+
+function getArticleIdentifier(article) {
+  if (!article) {
+    return null;
+  }
+
+  /*
+   * Prioridad:
+   *
+   * 1. ID
+   * 2. slug
+   * 3. URL
+   * 4. título
+   */
+
+  if (article.id) {
+    return `id:${String(article.id)}`;
+  }
+
+  if (article.slug) {
+    return `slug:${String(article.slug)}`;
+  }
+
+  if (article.url) {
+    return `url:${String(article.url)}`;
+  }
+
+  if (article.title) {
+    return `title:${String(article.title)
+      .trim()
+      .toLowerCase()}`;
+  }
+
+  return null;
+}
+
+/* =========================================================
    NEWSLETTER
 ========================================================= */
 
 async function sendNewArticleNewsletter(article) {
+
+  console.log(
+    '========================================'
+  );
+
+  console.log(
+    'NEWSLETTER: iniciando envío'
+  );
+
+  console.log(
+    'NEWSLETTER: artículo:',
+    article?.title
+  );
+
+  /* -------------------------------------------------------
+     VARIABLES
+  ------------------------------------------------------- */
+
   const segmentId =
     process.env.RESEND_SEGMENT_ID;
 
   if (!process.env.RESEND_API_KEY) {
-    console.error(
+
+    throw new Error(
       'Falta RESEND_API_KEY en Vercel.'
     );
-
-    return null;
   }
 
   if (!segmentId) {
-    console.error(
+
+    throw new Error(
       'Falta RESEND_SEGMENT_ID en Vercel.'
     );
-
-    return null;
   }
 
   if (!article) {
-    console.error(
+
+    throw new Error(
       'No se recibió la noticia.'
     );
-
-    return null;
   }
+
+  console.log(
+    'NEWSLETTER: segmento:',
+    segmentId
+  );
+
+  /* -------------------------------------------------------
+     DATOS
+  ------------------------------------------------------- */
 
   const title =
     article.title ||
@@ -241,20 +306,26 @@ async function sendNewArticleNewsletter(article) {
     article.category ||
     'Rugby';
 
-  /*
-   * Si tu artículo ya tiene URL,
-   * usamos esa URL.
-   */
   const articleUrl =
     article.url ||
     article.slug ||
     '';
 
-  const cleanUrl = String(articleUrl)
-    .replace(/^\/+/, '');
+  const cleanUrl =
+    String(articleUrl)
+      .replace(/^\/+/, '');
+
+  /*
+   * Si existe URL/slug usamos eso.
+   * Si no existe, vamos directamente
+   * a la página principal para evitar
+   * generar una URL rota.
+   */
 
   const fullUrl =
-    `https://www.droprugby.com/${cleanUrl}`;
+    cleanUrl
+      ? `https://www.droprugby.com/${cleanUrl}`
+      : 'https://www.droprugby.com/';
 
   const safeTitle =
     escapeHtml(title);
@@ -265,8 +336,18 @@ async function sendNewArticleNewsletter(article) {
   const safeCategory =
     escapeHtml(category);
 
-  const { data, error } =
+  console.log(
+    'NEWSLETTER: URL:',
+    fullUrl
+  );
+
+  /* -------------------------------------------------------
+     CREAR Y ENVIAR BROADCAST
+  ------------------------------------------------------- */
+
+  const result =
     await resend.broadcasts.create({
+
       segmentId,
 
       from:
@@ -281,12 +362,18 @@ async function sendNewArticleNewsletter(article) {
         <html lang="es">
 
         <head>
+
           <meta charset="UTF-8">
+
           <meta
             name="viewport"
             content="width=device-width, initial-scale=1.0"
           >
-          <title>${safeTitle}</title>
+
+          <title>
+            ${safeTitle}
+          </title>
+
         </head>
 
         <body style="
@@ -311,10 +398,13 @@ async function sendNewArticleNewsletter(article) {
                 margin:0;
                 font-size:32px;
                 letter-spacing:-1px;
+                color:#111;
               ">
+
                 DROP<span style="
                   font-weight:400;
                 ">RUGBY</span>
+
               </h1>
 
               <p style="
@@ -322,7 +412,9 @@ async function sendNewArticleNewsletter(article) {
                 color:#888;
                 font-size:13px;
               ">
+
                 Rugby es una pasión.
+
               </p>
 
             </div>
@@ -334,7 +426,9 @@ async function sendNewArticleNewsletter(article) {
               margin:0 0 18px;
               text-transform:uppercase;
             ">
+
               DROPRUGBY · ${safeCategory}
+
             </p>
 
             <h2 style="
@@ -343,7 +437,9 @@ async function sendNewArticleNewsletter(article) {
               margin:0 0 20px;
               color:#111;
             ">
+
               ${safeTitle}
+
             </h2>
 
             ${
@@ -355,7 +451,9 @@ async function sendNewArticleNewsletter(article) {
                     color:#444;
                     margin:0 0 25px;
                   ">
+
                     ${safeExcerpt}
+
                   </p>
                 `
                 : ''
@@ -377,7 +475,9 @@ async function sendNewArticleNewsletter(article) {
                   font-size:14px;
                 "
               >
+
                 LEER LA NOTICIA →
+
               </a>
 
             </div>
@@ -394,9 +494,11 @@ async function sendNewArticleNewsletter(article) {
               color:#888;
               margin:0 0 10px;
             ">
+
               Recibís este email porque estás
               suscripto a la newsletter de
               DropRugby.
+
             </p>
 
             <p style="
@@ -404,58 +506,71 @@ async function sendNewArticleNewsletter(article) {
               color:#888;
               margin:0 0 20px;
             ">
+
               © 2026 DropRugby
+
             </p>
 
             <p style="
               font-size:12px;
               color:#999;
             ">
+
               {{{RESEND_UNSUBSCRIBE_URL}}}
+
             </p>
 
           </div>
 
         </body>
+
         </html>
       `,
 
-      /*
-       * Crea y envía el Broadcast inmediatamente.
-       */
       send: true
     });
 
-  if (error) {
+  /* -------------------------------------------------------
+     ERROR DE RESEND
+  ------------------------------------------------------- */
+
+  if (result.error) {
+
     console.error(
-      'BROADCAST ERROR:',
-      error
+      '❌ RESEND BROADCAST ERROR:',
+      result.error
     );
 
     throw new Error(
-      error.message ||
-      'No se pudo enviar el newsletter.'
+      result.error.message ||
+      'Resend rechazó el Broadcast.'
     );
   }
 
   console.log(
-    'NEWSLETTER ENVIADO:',
-    data?.id
+    '✅ NEWSLETTER ENVIADO'
   );
 
-  return data;
+  console.log(
+    'Broadcast ID:',
+    result.data?.id
+  );
+
+  console.log(
+    '========================================'
+  );
+
+  return result.data;
 }
 
 /* =========================================================
-   HANDLER PRINCIPAL
+   HANDLER
 ========================================================= */
 
 export default async function handler(req, res) {
 
-  /*
-   * Solo POST
-   */
   if (req.method !== 'POST') {
+
     return res.status(405).json({
       error: 'Método no permitido.'
     });
@@ -463,13 +578,11 @@ export default async function handler(req, res) {
 
   try {
 
-    /*
-     * Verificación de configuración
-     */
+    /* =====================================================
+       CONFIGURACIÓN
+    ===================================================== */
+
     if (!secret()) {
-      console.error(
-        'Falta ADMIN_SESSION_SECRET.'
-      );
 
       return res.status(500).json({
         error:
@@ -477,9 +590,10 @@ export default async function handler(req, res) {
       });
     }
 
-    /*
-     * Body
-     */
+    /* =====================================================
+       BODY
+    ===================================================== */
+
     const body =
       typeof req.body === 'string'
         ? JSON.parse(req.body)
@@ -497,9 +611,6 @@ export default async function handler(req, res) {
           : '';
 
       if (!adminPassword()) {
-        console.error(
-          'Falta ADMIN_PASSWORD.'
-        );
 
         return res.status(500).json({
           error:
@@ -508,15 +619,13 @@ export default async function handler(req, res) {
       }
 
       if (!password) {
+
         return res.status(400).json({
           error:
             'Ingresá la contraseña.'
         });
       }
 
-      /*
-       * Comparación segura
-       */
       const passwordBuffer =
         Buffer.from(password);
 
@@ -529,6 +638,7 @@ export default async function handler(req, res) {
         passwordBuffer.length ===
         expectedBuffer.length
       ) {
+
         passwordCorrect =
           crypto.timingSafeEqual(
             passwordBuffer,
@@ -537,6 +647,7 @@ export default async function handler(req, res) {
       }
 
       if (!passwordCorrect) {
+
         return res.status(401).json({
           error:
             'Contraseña incorrecta.'
@@ -570,7 +681,7 @@ export default async function handler(req, res) {
     }
 
     /* =====================================================
-       VERIFICAR SESIÓN
+       CHECK
     ===================================================== */
 
     if (body.action === 'check') {
@@ -581,17 +692,14 @@ export default async function handler(req, res) {
           COOKIE
         );
 
-      const authenticated =
-        verifySession(token);
-
       return res.status(200).json({
-        authenticated
+        authenticated:
+          verifySession(token)
       });
     }
 
     /* =====================================================
-       TODAS LAS ACCIONES SIGUIENTES
-       REQUIEREN LOGIN
+       AUTENTICACIÓN
     ===================================================== */
 
     const token =
@@ -601,6 +709,7 @@ export default async function handler(req, res) {
       );
 
     if (!verifySession(token)) {
+
       return res.status(401).json({
         error:
           'No autorizado.'
@@ -608,7 +717,7 @@ export default async function handler(req, res) {
     }
 
     /* =====================================================
-       OBTENER DATOS
+       LOAD
     ===================================================== */
 
     if (body.action === 'load') {
@@ -623,7 +732,7 @@ export default async function handler(req, res) {
     }
 
     /* =====================================================
-       GUARDAR DATOS
+       SAVE
     ===================================================== */
 
     if (body.action === 'save') {
@@ -639,17 +748,36 @@ export default async function handler(req, res) {
           : null;
 
       if (!articles || !fixtures) {
+
         return res.status(400).json({
           error:
             'Datos inválidos.'
         });
       }
 
+      console.log(
+        '========================================'
+      );
+
+      console.log(
+        'ADMIN SAVE'
+      );
+
+      console.log(
+        'Artículos recibidos:',
+        articles.length
+      );
+
+      console.log(
+        'Fixtures recibidos:',
+        fixtures.length
+      );
+
       /* ---------------------------------------------------
          LEER DATOS ANTERIORES
       --------------------------------------------------- */
 
-      let previousData = null;
+      let previousData;
 
       try {
 
@@ -659,32 +787,15 @@ export default async function handler(req, res) {
       } catch (error) {
 
         console.error(
-          'No se pudo leer el contenido anterior:',
+          'ERROR LEYENDO DATOS ANTERIORES:',
           error
         );
 
-        /*
-         * Si no existe contenido anterior,
-         * tratamos la lista anterior como vacía.
-         */
         previousData = {
           articles: [],
           fixtures: []
         };
       }
-
-      /* ---------------------------------------------------
-         GUARDAR NUEVOS DATOS
-      --------------------------------------------------- */
-
-      await saveData({
-        articles,
-        fixtures
-      });
-
-      /* ---------------------------------------------------
-         DETECTAR NOTICIAS NUEVAS
-      --------------------------------------------------- */
 
       const previousArticles =
         Array.isArray(
@@ -693,65 +804,103 @@ export default async function handler(req, res) {
           ? previousData.articles
           : [];
 
-      const previousIds =
-        new Set(
-          previousArticles
-            .map(article => article?.id)
-            .filter(Boolean)
-        );
+      console.log(
+        'Artículos anteriores:',
+        previousArticles.length
+      );
+
+      /* ---------------------------------------------------
+         CREAR MAPA DE ARTÍCULOS ANTERIORES
+      --------------------------------------------------- */
+
+      const previousIdentifiers =
+        new Set();
+
+      for (
+        const article
+        of previousArticles
+      ) {
+
+        const identifier =
+          getArticleIdentifier(article);
+
+        if (identifier) {
+
+          previousIdentifiers.add(
+            identifier
+          );
+        }
+      }
+
+      /* ---------------------------------------------------
+         DETECTAR NUEVOS
+      --------------------------------------------------- */
 
       const newArticles =
         articles.filter(article => {
 
-          if (!article) {
-            return false;
-          }
-
-          /*
-           * Preferimos detectar por ID.
-           */
-          if (article.id) {
-            return !previousIds.has(
-              article.id
-            );
-          }
-
-          /*
-           * Fallback por slug/URL/título
-           * por si algún artículo viejo
-           * no tiene ID.
-           */
           const identifier =
-            article.slug ||
-            article.url ||
-            article.title;
+            getArticleIdentifier(article);
 
           if (!identifier) {
+
+            console.warn(
+              'Artículo sin identificador:',
+              article?.title
+            );
+
             return false;
           }
 
-          return !previousArticles.some(
-            oldArticle => {
-
-              const oldIdentifier =
-                oldArticle?.slug ||
-                oldArticle?.url ||
-                oldArticle?.title;
-
-              return (
-                oldIdentifier ===
-                identifier
-              );
-            }
+          return !previousIdentifiers.has(
+            identifier
           );
         });
 
+      console.log(
+        '========================================'
+      );
+
+      console.log(
+        'ARTÍCULOS NUEVOS DETECTADOS:',
+        newArticles.length
+      );
+
+      console.log(
+        'NUEVAS NOTICIAS:',
+        newArticles.map(article => ({
+          id: article?.id,
+          title: article?.title,
+          slug: article?.slug,
+          url: article?.url
+        }))
+      );
+
+      console.log(
+        '========================================'
+      );
+
       /* ---------------------------------------------------
-         ENVIAR NEWSLETTER
+         GUARDAR DATOS
+      --------------------------------------------------- */
+
+      await saveData({
+        articles,
+        fixtures
+      });
+
+      console.log(
+        'Contenido guardado correctamente en Blob.'
+      );
+
+      /* ---------------------------------------------------
+         NEWSLETTER
       --------------------------------------------------- */
 
       let newsletterSent = 0;
       let newsletterErrors = 0;
+
+      const newsletterResults = [];
 
       for (
         const article
@@ -760,31 +909,73 @@ export default async function handler(req, res) {
 
         try {
 
-          await sendNewArticleNewsletter(
-            article
+          console.log(
+            'Intentando enviar newsletter de:',
+            article?.title
           );
 
+          const newsletter =
+            await sendNewArticleNewsletter(
+              article
+            );
+
           newsletterSent++;
+
+          newsletterResults.push({
+            title:
+              article?.title || '',
+            ok: true,
+            broadcastId:
+              newsletter?.id || null
+          });
 
         } catch (error) {
 
           newsletterErrors++;
 
           console.error(
-            'Error enviando newsletter:',
-            article?.title,
+            '❌ ERROR NEWSLETTER:',
             error
           );
 
-          /*
-           * Importante:
-           *
-           * La noticia YA fue guardada.
-           * Un error de Resend no debe hacer
-           * que se pierda la publicación.
-           */
+          newsletterResults.push({
+            title:
+              article?.title || '',
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : String(error)
+          });
         }
       }
+
+      console.log(
+        '========================================'
+      );
+
+      console.log(
+        'RESULTADO FINAL:'
+      );
+
+      console.log(
+        'Noticias nuevas:',
+        newArticles.length
+      );
+
+      console.log(
+        'Newsletters enviados:',
+        newsletterSent
+      );
+
+      console.log(
+        'Errores newsletter:',
+        newsletterErrors
+      );
+
+      console.log(
+        '========================================'
+      );
 
       /* ---------------------------------------------------
          RESPUESTA
@@ -805,7 +996,9 @@ export default async function handler(req, res) {
 
         newsletterSent,
 
-        newsletterErrors
+        newsletterErrors,
+
+        newsletterResults
       });
     }
 
@@ -821,11 +1014,12 @@ export default async function handler(req, res) {
   } catch (error) {
 
     console.error(
-      'ADMIN API ERROR:',
+      '❌ ADMIN API ERROR:',
       error
     );
 
     return res.status(500).json({
+
       error:
         'Error interno del servidor.',
 
