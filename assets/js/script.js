@@ -410,3 +410,61 @@ document.addEventListener("DOMContentLoaded", () => {
   const catEl = document.getElementById("category-grid");
   if (catEl) renderCategoryPage(catEl.dataset.category);
 });
+
+const newsletterForm = document.getElementById('newsletter-form');
+
+if (newsletterForm) {
+  newsletterForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const emailInput = document.getElementById('newsletter-email');
+    const submitButton = document.getElementById('newsletter-submit');
+    const message = document.getElementById('newsletter-message');
+
+    const email = emailInput.value.trim();
+
+    if (!email) return;
+
+    submitButton.disabled = true;
+    submitButton.innerHTML = 'Enviando...';
+    message.textContent = 'Estamos procesando tu suscripción...';
+
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'No se pudo suscribir.');
+      }
+
+      message.textContent =
+        '¡Listo! Revisá tu bandeja de entrada. 🏉';
+
+      emailInput.value = '';
+
+      newsletterForm.classList.add('submitted');
+
+    } catch (error) {
+
+      console.error('Newsletter:', error);
+
+      message.textContent =
+        'No pudimos completar la suscripción. Intentá nuevamente.';
+
+    } finally {
+
+      submitButton.disabled = false;
+      submitButton.innerHTML = 'Suscribirme <span>→</span>';
+
+    }
+  });
+}
