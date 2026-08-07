@@ -1,875 +1,1951 @@
-import { list, put } from '@vercel/blob';
-import crypto from 'node:crypto';
-
-const BLOB_PATH = 'droprugby/content.json';
-const COOKIE = 'droprugby_session';
-const MAX_AGE = 60 * 60 * 24 * 7;
-
-/* =========================================================
-   CONFIGURACIÓN
-========================================================= */
-
-function getSecret() {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-
-  if (!secret) {
-    throw new Error(
-      'Falta configurar ADMIN_SESSION_SECRET en Vercel.'
-    );
-  }
-
-  return secret;
-}
-
-function getAdminUsername() {
-  return (
-    process.env.ADMIN_USERNAME ||
-    process.env.ADMIN_USER ||
-    'admin'
-  );
-}
-
-function getAdminPassword() {
-  return (
-    process.env.ADMIN_PASSWORD ||
-    process.env.ADMIN_PASS ||
-    ''
-  );
-}
-
-/* =========================================================
-   COOKIES
-========================================================= */
-
-function parseCookies(req) {
-  const header = req.headers.cookie || '';
-  const cookies = {};
-
-  header.split(';').forEach((part) => {
-    const index = part.indexOf('=');
-
-    if (index === -1) return;
-
-    const key = part.slice(0, index).trim();
-    const value = part.slice(index + 1).trim();
-
-    try {
-      cookies[key] = decodeURIComponent(value);
-    } catch {
-      cookies[key] = value;
-    }
-  });
-
-  return cookies;
-}
-
-/* =========================================================
-   SESIONES
-========================================================= */
-
-function createSession() {
-  const timestamp = Math.floor(Date.now() / 1000);
-
-  const random = crypto
-    .randomBytes(32)
-    .toString('hex');
-
-  const payload = `${timestamp}.${random}`;
-
-  const signature = crypto
-    .createHmac('sha256', getSecret())
-    .update(payload)
-    .digest('hex');
-
-  return `${payload}.${signature}`;
-}
-
-function verifySession(token) {
-  if (!token) return false;
-
-  const parts = token.split('.');
-
-  if (parts.length !== 3) return false;
-
-  const [timestamp, random, signature] = parts;
-
-  const payload = `${timestamp}.${random}`;
-
-  const expected = crypto
-    .createHmac('sha256', getSecret())
-    .update(payload)
-    .digest('hex');
-
-  if (signature.length !== expected.length) {
-    return false;
-  }
-
-  let validSignature = false;
-
-  try {
-    validSignature = crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expected)
-    );
-  } catch {
-    return false;
-  }
-
-  if (!validSignature) {
-    return false;
-  }
-
-  const created = Number(timestamp);
-
-  if (!Number.isFinite(created)) {
-    return false;
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-
-  if (now - created > MAX_AGE) {
-    return false;
-  }
-
-  if (created > now + 60) {
-    return false;
-  }
-
-  return true;
-}
-
-function sessionCookie(token) {
-  const secure =
-    process.env.NODE_ENV === 'production'
-      ? '; Secure'
-      : '';
-
-  return [
-    `${COOKIE}=${encodeURIComponent(token)}`,
-    'Path=/',
-    `Max-Age=${MAX_AGE}`,
-    'HttpOnly',
-    'SameSite=Lax',
-    secure
-  ]
-    .filter(Boolean)
-    .join('; ');
-}
-
-function deleteSessionCookie() {
-  const secure =
-    process.env.NODE_ENV === 'production'
-      ? '; Secure'
-      : '';
-
-  return [
-    `${COOKIE}=`,
-    'Path=/',
-    'Max-Age=0',
-    'HttpOnly',
-    'SameSite=Lax',
-    secure
-  ]
-    .filter(Boolean)
-    .join('; ');
-}
-
-function isAuthenticated(req) {
-  const cookies = parseCookies(req);
-
-  return verifySession(cookies[COOKIE]);
-}
-
-/* =========================================================
-   RESPUESTAS
-========================================================= */
-
-function json(res, data, status = 200, extraHeaders = {}) {
-  res.statusCode = status;
-
-  res.setHeader(
-    'Content-Type',
-    'application/json; charset=utf-8'
-  );
-
-  res.setHeader(
-    'Cache-Control',
-    'no-store'
-  );
-
-  Object.entries(extraHeaders).forEach(
-    ([key, value]) => {
-      res.setHeader(key, value);
-    }
-  );
-
-  res.end(JSON.stringify(data));
-}
-
-function error(res, message, status = 400) {
-  return json(
-    res,
-    {
-      error: message
-    },
-    status
-  );
-}
-
-/* =========================================================
-   CONTENT.JSON
-========================================================= */
-
-async function getContentBlob() {
-  const result = await list({
-    prefix: BLOB_PATH
-  });
-
-  const blobs = result.blobs || [];
-
-  const blob = blobs.find(
-    (item) => item.pathname === BLOB_PATH
-  );
-
-  return blob || null;
-}
-
-async function readContent() {
-  const blob = await getContentBlob();
-
-  if (!blob) {
-    return {
-      articles: [],
-      fixtures: [],
-      trash: [],
-      history: [],
-      standings: [],
-      players: []
-    };
-  }
-
-  const response = await fetch(blob.url, {
-    cache: 'no-store'
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      'No se pudo leer content.json desde Vercel Blob.'
-    );
-  }
-
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return {
-      articles: [],
-      fixtures: [],
-      trash: [],
-      history: [],
-      standings: [],
-      players: []
-    };
-  }
-
-  try {
-    const content = JSON.parse(text);
-
-    return {
-      ...content,
-
-      articles: Array.isArray(content.articles)
-        ? content.articles
-        : [],
-
-      fixtures: Array.isArray(content.fixtures)
-        ? content.fixtures
-        : [],
-
-      trash: Array.isArray(content.trash)
-        ? content.trash
-        : [],
-
-      history: Array.isArray(content.history)
-        ? content.history
-        : [],
-
-      standings: Array.isArray(content.standings)
-        ? content.standings
-        : [],
-
-      players: Array.isArray(content.players)
-        ? content.players
-        : []
-    };
-  } catch {
-    throw new Error(
-      'content.json no contiene JSON válido.'
-    );
-  }
-}
-
-/* =========================================================
-   GUARDAR CONTENT.JSON
-========================================================= */
-
-async function saveContent(content) {
-  const cleanContent = {
-    ...content,
-
-    articles: Array.isArray(content.articles)
-      ? content.articles
-      : [],
-
-    fixtures: Array.isArray(content.fixtures)
-      ? content.fixtures
-      : [],
-
-    trash: Array.isArray(content.trash)
-      ? content.trash
-      : [],
-
-    history: Array.isArray(content.history)
-      ? content.history
-      : [],
-
-    standings: Array.isArray(content.standings)
-      ? content.standings
-      : [],
-
-    players: Array.isArray(content.players)
-      ? content.players
-      : []
+(() => {
+
+  const state = {
+    articles: [],
+    fixtures: [],
+    standings: [],
+    editingArticle: null,
+    editingFixture: null
   };
 
-  const result = await put(
-    BLOB_PATH,
-    JSON.stringify(cleanContent, null, 2),
-    {
-      access: 'public',
-      addRandomSuffix: false,
-      contentType: 'application/json; charset=utf-8'
-    }
-  );
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
 
-  return result;
-}
-
-/* =========================================================
-   VALIDACIÓN
-========================================================= */
-
-function validateArray(value, name) {
-  if (
-    value !== undefined &&
-    !Array.isArray(value)
-  ) {
-    throw new Error(
-      `${name} debe ser un array.`
+  const esc = s =>
+    String(s ?? '').replace(
+      /[&<>'"]/g,
+      c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[c])
     );
-  }
-}
 
-/* =========================================================
-   NORMALIZAR NOTICIAS
-========================================================= */
+  const formatDate = iso => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
 
-function normalizeArticles(articles) {
-  return articles
-    .map((article) => {
-      if (
-        !article ||
-        typeof article !== 'object'
-      ) {
-        return null;
-      }
+  const today = () =>
+    new Date().toISOString().slice(0, 10);
 
-      return {
-        ...article,
+  const slugify = s =>
+    String(s)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 70);
 
-        id: String(
-          article.id ||
-          crypto
-            .randomBytes(8)
-            .toString('hex')
-        ),
 
-        title: String(
-          article.title || ''
-        ).trim(),
+  /* =========================================================
+     API
+  ========================================================= */
 
-        category: String(
-          article.category ||
-          'Actualidad'
-        ).trim(),
+  async function api(action, payload = {}) {
 
-        subcategory: String(
-          article.subcategory ||
-          ''
-        ).trim(),
-
-        author: String(
-          article.author ||
-          'DropRugby'
-        ).trim(),
-
-        date: String(
-          article.date ||
-          ''
-        ).trim(),
-
-        time: String(
-          article.time ||
-          ''
-        ).trim(),
-
-        excerpt: String(
-          article.excerpt ||
-          ''
-        ).trim(),
-
-        content: String(
-          article.content ||
-          ''
-        ),
-
-        featured: Boolean(
-          article.featured
-        ),
-
-        breaking: Boolean(
-          article.breaking
-        ),
-
-        scheduled: Boolean(
-          article.scheduled
-        )
-      };
-    })
-    .filter(Boolean);
-}
-
-/* =========================================================
-   NORMALIZAR PARTIDOS
-========================================================= */
-
-function normalizeFixtures(fixtures) {
-  return fixtures
-    .map((fixture) => {
-      if (
-        !fixture ||
-        typeof fixture !== 'object'
-      ) {
-        return null;
-      }
-
-      return {
-        ...fixture,
-
-        date: String(
-          fixture.date || ''
-        ).trim(),
-
-        competition: String(
-          fixture.competition || ''
-        ).trim(),
-
-        time: String(
-          fixture.time || ''
-        ).trim(),
-
-        home: String(
-          fixture.home || ''
-        ).trim(),
-
-        away: String(
-          fixture.away || ''
-        ).trim(),
-
-        channel: String(
-          fixture.channel || ''
-        ).trim(),
-
-        venue: String(
-          fixture.venue || ''
-        ).trim()
-      };
-    })
-    .filter(Boolean);
-}
-
-/* =========================================================
-   NORMALIZAR POSICIONES
-========================================================= */
-
-function normalizeStandings(standings) {
-  return standings
-    .map((team) => {
-      if (
-        !team ||
-        typeof team !== 'object'
-      ) {
-        return null;
-      }
-
-      return {
-        ...team,
-
-        team: String(
-          team.team || ''
-        ).trim(),
-
-        pj: Number(team.pj) || 0,
-
-        pg: Number(team.pg) || 0,
-
-        pts: Number(team.pts) || 0
-      };
-    })
-    .filter(Boolean);
-}
-
-/* =========================================================
-   NORMALIZAR JUGADORES
-========================================================= */
-
-function normalizePlayers(players) {
-  return players
-    .map((player) => {
-      if (
-        !player ||
-        typeof player !== 'object'
-      ) {
-        return null;
-      }
-
-      return {
-        ...player,
-
-        name: String(
-          player.name || ''
-        ).trim(),
-
-        club: String(
-          player.club || ''
-        ).trim(),
-
-        points:
-          Number(player.points) || 0,
-
-        tries:
-          Number(player.tries) || 0
-      };
-    })
-    .filter(Boolean);
-}
-
-/* =========================================================
-   LEER BODY
-========================================================= */
-
-async function getBody(req) {
-  if (
-    req.body &&
-    typeof req.body === 'object'
-  ) {
-    return req.body;
-  }
-
-  let raw = '';
-
-  await new Promise((resolve, reject) => {
-    req.on('data', (chunk) => {
-      raw += chunk;
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action,
+        ...payload
+      })
     });
 
-    req.on('end', resolve);
-    req.on('error', reject);
-  });
+    let data = {};
 
-  if (!raw) {
-    return {};
-  }
+    try {
+      data = await res.json();
+    } catch {}
 
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error(
-      'El cuerpo de la petición no es JSON válido.'
-    );
-  }
-}
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-async function handleLogin(req, res, body) {
-  const username = String(
-    body.username || ''
-  );
-
-  const password = String(
-    body.password || ''
-  );
-
-  const expectedUsername =
-    getAdminUsername();
-
-  const expectedPassword =
-    getAdminPassword();
-
-  if (!expectedPassword) {
-    return error(
-      res,
-      'ADMIN_PASSWORD no está configurado en Vercel.',
-      500
-    );
-  }
-
-  if (
-    username !== expectedUsername ||
-    password !== expectedPassword
-  ) {
-    return error(
-      res,
-      'Usuario o contraseña incorrectos.',
-      401
-    );
-  }
-
-  const session = createSession();
-
-  return json(
-    res,
-    {
-      ok: true,
-      authenticated: true
-    },
-    200,
-    {
-      'Set-Cookie':
-        sessionCookie(session)
+    if (!res.ok) {
+      throw new Error(
+        data.error || 'Ocurrió un error.'
+      );
     }
-  );
-}
 
-/* =========================================================
-   SESSION
-========================================================= */
-
-async function handleSession(req, res) {
-  const authenticated =
-    isAuthenticated(req);
-
-  if (!authenticated) {
-    return error(
-      res,
-      'No autenticado.',
-      401
-    );
+    return data;
   }
 
-  return json(res, {
-    ok: true,
-    authenticated: true
-  });
-}
 
-/* =========================================================
-   LOGOUT
-========================================================= */
+  /* =========================================================
+     CARGAR DATOS
+  ========================================================= */
 
-async function handleLogout(res) {
-  return json(
-    res,
-    {
-      ok: true
-    },
-    200,
-    {
-      'Set-Cookie':
-        deleteSessionCookie()
+  async function loadData() {
+
+    const res = await fetch(
+      '/api/content',
+      {
+        cache: 'no-store'
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        'No se pudo conectar con el contenido de DropRugby.'
+      );
     }
-  );
-}
 
-/* =========================================================
-   SAVE
-========================================================= */
+    const data = await res.json();
 
-async function handleSave(req, res, body) {
-  if (!isAuthenticated(req)) {
-    return error(
-      res,
-      'Sesión expirada. Volvé a iniciar sesión.',
-      401
+    state.articles =
+      Array.isArray(data.articles)
+        ? data.articles
+        : [];
+
+    state.fixtures =
+      Array.isArray(data.fixtures)
+        ? data.fixtures
+        : [];
+
+    state.standings =
+      Array.isArray(data.standings)
+        ? data.standings
+        : [];
+  }
+
+
+  /* =========================================================
+     GUARDAR DATOS
+  ========================================================= */
+
+  async function saveData() {
+
+    await api('save', {
+      articles: state.articles,
+      fixtures: state.fixtures,
+      standings: state.standings
+    });
+
+    window.dispatchEvent(
+      new Event('droprugby:data-updated')
     );
   }
 
-  const current = await readContent();
 
-  const next = {
-    ...current
-  };
+  /* =========================================================
+     NAVEGACIÓN
+  ========================================================= */
 
-  if (body.articles !== undefined) {
-    validateArray(
-      body.articles,
-      'articles'
-    );
+  function showApp() {
 
-    next.articles =
-      normalizeArticles(
-        body.articles
+    $('#login-view').hidden = true;
+    $('#app-view').hidden = false;
+
+    renderAll();
+  }
+
+
+  function switchSection(name) {
+
+    $$('.admin-section').forEach(section => {
+      section.classList.toggle(
+        'active',
+        section.id === `section-${name}`
       );
-  }
+    });
 
-  if (body.fixtures !== undefined) {
-    validateArray(
-      body.fixtures,
-      'fixtures'
-    );
-
-    next.fixtures =
-      normalizeFixtures(
-        body.fixtures
+    $$('.admin-nav').forEach(button => {
+      button.classList.toggle(
+        'active',
+        button.dataset.section === name
       );
+    });
+
+    const titles = {
+      dashboard: 'Dashboard',
+      articles: 'Noticias',
+      fixtures: 'Partidos',
+      standings: 'Tabla URBA',
+      data: 'Datos y respaldo'
+    };
+
+    const title = $('#section-title');
+
+    if (title) {
+      title.textContent =
+        titles[name] || name;
+    }
   }
 
-  if (body.trash !== undefined) {
-    validateArray(
-      body.trash,
-      'trash'
-    );
 
-    next.trash =
-      normalizeArticles(
-        body.trash
-      );
+  /* =========================================================
+     DASHBOARD
+  ========================================================= */
+
+  function renderDashboard() {
+
+    if ($('#stat-articles')) {
+      $('#stat-articles').textContent =
+        state.articles.length;
+    }
+
+    if ($('#stat-fixtures')) {
+      $('#stat-fixtures').textContent =
+        state.fixtures.length;
+    }
+
+    const articlesContainer =
+      $('#dashboard-articles');
+
+    if (articlesContainer) {
+
+      articlesContainer.innerHTML =
+        state.articles
+          .slice()
+          .sort(
+            (a, b) =>
+              b.date.localeCompare(a.date)
+          )
+          .slice(0, 5)
+          .map(article => `
+
+            <div class="admin-list-item">
+
+              <div>
+
+                <strong>
+                  ${esc(article.title)}
+                </strong>
+
+                <small>
+                  ${esc(article.category)}
+                  ·
+                  ${esc(article.author || 'DropRugby')}
+                </small>
+
+              </div>
+
+              <span class="date">
+                ${formatDate(article.date)}
+              </span>
+
+            </div>
+
+          `)
+          .join('')
+        ||
+        '<p class="admin-muted">No hay noticias.</p>';
+    }
+
+
+    const fixturesContainer =
+      $('#dashboard-fixtures');
+
+    if (fixturesContainer) {
+
+      fixturesContainer.innerHTML =
+        state.fixtures
+          .slice()
+          .sort(
+            (a, b) =>
+              (a.date + a.time)
+                .localeCompare(
+                  b.date + b.time
+                )
+          )
+          .slice(0, 5)
+          .map(fixture => `
+
+            <div class="admin-list-item">
+
+              <div>
+
+                <strong>
+                  ${esc(fixture.home)}
+                  vs.
+                  ${esc(fixture.away)}
+                </strong>
+
+                <small>
+                  ${esc(fixture.competition)}
+                  ·
+                  ${esc(fixture.channel || '')}
+                </small>
+
+              </div>
+
+              <span class="date">
+
+                ${formatDate(fixture.date)}
+
+                <br>
+
+                ${esc(fixture.time)}
+
+              </span>
+
+            </div>
+
+          `)
+          .join('')
+        ||
+        '<p class="admin-muted">No hay partidos.</p>';
+    }
   }
 
-  if (body.history !== undefined) {
-    validateArray(
-      body.history,
-      'history'
-    );
 
-    next.history =
-      body.history
-        .filter(
-          (item) =>
-            item &&
-            typeof item === 'object'
+  /* =========================================================
+     NOTICIAS
+  ========================================================= */
+
+  function renderArticles() {
+
+    const search =
+      ($('#article-search')?.value || '')
+        .toLowerCase();
+
+    const category =
+      $('#article-filter')?.value || 'TODAS';
+
+    const rows =
+      state.articles
+        .slice()
+        .sort(
+          (a, b) =>
+            b.date.localeCompare(a.date)
         )
-        .slice(0, 500);
+        .filter(article => {
+
+          const categoryOK =
+            category === 'TODAS' ||
+            article.category === category;
+
+          const searchOK =
+            !search ||
+            `
+              ${article.title}
+              ${article.category}
+              ${article.subcategory || ''}
+            `
+              .toLowerCase()
+              .includes(search);
+
+          return categoryOK && searchOK;
+        });
+
+
+    const table =
+      $('#articles-table');
+
+    if (!table) return;
+
+
+    table.innerHTML =
+      rows
+        .map(article => `
+
+          <tr>
+
+            <td>
+
+              <strong>
+                ${esc(article.title)}
+              </strong>
+
+              <br>
+
+              <small>
+                ${esc(article.author || 'DropRugby')}
+              </small>
+
+            </td>
+
+            <td>
+
+              ${esc(article.category)}
+
+              <br>
+
+              <small>
+                ${esc(
+                  article.subcategory ||
+                  'Actualidad'
+                )}
+              </small>
+
+            </td>
+
+            <td>
+              ${formatDate(article.date)}
+            </td>
+
+            <td>
+              <span class="badge">
+                PUBLICADA
+              </span>
+            </td>
+
+            <td>
+
+              <div class="row-actions">
+
+                <button
+                  data-edit-article="${esc(article.id)}"
+                >
+                  Editar
+                </button>
+
+                <button
+                  data-delete-article="${esc(article.id)}"
+                >
+                  Eliminar
+                </button>
+
+              </div>
+
+            </td>
+
+          </tr>
+
+        `)
+        .join('')
+      ||
+      `
+        <tr>
+          <td
+            colspan="5"
+            class="empty-row"
+          >
+            No hay noticias con esos filtros.
+          </td>
+        </tr>
+      `;
   }
 
-  if (body.standings !== undefined) {
-    validateArray(
-      body.standings,
-      'standings'
-    );
 
-    next.standings =
-      normalizeStandings(
-        body.standings
-      );
+  /* =========================================================
+     PARTIDOS
+  ========================================================= */
+
+  function renderFixtures() {
+
+    const search =
+      ($('#fixture-search')?.value || '')
+        .toLowerCase();
+
+    const competition =
+      $('#fixture-filter')?.value || 'TODAS';
+
+
+    const rows =
+      state.fixtures
+        .map((fixture, index) => ({
+          ...fixture,
+          _i: index
+        }))
+        .sort(
+          (a, b) =>
+            (a.date + a.time)
+              .localeCompare(
+                b.date + b.time
+              )
+        )
+        .filter(fixture => {
+
+          const competitionOK =
+            competition === 'TODAS' ||
+            fixture.competition === competition;
+
+          const searchOK =
+            !search ||
+            `
+              ${fixture.home}
+              ${fixture.away}
+              ${fixture.competition}
+            `
+              .toLowerCase()
+              .includes(search);
+
+          return (
+            competitionOK &&
+            searchOK
+          );
+        });
+
+
+    const table =
+      $('#fixtures-table');
+
+    if (!table) return;
+
+
+    table.innerHTML =
+      rows
+        .map(fixture => `
+
+          <tr>
+
+            <td>
+
+              <strong>
+                ${formatDate(fixture.date)}
+              </strong>
+
+            </td>
+
+            <td>
+              ${esc(fixture.competition)}
+            </td>
+
+            <td>
+
+              <strong>
+                ${esc(fixture.home)}
+                —
+                ${esc(fixture.away)}
+              </strong>
+
+              ${
+                fixture.venue
+                  ? `
+                    <br>
+                    <small>
+                      ${esc(fixture.venue)}
+                    </small>
+                  `
+                  : ''
+              }
+
+            </td>
+
+            <td>
+              ${esc(fixture.time)}
+            </td>
+
+            <td>
+              ${esc(fixture.channel || '—')}
+            </td>
+
+            <td>
+
+              <div class="row-actions">
+
+                <button
+                  data-edit-fixture="${fixture._i}"
+                >
+                  Editar
+                </button>
+
+                <button
+                  data-delete-fixture="${fixture._i}"
+                >
+                  Eliminar
+                </button>
+
+              </div>
+
+            </td>
+
+          </tr>
+
+        `)
+        .join('')
+      ||
+      `
+        <tr>
+          <td
+            colspan="6"
+            class="empty-row"
+          >
+            No hay partidos con esos filtros.
+          </td>
+        </tr>
+      `;
   }
 
-  if (body.players !== undefined) {
-    validateArray(
-      body.players,
-      'players'
-    );
 
-    next.players =
-      normalizePlayers(
-        body.players
-      );
-  }
+  /* =========================================================
+     TABLA URBA - ADMIN
+  ========================================================= */
 
-  next.updatedAt =
-    new Date().toISOString();
+  function renderStandings() {
 
-  const saved =
-    await saveContent(next);
+    const tbody =
+      $('#standings-admin-body');
 
-  return json(res, {
-    ok: true,
-    saved: true,
-    updatedAt: next.updatedAt,
-    url: saved.url
-  });
-}
+    if (!tbody) return;
 
-/* =========================================================
-   HANDLER PRINCIPAL
-========================================================= */
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return error(
-      res,
-      'Método no permitido.',
-      405
-    );
-  }
-
-  try {
-    const body =
-      await getBody(req);
-
-    const action =
-      String(
-        body.action || ''
-      ).trim();
-
-    switch (action) {
-      case 'login':
-        return await handleLogin(
-          req,
-          res,
-          body
+    const rows =
+      state.standings
+        .map((team, index) => ({
+          ...team,
+          _index: index
+        }))
+        .sort(
+          (a, b) =>
+            Number(b.pts || 0) -
+            Number(a.pts || 0)
         );
 
-      case 'session':
-        return await handleSession(
-          req,
-          res
-        );
 
-      case 'logout':
-        return await handleLogout(
-          res
-        );
+    if (!rows.length) {
 
-      case 'save':
-        return await handleSave(
-          req,
-          res,
-          body
-        );
+      tbody.innerHTML = `
 
-      default:
-        return error(
-          res,
-          `Acción desconocida: ${
-            action || '(vacía)'
-          }`,
-          400
-        );
+        <tr>
+
+          <td
+            colspan="7"
+            class="empty-row"
+          >
+            No hay clubes cargados.
+          </td>
+
+        </tr>
+
+      `;
+
+      return;
     }
-  } catch (err) {
-    console.error(
-      '❌ ERROR API ADMIN:',
-      err
+
+
+    tbody.innerHTML =
+      rows
+        .map((team, position) => `
+
+          <tr>
+
+            <td>
+
+              <strong>
+                ${position + 1}
+              </strong>
+
+            </td>
+
+            <td>
+
+              <div class="standing-logo-preview">
+
+                ${
+                  team.logo
+                    ? `
+                      <img
+                        src="${esc(team.logo)}"
+                        alt=""
+                        onerror="
+                          this.style.display='none'
+                        "
+                      >
+                    `
+                    : `
+                      <span>
+                        ${esc(
+                          String(team.team || '?')
+                            .charAt(0)
+                            .toUpperCase()
+                        )}
+                      </span>
+                    `
+                }
+
+              </div>
+
+            </td>
+
+            <td>
+
+              <div class="standing-admin-fields">
+
+                <input
+                  class="standing-team"
+                  data-index="${team._index}"
+                  value="${esc(team.team || '')}"
+                  placeholder="Nombre del club"
+                >
+
+                <input
+                  class="standing-logo"
+                  data-index="${team._index}"
+                  value="${esc(team.logo || '')}"
+                  placeholder="URL del escudo"
+                >
+
+              </div>
+
+            </td>
+
+            <td>
+
+              <input
+                class="standing-number standing-pj"
+                data-index="${team._index}"
+                type="number"
+                min="0"
+                value="${Number(team.pj || 0)}"
+              >
+
+            </td>
+
+            <td>
+
+              <input
+                class="standing-number standing-pg"
+                data-index="${team._index}"
+                type="number"
+                min="0"
+                value="${Number(team.pg || 0)}"
+              >
+
+            </td>
+
+            <td>
+
+              <input
+                class="standing-number standing-pts"
+                data-index="${team._index}"
+                type="number"
+                min="0"
+                value="${Number(team.pts || 0)}"
+              >
+
+            </td>
+
+            <td>
+
+              <button
+                type="button"
+                class="standing-delete"
+                data-delete-standing="${team._index}"
+              >
+                Eliminar
+              </button>
+
+            </td>
+
+          </tr>
+
+        `)
+        .join('');
+  }
+
+
+  /* =========================================================
+     RENDER GENERAL
+  ========================================================= */
+
+  function renderAll() {
+
+    renderDashboard();
+
+    renderArticles();
+
+    renderFixtures();
+
+    renderStandings();
+  }
+
+
+  /* =========================================================
+     NOTICIAS - EDITOR
+  ========================================================= */
+
+  function openArticle(id = null) {
+
+    state.editingArticle = id;
+
+    const article =
+      id
+        ? state.articles.find(
+            item => item.id === id
+          )
+        : null;
+
+
+    $('#modal-kicker').textContent =
+      article
+        ? 'EDITAR PUBLICACIÓN'
+        : 'NUEVA PUBLICACIÓN';
+
+    $('#modal-title').textContent =
+      article
+        ? 'Editar noticia'
+        : 'Nueva noticia';
+
+
+    $('#article-id').value =
+      article?.id || '';
+
+    $('#article-title').value =
+      article?.title || '';
+
+    $('#article-category').value =
+      article?.category || 'Los Pumas';
+
+    $('#article-subcategory').value =
+      article?.subcategory || 'Actualidad';
+
+    $('#article-author').value =
+      article?.author || 'DropRugby';
+
+    $('#article-date').value =
+      article?.date || today();
+
+    $('#article-image').value =
+      article?.imageUrl ||
+      article?.imageClass ||
+      'img-tone-1';
+
+    $('#article-excerpt').value =
+      article?.excerpt || '';
+
+    $('#article-content').value =
+      article?.content || '';
+
+    $('#article-featured').checked =
+      !!article?.featured;
+
+
+    $('#editor-modal').hidden = false;
+  }
+
+
+  async function saveArticle(e) {
+
+    e.preventDefault();
+
+
+    const title =
+      $('#article-title')
+        .value
+        .trim();
+
+
+    const id =
+      $('#article-id').value ||
+      `${slugify(title)}-${Date.now()
+        .toString()
+        .slice(-5)}`;
+
+
+    const image =
+      $('#article-image')
+        .value
+        .trim() ||
+      'img-tone-1';
+
+
+    const article = {
+
+      id,
+
+      title,
+
+      category:
+        $('#article-category').value,
+
+      subcategory:
+        $('#article-subcategory')
+          .value
+          .trim(),
+
+      date:
+        $('#article-date').value,
+
+      author:
+        $('#article-author')
+          .value
+          .trim(),
+
+      excerpt:
+        $('#article-excerpt')
+          .value
+          .trim(),
+
+      content:
+        $('#article-content')
+          .value
+          .trim(),
+
+      featured:
+        $('#article-featured').checked,
+
+      url:
+        `article.html?id=${encodeURIComponent(id)}`
+    };
+
+
+    if (
+      /^(https?:\/\/|\/|\.\/|\.\.\/)/i
+        .test(image)
+    ) {
+
+      article.imageUrl = image;
+
+    } else {
+
+      article.imageClass = image;
+
+    }
+
+
+    if (article.featured) {
+
+      state.articles.forEach(
+        item => item.featured = false
+      );
+
+    }
+
+
+    const index =
+      state.articles.findIndex(
+        item => item.id === id
+      );
+
+
+    if (index >= 0) {
+
+      state.articles[index] =
+        article;
+
+    } else {
+
+      state.articles.push(
+        article
+      );
+
+    }
+
+
+    try {
+
+      await saveData();
+
+      closeModals();
+
+      renderAll();
+
+      switchSection('articles');
+
+      toast(
+        'Noticia publicada correctamente.'
+      );
+
+    } catch (error) {
+
+      alert(error.message);
+
+    }
+  }
+
+
+  async function deleteArticle(id) {
+
+    if (
+      !confirm(
+        '¿Eliminar esta noticia?'
+      )
+    ) {
+      return;
+    }
+
+
+    state.articles =
+      state.articles.filter(
+        article =>
+          article.id !== id
+      );
+
+
+    try {
+
+      await saveData();
+
+      renderAll();
+
+      toast(
+        'Noticia eliminada.'
+      );
+
+    } catch (error) {
+
+      alert(error.message);
+
+    }
+  }
+
+
+  /* =========================================================
+     PARTIDOS - EDITOR
+  ========================================================= */
+
+  function openFixture(index = null) {
+
+    state.editingFixture = index;
+
+    const fixture =
+      index !== null
+        ? state.fixtures[index]
+        : null;
+
+
+    $('#fixture-modal-title').textContent =
+      fixture
+        ? 'Editar partido'
+        : 'Nuevo partido';
+
+
+    $('#fixture-index').value =
+      index === null
+        ? ''
+        : index;
+
+
+    $('#fixture-competition').value =
+      fixture?.competition ||
+      'Los Pumas';
+
+    $('#fixture-home').value =
+      fixture?.home || '';
+
+    $('#fixture-away').value =
+      fixture?.away || '';
+
+    $('#fixture-date').value =
+      fixture?.date || today();
+
+    $('#fixture-time').value =
+      fixture?.time || '16:00';
+
+    $('#fixture-venue').value =
+      fixture?.venue || '';
+
+    $('#fixture-channel').value =
+      fixture?.channel || 'ESPN';
+
+
+    $('#fixture-modal').hidden =
+      false;
+  }
+
+
+  async function saveFixture(e) {
+
+    e.preventDefault();
+
+
+    const index =
+      $('#fixture-index').value;
+
+
+    const fixture = {
+
+      date:
+        $('#fixture-date').value,
+
+      competition:
+        $('#fixture-competition').value,
+
+      time:
+        $('#fixture-time').value,
+
+      home:
+        $('#fixture-home')
+          .value
+          .trim(),
+
+      away:
+        $('#fixture-away')
+          .value
+          .trim(),
+
+      channel:
+        $('#fixture-channel')
+          .value
+          .trim(),
+
+      venue:
+        $('#fixture-venue')
+          .value
+          .trim()
+
+    };
+
+
+    if (index === '') {
+
+      state.fixtures.push(
+        fixture
+      );
+
+    } else {
+
+      state.fixtures[
+        Number(index)
+      ] = fixture;
+
+    }
+
+
+    try {
+
+      await saveData();
+
+      closeModals();
+
+      renderAll();
+
+      switchSection('fixtures');
+
+      toast(
+        'Partido guardado.'
+      );
+
+    } catch (error) {
+
+      alert(error.message);
+
+    }
+  }
+
+
+  async function deleteFixture(i) {
+
+    if (
+      !confirm(
+        '¿Eliminar este partido?'
+      )
+    ) {
+      return;
+    }
+
+
+    state.fixtures.splice(
+      Number(i),
+      1
     );
 
-    return error(
-      res,
-      err?.message ||
-        'Error interno del servidor.',
-      500
+
+    try {
+
+      await saveData();
+
+      renderAll();
+
+      toast(
+        'Partido eliminado.'
+      );
+
+    } catch (error) {
+
+      alert(error.message);
+
+    }
+  }
+
+
+  /* =========================================================
+     TABLA URBA - ACCIONES
+  ========================================================= */
+
+  function addStanding() {
+
+    state.standings.push({
+
+      team: 'Nuevo club',
+
+      logo: '',
+
+      pj: 0,
+
+      pg: 0,
+
+      pts: 0
+
+    });
+
+
+    renderStandings();
+  }
+
+
+  async function saveStandings() {
+
+    const rows =
+      $$('#standings-admin-body tr');
+
+
+    const standings = [];
+
+
+    rows.forEach(row => {
+
+      const index =
+        Number(
+          row.querySelector(
+            '.standing-team'
+          )?.dataset.index
+        );
+
+
+      if (
+        !Number.isInteger(index) ||
+        !state.standings[index]
+      ) {
+        return;
+      }
+
+
+      const team =
+        row.querySelector(
+          '.standing-team'
+        )?.value
+          .trim() || '';
+
+
+      const logo =
+        row.querySelector(
+          '.standing-logo'
+        )?.value
+          .trim() || '';
+
+
+      const pj =
+        Number(
+          row.querySelector(
+            '.standing-pj'
+          )?.value || 0
+        );
+
+
+      const pg =
+        Number(
+          row.querySelector(
+            '.standing-pg'
+          )?.value || 0
+        );
+
+
+      const pts =
+        Number(
+          row.querySelector(
+            '.standing-pts'
+          )?.value || 0
+        );
+
+
+      if (!team) {
+        return;
+      }
+
+
+      standings.push({
+
+        team,
+
+        logo,
+
+        pj: Math.max(
+          0,
+          pj
+        ),
+
+        pg: Math.max(
+          0,
+          pg
+        ),
+
+        pts: Math.max(
+          0,
+          pts
+        )
+
+      });
+
+    });
+
+
+    state.standings =
+      standings;
+
+
+    try {
+
+      await saveData();
+
+      renderStandings();
+
+      toast(
+        'Tabla de posiciones guardada correctamente.'
+      );
+
+    } catch (error) {
+
+      alert(error.message);
+
+    }
+  }
+
+
+  /* =========================================================
+     ELIMINAR CLUB
+  ========================================================= */
+
+  async function deleteStanding(index) {
+
+    const team =
+      state.standings[index];
+
+
+    if (!team) return;
+
+
+    if (
+      !confirm(
+        `¿Eliminar ${team.team || 'este club'}?`
+      )
+    ) {
+      return;
+    }
+
+
+    state.standings.splice(
+      index,
+      1
+    );
+
+
+    renderStandings();
+  }
+
+
+  /* =========================================================
+     MODALES
+  ========================================================= */
+
+  function closeModals() {
+
+    if ($('#editor-modal')) {
+      $('#editor-modal').hidden =
+        true;
+    }
+
+    if ($('#fixture-modal')) {
+      $('#fixture-modal').hidden =
+        true;
+    }
+  }
+
+
+  /* =========================================================
+     EXPORTAR
+  ========================================================= */
+
+  function exportData() {
+
+    const blob =
+      new Blob(
+        [
+          JSON.stringify(
+            {
+              articles:
+                state.articles,
+
+              fixtures:
+                state.fixtures,
+
+              standings:
+                state.standings
+            },
+            null,
+            2
+          )
+        ],
+        {
+          type:
+            'application/json'
+        }
+      );
+
+
+    const a =
+      document.createElement('a');
+
+
+    a.href =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    a.download =
+      'droprugby-backup.json';
+
+
+    a.click();
+
+
+    URL.revokeObjectURL(
+      a.href
     );
   }
-}
+
+
+  /* =========================================================
+     IMPORTAR
+  ========================================================= */
+
+  function importData(file) {
+
+    if (!file) return;
+
+
+    const reader =
+      new FileReader();
+
+
+    reader.onload =
+      async () => {
+
+        try {
+
+          const data =
+            JSON.parse(
+              reader.result
+            );
+
+
+          if (
+            !Array.isArray(
+              data.articles
+            ) ||
+            !Array.isArray(
+              data.fixtures
+            )
+          ) {
+
+            throw new Error(
+              'El archivo no tiene un formato DropRugby válido.'
+            );
+
+          }
+
+
+          state.articles =
+            data.articles;
+
+
+          state.fixtures =
+            data.fixtures;
+
+
+          state.standings =
+            Array.isArray(
+              data.standings
+            )
+              ? data.standings
+              : [];
+
+
+          await saveData();
+
+          renderAll();
+
+
+          alert(
+            'Datos importados correctamente.'
+          );
+
+
+        } catch (error) {
+
+          alert(
+            error.message ||
+            'El archivo no tiene un formato DropRugby válido.'
+          );
+
+        }
+
+      };
+
+
+    reader.readAsText(
+      file
+    );
+  }
+
+
+  /* =========================================================
+     RESET
+  ========================================================= */
+
+  async function resetData() {
+
+    if (
+      !confirm(
+        'Esto reemplazará el contenido online por los datos demo iniciales. ¿Continuar?'
+      )
+    ) {
+      return;
+    }
+
+
+    try {
+
+      const articlesResponse =
+        await fetch(
+          '/data/articles.json'
+        );
+
+
+      const articles =
+        await articlesResponse.json();
+
+
+      const fixturesResponse =
+        await fetch(
+          '/data/fixtures.json'
+        );
+
+
+      const fixtures =
+        await fixturesResponse.json();
+
+
+      state.articles =
+        articles;
+
+      state.fixtures =
+        fixtures;
+
+
+      /*
+       * No borramos standings.
+       * La tabla se administra desde
+       * el panel.
+       */
+
+
+      await saveData();
+
+      renderAll();
+
+
+      toast(
+        'Datos demo restaurados.'
+      );
+
+
+    } catch (error) {
+
+      alert(
+        error.message
+      );
+
+    }
+  }
+
+
+  /* =========================================================
+     TOAST
+  ========================================================= */
+
+  function toast(message) {
+
+    let toastElement =
+      $('#admin-toast');
+
+
+    if (!toastElement) {
+
+      toastElement =
+        document.createElement(
+          'div'
+        );
+
+      toastElement.id =
+        'admin-toast';
+
+      document.body.appendChild(
+        toastElement
+      );
+    }
+
+
+    toastElement.textContent =
+      message;
+
+
+    toastElement.classList.add(
+      'show'
+    );
+
+
+    clearTimeout(
+      window.__toast
+    );
+
+
+    window.__toast =
+      setTimeout(
+        () =>
+          toastElement.classList.remove(
+            'show'
+          ),
+        2600
+      );
+  }
+
+
+  /* =========================================================
+     LOGIN
+  ========================================================= */
+
+  async function login(e) {
+
+    e.preventDefault();
+
+
+    const button =
+      $('#login-form button');
+
+
+    button.disabled =
+      true;
+
+
+    $('#login-error')
+      .textContent = '';
+
+
+    try {
+
+      await api(
+        'login',
+        {
+          username:
+            $('#login-user')
+              .value
+              .trim(),
+
+          password:
+            $('#login-pass')
+              .value
+        }
+      );
+
+
+      await loadData();
+
+      showApp();
+
+
+    } catch (error) {
+
+      $('#login-error')
+        .textContent =
+        error.message;
+
+
+    } finally {
+
+      button.disabled =
+        false;
+
+    }
+  }
+
+
+  async function logout() {
+
+    try {
+
+      await api(
+        'logout'
+      );
+
+    } finally {
+
+      location.reload();
+
+    }
+  }
+
+
+  /* =========================================================
+     EVENTOS
+  ========================================================= */
+
+  $('#login-form')
+    ?.addEventListener(
+      'submit',
+      login
+    );
+
+
+  $('#logout-btn')
+    ?.addEventListener(
+      'click',
+      logout
+    );
+
+
+  $$('.admin-nav')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () =>
+          switchSection(
+            button.dataset.section
+          )
+      );
+
+    });
+
+
+  $$('[data-go]')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () =>
+          switchSection(
+            button.dataset.go
+          )
+      );
+
+    });
+
+
+  $$('[data-action="new-article"]')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () => openArticle()
+      );
+
+    });
+
+
+  $$('[data-action="new-fixture"]')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () => openFixture()
+      );
+
+    });
+
+
+  $('#add-standing')
+    ?.addEventListener(
+      'click',
+      addStanding
+    );
+
+
+  $('#save-standings')
+    ?.addEventListener(
+      'click',
+      saveStandings
+    );
+
+
+  $('#article-form')
+    ?.addEventListener(
+      'submit',
+      saveArticle
+    );
+
+
+  $('#fixture-form')
+    ?.addEventListener(
+      'submit',
+      saveFixture
+    );
+
+
+  $$('[data-close]')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        closeModals
+      );
+
+    });
+
+
+  $('#article-search')
+    ?.addEventListener(
+      'input',
+      renderArticles
+    );
+
+
+  $('#article-filter')
+    ?.addEventListener(
+      'change',
+      renderArticles
+    );
+
+
+  $('#fixture-search')
+    ?.addEventListener(
+      'input',
+      renderFixtures
+    );
+
+
+  $('#fixture-filter')
+    ?.addEventListener(
+      'change',
+      renderFixtures
+    );
+
+
+  document.addEventListener(
+    'click',
+    event => {
+
+      const editArticle =
+        event.target.closest(
+          '[data-edit-article]'
+        );
+
+
+      const deleteArticleButton =
+        event.target.closest(
+          '[data-delete-article]'
+        );
+
+
+      const editFixture =
+        event.target.closest(
+          '[data-edit-fixture]'
+        );
+
+
+      const deleteFixtureButton =
+        event.target.closest(
+          '[data-delete-fixture]'
+        );
+
+
+      const deleteStandingButton =
+        event.target.closest(
+          '[data-delete-standing]'
+        );
+
+
+      if (editArticle) {
+
+        openArticle(
+          editArticle.dataset.editArticle
+        );
+
+      }
+
+
+      if (deleteArticleButton) {
+
+        deleteArticle(
+          deleteArticleButton
+            .dataset
+            .deleteArticle
+        );
+
+      }
+
+
+      if (editFixture) {
+
+        openFixture(
+          Number(
+            editFixture
+              .dataset
+              .editFixture
+          )
+        );
+
+      }
+
+
+      if (deleteFixtureButton) {
+
+        deleteFixture(
+          Number(
+            deleteFixtureButton
+              .dataset
+              .deleteFixture
+          )
+        );
+
+      }
+
+
+      if (deleteStandingButton) {
+
+        deleteStanding(
+          Number(
+            deleteStandingButton
+              .dataset
+              .deleteStanding
+          )
+        );
+
+      }
+
+    }
+  );
+
+
+  $('#export-data')
+    ?.addEventListener(
+      'click',
+      exportData
+    );
+
+
+  $('#import-data')
+    ?.addEventListener(
+      'change',
+      event =>
+        importData(
+          event.target.files[0]
+        )
+    );
+
+
+  $('#reset-data')
+    ?.addEventListener(
+      'click',
+      resetData
+    );
+
+
+  /* =========================================================
+     INICIO
+  ========================================================= */
+
+  (async () => {
+
+    try {
+
+      await api(
+        'session'
+      );
+
+      await loadData();
+
+      showApp();
+
+    } catch {}
+
+  })();
+
+})();
