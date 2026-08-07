@@ -423,11 +423,15 @@ if (newsletterForm) {
 
     const email = emailInput.value.trim();
 
-    if (!email) return;
+    if (!email) {
+      message.textContent = 'Ingresá tu email.';
+      return;
+    }
 
     submitButton.disabled = true;
     submitButton.innerHTML = 'Enviando...';
-    message.textContent = 'Estamos procesando tu suscripción...';
+
+    message.textContent = 'Procesando suscripción...';
 
     try {
       const response = await fetch('/api/newsletter', {
@@ -435,36 +439,28 @@ if (newsletterForm) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          email
-        })
+        body: JSON.stringify({ email })
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'No se pudo suscribir.');
+        throw new Error(result.error || 'No se pudo completar la suscripción.');
       }
 
-      message.textContent =
-        '¡Listo! Revisá tu bandeja de entrada. 🏉';
-
+      message.textContent = '¡Listo! Revisá tu email 🏉';
       emailInput.value = '';
 
       newsletterForm.classList.add('submitted');
 
     } catch (error) {
-
       console.error('Newsletter:', error);
 
       message.textContent =
-        'No pudimos completar la suscripción. Intentá nuevamente.';
-
+        error.message || 'Ocurrió un error. Intentá nuevamente.';
     } finally {
-
       submitButton.disabled = false;
       submitButton.innerHTML = 'Suscribirme <span>→</span>';
-
     }
   });
 }
