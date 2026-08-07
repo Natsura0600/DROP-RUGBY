@@ -1,54 +1,1921 @@
-/* ============================================================
-   DROP RUGBY — ADMIN JS
-============================================================ */
+// ============================================================
+// DROPRUGBY - API ADMIN
+// /api/admin.js
+// ============================================================
 
-"use strict";
+import { list, put, del } from "@vercel/blob";
+import crypto from "node:crypto";
 
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
 
-/* ============================================================
-   STATE
-============================================================ */
+const BLOB_PATH = "droprugby/content.json";
+const COOKIE_NAME = "droprugby_session";
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 días
 
-const state = {
-
+const DEFAULT_CONTENT = {
   articles: [],
   fixtures: [],
   standings: [],
   players: [],
+  instagram: [],
   trash: [],
   history: [],
-
-  currentSection: "dashboard",
-
-  editingArticle: null,
-  editingFixture: null,
-  editingTeam: null,
-  editingPlayer: null,
-
-  confirmCallback: null
-
+  settings: {
+    siteName: "DropRugby",
+    description: "Noticias de rugby",
+  },
 };
 
+// ============================================================
+// UTILIDADES
+// ============================================================
 
-/* ============================================================
-   DOM HELPERS
-============================================================ */
-
-const $ = (selector) =>
-  document.querySelector(selector);
-
-
-const $$ = (selector) =>
-  document.querySelectorAll(selector);
-
-
-function escapeHTML(value) {
-
-  if (value === null || value === undefined) {
-    return "";
+function getSecret() {
+  if (!process.env.ADMIN_SESSION_SECRET) {
+    throw new Error("Falta ADMIN_SESSION_SECRET en Environment Variables");
   }
 
-  return String(value)
+  return process.env.ADMIN_SESSION_SECRET;
+}
+
+function parseCookies(req) {
+  const header = req.headers.cookie || "";
+  const cookies = {};
+
+  header.split(";").forEach((item) => {
+    const index = item.indexOf("=");
+
+    if (index === -1) return;
+
+    const key = item.slice(0, index).trim();
+    const value = item.slice(index + 1).trim();
+
+    cookies[key] = decodeURIComponent(value);
+  });
+
+  return cookies;
+}
+
+function createSession(username) {
+  const timestamp = Math.floor(Date.now() / 1000);
+
+  const payload = `${username}.${timestamp}`;
+
+  const signature = crypto
+    .createHmac("sha256", getSecret())
+    .update(payload)
+    .digest("hex");
+
+  return Buffer.from(`${payload}.${signature}`).toString("base64url");
+}
+
+function verifySession(token) {
+  try {
+    if (!token) return null;
+
+    const decoded = Buffer.from(token, "base64url").toString("utf8");
+
+    const parts = decoded.split(".");
+
+    if (parts.length !== 3) return null;
+
+    const username = parts[0];
+    const timestamp = Number(parts[1]);
+    const signature = parts[2];
+
+    if (!username || !timestamp || !signature) {
+      return null;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+
+    if (now - timestamp > MAX_AGE) {
+      return null;
+    }
+
+    const payload = `${username}.${timestamp}`;
+
+    const expected = crypto
+      .createHmac("sha256", getSecret())
+      .update(payload)
+      .digest("hex");
+
+    if (signature.length !== expected.length) {
+      return null;
+    }
+
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expected)
+      )
+    ) {
+      return null;
+    }
+
+    return {
+      username,
+      timestamp,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function setCookie(res, token) {
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${MAX_AGE}`
+  );
+}
+
+function clearCookie(res) {
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  );
+}
+
+function json(res, status, data) {
+  res.status(status).json(data);
+}
+
+async function getBody(req) {
+  if (req.body && typeof req.body === "object") {
+    return req.body;
+  }
+
+  return new Promise((resolve, reject) => {
+    let raw = "";
+
+    req.on("data", (chunk) => {
+      raw += chunk;
+    });
+
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(raw));
+      } catch {
+        reject(new Error("JSON inválido"));
+      }
+    });
+
+    req.on("error", reject);
+  });
+}
+
+// ============================================================
+// BLOB
+// ============================================================
+
+async function findContentBlob() {
+  const result = await list({
+    prefix: BLOB_PATH,
+  });
+
+  const blob = result.blobs?.find(
+    (item) => item.pathname === BLOB_PATH
+  );
+
+  return blob || null;
+}
+
+async function loadContent() {
+  const blob = await findContentBlob();
+
+  if (!blob) {
+    return structuredClone(DEFAULT_CONTENT);
+  }
+
+  const response = await fetch(blob.url);
+
+  if (!response.ok) {
+    throw new Error("No se pudo leer content.json");
+  }
+
+  const data = await response.json();
+
+  return normalizeContent(data);
+}
+
+function normalizeContent(data) {
+  const content =
+    data && typeof data === "object"
+      ? data
+      : {};
+
+  return {
+    ...structuredClone(DEFAULT_CONTENT),
+    ...content,
+
+    articles: Array.isArray(content.articles)
+      ? content.articles
+      : [],
+
+    fixtures: Array.isArray(content.fixtures)
+      ? content.fixtures
+      : [],
+
+    standings: Array.isArray(content.standings)
+      ? content.standings
+      : [],
+
+    players: Array.isArray(content.players)
+      ? content.players
+      : [],
+
+    instagram: Array.isArray(content.instagram)
+      ? content.instagram
+      : [],
+
+    trash: Array.isArray(content.trash)
+      ? content.trash
+      : [],
+
+    history: Array.isArray(content.history)
+      ? content.history
+      : [],
+
+    settings: {
+      ...DEFAULT_CONTENT.settings,
+      ...(content.settings || {}),
+    },
+  };
+}
+
+async function saveContent(content) {
+  const normalized = normalizeContent(content);
+
+  normalized.updatedAt = new Date().toISOString();
+
+  const blob = await put(
+    BLOB_PATH,
+    JSON.stringify(normalized, null, 2),
+    {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+    }
+  );
+
+  return {
+    content: normalized,
+    blob,
+  };
+}
+
+// ============================================================
+// ID
+// ============================================================
+
+function createId(prefix = "item") {
+  return `${prefix}_${Date.now()}_${crypto
+    .randomBytes(4)
+    .toString("hex")}`;
+}
+
+// ============================================================
+// HISTORIAL
+// ============================================================
+
+function addHistory(content, action, type, item = null) {
+  if (!Array.isArray(content.history)) {
+    content.history = [];
+  }
+
+  content.history.unshift({
+    id: createId("history"),
+    action,
+    type,
+    itemId: item?.id || null,
+    title:
+      item?.title ||
+      item?.name ||
+      item?.team ||
+      item?.player ||
+      null,
+    date: new Date().toISOString(),
+  });
+
+  // Mantener como máximo 300 registros
+  content.history = content.history.slice(0, 300);
+}
+
+// ============================================================
+// PAPELERA
+// ============================================================
+
+function moveToTrash(content, type, item) {
+  if (!Array.isArray(content.trash)) {
+    content.trash = [];
+  }
+
+  content.trash.unshift({
+    id: createId("trash"),
+    originalId: item.id,
+    type,
+    item,
+    deletedAt: new Date().toISOString(),
+  });
+}
+
+// ============================================================
+// AUTENTICACIÓN
+// ============================================================
+
+function requireAuth(req, res) {
+  const cookies = parseCookies(req);
+
+  const session = verifySession(cookies[COOKIE_NAME]);
+
+  if (!session) {
+    json(res, 401, {
+      ok: false,
+      error: "No autorizado",
+    });
+
+    return null;
+  }
+
+  return session;
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+function checkLogin(username, password) {
+  const adminUser =
+    process.env.ADMIN_USER || "admin";
+
+  const adminPassword =
+    process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    throw new Error(
+      "Falta ADMIN_PASSWORD en Environment Variables"
+    );
+  }
+
+  return (
+    username === adminUser &&
+    password === adminPassword
+  );
+}
+
+// ============================================================
+// NEWSLETTER - RESEND
+// ============================================================
+
+async function sendNewsletter({
+  subject,
+  html,
+  text,
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "Falta RESEND_API_KEY en Environment Variables"
+    );
+  }
+
+  const from =
+    process.env.RESEND_FROM_EMAIL ||
+    "DropRugby <newsletter@droprugby.com>";
+
+  const audienceId =
+    process.env.RESEND_AUDIENCE_ID;
+
+  if (!audienceId) {
+    throw new Error(
+      "Falta RESEND_AUDIENCE_ID en Environment Variables"
+    );
+  }
+
+  // Obtener contactos
+  const contactsResponse = await fetch(
+    `https://api.resend.com/audiences/${audienceId}/contacts`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    }
+  );
+
+  const contactsData =
+    await contactsResponse.json();
+
+  if (!contactsResponse.ok) {
+    throw new Error(
+      contactsData?.message ||
+        "No se pudieron obtener los contactos"
+    );
+  }
+
+  const contacts =
+    contactsData?.data || [];
+
+  const emails = contacts
+    .filter((contact) => {
+      return (
+        contact.email &&
+        contact.unsubscribed !== true
+      );
+    })
+    .map((contact) => contact.email);
+
+  if (!emails.length) {
+    return {
+      sent: 0,
+      message: "No hay suscriptores activos",
+    };
+  }
+
+  let sent = 0;
+  const errors = [];
+
+  // Resend permite enviar a múltiples destinatarios.
+  // Se hace por bloques para evitar requests gigantes.
+  const chunkSize = 50;
+
+  for (
+    let i = 0;
+    i < emails.length;
+    i += chunkSize
+  ) {
+    const chunk = emails.slice(
+      i,
+      i + chunkSize
+    );
+
+    const response = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          to: chunk,
+          subject,
+          html,
+          text:
+            text ||
+            "Nueva noticia de DropRugby.",
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      errors.push(
+        data?.message ||
+          "Error enviando newsletter"
+      );
+    } else {
+      sent += chunk.length;
+    }
+  }
+
+  return {
+    sent,
+    total: emails.length,
+    errors,
+  };
+}
+
+// ============================================================
+// HANDLER PRINCIPAL
+// ============================================================
+
+export default async function handler(req, res) {
+  try {
+    // --------------------------------------------------------
+    // CORS
+    // --------------------------------------------------------
+
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      req.headers.origin || "*"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Credentials",
+      "true"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,DELETE,OPTIONS"
+    );
+
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+
+    // --------------------------------------------------------
+    // GET
+    // --------------------------------------------------------
+
+    if (req.method === "GET") {
+      const action =
+        req.query?.action ||
+        req.url?.split("?")[1]
+          ?.split("&")
+          ?.find((x) =>
+            x.startsWith("action=")
+          )
+          ?.split("=")[1];
+
+      // Comprobar sesión
+      if (
+        action === "session" ||
+        action === "check-session" ||
+        action === "me"
+      ) {
+        const cookies = parseCookies(req);
+
+        const session = verifySession(
+          cookies[COOKIE_NAME]
+        );
+
+        if (!session) {
+          return json(res, 401, {
+            ok: false,
+            authenticated: false,
+          });
+        }
+
+        return json(res, 200, {
+          ok: true,
+          authenticated: true,
+          user: session.username,
+        });
+      }
+
+      // Todo el contenido
+      const session = requireAuth(req, res);
+
+      if (!session) return;
+
+      const content = await loadContent();
+
+      return json(res, 200, {
+        ok: true,
+        content,
+      });
+    }
+
+    // --------------------------------------------------------
+    // POST
+    // --------------------------------------------------------
+
+    if (req.method === "POST") {
+      const body = await getBody(req);
+
+      const action =
+        body.action ||
+        req.query?.action ||
+        "save";
+
+      // ======================================================
+      // LOGIN
+      // ======================================================
+
+      if (
+        action === "login" ||
+        action === "authenticate"
+      ) {
+        const username =
+          String(body.username || "").trim();
+
+        const password =
+          String(body.password || "");
+
+        if (!username || !password) {
+          return json(res, 400, {
+            ok: false,
+            error:
+              "Usuario y contraseña requeridos",
+          });
+        }
+
+        if (!checkLogin(username, password)) {
+          return json(res, 401, {
+            ok: false,
+            error:
+              "Usuario o contraseña incorrectos",
+          });
+        }
+
+        const token =
+          createSession(username);
+
+        setCookie(res, token);
+
+        return json(res, 200, {
+          ok: true,
+          authenticated: true,
+          user: username,
+        });
+      }
+
+      // ======================================================
+      // LOGOUT
+      // ======================================================
+
+      if (
+        action === "logout" ||
+        action === "signout"
+      ) {
+        clearCookie(res);
+
+        return json(res, 200, {
+          ok: true,
+          authenticated: false,
+        });
+      }
+
+      // Todo lo demás necesita sesión
+      const session = requireAuth(req, res);
+
+      if (!session) return;
+
+      // ======================================================
+      // OBTENER CONTENIDO
+      // ======================================================
+
+      if (
+        action === "get" ||
+        action === "load"
+      ) {
+        const content =
+          await loadContent();
+
+        return json(res, 200, {
+          ok: true,
+          content,
+        });
+      }
+
+      // ======================================================
+      // GUARDAR TODO
+      // ======================================================
+
+      if (
+        action === "save" ||
+        action === "save-all" ||
+        action === "update"
+      ) {
+        let content;
+
+        if (body.content) {
+          content = body.content;
+        } else {
+          content = {
+            articles: body.articles,
+            fixtures: body.fixtures,
+            standings: body.standings,
+            players: body.players,
+            instagram: body.instagram,
+            trash: body.trash,
+            history: body.history,
+            settings: body.settings,
+          };
+        }
+
+        const current =
+          await loadContent();
+
+        const merged = {
+          ...current,
+          ...content,
+        };
+
+        addHistory(
+          merged,
+          "update",
+          "content"
+        );
+
+        const saved =
+          await saveContent(merged);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // CREAR NOTICIA
+      // ======================================================
+
+      if (
+        action === "create-article" ||
+        action === "add-article" ||
+        action === "article-create"
+      ) {
+        const content =
+          await loadContent();
+
+        const article = {
+          id:
+            body.article?.id ||
+            body.id ||
+            createId("article"),
+
+          title:
+            body.article?.title ||
+            body.title ||
+            "",
+
+          slug:
+            body.article?.slug ||
+            body.slug ||
+            "",
+
+          excerpt:
+            body.article?.excerpt ||
+            body.excerpt ||
+            "",
+
+          content:
+            body.article?.content ||
+            body.contentText ||
+            body.text ||
+            "",
+
+          image:
+            body.article?.image ||
+            body.image ||
+            "",
+
+          category:
+            body.article?.category ||
+            body.category ||
+            "Rugby",
+
+          author:
+            body.article?.author ||
+            body.author ||
+            "DropRugby",
+
+          date:
+            body.article?.date ||
+            body.date ||
+            new Date().toISOString(),
+
+          featured:
+            body.article?.featured ??
+            body.featured ??
+            false,
+
+          published:
+            body.article?.published ??
+            body.published ??
+            true,
+
+          tags:
+            body.article?.tags ||
+            body.tags ||
+            [],
+
+          createdAt:
+            new Date().toISOString(),
+
+          updatedAt:
+            new Date().toISOString(),
+        };
+
+        const existingIndex =
+          content.articles.findIndex(
+            (item) =>
+              item.id === article.id
+          );
+
+        if (existingIndex >= 0) {
+          content.articles[
+            existingIndex
+          ] = {
+            ...content.articles[
+              existingIndex
+            ],
+            ...article,
+            updatedAt:
+              new Date().toISOString(),
+          };
+
+          addHistory(
+            content,
+            "edit",
+            "article",
+            article
+          );
+        } else {
+          content.articles.unshift(
+            article
+          );
+
+          addHistory(
+            content,
+            "create",
+            "article",
+            article
+          );
+        }
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          article,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // ELIMINAR NOTICIA
+      // ======================================================
+
+      if (
+        action === "delete-article" ||
+        action === "remove-article"
+      ) {
+        const content =
+          await loadContent();
+
+        const id =
+          body.id ||
+          body.articleId;
+
+        const index =
+          content.articles.findIndex(
+            (item) => item.id === id
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error: "Noticia no encontrada",
+          });
+        }
+
+        const [article] =
+          content.articles.splice(
+            index,
+            1
+          );
+
+        moveToTrash(
+          content,
+          "article",
+          article
+        );
+
+        addHistory(
+          content,
+          "delete",
+          "article",
+          article
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // CREAR / EDITAR PARTIDO
+      // ======================================================
+
+      if (
+        action === "create-fixture" ||
+        action === "add-fixture" ||
+        action === "fixture-create"
+      ) {
+        const content =
+          await loadContent();
+
+        const fixture =
+          body.fixture || {
+            ...body,
+          };
+
+        delete fixture.action;
+
+        fixture.id =
+          fixture.id ||
+          createId("fixture");
+
+        fixture.createdAt =
+          fixture.createdAt ||
+          new Date().toISOString();
+
+        fixture.updatedAt =
+          new Date().toISOString();
+
+        const index =
+          content.fixtures.findIndex(
+            (item) =>
+              item.id === fixture.id
+          );
+
+        if (index >= 0) {
+          content.fixtures[index] = {
+            ...content.fixtures[index],
+            ...fixture,
+          };
+
+          addHistory(
+            content,
+            "edit",
+            "fixture",
+            fixture
+          );
+        } else {
+          content.fixtures.push(
+            fixture
+          );
+
+          addHistory(
+            content,
+            "create",
+            "fixture",
+            fixture
+          );
+        }
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          fixture,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // ELIMINAR PARTIDO
+      // ======================================================
+
+      if (
+        action === "delete-fixture" ||
+        action === "remove-fixture"
+      ) {
+        const content =
+          await loadContent();
+
+        const id =
+          body.id ||
+          body.fixtureId;
+
+        const index =
+          content.fixtures.findIndex(
+            (item) => item.id === id
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error: "Partido no encontrado",
+          });
+        }
+
+        const [fixture] =
+          content.fixtures.splice(
+            index,
+            1
+          );
+
+        moveToTrash(
+          content,
+          "fixture",
+          fixture
+        );
+
+        addHistory(
+          content,
+          "delete",
+          "fixture",
+          fixture
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // CREAR / EDITAR EQUIPO / POSICIONES
+      // ======================================================
+
+      if (
+        action === "create-team" ||
+        action === "add-team" ||
+        action === "team-create" ||
+        action === "save-team"
+      ) {
+        const content =
+          await loadContent();
+
+        const team =
+          body.team || {
+            ...body,
+          };
+
+        delete team.action;
+
+        team.id =
+          team.id ||
+          createId("team");
+
+        const index =
+          content.standings.findIndex(
+            (item) =>
+              item.id === team.id
+          );
+
+        if (index >= 0) {
+          content.standings[index] = {
+            ...content.standings[index],
+            ...team,
+          };
+
+          addHistory(
+            content,
+            "edit",
+            "team",
+            team
+          );
+        } else {
+          content.standings.push(team);
+
+          addHistory(
+            content,
+            "create",
+            "team",
+            team
+          );
+        }
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          team,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // ELIMINAR EQUIPO
+      // ======================================================
+
+      if (
+        action === "delete-team" ||
+        action === "remove-team"
+      ) {
+        const content =
+          await loadContent();
+
+        const id =
+          body.id ||
+          body.teamId;
+
+        const index =
+          content.standings.findIndex(
+            (item) => item.id === id
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error: "Equipo no encontrado",
+          });
+        }
+
+        const [team] =
+          content.standings.splice(
+            index,
+            1
+          );
+
+        moveToTrash(
+          content,
+          "team",
+          team
+        );
+
+        addHistory(
+          content,
+          "delete",
+          "team",
+          team
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // CREAR / EDITAR JUGADOR
+      // ======================================================
+
+      if (
+        action === "create-player" ||
+        action === "add-player" ||
+        action === "player-create"
+      ) {
+        const content =
+          await loadContent();
+
+        const player =
+          body.player || {
+            ...body,
+          };
+
+        delete player.action;
+
+        player.id =
+          player.id ||
+          createId("player");
+
+        player.updatedAt =
+          new Date().toISOString();
+
+        const index =
+          content.players.findIndex(
+            (item) =>
+              item.id === player.id
+          );
+
+        if (index >= 0) {
+          content.players[index] = {
+            ...content.players[index],
+            ...player,
+          };
+
+          addHistory(
+            content,
+            "edit",
+            "player",
+            player
+          );
+        } else {
+          content.players.push(player);
+
+          addHistory(
+            content,
+            "create",
+            "player",
+            player
+          );
+        }
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          player,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // ELIMINAR JUGADOR
+      // ======================================================
+
+      if (
+        action === "delete-player" ||
+        action === "remove-player"
+      ) {
+        const content =
+          await loadContent();
+
+        const id =
+          body.id ||
+          body.playerId;
+
+        const index =
+          content.players.findIndex(
+            (item) => item.id === id
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error: "Jugador no encontrado",
+          });
+        }
+
+        const [player] =
+          content.players.splice(
+            index,
+            1
+          );
+
+        moveToTrash(
+          content,
+          "player",
+          player
+        );
+
+        addHistory(
+          content,
+          "delete",
+          "player",
+          player
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // INSTAGRAM
+      // ======================================================
+
+      if (
+        action === "save-instagram" ||
+        action === "create-instagram" ||
+        action === "add-instagram"
+      ) {
+        const content =
+          await loadContent();
+
+        const post =
+          body.post ||
+          body.instagram ||
+          {
+            ...body,
+          };
+
+        delete post.action;
+
+        post.id =
+          post.id ||
+          createId("instagram");
+
+        post.updatedAt =
+          new Date().toISOString();
+
+        const index =
+          content.instagram.findIndex(
+            (item) =>
+              item.id === post.id
+          );
+
+        if (index >= 0) {
+          content.instagram[index] = {
+            ...content.instagram[index],
+            ...post,
+          };
+
+          addHistory(
+            content,
+            "edit",
+            "instagram",
+            post
+          );
+        } else {
+          content.instagram.unshift(
+            post
+          );
+
+          addHistory(
+            content,
+            "create",
+            "instagram",
+            post
+          );
+        }
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          post,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // ELIMINAR INSTAGRAM
+      // ======================================================
+
+      if (
+        action === "delete-instagram" ||
+        action === "remove-instagram"
+      ) {
+        const content =
+          await loadContent();
+
+        const id =
+          body.id ||
+          body.postId;
+
+        const index =
+          content.instagram.findIndex(
+            (item) => item.id === id
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error:
+              "Publicación no encontrada",
+          });
+        }
+
+        const [post] =
+          content.instagram.splice(
+            index,
+            1
+          );
+
+        moveToTrash(
+          content,
+          "instagram",
+          post
+        );
+
+        addHistory(
+          content,
+          "delete",
+          "instagram",
+          post
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // PAPELERA - RESTAURAR
+      // ======================================================
+
+      if (
+        action === "restore" ||
+        action === "restore-item"
+      ) {
+        const content =
+          await loadContent();
+
+        const trashId =
+          body.id ||
+          body.trashId;
+
+        const index =
+          content.trash.findIndex(
+            (item) =>
+              item.id === trashId
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error:
+              "Elemento no encontrado en papelera",
+          });
+        }
+
+        const [deleted] =
+          content.trash.splice(
+            index,
+            1
+          );
+
+        const type = deleted.type;
+        const item = deleted.item;
+
+        if (type === "article") {
+          content.articles.unshift(item);
+        } else if (type === "fixture") {
+          content.fixtures.push(item);
+        } else if (type === "team") {
+          content.standings.push(item);
+        } else if (type === "player") {
+          content.players.push(item);
+        } else if (type === "instagram") {
+          content.instagram.unshift(item);
+        }
+
+        addHistory(
+          content,
+          "restore",
+          type,
+          item
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // PAPELERA - ELIMINAR DEFINITIVAMENTE
+      // ======================================================
+
+      if (
+        action === "permanent-delete" ||
+        action === "delete-trash"
+      ) {
+        const content =
+          await loadContent();
+
+        const trashId =
+          body.id ||
+          body.trashId;
+
+        const index =
+          content.trash.findIndex(
+            (item) =>
+              item.id === trashId
+          );
+
+        if (index === -1) {
+          return json(res, 404, {
+            ok: false,
+            error:
+              "Elemento no encontrado",
+          });
+        }
+
+        const [deleted] =
+          content.trash.splice(
+            index,
+            1
+          );
+
+        addHistory(
+          content,
+          "permanent-delete",
+          deleted.type,
+          deleted.item
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // VACIAR PAPELERA
+      // ======================================================
+
+      if (
+        action === "empty-trash" ||
+        action === "clear-trash"
+      ) {
+        const content =
+          await loadContent();
+
+        const count =
+          content.trash.length;
+
+        content.trash = [];
+
+        addHistory(
+          content,
+          "empty-trash",
+          "trash",
+          {
+            name: `${count} elementos`,
+          }
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          deleted: count,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // BORRAR HISTORIAL
+      // ======================================================
+
+      if (
+        action === "clear-history"
+      ) {
+        const content =
+          await loadContent();
+
+        content.history = [];
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // NEWSLETTER DE UNA NOTICIA
+      // ======================================================
+
+      if (
+        action === "send-newsletter" ||
+        action === "newsletter" ||
+        action === "send-newsletter-article"
+      ) {
+        let article =
+          body.article || null;
+
+        if (!article && body.articleId) {
+          const content =
+            await loadContent();
+
+          article =
+            content.articles.find(
+              (item) =>
+                item.id ===
+                body.articleId
+            );
+        }
+
+        if (!article) {
+          return json(res, 404, {
+            ok: false,
+            error:
+              "No se encontró la noticia",
+          });
+        }
+
+        const subject =
+          body.subject ||
+          `📰 ${article.title}`;
+
+        const siteUrl =
+          process.env.SITE_URL ||
+          "https://drop-rugby.vercel.app";
+
+        const articleUrl =
+          article.slug
+            ? `${siteUrl}/noticia.html?slug=${encodeURIComponent(
+                article.slug
+              )}`
+            : siteUrl;
+
+        const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(article.title)}</title>
+</head>
+
+<body style="margin:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#ffffff;">
+
+<div style="max-width:650px;margin:0 auto;background:#111111;">
+
+  <div style="padding:30px;text-align:center;border-bottom:1px solid #292929;">
+    <h1 style="margin:0;font-size:28px;letter-spacing:2px;">
+      DROP<span style="color:#c9ff00;">RUGBY</span>
+    </h1>
+  </div>
+
+  ${
+    article.image
+      ? `
+  <img
+    src="${escapeAttribute(article.image)}"
+    alt="${escapeAttribute(article.title)}"
+    style="display:block;width:100%;height:auto;"
+  >
+  `
+      : ""
+  }
+
+  <div style="padding:35px;">
+
+    <div style="font-size:12px;color:#c9ff00;font-weight:bold;text-transform:uppercase;margin-bottom:15px;">
+      ${escapeHtml(
+        article.category || "Rugby"
+      )}
+    </div>
+
+    <h2 style="font-size:30px;line-height:1.15;margin:0 0 20px;">
+      ${escapeHtml(article.title)}
+    </h2>
+
+    ${
+      article.excerpt
+        ? `
+    <p style="font-size:17px;line-height:1.6;color:#cccccc;">
+      ${escapeHtml(article.excerpt)}
+    </p>
+    `
+        : ""
+    }
+
+    <a
+      href="${escapeAttribute(articleUrl)}"
+      style="
+        display:inline-block;
+        margin-top:15px;
+        padding:14px 22px;
+        background:#c9ff00;
+        color:#000000;
+        text-decoration:none;
+        font-weight:bold;
+        border-radius:5px;
+      "
+    >
+      LEER NOTICIA
+    </a>
+
+  </div>
+
+  <div style="padding:25px;text-align:center;border-top:1px solid #292929;color:#777;font-size:12px;">
+    DropRugby · Noticias de rugby
+  </div>
+
+</div>
+
+</body>
+</html>
+`;
+
+        const result =
+          await sendNewsletter({
+            subject,
+            html,
+            text:
+              article.excerpt ||
+              article.title,
+          });
+
+        return json(res, 200, {
+          ok: true,
+          newsletter: result,
+        });
+      }
+
+      // ======================================================
+      // NEWSLETTER PERSONALIZADO
+      // ======================================================
+
+      if (
+        action ===
+        "send-custom-newsletter"
+      ) {
+        if (!body.subject) {
+          return json(res, 400, {
+            ok: false,
+            error:
+              "Falta el asunto del newsletter",
+          });
+        }
+
+        if (!body.html) {
+          return json(res, 400, {
+            ok: false,
+            error:
+              "Falta el contenido HTML",
+          });
+        }
+
+        const result =
+          await sendNewsletter({
+            subject: body.subject,
+            html: body.html,
+            text: body.text,
+          });
+
+        return json(res, 200, {
+          ok: true,
+          newsletter: result,
+        });
+      }
+
+      // ======================================================
+      // SETTINGS
+      // ======================================================
+
+      if (
+        action === "save-settings" ||
+        action === "update-settings"
+      ) {
+        const content =
+          await loadContent();
+
+        content.settings = {
+          ...content.settings,
+          ...(body.settings || body),
+        };
+
+        delete content.settings.action;
+
+        addHistory(
+          content,
+          "update",
+          "settings"
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          settings:
+            saved.content.settings,
+          content: saved.content,
+        });
+      }
+
+      // ======================================================
+      // ACCIÓN DESCONOCIDA
+      // ======================================================
+
+      return json(res, 400, {
+        ok: false,
+        error: `Acción desconocida: ${action}`,
+      });
+    }
+
+    // --------------------------------------------------------
+    // DELETE
+    // --------------------------------------------------------
+
+    if (req.method === "DELETE") {
+      const session =
+        requireAuth(req, res);
+
+      if (!session) return;
+
+      const body =
+        await getBody(req);
+
+      const content =
+        await loadContent();
+
+      const type = body.type;
+      const id = body.id;
+
+      if (!type || !id) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Se requiere type e id",
+        });
+      }
+
+      const collections = {
+        article: "articles",
+        articles: "articles",
+
+        fixture: "fixtures",
+        fixtures: "fixtures",
+
+        team: "standings",
+        standings: "standings",
+
+        player: "players",
+        players: "players",
+
+        instagram: "instagram",
+      };
+
+      const collectionName =
+        collections[type];
+
+      if (!collectionName) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Tipo de contenido inválido",
+        });
+      }
+
+      const collection =
+        content[collectionName];
+
+      const index =
+        collection.findIndex(
+          (item) => item.id === id
+        );
+
+      if (index === -1) {
+        return json(res, 404, {
+          ok: false,
+          error:
+            "Elemento no encontrado",
+        });
+      }
+
+      const [item] =
+        collection.splice(index, 1);
+
+      moveToTrash(
+        content,
+        type,
+        item
+      );
+
+      addHistory(
+        content,
+        "delete",
+        type,
+        item
+      );
+
+      const saved =
+        await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        content: saved.content,
+      });
+    }
+
+    return json(res, 405, {
+      ok: false,
+      error: "Método no permitido",
+    });
+  } catch (error) {
+    console.error(
+      "❌ ERROR API ADMIN:",
+      error
+    );
+
+    return json(res, 500, {
+      ok: false,
+      error:
+        error?.message ||
+        "Error interno del servidor",
+    });
+  }
+}
+
+// ============================================================
+// SEGURIDAD HTML
+// ============================================================
+
+function escapeHtml(value) {
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -56,4440 +1923,6 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
-
-function getId(item) {
-
-  return (
-    item?.id ??
-    item?._id ??
-    item?.slug ??
-    crypto.randomUUID()
-  );
-
+function escapeAttribute(value) {
+  return escapeHtml(value);
 }
-
-
-function normalizeArray(value) {
-
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  return [];
-
-}
-
-
-/* ============================================================
-   API
-============================================================ */
-
-async function apiRequest(action, options = {}) {
-
-  const {
-    method = "GET",
-    body = null
-  } = options;
-
-
-  const url =
-    `/api/admin?action=${encodeURIComponent(action)}`;
-
-
-  const request = {
-
-    method,
-
-    credentials: "include",
-
-    headers: {
-      "Accept": "application/json"
-    }
-
-  };
-
-
-  if (body !== null) {
-
-    request.headers["Content-Type"] =
-      "application/json";
-
-    request.body =
-      JSON.stringify(body);
-
-  }
-
-
-  const response =
-    await fetch(url, request);
-
-
-  let data = null;
-
-  try {
-
-    data =
-      await response.json();
-
-  } catch {
-
-    data = {};
-
-  }
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      data?.error ||
-      data?.message ||
-      `Error ${response.status}`
-    );
-
-  }
-
-
-  return data;
-
-}
-
-
-/* ============================================================
-   LOGIN
-============================================================ */
-
-async function checkSession() {
-
-  try {
-
-    const data =
-      await apiRequest("session");
-
-    if (
-      data?.authenticated ||
-      data?.loggedIn ||
-      data?.user
-    ) {
-
-      showAdmin();
-
-      if (data.user) {
-        updateAdminUser(data.user);
-      }
-
-      await loadAll();
-
-      return true;
-
-    }
-
-  } catch (error) {
-
-    console.log(
-      "Sesión no iniciada:",
-      error.message
-    );
-
-  }
-
-  showLogin();
-
-  return false;
-
-}
-
-
-function showLogin() {
-
-  const login =
-    $("#login-screen");
-
-  const app =
-    $("#admin-app");
-
-
-  if (login) {
-    login.hidden = false;
-  }
-
-  if (app) {
-    app.hidden = true;
-  }
-
-}
-
-
-function showAdmin() {
-
-  const login =
-    $("#login-screen");
-
-  const app =
-    $("#admin-app");
-
-
-  if (login) {
-    login.hidden = true;
-  }
-
-  if (app) {
-    app.hidden = false;
-  }
-
-}
-
-
-function updateAdminUser(username) {
-
-  const element =
-    $("#admin-username");
-
-  if (!element) {
-    return;
-  }
-
-  if (typeof username === "object") {
-
-    username =
-      username.username ||
-      username.name ||
-      "Admin";
-
-  }
-
-  element.textContent =
-    username || "Admin";
-
-}
-
-
-/* ============================================================
-   LOGIN SUBMIT
-============================================================ */
-
-async function handleLogin(event) {
-
-  event.preventDefault();
-
-
-  const username =
-    $("#login-user")?.value.trim();
-
-  const password =
-    $("#login-password")?.value;
-
-
-  const errorElement =
-    $("#login-error");
-
-
-  if (errorElement) {
-    errorElement.hidden = true;
-  }
-
-
-  const button =
-    $("#login-form button[type='submit']");
-
-
-  const originalText =
-    button?.innerHTML;
-
-
-  if (button) {
-
-    button.disabled = true;
-
-    button.innerHTML =
-      "Ingresando...";
-
-  }
-
-
-  try {
-
-    const data =
-      await apiRequest("login", {
-
-        method: "POST",
-
-        body: {
-          username,
-          password
-        }
-
-      });
-
-
-    if (
-      data?.success === false ||
-      data?.authenticated === false
-    ) {
-
-      throw new Error(
-        data?.error ||
-        "Usuario o contraseña incorrectos."
-      );
-
-    }
-
-
-    showAdmin();
-
-
-    updateAdminUser(
-      data?.user ||
-      username ||
-      "Admin"
-    );
-
-
-    await loadAll();
-
-
-    showToast(
-      "Sesión iniciada correctamente.",
-      "success"
-    );
-
-
-  } catch (error) {
-
-    if (errorElement) {
-
-      errorElement.textContent =
-        error.message ||
-        "No se pudo iniciar sesión.";
-
-      errorElement.hidden = false;
-
-    }
-
-  } finally {
-
-    if (button) {
-
-      button.disabled = false;
-
-      button.innerHTML =
-        originalText;
-
-    }
-
-  }
-
-}
-
-
-/* ============================================================
-   LOGOUT
-============================================================ */
-
-async function logout() {
-
-  try {
-
-    await apiRequest("logout", {
-      method: "POST"
-    });
-
-  } catch (error) {
-
-    console.warn(
-      "Logout:",
-      error.message
-    );
-
-  }
-
-
-  state.articles = [];
-  state.fixtures = [];
-  state.standings = [];
-  state.players = [];
-  state.trash = [];
-  state.history = [];
-
-
-  showLogin();
-
-  showToast(
-    "Sesión cerrada.",
-    "success"
-  );
-
-}
-
-
-/* ============================================================
-   LOAD EVERYTHING
-============================================================ */
-
-async function loadAll() {
-
-  try {
-
-    const data =
-      await apiRequest("data");
-
-
-    state.articles =
-      normalizeArray(
-        data?.articles ||
-        data?.content?.articles
-      );
-
-
-    state.fixtures =
-      normalizeArray(
-        data?.fixtures ||
-        data?.content?.fixtures
-      );
-
-
-    state.standings =
-      normalizeArray(
-        data?.standings ||
-        data?.content?.standings ||
-        data?.teams
-      );
-
-
-    state.players =
-      normalizeArray(
-        data?.players ||
-        data?.content?.players
-      );
-
-
-    state.trash =
-      normalizeArray(
-        data?.trash ||
-        data?.content?.trash
-      );
-
-
-    state.history =
-      normalizeArray(
-        data?.history ||
-        data?.content?.history
-      );
-
-
-    renderEverything();
-
-
-  } catch (error) {
-
-    console.error(
-      "Error cargando datos:",
-      error
-    );
-
-
-    /*
-      Compatibilidad adicional:
-      Si el endpoint "data" no existe pero
-      el API devuelve el contenido directamente,
-      intentamos cargar desde /api/admin.
-    */
-
-    try {
-
-      const fallback =
-        await fetch(
-          "/api/admin",
-          {
-            credentials: "include"
-          }
-        );
-
-
-      if (fallback.ok) {
-
-        const data =
-          await fallback.json();
-
-
-        state.articles =
-          normalizeArray(data?.articles);
-
-        state.fixtures =
-          normalizeArray(data?.fixtures);
-
-        state.standings =
-          normalizeArray(
-            data?.standings ||
-            data?.teams
-          );
-
-        state.players =
-          normalizeArray(data?.players);
-
-        state.trash =
-          normalizeArray(data?.trash);
-
-        state.history =
-          normalizeArray(data?.history);
-
-
-        renderEverything();
-
-      }
-
-    } catch (fallbackError) {
-
-      console.error(
-        fallbackError
-      );
-
-      showToast(
-        "No se pudieron cargar los datos.",
-        "error"
-      );
-
-    }
-
-  }
-
-}
-
-
-/* ============================================================
-   RENDER EVERYTHING
-============================================================ */
-
-function renderEverything() {
-
-  updateStats();
-
-  renderDashboard();
-
-  renderArticles();
-
-  renderFixtures();
-
-  renderStandings();
-
-  renderPlayers();
-
-  renderInstagram();
-
-  renderTrash();
-
-  renderHistory();
-
-  updateTrashCount();
-
-}
-
-
-/* ============================================================
-   STATS
-============================================================ */
-
-function updateStats() {
-
-  const articleCount =
-    $("#stat-articles");
-
-  const fixtureCount =
-    $("#stat-fixtures");
-
-  const teamCount =
-    $("#stat-teams");
-
-  const playerCount =
-    $("#stat-players");
-
-
-  if (articleCount) {
-
-    articleCount.textContent =
-      state.articles.length;
-
-  }
-
-
-  if (fixtureCount) {
-
-    fixtureCount.textContent =
-      state.fixtures.length;
-
-  }
-
-
-  if (teamCount) {
-
-    teamCount.textContent =
-      state.standings.length;
-
-  }
-
-
-  if (playerCount) {
-
-    playerCount.textContent =
-      state.players.length;
-
-  }
-
-}
-
-
-/* ============================================================
-   SECTION NAVIGATION
-============================================================ */
-
-function showSection(section) {
-
-  if (!section) {
-    return;
-  }
-
-
-  state.currentSection =
-    section;
-
-
-  $$(".admin-section")
-    .forEach(element => {
-
-      element.classList.toggle(
-        "active",
-        element.id ===
-          `section-${section}`
-      );
-
-    });
-
-
-  $$(".nav-item")
-    .forEach(button => {
-
-      button.classList.toggle(
-        "active",
-        button.dataset.section ===
-          section
-      );
-
-    });
-
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-
-  const sidebar =
-    $(".sidebar");
-
-  if (sidebar) {
-    sidebar.classList.remove(
-      "mobile-open"
-    );
-  }
-
-}
-
-
-/* ============================================================
-   DASHBOARD
-============================================================ */
-
-function renderDashboard() {
-
-  renderDashboardArticles();
-
-  renderDashboardFixtures();
-
-}
-
-
-function renderDashboardArticles() {
-
-  const container =
-    $("#dashboard-articles");
-
-  if (!container) {
-    return;
-  }
-
-
-  const articles =
-    [...state.articles]
-      .sort(
-        (a, b) =>
-          getDateValue(b) -
-          getDateValue(a)
-      )
-      .slice(0, 6);
-
-
-  if (!articles.length) {
-
-    container.innerHTML =
-      emptyState(
-        "📰",
-        "No hay noticias",
-        "Creá tu primera noticia."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    articles
-      .map(article => {
-
-        const image =
-          article.image ||
-          article.imageUrl ||
-          article.cover ||
-          "";
-
-
-        return `
-          <div class="dashboard-item">
-
-            ${
-              image
-                ? `
-                  <div class="dashboard-thumb">
-                    <img
-                      src="${escapeHTML(image)}"
-                      alt=""
-                    >
-                  </div>
-                `
-                : ""
-            }
-
-            <div class="dashboard-item-main">
-
-              <div class="dashboard-item-title">
-                ${escapeHTML(
-                  article.title ||
-                  "Sin título"
-                )}
-              </div>
-
-              <div class="dashboard-item-meta">
-                ${escapeHTML(
-                  article.category ||
-                  "Rugby"
-                )}
-                ·
-                ${formatDate(
-                  article.date ||
-                  article.createdAt
-                )}
-              </div>
-
-            </div>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
-}
-
-
-function renderDashboardFixtures() {
-
-  const container =
-    $("#dashboard-fixtures");
-
-  if (!container) {
-    return;
-  }
-
-
-  const fixtures =
-    [...state.fixtures]
-      .sort(
-        (a, b) =>
-          getFixtureDateValue(a) -
-          getFixtureDateValue(b)
-      )
-      .slice(0, 6);
-
-
-  if (!fixtures.length) {
-
-    container.innerHTML =
-      emptyState(
-        "🏉",
-        "No hay partidos",
-        "Agregá un partido al calendario."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    fixtures
-      .map(fixture => {
-
-        const home =
-          fixture.home ||
-          fixture.homeTeam ||
-          fixture.local ||
-          "Local";
-
-
-        const away =
-          fixture.away ||
-          fixture.awayTeam ||
-          fixture.visitante ||
-          "Visitante";
-
-
-        return `
-          <div class="dashboard-item">
-
-            <div class="dashboard-item-main">
-
-              <div class="dashboard-item-title">
-                ${escapeHTML(home)}
-                <span class="text-muted">
-                  vs
-                </span>
-                ${escapeHTML(away)}
-              </div>
-
-              <div class="dashboard-item-meta">
-
-                ${formatFixtureDate(fixture)}
-
-                ${
-                  fixture.competition
-                    ? ` · ${escapeHTML(
-                        fixture.competition
-                      )}`
-                    : ""
-                }
-
-              </div>
-
-            </div>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
-}
-
-
-/* ============================================================
-   ARTICLES
-============================================================ */
-
-function renderArticles() {
-
-  const container =
-    $("#articles-table");
-
-  if (!container) {
-    return;
-  }
-
-
-  const search =
-    $("#article-search")
-      ?.value
-      ?.toLowerCase()
-      .trim() || "";
-
-
-  const filter =
-    $("#article-filter")
-      ?.value ||
-      "all";
-
-
-  let articles =
-    [...state.articles];
-
-
-  if (search) {
-
-    articles =
-      articles.filter(article => {
-
-        const text =
-          [
-            article.title,
-            article.excerpt,
-            article.content,
-            article.category
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-
-        return text.includes(search);
-
-      });
-
-  }
-
-
-  if (filter !== "all") {
-
-    articles =
-      articles.filter(
-        article =>
-          getArticleStatus(article) ===
-          filter
-      );
-
-  }
-
-
-  articles.sort(
-    (a, b) =>
-      getDateValue(b) -
-      getDateValue(a)
-  );
-
-
-  if (!articles.length) {
-
-    container.innerHTML =
-      emptyState(
-        "📰",
-        "No hay noticias",
-        "Probá cambiar los filtros o crear una noticia."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML = `
-
-    <table class="admin-table">
-
-      <thead>
-
-        <tr>
-
-          <th>Noticia</th>
-          <th>Categoría</th>
-          <th>Estado</th>
-          <th>Fecha</th>
-          <th></th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${articles.map(article => {
-
-          const id =
-            getId(article);
-
-
-          return `
-
-            <tr>
-
-              <td>
-
-                <div class="table-title">
-                  ${escapeHTML(
-                    article.title ||
-                    "Sin título"
-                  )}
-                </div>
-
-                <div class="table-subtitle">
-                  ID:
-                  ${escapeHTML(id)}
-                </div>
-
-              </td>
-
-
-              <td>
-                ${escapeHTML(
-                  article.category ||
-                  "Rugby"
-                )}
-              </td>
-
-
-              <td>
-                ${statusBadge(
-                  getArticleStatus(article)
-                )}
-              </td>
-
-
-              <td>
-                ${formatDate(
-                  article.date ||
-                  article.createdAt
-                )}
-              </td>
-
-
-              <td>
-
-                <div class="table-actions">
-
-                  <button
-                    class="icon-btn"
-                    title="Editar"
-                    data-edit-article="${escapeHTML(id)}"
-                  >
-                    ✎
-                  </button>
-
-                  <button
-                    class="icon-btn accent"
-                    title="Newsletter"
-                    data-newsletter-article="${escapeHTML(id)}"
-                  >
-                    ✉
-                  </button>
-
-                  <button
-                    class="icon-btn danger"
-                    title="Eliminar"
-                    data-delete-article="${escapeHTML(id)}"
-                  >
-                    ×
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          `;
-
-        }).join("")}
-
-      </tbody>
-
-    </table>
-
-  `;
-
-}
-
-
-/* ============================================================
-   ARTICLE MODAL
-============================================================ */
-
-function openArticleModal(article = null) {
-
-  state.editingArticle =
-    article;
-
-
-  const modal =
-    $("#article-modal");
-
-
-  if (!modal) {
-    return;
-  }
-
-
-  $("#article-modal-title").textContent =
-    article
-      ? "Editar noticia"
-      : "Nueva noticia";
-
-
-  $("#article-id").value =
-    article
-      ? getId(article)
-      : "";
-
-
-  $("#article-title").value =
-    article?.title ||
-    "";
-
-
-  $("#article-category").value =
-    article?.category ||
-    "Rugby";
-
-
-  $("#article-status").value =
-    getArticleStatus(article) ||
-    "published";
-
-
-  $("#article-image").value =
-    article?.image ||
-    article?.imageUrl ||
-    article?.cover ||
-    "";
-
-
-  $("#article-excerpt").value =
-    article?.excerpt ||
-    article?.description ||
-    "";
-
-
-  $("#article-content").value =
-    article?.content ||
-    article?.body ||
-    "";
-
-
-  $("#article-date").value =
-    toDatetimeLocal(
-      article?.publishAt ||
-      article?.publishedAt ||
-      article?.date
-    );
-
-
-  toggleScheduleFields();
-
-
-  modal.hidden = false;
-
-}
-
-
-function closeModal(id) {
-
-  const modal =
-    document.getElementById(id);
-
-  if (!modal) {
-    return;
-  }
-
-  modal.hidden = true;
-
-}
-
-
-function toggleScheduleFields() {
-
-  const status =
-    $("#article-status")?.value;
-
-
-  const fields =
-    $("#schedule-fields");
-
-
-  if (!fields) {
-    return;
-  }
-
-
-  fields.hidden =
-    status !== "scheduled";
-
-}
-
-
-async function saveArticle(event) {
-
-  event.preventDefault();
-
-
-  const id =
-    $("#article-id").value.trim();
-
-
-  const article = {
-
-    id:
-      id ||
-      crypto.randomUUID(),
-
-    title:
-      $("#article-title").value.trim(),
-
-    category:
-      $("#article-category").value,
-
-    status:
-      $("#article-status").value,
-
-    image:
-      $("#article-image").value.trim(),
-
-    excerpt:
-      $("#article-excerpt").value.trim(),
-
-    content:
-      $("#article-content").value,
-
-    publishAt:
-      $("#article-date").value ||
-      null,
-
-    date:
-      $("#article-date").value ||
-      new Date().toISOString()
-
-  };
-
-
-  if (!article.title) {
-
-    showToast(
-      "El título es obligatorio.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const submit =
-    $("#article-form button[type='submit']");
-
-
-  setButtonLoading(
-    submit,
-    true,
-    "Guardando..."
-  );
-
-
-  try {
-
-    const action =
-      id
-        ? "update-article"
-        : "create-article";
-
-
-    await apiRequest(
-      action,
-      {
-        method: "POST",
-        body: article
-      }
-    );
-
-
-    closeModal("article-modal");
-
-
-    showToast(
-      id
-        ? "Noticia actualizada."
-        : "Noticia creada.",
-      "success"
-    );
-
-
-    await loadAll();
-
-
-  } catch (error) {
-
-    showToast(
-      error.message ||
-      "No se pudo guardar la noticia.",
-      "error"
-    );
-
-  } finally {
-
-    setButtonLoading(
-      submit,
-      false,
-      "Guardar noticia"
-    );
-
-  }
-
-}
-
-
-/* ============================================================
-   ARTICLE DELETE
-============================================================ */
-
-function deleteArticle(id) {
-
-  const article =
-    findById(
-      state.articles,
-      id
-    );
-
-
-  if (!article) {
-    return;
-  }
-
-
-  openConfirm(
-    "Enviar a papelera",
-    `¿Querés mover "${article.title || "esta noticia"}" a la papelera?`,
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "delete-article",
-          {
-            method: "POST",
-            body: {
-              id
-            }
-          }
-        );
-
-
-        showToast(
-          "Noticia enviada a la papelera.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   NEWSLETTER
-============================================================ */
-
-function newsletterArticle(id) {
-
-  const article =
-    findById(
-      state.articles,
-      id
-    );
-
-
-  if (!article) {
-    return;
-  }
-
-
-  openConfirm(
-    "Enviar newsletter",
-    `¿Querés enviar el newsletter de "${article.title}"?`,
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "newsletter",
-          {
-            method: "POST",
-            body: {
-              articleId: id,
-              article
-            }
-          }
-        );
-
-
-        showToast(
-          "Newsletter enviado correctamente.",
-          "success"
-        );
-
-
-      } catch (error) {
-
-        showToast(
-          error.message ||
-          "No se pudo enviar el newsletter.",
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   FIXTURES
-============================================================ */
-
-function renderFixtures() {
-
-  const container =
-    $("#fixtures-table");
-
-  if (!container) {
-    return;
-  }
-
-
-  const search =
-    $("#fixture-search")
-      ?.value
-      ?.toLowerCase()
-      .trim() || "";
-
-
-  let fixtures =
-    [...state.fixtures];
-
-
-  if (search) {
-
-    fixtures =
-      fixtures.filter(fixture => {
-
-        const text =
-          [
-            fixture.home,
-            fixture.homeTeam,
-            fixture.local,
-            fixture.away,
-            fixture.awayTeam,
-            fixture.visitante,
-            fixture.competition,
-            fixture.venue
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-
-        return text.includes(search);
-
-      });
-
-  }
-
-
-  fixtures.sort(
-    (a, b) =>
-      getFixtureDateValue(a) -
-      getFixtureDateValue(b)
-  );
-
-
-  if (!fixtures.length) {
-
-    container.innerHTML =
-      emptyState(
-        "🏉",
-        "No hay partidos",
-        "Agregá un nuevo partido."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML = `
-
-    <table class="admin-table">
-
-      <thead>
-
-        <tr>
-
-          <th>Fecha</th>
-          <th>Partido</th>
-          <th>Competición</th>
-          <th>Estado</th>
-          <th></th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${fixtures.map(fixture => {
-
-          const id =
-            getId(fixture);
-
-
-          const home =
-            fixture.home ||
-            fixture.homeTeam ||
-            fixture.local ||
-            "Local";
-
-
-          const away =
-            fixture.away ||
-            fixture.awayTeam ||
-            fixture.visitante ||
-            "Visitante";
-
-
-          const status =
-            fixture.status ||
-            "scheduled";
-
-
-          return `
-
-            <tr>
-
-              <td>
-                ${formatFixtureDate(fixture)}
-              </td>
-
-
-              <td>
-
-                <div class="table-title">
-
-                  ${escapeHTML(home)}
-
-                  <span class="text-muted">
-                    vs
-                  </span>
-
-                  ${escapeHTML(away)}
-
-                </div>
-
-                ${
-                  fixture.venue
-                    ? `
-                      <div class="table-subtitle">
-                        ${escapeHTML(
-                          fixture.venue
-                        )}
-                      </div>
-                    `
-                    : ""
-                }
-
-              </td>
-
-
-              <td>
-                ${escapeHTML(
-                  fixture.competition ||
-                  "—"
-                )}
-              </td>
-
-
-              <td>
-                ${statusBadge(status)}
-              </td>
-
-
-              <td>
-
-                <div class="table-actions">
-
-                  <button
-                    class="icon-btn"
-                    title="Editar"
-                    data-edit-fixture="${escapeHTML(id)}"
-                  >
-                    ✎
-                  </button>
-
-                  <button
-                    class="icon-btn danger"
-                    title="Eliminar"
-                    data-delete-fixture="${escapeHTML(id)}"
-                  >
-                    ×
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          `;
-
-        }).join("")}
-
-      </tbody>
-
-    </table>
-
-  `;
-
-}
-
-
-function openFixtureModal(fixture = null) {
-
-  state.editingFixture =
-    fixture;
-
-
-  $("#fixture-modal-title").textContent =
-    fixture
-      ? "Editar partido"
-      : "Nuevo partido";
-
-
-  $("#fixture-id").value =
-    fixture
-      ? getId(fixture)
-      : "";
-
-
-  $("#fixture-date").value =
-    normalizeDateInput(
-      fixture?.date
-    );
-
-
-  $("#fixture-time").value =
-    fixture?.time ||
-    "";
-
-
-  $("#fixture-competition").value =
-    fixture?.competition ||
-    "";
-
-
-  $("#fixture-home").value =
-    fixture?.home ||
-    fixture?.homeTeam ||
-    fixture?.local ||
-    "";
-
-
-  $("#fixture-away").value =
-    fixture?.away ||
-    fixture?.awayTeam ||
-    fixture?.visitante ||
-    "";
-
-
-  $("#fixture-home-score").value =
-    fixture?.homeScore ??
-    fixture?.scoreHome ??
-    "";
-
-
-  $("#fixture-away-score").value =
-    fixture?.awayScore ??
-    fixture?.scoreAway ??
-    "";
-
-
-  $("#fixture-venue").value =
-    fixture?.venue ||
-    "";
-
-
-  $("#fixture-status").value =
-    fixture?.status ||
-    "scheduled";
-
-
-  $("#fixture-modal").hidden =
-    false;
-
-}
-
-
-async function saveFixture(event) {
-
-  event.preventDefault();
-
-
-  const id =
-    $("#fixture-id").value.trim();
-
-
-  const fixture = {
-
-    id:
-      id ||
-      crypto.randomUUID(),
-
-    date:
-      $("#fixture-date").value,
-
-    time:
-      $("#fixture-time").value,
-
-    competition:
-      $("#fixture-competition").value.trim(),
-
-    home:
-      $("#fixture-home").value.trim(),
-
-    away:
-      $("#fixture-away").value.trim(),
-
-    homeScore:
-      numberOrNull(
-        $("#fixture-home-score").value
-      ),
-
-    awayScore:
-      numberOrNull(
-        $("#fixture-away-score").value
-      ),
-
-    venue:
-      $("#fixture-venue").value.trim(),
-
-    status:
-      $("#fixture-status").value
-
-  };
-
-
-  if (
-    !fixture.home ||
-    !fixture.away ||
-    !fixture.date
-  ) {
-
-    showToast(
-      "Completá fecha, local y visitante.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const submit =
-    $("#fixture-form button[type='submit']");
-
-
-  setButtonLoading(
-    submit,
-    true,
-    "Guardando..."
-  );
-
-
-  try {
-
-    await apiRequest(
-      id
-        ? "update-fixture"
-        : "create-fixture",
-      {
-        method: "POST",
-        body: fixture
-      }
-    );
-
-
-    closeModal("fixture-modal");
-
-
-    showToast(
-      id
-        ? "Partido actualizado."
-        : "Partido creado.",
-      "success"
-    );
-
-
-    await loadAll();
-
-
-  } catch (error) {
-
-    showToast(
-      error.message,
-      "error"
-    );
-
-  } finally {
-
-    setButtonLoading(
-      submit,
-      false,
-      "Guardar partido"
-    );
-
-  }
-
-}
-
-
-function deleteFixture(id) {
-
-  const fixture =
-    findById(
-      state.fixtures,
-      id
-    );
-
-
-  if (!fixture) {
-    return;
-  }
-
-
-  openConfirm(
-    "Eliminar partido",
-    "El partido será enviado a la papelera.",
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "delete-fixture",
-          {
-            method: "POST",
-            body: { id }
-          }
-        );
-
-
-        showToast(
-          "Partido eliminado.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   STANDINGS
-============================================================ */
-
-function renderStandings() {
-
-  const container =
-    $("#standings-table");
-
-  if (!container) {
-    return;
-  }
-
-
-  if (!state.standings.length) {
-
-    container.innerHTML =
-      emptyState(
-        "🏆",
-        "No hay equipos",
-        "Agregá un equipo para empezar."
-      );
-
-    return;
-
-  }
-
-
-  const teams =
-    [...state.standings]
-      .sort(
-        (a, b) =>
-          Number(b.points ?? b.pts ?? 0) -
-          Number(a.points ?? a.pts ?? 0)
-      );
-
-
-  container.innerHTML = `
-
-    <table class="admin-table">
-
-      <thead>
-
-        <tr>
-
-          <th>#</th>
-          <th>Equipo</th>
-          <th>PJ</th>
-          <th>PG</th>
-          <th>PE</th>
-          <th>PP</th>
-          <th>PF</th>
-          <th>PC</th>
-          <th>PTS</th>
-          <th></th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${teams.map((team, index) => {
-
-          const id =
-            getId(team);
-
-
-          return `
-
-            <tr>
-
-              <td>
-                <strong>
-                  ${index + 1}
-                </strong>
-              </td>
-
-              <td>
-                <div class="table-title">
-                  ${escapeHTML(
-                    team.name ||
-                    team.team ||
-                    "Equipo"
-                  )}
-                </div>
-              </td>
-
-              <td>${num(team.played ?? team.pj)}</td>
-              <td>${num(team.wins ?? team.pg)}</td>
-              <td>${num(team.draws ?? team.pe)}</td>
-              <td>${num(team.losses ?? team.pp)}</td>
-              <td>${num(team.pointsFor ?? team.pf)}</td>
-              <td>${num(team.pointsAgainst ?? team.pc)}</td>
-              <td>
-                <strong class="text-accent">
-                  ${num(team.points ?? team.pts)}
-                </strong>
-              </td>
-
-              <td>
-
-                <div class="table-actions">
-
-                  <button
-                    class="icon-btn"
-                    title="Editar"
-                    data-edit-team="${escapeHTML(id)}"
-                  >
-                    ✎
-                  </button>
-
-                  <button
-                    class="icon-btn danger"
-                    title="Eliminar"
-                    data-delete-team="${escapeHTML(id)}"
-                  >
-                    ×
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          `;
-
-        }).join("")}
-
-      </tbody>
-
-    </table>
-
-  `;
-
-}
-
-
-function openTeamModal(team = null) {
-
-  state.editingTeam =
-    team;
-
-
-  $("#team-modal-title").textContent =
-    team
-      ? "Editar equipo"
-      : "Nuevo equipo";
-
-
-  $("#team-id").value =
-    team
-      ? getId(team)
-      : "";
-
-
-  $("#team-name").value =
-    team?.name ||
-    team?.team ||
-    "";
-
-
-  $("#team-played").value =
-    team?.played ??
-    team?.pj ??
-    0;
-
-
-  $("#team-wins").value =
-    team?.wins ??
-    team?.pg ??
-    0;
-
-
-  $("#team-draws").value =
-    team?.draws ??
-    team?.pe ??
-    0;
-
-
-  $("#team-losses").value =
-    team?.losses ??
-    team?.pp ??
-    0;
-
-
-  $("#team-points-for").value =
-    team?.pointsFor ??
-    team?.pf ??
-    0;
-
-
-  $("#team-points-against").value =
-    team?.pointsAgainst ??
-    team?.pc ??
-    0;
-
-
-  $("#team-points").value =
-    team?.points ??
-    team?.pts ??
-    0;
-
-
-  $("#team-modal").hidden =
-    false;
-
-}
-
-
-async function saveTeam(event) {
-
-  event.preventDefault();
-
-
-  const id =
-    $("#team-id").value.trim();
-
-
-  const team = {
-
-    id:
-      id ||
-      crypto.randomUUID(),
-
-    name:
-      $("#team-name").value.trim(),
-
-    played:
-      numberOrZero(
-        $("#team-played").value
-      ),
-
-    wins:
-      numberOrZero(
-        $("#team-wins").value
-      ),
-
-    draws:
-      numberOrZero(
-        $("#team-draws").value
-      ),
-
-    losses:
-      numberOrZero(
-        $("#team-losses").value
-      ),
-
-    pointsFor:
-      numberOrZero(
-        $("#team-points-for").value
-      ),
-
-    pointsAgainst:
-      numberOrZero(
-        $("#team-points-against").value
-      ),
-
-    points:
-      numberOrZero(
-        $("#team-points").value
-      )
-
-  };
-
-
-  if (!team.name) {
-
-    showToast(
-      "El nombre del equipo es obligatorio.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    await apiRequest(
-      id
-        ? "update-team"
-        : "create-team",
-      {
-        method: "POST",
-        body: team
-      }
-    );
-
-
-    closeModal("team-modal");
-
-
-    showToast(
-      id
-        ? "Equipo actualizado."
-        : "Equipo creado.",
-      "success"
-    );
-
-
-    await loadAll();
-
-
-  } catch (error) {
-
-    showToast(
-      error.message,
-      "error"
-    );
-
-  }
-
-}
-
-
-function deleteTeam(id) {
-
-  openConfirm(
-    "Eliminar equipo",
-    "El equipo será enviado a la papelera.",
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "delete-team",
-          {
-            method: "POST",
-            body: { id }
-          }
-        );
-
-
-        showToast(
-          "Equipo eliminado.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   PLAYERS
-============================================================ */
-
-function renderPlayers() {
-
-  const container =
-    $("#players-table");
-
-  if (!container) {
-    return;
-  }
-
-
-  const search =
-    $("#player-search")
-      ?.value
-      ?.toLowerCase()
-      .trim() || "";
-
-
-  let players =
-    [...state.players];
-
-
-  if (search) {
-
-    players =
-      players.filter(player => {
-
-        const text =
-          [
-            player.name,
-            player.position,
-            player.team
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-
-        return text.includes(search);
-
-      });
-
-  }
-
-
-  if (!players.length) {
-
-    container.innerHTML =
-      emptyState(
-        "👤",
-        "No hay jugadores",
-        "Agregá un nuevo jugador."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML = `
-
-    <table class="admin-table">
-
-      <thead>
-
-        <tr>
-
-          <th>Jugador</th>
-          <th>Equipo</th>
-          <th>Posición</th>
-          <th>Número</th>
-          <th>Edad</th>
-          <th></th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${players.map(player => {
-
-          const id =
-            getId(player);
-
-
-          return `
-
-            <tr>
-
-              <td>
-
-                <div class="table-title">
-                  ${escapeHTML(
-                    player.name ||
-                    "Sin nombre"
-                  )}
-                </div>
-
-              </td>
-
-
-              <td>
-                ${escapeHTML(
-                  player.team ||
-                  "—"
-                )}
-              </td>
-
-
-              <td>
-                ${escapeHTML(
-                  player.position ||
-                  "—"
-                )}
-              </td>
-
-
-              <td>
-                ${player.number ?? "—"}
-              </td>
-
-
-              <td>
-                ${player.age ?? "—"}
-              </td>
-
-
-              <td>
-
-                <div class="table-actions">
-
-                  <button
-                    class="icon-btn"
-                    title="Editar"
-                    data-edit-player="${escapeHTML(id)}"
-                  >
-                    ✎
-                  </button>
-
-                  <button
-                    class="icon-btn danger"
-                    title="Eliminar"
-                    data-delete-player="${escapeHTML(id)}"
-                  >
-                    ×
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          `;
-
-        }).join("")}
-
-      </tbody>
-
-    </table>
-
-  `;
-
-}
-
-
-function openPlayerModal(player = null) {
-
-  state.editingPlayer =
-    player;
-
-
-  $("#player-modal-title").textContent =
-    player
-      ? "Editar jugador"
-      : "Nuevo jugador";
-
-
-  $("#player-id").value =
-    player
-      ? getId(player)
-      : "";
-
-
-  $("#player-name").value =
-    player?.name ||
-    "";
-
-
-  $("#player-position").value =
-    player?.position ||
-    "";
-
-
-  $("#player-team").value =
-    player?.team ||
-    "";
-
-
-  $("#player-number").value =
-    player?.number ??
-    "";
-
-
-  $("#player-age").value =
-    player?.age ??
-    "";
-
-
-  $("#player-image").value =
-    player?.image ||
-    player?.imageUrl ||
-    "";
-
-
-  $("#player-modal").hidden =
-    false;
-
-}
-
-
-async function savePlayer(event) {
-
-  event.preventDefault();
-
-
-  const id =
-    $("#player-id").value.trim();
-
-
-  const player = {
-
-    id:
-      id ||
-      crypto.randomUUID(),
-
-    name:
-      $("#player-name").value.trim(),
-
-    position:
-      $("#player-position").value.trim(),
-
-    team:
-      $("#player-team").value.trim(),
-
-    number:
-      numberOrNull(
-        $("#player-number").value
-      ),
-
-    age:
-      numberOrNull(
-        $("#player-age").value
-      ),
-
-    image:
-      $("#player-image").value.trim()
-
-  };
-
-
-  if (!player.name) {
-
-    showToast(
-      "El nombre es obligatorio.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    await apiRequest(
-      id
-        ? "update-player"
-        : "create-player",
-      {
-        method: "POST",
-        body: player
-      }
-    );
-
-
-    closeModal("player-modal");
-
-
-    showToast(
-      id
-        ? "Jugador actualizado."
-        : "Jugador creado.",
-      "success"
-    );
-
-
-    await loadAll();
-
-
-  } catch (error) {
-
-    showToast(
-      error.message,
-      "error"
-    );
-
-  }
-
-}
-
-
-function deletePlayer(id) {
-
-  openConfirm(
-    "Eliminar jugador",
-    "El jugador será enviado a la papelera.",
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "delete-player",
-          {
-            method: "POST",
-            body: { id }
-          }
-        );
-
-
-        showToast(
-          "Jugador eliminado.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   INSTAGRAM
-============================================================ */
-
-function renderInstagram() {
-
-  const container =
-    $("#instagram-news");
-
-  if (!container) {
-    return;
-  }
-
-
-  const articles =
-    state.articles.slice(0, 30);
-
-
-  if (!articles.length) {
-
-    container.innerHTML =
-      emptyState(
-        "◎",
-        "No hay noticias",
-        "Creá una noticia para generar contenido."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    articles
-      .map(article => {
-
-        const id =
-          getId(article);
-
-
-        const image =
-          article.image ||
-          article.imageUrl ||
-          "";
-
-
-        return `
-
-          <div
-            class="instagram-item"
-            data-instagram-id="${escapeHTML(id)}"
-          >
-
-            ${
-              image
-                ? `
-                  <img
-                    src="${escapeHTML(image)}"
-                    alt=""
-                  >
-                `
-                : `
-                  <div class="dashboard-thumb">
-                    📰
-                  </div>
-                `
-            }
-
-
-            <div class="instagram-item-content">
-
-              <strong>
-                ${escapeHTML(
-                  article.title ||
-                  "Sin título"
-                )}
-              </strong>
-
-              <span>
-                ${escapeHTML(
-                  article.category ||
-                  "Rugby"
-                )}
-              </span>
-
-            </div>
-
-          </div>
-
-        `;
-
-      })
-      .join("");
-
-}
-
-
-function generateInstagram(article) {
-
-  if (!article) {
-    return;
-  }
-
-
-  const title =
-    article.title ||
-    "";
-
-
-  const excerpt =
-    article.excerpt ||
-    article.description ||
-    "";
-
-
-  const category =
-    article.category ||
-    "Rugby";
-
-
-  const url =
-    article.url ||
-    article.link ||
-    "";
-
-
-  const text = `
-
-🏉 DROP RUGBY
-
-${title}
-
-${excerpt}
-
-📰 ${category}
-
-${url}
-
-#DropRugby #Rugby #Argentina #RugbyArgentino
-
-  `.trim();
-
-
-  const output =
-    $("#instagram-output");
-
-
-  if (output) {
-    output.value = text;
-  }
-
-
-  $$(".instagram-item")
-    .forEach(item => {
-
-      item.classList.toggle(
-        "active",
-        item.dataset.instagramId ===
-          String(getId(article))
-      );
-
-    });
-
-}
-
-
-async function copyInstagram() {
-
-  const output =
-    $("#instagram-output");
-
-
-  if (
-    !output ||
-    !output.value
-  ) {
-
-    showToast(
-      "Primero seleccioná una noticia.",
-      "warning"
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    await navigator.clipboard.writeText(
-      output.value
-    );
-
-
-    showToast(
-      "Publicación copiada.",
-      "success"
-    );
-
-
-  } catch {
-
-    output.select();
-
-    document.execCommand("copy");
-
-
-    showToast(
-      "Publicación copiada.",
-      "success"
-    );
-
-  }
-
-}
-
-
-/* ============================================================
-   TRASH
-============================================================ */
-
-function renderTrash() {
-
-  const container =
-    $("#trash-table");
-
-  if (!container) {
-    return;
-  }
-
-
-  if (!state.trash.length) {
-
-    container.innerHTML =
-      emptyState(
-        "♲",
-        "La papelera está vacía",
-        "Los elementos eliminados aparecerán acá."
-      );
-
-    return;
-
-  }
-
-
-  container.innerHTML = `
-
-    <table class="admin-table">
-
-      <thead>
-
-        <tr>
-
-          <th>Elemento</th>
-          <th>Tipo</th>
-          <th>Fecha</th>
-          <th></th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${state.trash.map(item => {
-
-          const id =
-            getId(item);
-
-
-          const type =
-            item.type ||
-            item.kind ||
-            "Contenido";
-
-
-          const name =
-            item.title ||
-            item.name ||
-            item.home
-              ? `${item.home || ""} vs ${item.away || ""}`
-              : "Elemento";
-
-
-          return `
-
-            <tr>
-
-              <td>
-
-                <div class="table-title">
-                  ${escapeHTML(name)}
-                </div>
-
-              </td>
-
-
-              <td>
-                ${escapeHTML(type)}
-              </td>
-
-
-              <td>
-                ${formatDate(
-                  item.deletedAt ||
-                  item.date
-                )}
-              </td>
-
-
-              <td>
-
-                <div class="table-actions">
-
-                  <button
-                    class="icon-btn accent"
-                    title="Restaurar"
-                    data-restore="${escapeHTML(id)}"
-                  >
-                    ↶
-                  </button>
-
-                  <button
-                    class="icon-btn danger"
-                    title="Eliminar definitivamente"
-                    data-hard-delete="${escapeHTML(id)}"
-                  >
-                    ×
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          `;
-
-        }).join("")}
-
-      </tbody>
-
-    </table>
-
-  `;
-
-}
-
-
-function updateTrashCount() {
-
-  const element =
-    $("#trash-count");
-
-  if (!element) {
-    return;
-  }
-
-
-  element.textContent =
-    state.trash.length;
-
-}
-
-
-function restoreTrash(id) {
-
-  openConfirm(
-    "Restaurar elemento",
-    "¿Querés restaurar este elemento?",
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "restore",
-          {
-            method: "POST",
-            body: { id }
-          }
-        );
-
-
-        showToast(
-          "Elemento restaurado.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-function hardDelete(id) {
-
-  openConfirm(
-    "Eliminar definitivamente",
-    "Este elemento será eliminado permanentemente.",
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "hard-delete",
-          {
-            method: "POST",
-            body: { id }
-          }
-        );
-
-
-        showToast(
-          "Elemento eliminado definitivamente.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-function emptyTrash() {
-
-  if (!state.trash.length) {
-
-    showToast(
-      "La papelera ya está vacía.",
-      "warning"
-    );
-
-    return;
-
-  }
-
-
-  openConfirm(
-    "Vaciar papelera",
-    "Todos los elementos de la papelera serán eliminados definitivamente.",
-    async () => {
-
-      try {
-
-        await apiRequest(
-          "empty-trash",
-          {
-            method: "POST"
-          }
-        );
-
-
-        showToast(
-          "Papelera vaciada.",
-          "success"
-        );
-
-
-        await loadAll();
-
-
-      } catch (error) {
-
-        showToast(
-          error.message,
-          "error"
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   HISTORY
-============================================================ */
-
-function renderHistory() {
-
-  const container =
-    $("#history-list");
-
-  if (!container) {
-    return;
-  }
-
-
-  if (!state.history.length) {
-
-    container.innerHTML =
-      emptyState(
-        "◴",
-        "No hay actividad",
-        "Los cambios aparecerán acá."
-      );
-
-    return;
-
-  }
-
-
-  const history =
-    [...state.history]
-      .sort(
-        (a, b) =>
-          getDateValue(b) -
-          getDateValue(a)
-      )
-      .slice(0, 100);
-
-
-  container.innerHTML =
-    history
-      .map(item => {
-
-        return `
-
-          <div class="history-item">
-
-            <div class="history-dot"></div>
-
-            <div class="history-main">
-
-              <strong>
-                ${escapeHTML(
-                  item.action ||
-                  item.title ||
-                  "Cambio realizado"
-                )}
-              </strong>
-
-              <p>
-                ${escapeHTML(
-                  item.description ||
-                  item.message ||
-                  item.details ||
-                  ""
-                )}
-              </p>
-
-            </div>
-
-            <div class="history-time">
-
-              ${formatDate(
-                item.createdAt ||
-                item.date ||
-                item.timestamp
-              )}
-
-            </div>
-
-          </div>
-
-        `;
-
-      })
-      .join("");
-
-}
-
-
-/* ============================================================
-   DATA EXPORT
-============================================================ */
-
-function exportData() {
-
-  const data = {
-
-    articles:
-      state.articles,
-
-    fixtures:
-      state.fixtures,
-
-    standings:
-      state.standings,
-
-    players:
-      state.players,
-
-    trash:
-      state.trash,
-
-    history:
-      state.history,
-
-    exportedAt:
-      new Date().toISOString()
-
-  };
-
-
-  const blob =
-    new Blob(
-      [
-        JSON.stringify(
-          data,
-          null,
-          2
-        )
-      ],
-      {
-        type:
-          "application/json"
-      }
-    );
-
-
-  const url =
-    URL.createObjectURL(blob);
-
-
-  const link =
-    document.createElement("a");
-
-
-  link.href =
-    url;
-
-
-  link.download =
-    `droprugby-backup-${formatFileDate(
-      new Date()
-    )}.json`;
-
-
-  document.body.appendChild(link);
-
-  link.click();
-
-  link.remove();
-
-
-  URL.revokeObjectURL(url);
-
-
-  showToast(
-    "Backup exportado.",
-    "success"
-  );
-
-}
-
-
-/* ============================================================
-   SYSTEM STATUS
-============================================================ */
-
-async function checkSystemStatus() {
-
-  const element =
-    $("#system-status");
-
-  if (!element) {
-    return;
-  }
-
-
-  try {
-
-    await apiRequest("session");
-
-
-    element.textContent =
-      "● API conectada";
-
-
-    element.style.color =
-      "var(--success)";
-
-
-  } catch {
-
-    element.textContent =
-      "● Error de conexión";
-
-
-    element.style.color =
-      "var(--danger)";
-
-  }
-
-}
-
-
-/* ============================================================
-   CONFIRM MODAL
-============================================================ */
-
-function openConfirm(
-  title,
-  message,
-  callback
-) {
-
-  $("#confirm-title").textContent =
-    title;
-
-
-  $("#confirm-message").textContent =
-    message;
-
-
-  state.confirmCallback =
-    callback;
-
-
-  $("#confirm-modal").hidden =
-    false;
-
-}
-
-
-async function confirmAction() {
-
-  const callback =
-    state.confirmCallback;
-
-
-  state.confirmCallback =
-    null;
-
-
-  closeModal(
-    "confirm-modal"
-  );
-
-
-  if (typeof callback === "function") {
-
-    await callback();
-
-  }
-
-}
-
-
-/* ============================================================
-   TOAST
-============================================================ */
-
-function showToast(
-  message,
-  type = "success"
-) {
-
-  const container =
-    $("#toast-container");
-
-
-  if (!container) {
-    return;
-  }
-
-
-  const toast =
-    document.createElement("div");
-
-
-  toast.className =
-    `toast ${type}`;
-
-
-  toast.textContent =
-    message;
-
-
-  container.appendChild(toast);
-
-
-  setTimeout(
-    () => {
-
-      toast.style.opacity =
-        "0";
-
-      toast.style.transform =
-        "translateX(20px)";
-
-
-      setTimeout(
-        () => toast.remove(),
-        250
-      );
-
-    },
-    3500
-  );
-
-}
-
-
-/* ============================================================
-   EVENT DELEGATION
-============================================================ */
-
-function setupDelegatedEvents() {
-
-  document.addEventListener(
-    "click",
-    event => {
-
-      const target =
-        event.target.closest(
-          "[data-section], [data-section-target], [data-action], [data-edit-article], [data-delete-article], [data-newsletter-article], [data-edit-fixture], [data-delete-fixture], [data-edit-team], [data-delete-team], [data-edit-player], [data-delete-player], [data-instagram-id], [data-restore], [data-hard-delete], [data-close-modal]"
-        );
-
-
-      if (!target) {
-        return;
-      }
-
-
-      if (
-        target.dataset.section
-      ) {
-
-        showSection(
-          target.dataset.section
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.sectionTarget
-      ) {
-
-        showSection(
-          target.dataset.sectionTarget
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.action
-      ) {
-
-        const action =
-          target.dataset.action;
-
-
-        if (
-          action ===
-          "new-article"
-        ) {
-
-          openArticleModal();
-
-        }
-
-
-        if (
-          action ===
-          "new-fixture"
-        ) {
-
-          openFixtureModal();
-
-        }
-
-
-        if (
-          action ===
-          "new-team"
-        ) {
-
-          openTeamModal();
-
-        }
-
-
-        if (
-          action ===
-          "new-player"
-        ) {
-
-          openPlayerModal();
-
-        }
-
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.editArticle
-      ) {
-
-        const item =
-          findById(
-            state.articles,
-            target.dataset.editArticle
-          );
-
-
-        if (item) {
-          openArticleModal(item);
-        }
-
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.deleteArticle
-      ) {
-
-        deleteArticle(
-          target.dataset.deleteArticle
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.newsletterArticle
-      ) {
-
-        newsletterArticle(
-          target.dataset.newsletterArticle
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.editFixture
-      ) {
-
-        const item =
-          findById(
-            state.fixtures,
-            target.dataset.editFixture
-          );
-
-
-        if (item) {
-          openFixtureModal(item);
-        }
-
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.deleteFixture
-      ) {
-
-        deleteFixture(
-          target.dataset.deleteFixture
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.editTeam
-      ) {
-
-        const item =
-          findById(
-            state.standings,
-            target.dataset.editTeam
-          );
-
-
-        if (item) {
-          openTeamModal(item);
-        }
-
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.deleteTeam
-      ) {
-
-        deleteTeam(
-          target.dataset.deleteTeam
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.editPlayer
-      ) {
-
-        const item =
-          findById(
-            state.players,
-            target.dataset.editPlayer
-          );
-
-
-        if (item) {
-          openPlayerModal(item);
-        }
-
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.deletePlayer
-      ) {
-
-        deletePlayer(
-          target.dataset.deletePlayer
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.instagramId
-      ) {
-
-        const article =
-          findById(
-            state.articles,
-            target.dataset.instagramId
-          );
-
-
-        generateInstagram(
-          article
-        );
-
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.restore
-      ) {
-
-        restoreTrash(
-          target.dataset.restore
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.hardDelete
-      ) {
-
-        hardDelete(
-          target.dataset.hardDelete
-        );
-
-        return;
-
-      }
-
-
-      if (
-        target.dataset.closeModal
-      ) {
-
-        closeModal(
-          target.dataset.closeModal
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   EVENT LISTENERS
-============================================================ */
-
-function setupEvents() {
-
-  $("#login-form")
-    ?.addEventListener(
-      "submit",
-      handleLogin
-    );
-
-
-  $("#logout-btn")
-    ?.addEventListener(
-      "click",
-      logout
-    );
-
-
-  $("#article-form")
-    ?.addEventListener(
-      "submit",
-      saveArticle
-    );
-
-
-  $("#fixture-form")
-    ?.addEventListener(
-      "submit",
-      saveFixture
-    );
-
-
-  $("#team-form")
-    ?.addEventListener(
-      "submit",
-      saveTeam
-    );
-
-
-  $("#player-form")
-    ?.addEventListener(
-      "submit",
-      savePlayer
-    );
-
-
-  $("#article-status")
-    ?.addEventListener(
-      "change",
-      toggleScheduleFields
-    );
-
-
-  $("#article-search")
-    ?.addEventListener(
-      "input",
-      renderArticles
-    );
-
-
-  $("#article-filter")
-    ?.addEventListener(
-      "change",
-      renderArticles
-    );
-
-
-  $("#fixture-search")
-    ?.addEventListener(
-      "input",
-      renderFixtures
-    );
-
-
-  $("#player-search")
-    ?.addEventListener(
-      "input",
-      renderPlayers
-    );
-
-
-  $("#copy-instagram")
-    ?.addEventListener(
-      "click",
-      copyInstagram
-    );
-
-
-  $("#empty-trash-btn")
-    ?.addEventListener(
-      "click",
-      emptyTrash
-    );
-
-
-  $("#export-data-btn")
-    ?.addEventListener(
-      "click",
-      exportData
-    );
-
-
-  $("#refresh-data-btn")
-    ?.addEventListener(
-      "click",
-      async () => {
-
-        await loadAll();
-
-        showToast(
-          "Datos actualizados.",
-          "success"
-        );
-
-      }
-    );
-
-
-  $("#confirm-cancel")
-    ?.addEventListener(
-      "click",
-      () => closeModal(
-        "confirm-modal"
-      )
-    );
-
-
-  $("#confirm-ok")
-    ?.addEventListener(
-      "click",
-      confirmAction
-    );
-
-
-  $("#mobile-menu-btn")
-    ?.addEventListener(
-      "click",
-      () => {
-
-        $(".sidebar")
-          ?.classList
-          .toggle(
-            "mobile-open"
-          );
-
-      }
-    );
-
-
-  setupDelegatedEvents();
-
-
-  /*
-    Cerrar modal haciendo click
-    en el fondo.
-  */
-
-  $$(".modal-backdrop")
-    .forEach(backdrop => {
-
-      backdrop.addEventListener(
-        "click",
-        () => {
-
-          const modal =
-            backdrop.closest(".modal");
-
-          if (modal) {
-            closeModal(modal.id);
-          }
-
-        }
-      );
-
-    });
-
-
-  /*
-    Escape cierra modales.
-  */
-
-  document.addEventListener(
-    "keydown",
-    event => {
-
-      if (
-        event.key !==
-        "Escape"
-      ) {
-
-        return;
-
-      }
-
-
-      $$(".modal")
-        .forEach(modal => {
-
-          if (!modal.hidden) {
-            closeModal(modal.id);
-          }
-
-        });
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   HELPERS
-============================================================ */
-
-function findById(
-  array,
-  id
-) {
-
-  return array.find(
-    item =>
-      String(getId(item)) ===
-      String(id)
-  );
-
-}
-
-
-function getDateValue(item) {
-
-  if (!item) {
-    return 0;
-  }
-
-
-  const value =
-    item.publishAt ||
-    item.publishedAt ||
-    item.date ||
-    item.createdAt ||
-    item.timestamp;
-
-
-  const date =
-    new Date(value);
-
-
-  const time =
-    date.getTime();
-
-
-  return Number.isNaN(time)
-    ? 0
-    : time;
-
-}
-
-
-function getFixtureDateValue(
-  fixture
-) {
-
-  if (!fixture) {
-    return 0;
-  }
-
-
-  const date =
-    fixture.date || "";
-
-
-  const time =
-    fixture.time || "";
-
-
-  const value =
-    `${date}T${time || "00:00"}`;
-
-
-  const parsed =
-    new Date(value);
-
-
-  if (!Number.isNaN(
-    parsed.getTime()
-  )) {
-
-    return parsed.getTime();
-
-  }
-
-
-  return getDateValue(
-    fixture
-  );
-
-}
-
-
-function getArticleStatus(
-  article
-) {
-
-  if (!article) {
-    return "draft";
-  }
-
-
-  if (article.status) {
-    return article.status;
-  }
-
-
-  if (
-    article.scheduled ||
-    article.publishAt
-  ) {
-
-    return "scheduled";
-
-  }
-
-
-  if (
-    article.published === false
-  ) {
-
-    return "draft";
-
-  }
-
-
-  return "published";
-
-}
-
-
-function statusBadge(status) {
-
-  const normalized =
-    String(status || "")
-      .toLowerCase();
-
-
-  const labels = {
-
-    published: "Publicada",
-
-    scheduled: "Programada",
-
-    draft: "Borrador",
-
-    live: "En vivo",
-
-    finished: "Finalizado",
-
-    postponed: "Postergado",
-
-    scheduled: "Próximo"
-
-  };
-
-
-  return `
-
-    <span
-      class="status-badge status-${escapeHTML(
-        normalized
-      )}"
-    >
-      ${escapeHTML(
-        labels[normalized] ||
-        status ||
-        "—"
-      )}
-    </span>
-
-  `;
-
-}
-
-
-function formatDate(
-  value
-) {
-
-  if (!value) {
-    return "—";
-  }
-
-
-  const date =
-    new Date(value);
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return escapeHTML(
-      value
-    );
-
-  }
-
-
-  return new Intl.DateTimeFormat(
-    "es-AR",
-    {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric"
-    }
-  ).format(date);
-
-}
-
-
-function formatFixtureDate(
-  fixture
-) {
-
-  if (!fixture?.date) {
-    return "—";
-  }
-
-
-  const date =
-    new Date(
-      `${fixture.date}T${
-        fixture.time ||
-        "00:00"
-      }`
-    );
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return escapeHTML(
-      fixture.date
-    );
-
-  }
-
-
-  let result =
-    new Intl.DateTimeFormat(
-      "es-AR",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-      }
-    ).format(date);
-
-
-  if (fixture.time) {
-
-    result +=
-      ` · ${escapeHTML(
-        fixture.time
-      )}`;
-
-  }
-
-
-  return result;
-
-}
-
-
-function normalizeDateInput(
-  value
-) {
-
-  if (!value) {
-    return "";
-  }
-
-
-  if (
-    /^\d{4}-\d{2}-\d{2}$/.test(
-      String(value)
-    )
-  ) {
-
-    return value;
-
-  }
-
-
-  const date =
-    new Date(value);
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return "";
-
-  }
-
-
-  return [
-    date.getFullYear(),
-    String(
-      date.getMonth() + 1
-    ).padStart(2, "0"),
-    String(
-      date.getDate()
-    ).padStart(2, "0")
-  ].join("-");
-
-}
-
-
-function toDatetimeLocal(
-  value
-) {
-
-  if (!value) {
-    return "";
-  }
-
-
-  const date =
-    new Date(value);
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return "";
-
-  }
-
-
-  const pad =
-    number =>
-      String(number)
-        .padStart(2, "0");
-
-
-  return (
-    `${date.getFullYear()}-` +
-    `${pad(date.getMonth() + 1)}-` +
-    `${pad(date.getDate())}T` +
-    `${pad(date.getHours())}:` +
-    `${pad(date.getMinutes())}`
-  );
-
-}
-
-
-function formatFileDate(
-  date
-) {
-
-  return [
-
-    date.getFullYear(),
-
-    String(
-      date.getMonth() + 1
-    ).padStart(2, "0"),
-
-    String(
-      date.getDate()
-    ).padStart(2, "0")
-
-  ].join("-");
-
-}
-
-
-function numberOrZero(
-  value
-) {
-
-  const number =
-    Number(value);
-
-
-  return Number.isFinite(number)
-    ? number
-    : 0;
-
-}
-
-
-function numberOrNull(
-  value
-) {
-
-  if (
-    value === "" ||
-    value === null ||
-    value === undefined
-  ) {
-
-    return null;
-
-  }
-
-
-  const number =
-    Number(value);
-
-
-  return Number.isFinite(number)
-    ? number
-    : null;
-
-}
-
-
-function num(value) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-
-    return "0";
-
-  }
-
-
-  return escapeHTML(
-    value
-  );
-
-}
-
-
-function emptyState(
-  icon,
-  title,
-  description
-) {
-
-  return `
-
-    <div class="empty-state">
-
-      <div class="empty-state-icon">
-        ${icon}
-      </div>
-
-      <strong>
-        ${escapeHTML(title)}
-      </strong>
-
-      <span>
-        ${escapeHTML(description)}
-      </span>
-
-    </div>
-
-  `;
-
-}
-
-
-function setButtonLoading(
-  button,
-  loading,
-  text
-) {
-
-  if (!button) {
-    return;
-  }
-
-
-  if (loading) {
-
-    button.dataset.originalText =
-      button.innerHTML;
-
-    button.disabled = true;
-
-    button.innerHTML =
-      text;
-
-  } else {
-
-    button.disabled = false;
-
-    button.innerHTML =
-      button.dataset.originalText ||
-      text;
-
-  }
-
-}
-
-
-/* ============================================================
-   INITIALIZATION
-============================================================ */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  async () => {
-
-    setupEvents();
-
-    await checkSession();
-
-    await checkSystemStatus();
-
-  }
-);
