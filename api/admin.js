@@ -350,8 +350,8 @@ async function sendNewArticleNewsletter(article) {
 
       segmentId,
 
-      from:
-        'DropRugby <onboarding@resend.dev>',
+      from: 
+        'DropRugby <newsletter@droprugby.com>',
 
       subject:
         `🏉 ${title}`,
