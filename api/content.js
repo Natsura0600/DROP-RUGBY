@@ -34,19 +34,18 @@ async function seed() {
 }
 
 async function readData() {
-  // Intentar leer directamente el Blob existente
   const result = await get(BLOB_PATH, {
-    access: 'public'
+    access: 'public',
+    useCache: false
   });
 
-  // Si todavía no existe, crear el contenido inicial
   if (!result) {
     return await seed();
   }
 
-  if (result.statusCode !== 200 || !result.stream) {
+  if (!result.stream) {
     throw new Error(
-      `No se pudo leer el Blob. Status: ${result.statusCode}`
+      `No se pudo leer ${BLOB_PATH} desde Vercel Blob.`
     );
   }
 
@@ -65,7 +64,6 @@ export default async function handler(req, res) {
 
     const data = await readData();
 
-    // Evita que /api/content quede cacheado por Vercel
     res.setHeader(
       'Cache-Control',
       'no-store, no-cache, must-revalidate, proxy-revalidate'
