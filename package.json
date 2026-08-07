@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vercel/blob": "latest",
+    "@vercel/blob": "^2.6.1",
     "resend": "latest"
   }
 }
