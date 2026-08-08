@@ -34,6 +34,7 @@ const state = {
   confirmCallback: null
 };
 
+
 /* =========================================================
    HELPERS
 ========================================================= */
@@ -54,6 +55,11 @@ function on(selector, event, callback) {
   }
 }
 
+
+/* =========================================================
+   SECURITY / HTML
+========================================================= */
+
 function escapeHTML(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -66,6 +72,11 @@ function escapeHTML(value) {
 function escapeAttribute(value) {
   return escapeHTML(value);
 }
+
+
+/* =========================================================
+   DATES
+========================================================= */
 
 function formatDate(value) {
   if (!value) {
@@ -105,6 +116,11 @@ function formatDateTime(value) {
   }).format(date);
 }
 
+
+/* =========================================================
+   SLUG
+========================================================= */
+
 function slugify(text) {
   return String(text || "")
     .toLowerCase()
@@ -113,6 +129,7 @@ function slugify(text) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
 
 /* =========================================================
    TOASTS
@@ -150,6 +167,7 @@ function showToast(title, message = "", type = "success") {
     }, 250);
   }, 3500);
 }
+
 
 /* =========================================================
    MODALS
@@ -210,6 +228,7 @@ function confirmAction(title, message, callback) {
   openModal("confirm-modal");
 }
 
+
 /* =========================================================
    API
 ========================================================= */
@@ -260,6 +279,7 @@ async function api(action, data = {}, method = "POST") {
 
   return result;
 }
+
 
 /* =========================================================
    LOGIN
@@ -352,6 +372,7 @@ async function logout() {
   );
 }
 
+
 /* =========================================================
    SESSION
 ========================================================= */
@@ -416,6 +437,7 @@ function showApp() {
     app.classList.remove("hidden");
   }
 }
+
 
 /* =========================================================
    CONTENT
@@ -496,6 +518,7 @@ function normalizeContent(content) {
   };
 }
 
+
 /* =========================================================
    NAVIGATION
 ========================================================= */
@@ -558,12 +581,14 @@ function closeSidebar() {
   $("#sidebar-overlay")?.classList.remove("open");
 }
 
+
 /* =========================================================
    RENDER ALL
 ========================================================= */
 
 function renderAll() {
   renderStats();
+
   renderDashboardArticles();
   renderDashboardHistory();
 
@@ -578,6 +603,7 @@ function renderAll() {
 
   updateNavCounts();
 }
+
 
 /* =========================================================
    STATS
@@ -644,8 +670,9 @@ function updateNavCounts() {
   }
 }
 
+
 /* =========================================================
-   DASHBOARD
+   DASHBOARD - ARTICLES
 ========================================================= */
 
 function renderDashboardArticles() {
@@ -710,6 +737,11 @@ function renderDashboardArticles() {
     })
     .join("");
 }
+
+
+/* =========================================================
+   DASHBOARD - HISTORY
+========================================================= */
 
 function renderDashboardHistory() {
   const container =
@@ -789,6 +821,7 @@ function historyLabel(item) {
   return action;
 }
 
+
 /* =========================================================
    ARTICLES
 ========================================================= */
@@ -858,7 +891,7 @@ function renderArticles() {
         <th>AUTOR</th>
         <th>FECHA</th>
         <th>ESTADO</th>
-        <th></th>
+        <th>ACCIONES</th>
       </tr>
     </thead>
 
@@ -920,6 +953,7 @@ function renderArticles() {
             <div class="table-actions">
 
               <button
+                type="button"
                 class="table-action"
                 title="Editar"
                 data-edit-article="${escapeAttribute(article.id)}"
@@ -928,6 +962,7 @@ function renderArticles() {
               </button>
 
               <button
+                type="button"
                 class="table-action"
                 title="Newsletter"
                 data-newsletter-article="${escapeAttribute(article.id)}"
@@ -936,6 +971,7 @@ function renderArticles() {
               </button>
 
               <button
+                type="button"
                 class="table-action danger"
                 title="Eliminar"
                 data-delete-article="${escapeAttribute(article.id)}"
@@ -982,6 +1018,7 @@ function bindDynamicArticleButtons() {
   });
 }
 
+
 /* =========================================================
    ARTICLE MODAL
 ========================================================= */
@@ -1025,37 +1062,66 @@ function openArticleModal(id = null) {
       return;
     }
 
-    $("#article-id").value =
-      article.id || "";
+    const articleId = $("#article-id");
+    const articleTitle = $("#article-title");
+    const articleCategory = $("#article-category");
+    const articleAuthor = $("#article-author");
+    const articleImage = $("#article-image");
+    const articleExcerpt = $("#article-excerpt");
+    const articleContent = $("#article-content");
+    const articleTags = $("#article-tags");
+    const articleFeatured = $("#article-featured");
+    const modalTitle = $("#article-modal-title");
 
-    $("#article-title").value =
-      article.title || "";
+    if (articleId) {
+      articleId.value = article.id || "";
+    }
 
-    $("#article-category").value =
-      article.category || "Rugby";
+    if (articleTitle) {
+      articleTitle.value = article.title || "";
+    }
 
-    $("#article-author").value =
-      article.author || "DropRugby";
+    if (articleCategory) {
+      articleCategory.value =
+        article.category || "Rugby";
+    }
 
-    $("#article-image").value =
-      article.image || "";
+    if (articleAuthor) {
+      articleAuthor.value =
+        article.author || "DropRugby";
+    }
 
-    $("#article-excerpt").value =
-      article.excerpt || "";
+    if (articleImage) {
+      articleImage.value =
+        article.image || "";
+    }
 
-    $("#article-content").value =
-      article.content || "";
+    if (articleExcerpt) {
+      articleExcerpt.value =
+        article.excerpt || "";
+    }
 
-    $("#article-tags").value =
-      Array.isArray(article.tags)
-        ? article.tags.join(", ")
-        : article.tags || "";
+    if (articleContent) {
+      articleContent.value =
+        article.content || "";
+    }
 
-    $("#article-featured").checked =
-      article.featured === true;
+    if (articleTags) {
+      articleTags.value =
+        Array.isArray(article.tags)
+          ? article.tags.join(", ")
+          : article.tags || "";
+    }
 
-    $("#article-modal-title").textContent =
-      "Editar noticia";
+    if (articleFeatured) {
+      articleFeatured.checked =
+        article.featured === true;
+    }
+
+    if (modalTitle) {
+      modalTitle.textContent =
+        "Editar noticia";
+    }
   }
 
   openModal("article-modal");
@@ -1065,10 +1131,10 @@ async function saveArticle(event) {
   event.preventDefault();
 
   const id =
-    $("#article-id").value.trim();
+    $("#article-id")?.value.trim() || "";
 
   const title =
-    $("#article-title").value.trim();
+    $("#article-title")?.value.trim() || "";
 
   if (!title) {
     showToast(
@@ -1081,7 +1147,7 @@ async function saveArticle(event) {
   }
 
   const tags =
-    $("#article-tags").value
+    ($("#article-tags")?.value || "")
       .split(",")
       .map(tag => tag.trim())
       .filter(Boolean);
@@ -1098,28 +1164,34 @@ async function saveArticle(event) {
 
     title,
 
-    slug: slugify(title),
+    slug:
+      existing?.slug ||
+      slugify(title),
 
     category:
-      $("#article-category").value,
+      $("#article-category")?.value ||
+      "Rugby",
 
     author:
-      $("#article-author").value.trim() ||
+      $("#article-author")?.value.trim() ||
       "DropRugby",
 
     image:
-      $("#article-image").value.trim(),
+      $("#article-image")?.value.trim() ||
+      "",
 
     excerpt:
-      $("#article-excerpt").value.trim(),
+      $("#article-excerpt")?.value.trim() ||
+      "",
 
     content:
-      $("#article-content").value.trim(),
+      $("#article-content")?.value.trim() ||
+      "",
 
     tags,
 
     featured:
-      $("#article-featured").checked,
+      $("#article-featured")?.checked === true,
 
     published: true,
 
@@ -1247,6 +1319,7 @@ async function sendArticleNewsletter(id) {
   );
 }
 
+
 /* =========================================================
    FIXTURES
 ========================================================= */
@@ -1326,7 +1399,7 @@ function renderFixtures() {
         <th>COMPETICIÓN</th>
         <th>RESULTADO</th>
         <th>ESTADO</th>
-        <th></th>
+        <th>ACCIONES</th>
       </tr>
     </thead>
 
@@ -1406,13 +1479,11 @@ function renderFixtures() {
                   ? ""
                   : "badge-green"
               }">
-
                 ${
                   finished
                     ? "FINALIZADO"
                     : "PRÓXIMO"
                 }
-
               </span>
             </td>
 
@@ -1421,6 +1492,7 @@ function renderFixtures() {
               <div class="table-actions">
 
                 <button
+                  type="button"
                   class="table-action"
                   title="Editar"
                   data-edit-fixture="${escapeAttribute(fixture.id)}"
@@ -1429,6 +1501,7 @@ function renderFixtures() {
                 </button>
 
                 <button
+                  type="button"
                   class="table-action danger"
                   title="Eliminar"
                   data-delete-fixture="${escapeAttribute(fixture.id)}"
@@ -1497,42 +1570,42 @@ function openFixtureModal(id = null) {
       return;
     }
 
-    $("#fixture-id").value =
-      fixture.id || "";
+    const values = {
+      "#fixture-id": fixture.id || "",
+      "#fixture-date": fixture.date || "",
+      "#fixture-time": fixture.time || "",
+      "#fixture-competition": fixture.competition || "",
+      "#fixture-venue": fixture.venue || "",
+      "#fixture-home":
+        fixture.home ||
+        fixture.homeTeam ||
+        "",
+      "#fixture-away":
+        fixture.away ||
+        fixture.awayTeam ||
+        "",
+      "#fixture-home-score":
+        fixture.homeScore ?? "",
+      "#fixture-away-score":
+        fixture.awayScore ?? "",
+      "#fixture-status":
+        fixture.status || "upcoming"
+    };
 
-    $("#fixture-date").value =
-      fixture.date || "";
+    Object.entries(values).forEach(
+      ([selector, value]) => {
+        const element = $(selector);
 
-    $("#fixture-time").value =
-      fixture.time || "";
+        if (element) {
+          element.value = value;
+        }
+      }
+    );
 
-    $("#fixture-competition").value =
-      fixture.competition || "";
-
-    $("#fixture-venue").value =
-      fixture.venue || "";
-
-    $("#fixture-home").value =
-      fixture.home ||
-      fixture.homeTeam ||
-      "";
-
-    $("#fixture-away").value =
-      fixture.away ||
-      fixture.awayTeam ||
-      "";
-
-    $("#fixture-home-score").value =
-      fixture.homeScore ?? "";
-
-    $("#fixture-away-score").value =
-      fixture.awayScore ?? "";
-
-    $("#fixture-status").value =
-      fixture.status || "upcoming";
-
-    $("#fixture-modal-title").textContent =
-      "Editar partido";
+    if ($("#fixture-modal-title")) {
+      $("#fixture-modal-title").textContent =
+        "Editar partido";
+    }
   }
 
   openModal("fixture-modal");
@@ -1542,45 +1615,46 @@ async function saveFixture(event) {
   event.preventDefault();
 
   const id =
-    $("#fixture-id").value.trim();
+    $("#fixture-id")?.value.trim() || "";
 
   const fixture = {
     id: id || undefined,
 
     date:
-      $("#fixture-date").value,
+      $("#fixture-date")?.value || "",
 
     time:
-      $("#fixture-time").value,
+      $("#fixture-time")?.value || "",
 
     competition:
-      $("#fixture-competition").value.trim(),
+      $("#fixture-competition")?.value.trim() || "",
 
     venue:
-      $("#fixture-venue").value.trim(),
+      $("#fixture-venue")?.value.trim() || "",
 
     home:
-      $("#fixture-home").value.trim(),
+      $("#fixture-home")?.value.trim() || "",
 
     away:
-      $("#fixture-away").value.trim(),
+      $("#fixture-away")?.value.trim() || "",
 
     homeScore:
-      $("#fixture-home-score").value === ""
+      $("#fixture-home-score")?.value === ""
         ? null
         : Number(
-            $("#fixture-home-score").value
+            $("#fixture-home-score")?.value
           ),
 
     awayScore:
-      $("#fixture-away-score").value === ""
+      $("#fixture-away-score")?.value === ""
         ? null
         : Number(
-            $("#fixture-away-score").value
+            $("#fixture-away-score")?.value
           ),
 
     status:
-      $("#fixture-status").value
+      $("#fixture-status")?.value ||
+      "upcoming"
   };
 
   try {
@@ -1666,6 +1740,7 @@ async function deleteFixture(id) {
   );
 }
 
+
 /* =========================================================
    STANDINGS
 ========================================================= */
@@ -1715,7 +1790,7 @@ function renderStandings() {
         <th>PF</th>
         <th>PC</th>
         <th>PTS</th>
-        <th></th>
+        <th>ACCIONES</th>
       </tr>
     </thead>
 
@@ -1758,6 +1833,7 @@ function renderStandings() {
             <div class="table-actions">
 
               <button
+                type="button"
                 class="table-action"
                 title="Editar"
                 data-edit-team="${escapeAttribute(team.id)}"
@@ -1766,6 +1842,7 @@ function renderStandings() {
               </button>
 
               <button
+                type="button"
                 class="table-action danger"
                 title="Eliminar"
                 data-delete-team="${escapeAttribute(team.id)}"
@@ -1840,34 +1917,42 @@ function openTeamModal(id = null) {
       return;
     }
 
-    $("#team-id").value =
-      team.id || "";
+    const values = {
+      "#team-id": team.id || "",
+      "#team-name":
+        team.name ||
+        team.team ||
+        "",
+      "#team-played":
+        team.played || 0,
+      "#team-wins":
+        team.wins || 0,
+      "#team-draws":
+        team.draws || 0,
+      "#team-losses":
+        team.losses || 0,
+      "#team-points-for":
+        team.pointsFor || 0,
+      "#team-points-against":
+        team.pointsAgainst || 0,
+      "#team-points":
+        team.points || 0
+    };
 
-    $("#team-name").value =
-      team.name ||
-      team.team ||
-      "";
+    Object.entries(values).forEach(
+      ([selector, value]) => {
+        const element = $(selector);
 
-    $("#team-played").value =
-      team.played || 0;
+        if (element) {
+          element.value = value;
+        }
+      }
+    );
 
-    $("#team-wins").value =
-      team.wins || 0;
-
-    $("#team-draws").value =
-      team.draws || 0;
-
-    $("#team-losses").value =
-      team.losses || 0;
-
-    $("#team-points-for").value =
-      team.pointsFor || 0;
-
-    $("#team-points-against").value =
-      team.pointsAgainst || 0;
-
-    $("#team-points").value =
-      team.points || 0;
+    if ($("#team-modal-title")) {
+      $("#team-modal-title").textContent =
+        "Editar equipo";
+    }
   }
 
   openModal("team-modal");
@@ -1877,47 +1962,47 @@ async function saveTeam(event) {
   event.preventDefault();
 
   const id =
-    $("#team-id").value.trim();
+    $("#team-id")?.value.trim() || "";
 
   const team = {
     id: id || undefined,
 
     name:
-      $("#team-name").value.trim(),
+      $("#team-name")?.value.trim() || "",
 
     played:
       Number(
-        $("#team-played").value || 0
+        $("#team-played")?.value || 0
       ),
 
     wins:
       Number(
-        $("#team-wins").value || 0
+        $("#team-wins")?.value || 0
       ),
 
     draws:
       Number(
-        $("#team-draws").value || 0
+        $("#team-draws")?.value || 0
       ),
 
     losses:
       Number(
-        $("#team-losses").value || 0
+        $("#team-losses")?.value || 0
       ),
 
     pointsFor:
       Number(
-        $("#team-points-for").value || 0
+        $("#team-points-for")?.value || 0
       ),
 
     pointsAgainst:
       Number(
-        $("#team-points-against").value || 0
+        $("#team-points-against")?.value || 0
       ),
 
     points:
       Number(
-        $("#team-points").value || 0
+        $("#team-points")?.value || 0
       )
   };
 
@@ -1999,6 +2084,7 @@ async function deleteTeam(id) {
   );
 }
 
+
 /* =========================================================
    PLAYERS
 ========================================================= */
@@ -2053,6 +2139,7 @@ function renderPlayers() {
             <img
               src="${escapeAttribute(player.image)}"
               alt="${escapeAttribute(player.name || "")}"
+              loading="lazy"
               onerror="this.style.display='none'"
             >
           `
@@ -2094,6 +2181,7 @@ function renderPlayers() {
             <div class="player-actions">
 
               <button
+                type="button"
                 class="btn btn-secondary"
                 data-edit-player="${escapeAttribute(player.id)}"
               >
@@ -2101,6 +2189,7 @@ function renderPlayers() {
               </button>
 
               <button
+                type="button"
                 class="btn btn-danger"
                 data-delete-player="${escapeAttribute(player.id)}"
               >
@@ -2156,29 +2245,46 @@ function openPlayerModal(id = null) {
       return;
     }
 
-    $("#player-id").value =
-      player.id || "";
+    const values = {
+      "#player-id":
+        player.id || "",
 
-    $("#player-name").value =
-      player.name || "";
+      "#player-name":
+        player.name || "",
 
-    $("#player-position").value =
-      player.position || "";
+      "#player-position":
+        player.position || "",
 
-    $("#player-team").value =
-      player.team || "";
+      "#player-team":
+        player.team || "",
 
-    $("#player-number").value =
-      player.number ?? "";
+      "#player-number":
+        player.number ?? "",
 
-    $("#player-country").value =
-      player.country || "";
+      "#player-country":
+        player.country || "",
 
-    $("#player-image").value =
-      player.image || "";
+      "#player-image":
+        player.image || "",
 
-    $("#player-bio").value =
-      player.bio || "";
+      "#player-bio":
+        player.bio || ""
+    };
+
+    Object.entries(values).forEach(
+      ([selector, value]) => {
+        const element = $(selector);
+
+        if (element) {
+          element.value = value;
+        }
+      }
+    );
+
+    if ($("#player-modal-title")) {
+      $("#player-modal-title").textContent =
+        "Editar jugador";
+    }
   }
 
   openModal("player-modal");
@@ -2188,35 +2294,35 @@ async function savePlayer(event) {
   event.preventDefault();
 
   const id =
-    $("#player-id").value.trim();
+    $("#player-id")?.value.trim() || "";
 
   const player = {
     id: id || undefined,
 
     name:
-      $("#player-name").value.trim(),
+      $("#player-name")?.value.trim() || "",
 
     position:
-      $("#player-position").value.trim(),
+      $("#player-position")?.value.trim() || "",
 
     team:
-      $("#player-team").value.trim(),
+      $("#player-team")?.value.trim() || "",
 
     number:
-      $("#player-number").value === ""
+      $("#player-number")?.value === ""
         ? null
         : Number(
-            $("#player-number").value
+            $("#player-number")?.value
           ),
 
     country:
-      $("#player-country").value.trim(),
+      $("#player-country")?.value.trim() || "",
 
     image:
-      $("#player-image").value.trim(),
+      $("#player-image")?.value.trim() || "",
 
     bio:
-      $("#player-bio").value.trim()
+      $("#player-bio")?.value.trim() || ""
   };
 
   try {
@@ -2292,6 +2398,7 @@ async function deletePlayer(id) {
   );
 }
 
+
 /* =========================================================
    INSTAGRAM
 ========================================================= */
@@ -2365,6 +2472,7 @@ function renderInstagram() {
             <div class="instagram-actions">
 
               <button
+                type="button"
                 class="btn btn-secondary"
                 data-edit-instagram="${escapeAttribute(post.id)}"
               >
@@ -2372,6 +2480,7 @@ function renderInstagram() {
               </button>
 
               <button
+                type="button"
                 class="btn btn-danger"
                 data-delete-instagram="${escapeAttribute(post.id)}"
               >
@@ -2427,20 +2536,37 @@ function openInstagramModal(id = null) {
       return;
     }
 
-    $("#instagram-id").value =
-      post.id || "";
+    const values = {
+      "#instagram-id":
+        post.id || "",
 
-    $("#instagram-title").value =
-      post.title || "";
+      "#instagram-title":
+        post.title || "",
 
-    $("#instagram-url").value =
-      post.url || "";
+      "#instagram-url":
+        post.url || "",
 
-    $("#instagram-image").value =
-      post.image || "";
+      "#instagram-image":
+        post.image || "",
 
-    $("#instagram-caption").value =
-      post.caption || "";
+      "#instagram-caption":
+        post.caption || ""
+    };
+
+    Object.entries(values).forEach(
+      ([selector, value]) => {
+        const element = $(selector);
+
+        if (element) {
+          element.value = value;
+        }
+      }
+    );
+
+    if ($("#instagram-modal-title")) {
+      $("#instagram-modal-title").textContent =
+        "Editar publicación";
+    }
   }
 
   openModal("instagram-modal");
@@ -2450,22 +2576,22 @@ async function saveInstagram(event) {
   event.preventDefault();
 
   const id =
-    $("#instagram-id").value.trim();
+    $("#instagram-id")?.value.trim() || "";
 
   const post = {
     id: id || undefined,
 
     title:
-      $("#instagram-title").value.trim(),
+      $("#instagram-title")?.value.trim() || "",
 
     url:
-      $("#instagram-url").value.trim(),
+      $("#instagram-url")?.value.trim() || "",
 
     image:
-      $("#instagram-image").value.trim(),
+      $("#instagram-image")?.value.trim() || "",
 
     caption:
-      $("#instagram-caption").value.trim()
+      $("#instagram-caption")?.value.trim() || ""
   };
 
   try {
@@ -2541,6 +2667,7 @@ async function deleteInstagram(id) {
   );
 }
 
+
 /* =========================================================
    TRASH
 ========================================================= */
@@ -2604,6 +2731,7 @@ function renderTrash() {
           <div class="trash-actions">
 
             <button
+              type="button"
               class="btn btn-secondary"
               data-restore="${escapeAttribute(item.id)}"
             >
@@ -2611,6 +2739,7 @@ function renderTrash() {
             </button>
 
             <button
+              type="button"
               class="btn btn-danger"
               data-permanent-delete="${escapeAttribute(item.id)}"
             >
@@ -2741,6 +2870,7 @@ async function emptyTrash() {
   );
 }
 
+
 /* =========================================================
    HISTORY
 ========================================================= */
@@ -2840,6 +2970,7 @@ async function clearHistory() {
   );
 }
 
+
 /* =========================================================
    SETTINGS
 ========================================================= */
@@ -2873,13 +3004,13 @@ async function saveSettings(event) {
   const settings = {
     siteName:
       $("#settings-site-name")
-        .value
-        .trim(),
+        ?.value
+        .trim() || "",
 
     description:
       $("#settings-site-description")
-        .value
-        .trim()
+        ?.value
+        .trim() || ""
   };
 
   try {
@@ -2907,13 +3038,16 @@ async function saveSettings(event) {
   }
 }
 
+
 /* =========================================================
    EVENTS
 ========================================================= */
 
 function bindEvents() {
 
-  /* LOGIN */
+  /* =======================================================
+     LOGIN
+  ======================================================= */
 
   on(
     "#login-form",
@@ -2928,7 +3062,10 @@ function bindEvents() {
     }
   );
 
-  /* LOGOUT */
+
+  /* =======================================================
+     LOGOUT
+  ======================================================= */
 
   on(
     "#logout-button",
@@ -2936,7 +3073,10 @@ function bindEvents() {
     logout
   );
 
-  /* NAVIGATION */
+
+  /* =======================================================
+     NAVIGATION
+  ======================================================= */
 
   $$(".nav-item").forEach(button => {
     button.addEventListener(
@@ -2949,7 +3089,10 @@ function bindEvents() {
     );
   });
 
-  /* MOBILE */
+
+  /* =======================================================
+     MOBILE
+  ======================================================= */
 
   on(
     "#menu-button",
@@ -2969,7 +3112,10 @@ function bindEvents() {
     closeSidebar
   );
 
-  /* REFRESH */
+
+  /* =======================================================
+     REFRESH
+  ======================================================= */
 
   on(
     "#refresh-button",
@@ -2977,7 +3123,10 @@ function bindEvents() {
     () => loadContent(true)
   );
 
-  /* NEW ARTICLE */
+
+  /* =======================================================
+     NEW ARTICLE
+  ======================================================= */
 
   on(
     "#new-article-button",
@@ -3000,7 +3149,10 @@ function bindEvents() {
     saveArticle
   );
 
-  /* FIXTURE */
+
+  /* =======================================================
+     FIXTURE
+  ======================================================= */
 
   on(
     "#new-fixture-button",
@@ -3014,7 +3166,10 @@ function bindEvents() {
     saveFixture
   );
 
-  /* TEAM */
+
+  /* =======================================================
+     TEAM
+  ======================================================= */
 
   on(
     "#new-team-button",
@@ -3028,7 +3183,10 @@ function bindEvents() {
     saveTeam
   );
 
-  /* PLAYER */
+
+  /* =======================================================
+     PLAYER
+  ======================================================= */
 
   on(
     "#new-player-button",
@@ -3042,7 +3200,10 @@ function bindEvents() {
     savePlayer
   );
 
-  /* INSTAGRAM */
+
+  /* =======================================================
+     INSTAGRAM
+  ======================================================= */
 
   on(
     "#new-instagram-button",
@@ -3056,7 +3217,10 @@ function bindEvents() {
     saveInstagram
   );
 
-  /* TRASH */
+
+  /* =======================================================
+     TRASH
+  ======================================================= */
 
   on(
     "#empty-trash-button",
@@ -3064,7 +3228,10 @@ function bindEvents() {
     emptyTrash
   );
 
-  /* HISTORY */
+
+  /* =======================================================
+     HISTORY
+  ======================================================= */
 
   on(
     "#clear-history-button",
@@ -3072,7 +3239,10 @@ function bindEvents() {
     clearHistory
   );
 
-  /* SETTINGS */
+
+  /* =======================================================
+     SETTINGS
+  ======================================================= */
 
   on(
     "#settings-form",
@@ -3080,7 +3250,10 @@ function bindEvents() {
     saveSettings
   );
 
-  /* ARTICLE SEARCH */
+
+  /* =======================================================
+     ARTICLE SEARCH
+  ======================================================= */
 
   on(
     "#article-search",
@@ -3104,7 +3277,10 @@ function bindEvents() {
     }
   );
 
-  /* FIXTURE SEARCH */
+
+  /* =======================================================
+     FIXTURE SEARCH
+  ======================================================= */
 
   on(
     "#fixture-search",
@@ -3128,7 +3304,10 @@ function bindEvents() {
     }
   );
 
-  /* PLAYER SEARCH */
+
+  /* =======================================================
+     PLAYER SEARCH
+  ======================================================= */
 
   on(
     "#player-search",
@@ -3141,7 +3320,10 @@ function bindEvents() {
     }
   );
 
-  /* CLOSE MODALS */
+
+  /* =======================================================
+     CLOSE MODALS
+  ======================================================= */
 
   $$("[data-close-modal]").forEach(element => {
     element.addEventListener(
@@ -3157,7 +3339,10 @@ function bindEvents() {
     );
   });
 
-  /* CONFIRM CANCEL */
+
+  /* =======================================================
+     CONFIRM CANCEL
+  ======================================================= */
 
   on(
     "#confirm-cancel",
@@ -3169,7 +3354,10 @@ function bindEvents() {
     }
   );
 
-  /* CONFIRM OK */
+
+  /* =======================================================
+     CONFIRM OK
+  ======================================================= */
 
   on(
     "#confirm-ok",
@@ -3188,7 +3376,10 @@ function bindEvents() {
     }
   );
 
-  /* QUICK ACTIONS */
+
+  /* =======================================================
+     QUICK ACTIONS
+  ======================================================= */
 
   $$("[data-quick]").forEach(button => {
     button.addEventListener(
@@ -3220,7 +3411,10 @@ function bindEvents() {
     );
   });
 
-  /* GO TO SECTION */
+
+  /* =======================================================
+     GO TO SECTION
+  ======================================================= */
 
   $$("[data-go-section]").forEach(button => {
     button.addEventListener(
@@ -3233,7 +3427,10 @@ function bindEvents() {
     );
   });
 
-  /* ESC */
+
+  /* =======================================================
+     ESCAPE
+  ======================================================= */
 
   document.addEventListener(
     "keydown",
@@ -3245,7 +3442,10 @@ function bindEvents() {
     }
   );
 
-  /* CLICK OUTSIDE MODAL */
+
+  /* =======================================================
+     CLICK OUTSIDE MODAL
+  ======================================================= */
 
   $$(".modal").forEach(modal => {
     modal.addEventListener(
@@ -3261,6 +3461,7 @@ function bindEvents() {
     );
   });
 }
+
 
 /* =========================================================
    START
