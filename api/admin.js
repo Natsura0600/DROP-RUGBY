@@ -22,6 +22,7 @@ const DEFAULT_CONTENT = {
   instagram: [],
   trash: [],
   history: [],
+
   settings: {
     siteName: "DropRugby",
     description: "Noticias de rugby",
@@ -44,6 +45,10 @@ function getSecret() {
   return secret;
 }
 
+// ============================================================
+// COOKIES
+// ============================================================
+
 function parseCookies(req) {
   const header = req.headers.cookie || "";
   const cookies = {};
@@ -65,6 +70,26 @@ function parseCookies(req) {
 
   return cookies;
 }
+
+function setCookie(res, token) {
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE_NAME}=${encodeURIComponent(
+      token
+    )}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${MAX_AGE}`
+  );
+}
+
+function clearCookie(res) {
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  );
+}
+
+// ============================================================
+// RESPONSE
+// ============================================================
 
 function json(res, status, data) {
   return res.status(status).json(data);
@@ -113,6 +138,7 @@ async function getBody(req) {
 
 function createSession(username) {
   const timestamp = Math.floor(Date.now() / 1000);
+
   const payload = `${username}.${timestamp}`;
 
   const signature = crypto
@@ -144,11 +170,17 @@ function verifySession(token) {
     const timestamp = Number(parts[1]);
     const signature = parts[2];
 
-    if (!username || !timestamp || !signature) {
+    if (
+      !username ||
+      !timestamp ||
+      !signature
+    ) {
       return null;
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = Math.floor(
+      Date.now() / 1000
+    );
 
     if (now - timestamp > MAX_AGE) {
       return null;
@@ -158,14 +190,18 @@ function verifySession(token) {
       return null;
     }
 
-    const payload = `${username}.${timestamp}`;
+    const payload =
+      `${username}.${timestamp}`;
 
     const expected = crypto
       .createHmac("sha256", getSecret())
       .update(payload)
       .digest("hex");
 
-    if (signature.length !== expected.length) {
+    if (
+      signature.length !==
+      expected.length
+    ) {
       return null;
     }
 
@@ -187,22 +223,6 @@ function verifySession(token) {
   }
 }
 
-function setCookie(res, token) {
-  res.setHeader(
-    "Set-Cookie",
-    `${COOKIE_NAME}=${encodeURIComponent(
-      token
-    )}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${MAX_AGE}`
-  );
-}
-
-function clearCookie(res) {
-  res.setHeader(
-    "Set-Cookie",
-    `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
-  );
-}
-
 function requireAuth(req, res) {
   const cookies = parseCookies(req);
 
@@ -213,6 +233,7 @@ function requireAuth(req, res) {
   if (!session) {
     json(res, 401, {
       ok: false,
+      authenticated: false,
       error: "No autorizado",
     });
 
@@ -265,20 +286,25 @@ async function findContentBlob() {
   });
 
   const blob = result.blobs?.find(
-    (item) => item.pathname === BLOB_PATH
+    (item) =>
+      item.pathname === BLOB_PATH
   );
 
   return blob || null;
 }
 
 async function loadContent() {
-  const blob = await findContentBlob();
+  const blob =
+    await findContentBlob();
 
   if (!blob) {
-    return structuredClone(DEFAULT_CONTENT);
+    return structuredClone(
+      DEFAULT_CONTENT
+    );
   }
 
-  const response = await fetch(blob.url);
+  const response =
+    await fetch(blob.url);
 
   if (!response.ok) {
     throw new Error(
@@ -286,46 +312,65 @@ async function loadContent() {
     );
   }
 
-  const data = await response.json();
+  const data =
+    await response.json();
 
   return normalizeContent(data);
 }
 
 function normalizeContent(data) {
   const content =
-    data && typeof data === "object"
+    data &&
+    typeof data === "object"
       ? data
       : {};
 
   return {
-    ...structuredClone(DEFAULT_CONTENT),
+    ...structuredClone(
+      DEFAULT_CONTENT
+    ),
+
     ...content,
 
-    articles: Array.isArray(content.articles)
+    articles: Array.isArray(
+      content.articles
+    )
       ? content.articles
       : [],
 
-    fixtures: Array.isArray(content.fixtures)
+    fixtures: Array.isArray(
+      content.fixtures
+    )
       ? content.fixtures
       : [],
 
-    standings: Array.isArray(content.standings)
+    standings: Array.isArray(
+      content.standings
+    )
       ? content.standings
       : [],
 
-    players: Array.isArray(content.players)
+    players: Array.isArray(
+      content.players
+    )
       ? content.players
       : [],
 
-    instagram: Array.isArray(content.instagram)
+    instagram: Array.isArray(
+      content.instagram
+    )
       ? content.instagram
       : [],
 
-    trash: Array.isArray(content.trash)
+    trash: Array.isArray(
+      content.trash
+    )
       ? content.trash
       : [],
 
-    history: Array.isArray(content.history)
+    history: Array.isArray(
+      content.history
+    )
       ? content.history
       : [],
 
@@ -337,14 +382,19 @@ function normalizeContent(data) {
 }
 
 async function saveContent(content) {
-  const normalized = normalizeContent(content);
+  const normalized =
+    normalizeContent(content);
 
   normalized.updatedAt =
     new Date().toISOString();
 
   const blob = await put(
     BLOB_PATH,
-    JSON.stringify(normalized, null, 2),
+    JSON.stringify(
+      normalized,
+      null,
+      2
+    ),
     {
       access: "public",
       addRandomSuffix: false,
@@ -369,15 +419,21 @@ function addHistory(
   type,
   item = null
 ) {
-  if (!Array.isArray(content.history)) {
+  if (
+    !Array.isArray(content.history)
+  ) {
     content.history = [];
   }
 
   content.history.unshift({
     id: createId("history"),
+
     action,
+
     type,
-    itemId: item?.id || null,
+
+    itemId:
+      item?.id || null,
 
     title:
       item?.title ||
@@ -386,7 +442,8 @@ function addHistory(
       item?.player ||
       null,
 
-    date: new Date().toISOString(),
+    date:
+      new Date().toISOString(),
   });
 
   content.history =
@@ -402,16 +459,23 @@ function moveToTrash(
   type,
   item
 ) {
-  if (!Array.isArray(content.trash)) {
+  if (
+    !Array.isArray(content.trash)
+  ) {
     content.trash = [];
   }
 
   content.trash.unshift({
     id: createId("trash"),
+
     originalId: item.id,
+
     type,
+
     item,
-    deletedAt: new Date().toISOString(),
+
+    deletedAt:
+      new Date().toISOString(),
   });
 }
 
@@ -463,13 +527,19 @@ async function sendNewsletter({
     );
   }
 
+  // ----------------------------------------------------------
+  // CONTACTOS
+  // ----------------------------------------------------------
+
   const contactsResponse =
     await fetch(
       `https://api.resend.com/audiences/${audienceId}/contacts`,
       {
         method: "GET",
+
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization:
+            `Bearer ${apiKey}`,
         },
       }
     );
@@ -494,7 +564,8 @@ async function sendNewsletter({
         contact.unsubscribed !== true
     )
     .map(
-      (contact) => contact.email
+      (contact) =>
+        contact.email
     );
 
   if (!emails.length) {
@@ -507,7 +578,12 @@ async function sendNewsletter({
     };
   }
 
+  // ----------------------------------------------------------
+  // ENVÍO
+  // ----------------------------------------------------------
+
   let sent = 0;
+
   const errors = [];
 
   const chunkSize = 50;
@@ -539,8 +615,11 @@ async function sendNewsletter({
 
           body: JSON.stringify({
             from,
+
             to: chunk,
+
             subject,
+
             html,
 
             text:
@@ -608,9 +687,14 @@ export default async function handler(
       "GET,POST,PUT,DELETE,OPTIONS"
     );
 
+    // ========================================================
+    // OPTIONS
+    // ========================================================
+
     if (req.method === "OPTIONS") {
-      res.status(204).end();
-      return;
+      return res
+        .status(204)
+        .end();
     }
 
     // ========================================================
@@ -621,7 +705,9 @@ export default async function handler(
       const action =
         req.query?.action;
 
+      // ------------------------------------------------------
       // SESSION
+      // ------------------------------------------------------
 
       if (
         action === "session" ||
@@ -646,11 +732,14 @@ export default async function handler(
         return json(res, 200, {
           ok: true,
           authenticated: true,
-          user: session.username,
+          user:
+            session.username,
         });
       }
 
+      // ------------------------------------------------------
       // CONTENIDO
+      // ------------------------------------------------------
 
       const session =
         requireAuth(req, res);
@@ -697,7 +786,10 @@ export default async function handler(
             body.password || ""
           );
 
-        if (!username || !password) {
+        if (
+          !username ||
+          !password
+        ) {
           return json(res, 400, {
             ok: false,
             error:
@@ -719,9 +811,14 @@ export default async function handler(
         }
 
         const token =
-          createSession(username);
+          createSession(
+            username
+          );
 
-        setCookie(res, token);
+        setCookie(
+          res,
+          token
+        );
 
         return json(res, 200, {
           ok: true,
@@ -747,11 +844,14 @@ export default async function handler(
       }
 
       // ======================================================
-      // AUTH PARA TODO LO DEMÁS
+      // AUTH
       // ======================================================
 
       const session =
-        requireAuth(req, res);
+        requireAuth(
+          req,
+          res
+        );
 
       if (!session) return;
 
@@ -845,7 +945,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // ARTÍCULOS
+      // ARTICLES
       // ======================================================
 
       if (
@@ -857,28 +957,47 @@ export default async function handler(
           await loadContent();
 
         const source =
-          body.article || body;
+          body.article ||
+          body;
+
+        const title =
+          source.title || "";
+
+        const slug =
+          source.slug ||
+          title
+            .toLowerCase()
+            .trim()
+            .normalize("NFD")
+            .replace(
+              /[\u0300-\u036f]/g,
+              ""
+            )
+            .replace(
+              /[^\w\s-]/g,
+              ""
+            )
+            .replace(
+              /\s+/g,
+              "-"
+            )
+            .replace(
+              /-+/g,
+              "-"
+            );
 
         const article = {
           id:
             source.id ||
             createId("article"),
 
-          title:
-            source.title || "",
+          title,
 
-          slug:
-            source.slug ||
-            String(
-              source.title || ""
-            )
-              .toLowerCase()
-              .trim()
-              .replace(/[^\w\s-]/g, "")
-              .replace(/\s+/g, "-"),
+          slug,
 
           excerpt:
-            source.excerpt || "",
+            source.excerpt ||
+            "",
 
           content:
             source.content ||
@@ -887,7 +1006,8 @@ export default async function handler(
             "",
 
           image:
-            source.image || "",
+            source.image ||
+            "",
 
           category:
             source.category ||
@@ -902,10 +1022,12 @@ export default async function handler(
             new Date().toISOString(),
 
           featured:
-            source.featured ?? false,
+            source.featured ??
+            false,
 
           published:
-            source.published ?? true,
+            source.published ??
+            true,
 
           tags:
             Array.isArray(
@@ -916,8 +1038,9 @@ export default async function handler(
                 "string"
               ? source.tags
                   .split(",")
-                  .map((tag) =>
-                    tag.trim()
+                  .map(
+                    (tag) =>
+                      tag.trim()
                   )
                   .filter(Boolean)
               : [],
@@ -933,7 +1056,8 @@ export default async function handler(
         const index =
           content.articles.findIndex(
             (item) =>
-              item.id === article.id
+              item.id ===
+              article.id
           );
 
         if (index >= 0) {
@@ -976,7 +1100,9 @@ export default async function handler(
         });
       }
 
+      // ======================================================
       // DELETE ARTICLE
+      // ======================================================
 
       if (
         action === "delete-article" ||
@@ -1035,7 +1161,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // PARTIDOS
+      // FIXTURES
       // ======================================================
 
       if (
@@ -1047,7 +1173,8 @@ export default async function handler(
           await loadContent();
 
         const fixture = {
-          ...(body.fixture || body),
+          ...(body.fixture ||
+            body),
         };
 
         delete fixture.action;
@@ -1108,7 +1235,9 @@ export default async function handler(
         });
       }
 
+      // ======================================================
       // DELETE FIXTURE
+      // ======================================================
 
       if (
         action === "delete-fixture" ||
@@ -1167,7 +1296,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // EQUIPOS
+      // TEAMS / STANDINGS
       // ======================================================
 
       if (
@@ -1180,7 +1309,8 @@ export default async function handler(
           await loadContent();
 
         const team = {
-          ...(body.team || body),
+          ...(body.team ||
+            body),
         };
 
         delete team.action;
@@ -1192,7 +1322,8 @@ export default async function handler(
         const index =
           content.standings.findIndex(
             (item) =>
-              item.id === team.id
+              item.id ===
+              team.id
           );
 
         if (index >= 0) {
@@ -1208,7 +1339,9 @@ export default async function handler(
             team
           );
         } else {
-          content.standings.push(team);
+          content.standings.push(
+            team
+          );
 
           addHistory(
             content,
@@ -1231,7 +1364,9 @@ export default async function handler(
         });
       }
 
+      // ======================================================
       // DELETE TEAM
+      // ======================================================
 
       if (
         action === "delete-team" ||
@@ -1290,7 +1425,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // JUGADORES
+      // PLAYERS
       // ======================================================
 
       if (
@@ -1302,7 +1437,8 @@ export default async function handler(
           await loadContent();
 
         const player = {
-          ...(body.player || body),
+          ...(body.player ||
+            body),
         };
 
         delete player.action;
@@ -1359,7 +1495,9 @@ export default async function handler(
         });
       }
 
+      // ======================================================
       // DELETE PLAYER
+      // ======================================================
 
       if (
         action === "delete-player" ||
@@ -1447,7 +1585,8 @@ export default async function handler(
         const index =
           content.instagram.findIndex(
             (item) =>
-              item.id === post.id
+              item.id ===
+              post.id
           );
 
         if (index >= 0) {
@@ -1488,7 +1627,9 @@ export default async function handler(
         });
       }
 
+      // ======================================================
       // DELETE INSTAGRAM
+      // ======================================================
 
       if (
         action === "delete-instagram" ||
@@ -1547,7 +1688,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // RESTAURAR
+      // RESTORE
       // ======================================================
 
       if (
@@ -1564,7 +1705,8 @@ export default async function handler(
         const index =
           content.trash.findIndex(
             (item) =>
-              item.id === trashId
+              item.id ===
+              trashId
           );
 
         if (index === -1) {
@@ -1587,16 +1729,36 @@ export default async function handler(
         const item =
           deleted.item;
 
-        if (type === "article") {
-          content.articles.unshift(item);
-        } else if (type === "fixture") {
-          content.fixtures.push(item);
-        } else if (type === "team") {
-          content.standings.push(item);
-        } else if (type === "player") {
-          content.players.push(item);
-        } else if (type === "instagram") {
-          content.instagram.unshift(item);
+        if (
+          type === "article"
+        ) {
+          content.articles.unshift(
+            item
+          );
+        } else if (
+          type === "fixture"
+        ) {
+          content.fixtures.push(
+            item
+          );
+        } else if (
+          type === "team"
+        ) {
+          content.standings.push(
+            item
+          );
+        } else if (
+          type === "player"
+        ) {
+          content.players.push(
+            item
+          );
+        } else if (
+          type === "instagram"
+        ) {
+          content.instagram.unshift(
+            item
+          );
         }
 
         addHistory(
@@ -1619,7 +1781,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // ELIMINAR DEFINITIVAMENTE
+      // PERMANENT DELETE
       // ======================================================
 
       if (
@@ -1636,7 +1798,8 @@ export default async function handler(
         const index =
           content.trash.findIndex(
             (item) =>
-              item.id === trashId
+              item.id ===
+              trashId
           );
 
         if (index === -1) {
@@ -1673,7 +1836,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // VACIAR PAPELERA
+      // EMPTY TRASH
       // ======================================================
 
       if (
@@ -1712,7 +1875,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // LIMPIAR HISTORIAL
+      // CLEAR HISTORY
       // ======================================================
 
       if (
@@ -1736,7 +1899,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // NEWSLETTER DE NOTICIA
+      // NEWSLETTER DE ARTÍCULO
       // ======================================================
 
       if (
@@ -1746,7 +1909,8 @@ export default async function handler(
           "send-newsletter-article"
       ) {
         let article =
-          body.article || null;
+          body.article ||
+          null;
 
         if (
           !article &&
@@ -1787,7 +1951,9 @@ export default async function handler(
             : siteUrl;
 
         const safeTitle =
-          escapeHtml(article.title);
+          escapeHtml(
+            article.title
+          );
 
         const safeExcerpt =
           escapeHtml(
@@ -1824,100 +1990,63 @@ export default async function handler(
             : "";
 
         const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>${safeTitle}</title>
-</head>
+          <div style="
+            max-width:700px;
+            margin:0 auto;
+            padding:30px;
+            background:#111111;
+            color:#ffffff;
+            font-family:Arial,sans-serif;
+          ">
 
-<body style="
-  margin:0;
-  padding:0;
-  background:#111111;
-  font-family:Arial,Helvetica,sans-serif;
-  color:#ffffff;
-">
+            ${imageHtml}
 
-<div style="
-  max-width:700px;
-  margin:0 auto;
-  padding:40px 20px;
-">
+            <h1 style="
+              font-size:30px;
+              margin-bottom:20px;
+            ">
+              ${safeTitle}
+            </h1>
 
-  <div style="
-    font-size:28px;
-    font-weight:900;
-    margin-bottom:35px;
-  ">
-    DROP<span style="color:#c9ff00;">RUGBY</span>
-  </div>
+            ${
+              safeExcerpt
+                ? `
+                  <p style="
+                    font-size:17px;
+                    line-height:1.6;
+                    color:#cccccc;
+                  ">
+                    ${safeExcerpt}
+                  </p>
+                `
+                : ""
+            }
 
-  ${imageHtml}
+            <a
+              href="${safeUrl}"
+              style="
+                display:inline-block;
+                margin-top:20px;
+                padding:15px 24px;
+                background:#c9ff00;
+                color:#000000;
+                text-decoration:none;
+                font-weight:800;
+                border-radius:5px;
+              "
+            >
+              LEER NOTICIA →
+            </a>
 
-  <div style="
-    font-size:12px;
-    font-weight:bold;
-    letter-spacing:2px;
-    color:#c9ff00;
-    margin-bottom:12px;
-  ">
-    NUEVA NOTICIA
-  </div>
+            <p style="
+              margin-top:35px;
+              color:#777777;
+              font-size:13px;
+            ">
+              DropRugby · Noticias de rugby
+            </p>
 
-  <h1 style="
-    font-size:32px;
-    line-height:1.15;
-    margin:0 0 20px;
-    color:#ffffff;
-  ">
-    ${safeTitle}
-  </h1>
-
-  ${
-    safeExcerpt
-      ? `
-        <p style="
-          font-size:17px;
-          line-height:1.6;
-          color:#cccccc;
-        ">
-          ${safeExcerpt}
-        </p>
-      `
-      : ""
-  }
-
-  <a
-    href="${safeUrl}"
-    style="
-      display:inline-block;
-      margin-top:20px;
-      padding:15px 24px;
-      background:#c9ff00;
-      color:#000000;
-      text-decoration:none;
-      font-weight:800;
-      border-radius:5px;
-    "
-  >
-    LEER NOTICIA →
-  </a>
-
-  <div style="
-    margin-top:50px;
-    padding-top:20px;
-    border-top:1px solid #333333;
-    font-size:12px;
-    color:#777777;
-  ">
-    DropRugby · Noticias de rugby
-  </div>
-
-</div>
-
-</body>
-</html>
+          </div>
         `;
 
         const result =
@@ -1936,7 +2065,7 @@ export default async function handler(
       }
 
       // ======================================================
-      // NEWSLETTER PERSONALIZADO
+      // CUSTOM NEWSLETTER
       // ======================================================
 
       if (
@@ -2009,6 +2138,7 @@ export default async function handler(
 
         return json(res, 200, {
           ok: true,
+
           settings:
             saved.content.settings,
 
@@ -2018,11 +2148,12 @@ export default async function handler(
       }
 
       // ======================================================
-      // ACCIÓN DESCONOCIDA
+      // UNKNOWN ACTION
       // ======================================================
 
       return json(res, 400, {
         ok: false,
+
         error:
           `Acción desconocida: ${action}`,
       });
@@ -2044,8 +2175,11 @@ export default async function handler(
       const content =
         await loadContent();
 
-      const type = body.type;
-      const id = body.id;
+      const type =
+        body.type;
+
+      const id =
+        body.id;
 
       if (!type || !id) {
         return json(res, 400, {
@@ -2068,7 +2202,8 @@ export default async function handler(
         player: "players",
         players: "players",
 
-        instagram: "instagram",
+        instagram:
+          "instagram",
       };
 
       const collectionName =
@@ -2083,7 +2218,9 @@ export default async function handler(
       }
 
       const collection =
-        content[collectionName];
+        content[
+          collectionName
+        ];
 
       const index =
         collection.findIndex(
@@ -2131,7 +2268,7 @@ export default async function handler(
     }
 
     // ========================================================
-    // MÉTODO NO PERMITIDO
+    // METHOD NOT ALLOWED
     // ========================================================
 
     return json(res, 405, {
@@ -2148,6 +2285,7 @@ export default async function handler(
 
     return json(res, 500, {
       ok: false,
+
       error:
         error?.message ||
         "Error interno del servidor",
