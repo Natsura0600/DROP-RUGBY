@@ -1036,6 +1036,12 @@ export default async function handler(
       const now =
         new Date().toISOString();
 
+      // Si el fixture viene de una versión anterior y no tiene ID,
+      // usamos fixtureKey como referencia estable para poder editarlo
+      // sin crear un partido duplicado.
+      const incomingFixtureKey =
+        fixture.fixtureKey || fixtureKey(fixture);
+
       const fixtureId =
         fixture.id ||
         makeId("fixture");
@@ -1044,8 +1050,7 @@ export default async function handler(
         id: fixtureId,
 
         fixtureKey:
-          fixture.fixtureKey ||
-          fixtureKey(fixture),
+          incomingFixtureKey,
 
         home:
           fixture.home ||
@@ -1082,23 +1087,29 @@ export default async function handler(
         updatedAt: now
       };
 
+      // Primero buscamos por ID. Si el partido es antiguo y todavía no
+      // tenía ID, buscamos por fixtureKey para actualizar el registro
+      // existente en lugar de crear uno nuevo.
       const existingIndex =
         content.fixtures.findIndex(
           (item) =>
-            String(item.id) ===
-            String(fixtureId)
+            (fixture.id &&
+              String(item.id || "") ===
+              String(fixture.id)) ||
+            String(item.fixtureKey || fixtureKey(item)) ===
+              String(incomingFixtureKey)
         );
 
       if (
         existingIndex >= 0
       ) {
-        content.fixtures[
-          existingIndex
-        ] = {
-          ...content.fixtures[
-            existingIndex
-          ],
-          ...normalizedFixture
+        const existingFixture =
+          content.fixtures[existingIndex];
+
+        content.fixtures[existingIndex] = {
+          ...existingFixture,
+          ...normalizedFixture,
+          id: existingFixture.id || fixtureId
         };
 
         addHistory(
@@ -1964,4 +1975,3 @@ function calculateStandings(
       })
     );
 }
- 
