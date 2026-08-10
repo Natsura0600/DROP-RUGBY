@@ -334,13 +334,9 @@ async function renderCalendar() {
 
   let activeCompetition = "TODAS";
   let mode = "dia"; // dia | manana | finde | semana
-  let currentDate = new Date();
-  currentDate.setHours(0,0,0,0);
+let currentDate = new Date();
+currentDate.setHours(0, 0, 0, 0);
 
-  // Usar la fecha del fixture más próximo si "hoy" no tiene partidos, para que la demo se vea poblada
-  const availableDates = fixtures.map(f => f.date).sort();
-  if (availableDates.length && !fixtures.some(f => f.date === isoFromDate(currentDate))) {
-    currentDate = dateFromISO(availableDates[0]);
   }
 
   function groupByDateAndCompetition(items) {
