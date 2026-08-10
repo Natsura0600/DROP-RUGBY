@@ -296,3 +296,4 @@ window.DROP_RUGBY_DATA = {
   players: []
 
 };
+ 
