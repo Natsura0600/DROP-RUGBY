@@ -205,14 +205,21 @@ function storyCardHTML(article, opts = {}) {
   const visual = article.imageUrl
     ? `<div class="story-image photo-not-clickable"><img src="${String(article.imageUrl).replace(/"/g, '&quot;')}" alt="" loading="lazy"></div>`
     : `<div class="story-image ph-image photo-not-clickable ${article.imageClass || 'img-tone-1'}"></div>`;
+  const category = String(article.category || 'Rugby').toUpperCase();
+  const subcategory = String(article.subcategory || 'ACTUALIDAD').toUpperCase();
+  const articleUrl = article.url || `article.html?id=${encodeURIComponent(article.id || '')}`;
+  const title = String(article.title || 'Sin título');
+  const excerpt = String(article.excerpt || '');
+  const author = String(article.author || 'DropRugby');
+  const date = article.date || new Date().toISOString().slice(0, 10);
   return `
     <article class="story ${featuredClass} reveal">
       ${visual}
       <div class="story-body">
-        <p class="category">${article.category.toUpperCase()} · ${article.subcategory.toUpperCase()}</p>
-        <h3><a href="${BASE}${article.url}">${article.title}</a></h3>
-        <p>${article.excerpt}</p>
-        <div class="meta">Por ${article.author} · ${formatDateShort(article.date).toUpperCase()}</div>
+        <p class="category">${category} · ${subcategory}</p>
+        <h3><a href="${BASE}${articleUrl}">${title}</a></h3>
+        <p>${excerpt}</p>
+        <div class="meta">Por ${author} · ${formatDateShort(date).toUpperCase()}</div>
       </div>
     </article>`;
 }
@@ -228,7 +235,7 @@ async function renderHome() {
   const heroEl = document.getElementById("home-hero");
   if (!grid && !heroEl) return;
 
-  const articles = (await loadArticles()).slice().sort((a,b) => b.date.localeCompare(a.date));
+  const articles = (await loadArticles()).filter(a => a.published !== false && !a.scheduled).slice().sort((a,b) => b.date.localeCompare(a.date));
   const featured = articles.find(a => a.featured) || articles[0];
 
   if (heroEl && featured) {
@@ -247,7 +254,7 @@ async function renderHome() {
 
   const byCategory = (name, el, n = 3) => {
     if (!el) return;
-    const items = articles.filter(a => a.category === name).slice(0, n);
+    const items = articles.filter(a => a.category === name && a.published !== false && !a.scheduled).slice(0, n);
     el.innerHTML = items.length
       ? items.map(a => storyCardHTML(a)).join("")
       : `<p class="empty-state">Todavía no hay noticias publicadas en esta categoría.</p>`;
@@ -265,7 +272,7 @@ async function renderCategoryPage(categoryName) {
   const grid = document.getElementById("category-grid");
   if (!grid) return;
   const articles = (await loadArticles())
-    .filter(a => a.category === categoryName)
+    .filter(a => a.category === categoryName && a.published !== false && !a.scheduled)
     .sort((a,b) => b.date.localeCompare(a.date));
 
   const chips = document.querySelectorAll(".filter-bar .filter-chip");
