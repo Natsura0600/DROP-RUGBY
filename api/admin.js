@@ -3,11 +3,11 @@
 // /api/admin.js
 // ============================================================
 
+import { Resend } from "resend";
 import { list, put } from "@vercel/blob";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { Resend } from "resend";
 
 // ============================================================
 // CONFIGURACIÓN
@@ -17,22 +17,15 @@ const BLOB_PATH = "droprugby/content.json";
 const COOKIE_NAME = "droprugby_session";
 const MAX_AGE = 60 * 60 * 24 * 7;
 
-// ============================================================
-// RESEND
-// ============================================================
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
-const DEFAULT_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ||
+const NEWSLETTER_FROM =
   "DropRugby <newsletter@droprugby.com>";
 
-const NEWSLETTER_NOTIFY_EMAIL =
-  process.env.NEWSLETTER_NOTIFY_EMAIL ||
-  process.env.ADMIN_EMAIL ||
-  "";
+const SITE_URL =
+  "https://droprugby.com";
 
 // ============================================================
 // CONTENIDO POR DEFECTO
@@ -177,6 +170,7 @@ const DEFAULT_CONTENT = {
   instagram: [],
   trash: [],
   history: [],
+  subscribers: [],
 
   settings: {
     siteName: "DropRugby",
@@ -217,6 +211,25 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+function normalizeEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
+function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function fixtureKey(fixture) {
   return [
     fixture.date || "",
@@ -244,69 +257,40 @@ function isTop14(fixture) {
 }
 
 // ============================================================
-// ESCAPAR HTML PARA EMAIL
+// NEWSLETTER AUTOMÁTICO
 // ============================================================
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function getArticleUrl(article) {
+  const id = encodeURIComponent(
+    article?.id || ""
+  );
+
+  return `${SITE_URL}/article.html?id=${id}`;
 }
 
-// ============================================================
-// EMAIL AUTOMÁTICO DE NUEVA NOTICIA
-// ============================================================
+function buildArticleNewsletterHtml(article) {
+  const title = escapeHtml(
+    article?.title || "Nueva noticia en DropRugby"
+  );
 
-async function sendNewArticleEmail(article) {
-  if (!resend) {
-    console.warn(
-      "NEWSLETTER: RESEND_API_KEY no está configurada."
-    );
+  const excerpt = escapeHtml(
+    article?.excerpt ||
+      "Toda la actualidad del rugby argentino e internacional."
+  );
 
-    return {
-      ok: false,
-      skipped: true,
-      reason: "missing_api_key"
-    };
-  }
-
-  if (!NEWSLETTER_NOTIFY_EMAIL) {
-    console.warn(
-      "NEWSLETTER: NEWSLETTER_NOTIFY_EMAIL no está configurado."
-    );
-
-    return {
-      ok: false,
-      skipped: true,
-      reason: "missing_recipient"
-    };
-  }
-
-  const title =
-    escapeHtml(article.title || "Nueva noticia");
-
-  const excerpt =
-    escapeHtml(
-      article.excerpt ||
-      "Nueva noticia publicada en DropRugby."
-    );
+  const category = escapeHtml(
+    article?.category || "Rugby"
+  );
 
   const imageUrl =
-    article.imageUrl ||
-    article.image ||
-    "";
+    String(
+      article?.imageUrl ||
+        article?.image ||
+        ""
+    ).trim();
 
   const articleUrl =
-    article.url ||
-    `https://droprugby.com/article.html?id=${encodeURIComponent(
-      article.id
-    )}`;
-
-  const safeArticleUrl =
-    escapeHtml(articleUrl);
+    getArticleUrl(article);
 
   const imageBlock = imageUrl
     ? `
@@ -315,13 +299,12 @@ async function sendNewArticleEmail(article) {
           <img
             src="${escapeHtml(imageUrl)}"
             alt="${title}"
-            width="100%"
             style="
               display:block;
               width:100%;
               max-width:540px;
               height:auto;
-              object-fit:cover;
+              border:0;
             "
           >
         </td>
@@ -329,11 +312,11 @@ async function sendNewArticleEmail(article) {
     `
     : "";
 
-  const html = `
-<!DOCTYPE html>
-<html lang="es">
+  return `
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -347,6 +330,7 @@ async function sendNewArticleEmail(article) {
     padding:0;
     background:#eeeeeb;
     font-family:Arial,Helvetica,sans-serif;
+    color:#111111;
   "
 >
 
@@ -377,7 +361,7 @@ async function sendNewArticleEmail(article) {
           <td
             style="
               background:#111111;
-              padding:30px 35px;
+              padding:30px 40px;
             "
           >
 
@@ -403,18 +387,18 @@ async function sendNewArticleEmail(article) {
                 font-weight:700;
               "
             >
-              NUEVA NOTICIA
+              MEDIO DIGITAL DE RUGBY
             </div>
 
           </td>
         </tr>
 
-        <!-- INTRO -->
+        <!-- LABEL -->
 
         <tr>
           <td
             style="
-              padding:40px 40px 20px;
+              padding:42px 40px 12px;
             "
           >
 
@@ -428,13 +412,13 @@ async function sendNewArticleEmail(article) {
                 margin-bottom:14px;
               "
             >
-              DROP RUGBY · ACTUALIDAD
+              ${category.toUpperCase()}
             </div>
 
             <h1
               style="
                 margin:0;
-                font-size:32px;
+                font-size:34px;
                 line-height:1.15;
                 letter-spacing:-1px;
                 font-weight:700;
@@ -449,7 +433,7 @@ async function sendNewArticleEmail(article) {
 
         ${imageBlock}
 
-        <!-- TEXTO -->
+        <!-- EXCERPT -->
 
         <tr>
           <td
@@ -461,7 +445,7 @@ async function sendNewArticleEmail(article) {
             <p
               style="
                 margin:0;
-                font-size:16px;
+                font-size:17px;
                 line-height:1.7;
                 color:#444444;
               "
@@ -472,7 +456,7 @@ async function sendNewArticleEmail(article) {
           </td>
         </tr>
 
-        <!-- BOTÓN -->
+        <!-- BUTTON -->
 
         <tr>
           <td
@@ -483,7 +467,7 @@ async function sendNewArticleEmail(article) {
           >
 
             <a
-              href="${safeArticleUrl}"
+              href="${articleUrl}"
               target="_blank"
               style="
                 display:inline-block;
@@ -520,7 +504,8 @@ async function sendNewArticleEmail(article) {
                 color:#777777;
               "
             >
-              DropRugby · Noticias de rugby.
+              Recibís este email porque estás suscripto
+              al newsletter de DropRugby.
             </p>
 
             <p
@@ -546,55 +531,116 @@ async function sendNewArticleEmail(article) {
 </body>
 </html>
 `;
+}
 
-  try {
-    const result =
-      await resend.emails.send({
-        from: DEFAULT_FROM_EMAIL,
-        to: [NEWSLETTER_NOTIFY_EMAIL],
-        subject:
-          `DropRugby · ${article.title || "Nueva noticia"}`,
-        html
-      });
-
-    if (result.error) {
-      console.error(
-        "❌ RESEND ERROR AL ENVIAR NOTICIA:",
-        result.error
-      );
-
-      return {
-        ok: false,
-        error:
-          result.error.message ||
-          "Error de Resend"
-      };
-    }
-
-    console.log(
-      "✅ EMAIL DE NUEVA NOTICIA ENVIADO:",
-      result.data?.id || null
-    );
-
-    return {
-      ok: true,
-      id: result.data?.id || null
-    };
-
-  } catch (error) {
+async function sendArticleNewsletter(
+  article,
+  subscribers
+) {
+  if (!process.env.RESEND_API_KEY) {
     console.error(
-      "❌ EXCEPCIÓN RESEND:",
-      error
+      "NEWSLETTER: falta RESEND_API_KEY"
     );
 
     return {
-      ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : String(error)
+      attempted: 0,
+      sent: 0,
+      failed: 0
     };
   }
+
+  if (!Array.isArray(subscribers)) {
+    return {
+      attempted: 0,
+      sent: 0,
+      failed: 0
+    };
+  }
+
+  const emails = [
+    ...new Set(
+      subscribers
+        .map((subscriber) =>
+          normalizeEmail(
+            typeof subscriber === "string"
+              ? subscriber
+              : subscriber?.email
+          )
+        )
+        .filter(validEmail)
+    )
+  ];
+
+  if (!emails.length) {
+    console.log(
+      "NEWSLETTER: no hay suscriptores."
+    );
+
+    return {
+      attempted: 0,
+      sent: 0,
+      failed: 0
+    };
+  }
+
+  const html =
+    buildArticleNewsletterHtml(
+      article
+    );
+
+  let sent = 0;
+  let failed = 0;
+
+  // Se manda un email individual por suscriptor.
+  // Así las direcciones de los suscriptores
+  // nunca quedan expuestas entre sí.
+
+  const results = await Promise.allSettled(
+    emails.map(async (email) => {
+      const { data, error } =
+        await resend.emails.send({
+          from: NEWSLETTER_FROM,
+          to: [email],
+          subject:
+            `Nuevo en DropRugby: ${article.title}`,
+          html
+        });
+
+      if (error) {
+        throw new Error(
+          `${email}: ${
+            error.message ||
+            "Error de Resend"
+          }`
+        );
+      }
+
+      return data;
+    })
+  );
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      sent++;
+    } else {
+      failed++;
+
+      console.error(
+        "NEWSLETTER SEND ERROR:",
+        result.reason
+      );
+    }
+  }
+
+  console.log(
+    `NEWSLETTER: ${sent} enviados, ${failed} fallidos de ${emails.length}.`
+  );
+
+  return {
+    attempted: emails.length,
+    sent,
+    failed
+  };
 }
 
 // ============================================================
@@ -607,32 +653,27 @@ function parseCookies(req) {
 
   const cookies = {};
 
-  header
-    .split(";")
-    .forEach((part) => {
+  header.split(";").forEach(
+    (part) => {
       const index =
         part.indexOf("=");
 
       if (index === -1) return;
 
       const key =
-        part
-          .slice(0, index)
-          .trim();
+        part.slice(0, index).trim();
 
       const value =
-        part
-          .slice(index + 1)
-          .trim();
+        part.slice(index + 1).trim();
 
       try {
         cookies[key] =
           decodeURIComponent(value);
       } catch {
-        cookies[key] =
-          value;
+        cookies[key] = value;
       }
-    });
+    }
+  );
 
   return cookies;
 }
@@ -669,9 +710,7 @@ function validToken(req) {
     const token =
       cookies[COOKIE_NAME];
 
-    if (!token) {
-      return false;
-    }
+    if (!token) return false;
 
     const parts =
       token.split(".");
@@ -688,7 +727,8 @@ function validToken(req) {
     }
 
     if (
-      Date.now() - timestamp >
+      Date.now() -
+        timestamp >
       MAX_AGE * 1000
     ) {
       return false;
@@ -723,7 +763,6 @@ function validToken(req) {
       receivedBuffer,
       expectedBuffer
     );
-
   } catch {
     return false;
   }
@@ -885,6 +924,13 @@ function normalizeContent(data) {
         ? content.history
         : [],
 
+    subscribers:
+      Array.isArray(
+        content.subscribers
+      )
+        ? content.subscribers
+        : [],
+
     settings:
       content.settings &&
       typeof content.settings ===
@@ -987,23 +1033,19 @@ async function readLocalContent() {
 
     return {
       ...DEFAULT_CONTENT,
-
       articles:
         JSON.parse(
           articlesRaw
         ),
-
       fixtures:
         JSON.parse(
           fixturesRaw
         ),
-
       teams:
         JSON.parse(
           teamsRaw
         )
     };
-
   } catch {
     return {
       ...DEFAULT_CONTENT
@@ -1175,14 +1217,10 @@ function addHistory(
 
   content.history.unshift({
     id: makeId("history"),
-
     action,
-
     type,
-
     itemId:
       item?.id || null,
-
     title:
       item?.title ||
       (
@@ -1192,7 +1230,6 @@ function addHistory(
             }`
           : ""
       ),
-
     date:
       new Date().toISOString()
   });
@@ -1238,11 +1275,8 @@ function processScheduledArticles(
 
             return {
               ...article,
-
               scheduled: false,
-
               published: true,
-
               updatedAt:
                 new Date().toISOString()
             };
@@ -1270,8 +1304,9 @@ export default async function handler(
     // GET
     // ========================================================
 
-    if (req.method === "GET") {
-
+    if (
+      req.method === "GET"
+    ) {
       const action =
         req.query?.action;
 
@@ -1292,7 +1327,6 @@ export default async function handler(
           200,
           {
             authenticated,
-
             user:
               authenticated
                 ? process.env.ADMIN_USER ||
@@ -1363,7 +1397,9 @@ export default async function handler(
     // POST
     // ========================================================
 
-    if (req.method !== "POST") {
+    if (
+      req.method !== "POST"
+    ) {
       return json(
         res,
         405,
@@ -1413,10 +1449,12 @@ export default async function handler(
       if (
         String(
           body.username || ""
-        ) !== String(username) ||
+        ) !==
+          String(username) ||
         String(
           body.password || ""
-        ) !== String(password)
+        ) !==
+          String(password)
       ) {
         return json(
           res,
@@ -1442,8 +1480,7 @@ export default async function handler(
         200,
         {
           ok: true,
-          authenticated:
-            true,
+          authenticated: true,
           user: username
         }
       );
@@ -1472,7 +1509,9 @@ export default async function handler(
     // TODO LO DEMÁS REQUIERE SESIÓN
     // ========================================================
 
-    if (!validToken(req)) {
+    if (
+      !validToken(req)
+    ) {
       return json(
         res,
         401,
@@ -1596,89 +1635,92 @@ export default async function handler(
       const existingIndex =
         content.articles.findIndex(
           (item) =>
-            String(item.id) ===
+            String(
+              item.id
+            ) ===
             String(articleId)
         );
 
       const isNewArticle =
         existingIndex < 0;
 
-      const normalizedArticle = {
-        id: articleId,
+      const normalizedArticle =
+        {
+          id: articleId,
 
-        title:
-          String(
-            article.title || ""
-          ).trim(),
+          title:
+            String(
+              article.title ||
+                ""
+            ).trim(),
 
-        slug:
-          article.slug ||
-          slugify(
-            article.title
-          ),
+          slug:
+            article.slug ||
+            slugify(
+              article.title
+            ),
 
-        url:
-          `article.html?id=${encodeURIComponent(
-            articleId
-          )}`,
+          url:
+            `article.html?id=${encodeURIComponent(
+              articleId
+            )}`,
 
-        category:
-          article.category ||
-          "Rugby",
+          category:
+            article.category ||
+            "Rugby",
 
-        subcategory:
-          article.subcategory ||
-          "Actualidad",
+          subcategory:
+            article.subcategory ||
+            "Actualidad",
 
-        author:
-          article.author ||
-          "DropRugby",
+          author:
+            article.author ||
+            "DropRugby",
 
-        excerpt:
-          article.excerpt || "",
+          excerpt:
+            article.excerpt ||
+            "",
 
-        content:
-          article.content || "",
+          content:
+            article.content ||
+            "",
 
-        imageUrl:
-          article.imageUrl ||
-          article.image ||
-          "",
+          imageUrl:
+            article.imageUrl ||
+            article.image ||
+            "",
 
-        date:
-          article.date ||
-          now.slice(0, 10),
+          date:
+            article.date ||
+            now.slice(0, 10),
 
-        featured:
-          Boolean(
-            article.featured
-          ),
+          featured:
+            Boolean(
+              article.featured
+            ),
 
-        published:
-          article.scheduled
-            ? false
-            : article.published !==
-              false,
-
-        scheduled:
-          Boolean(
+          published:
             article.scheduled
-          ),
+              ? false
+              : article.published !==
+                false,
 
-        publishAt:
-          article.publishAt ||
-          null,
+          scheduled:
+            Boolean(
+              article.scheduled
+            ),
 
-        createdAt:
-          article.createdAt ||
-          now,
+          publishAt:
+            article.publishAt ||
+            null,
 
-        updatedAt: now
-      };
+          createdAt:
+            article.createdAt ||
+            now,
 
-      // ------------------------------------------------------
-      // EDITAR
-      // ------------------------------------------------------
+          updatedAt:
+            now
+        };
 
       if (
         existingIndex >= 0
@@ -1689,7 +1731,6 @@ export default async function handler(
           ...content.articles[
             existingIndex
           ],
-
           ...normalizedArticle
         };
 
@@ -1699,13 +1740,7 @@ export default async function handler(
           "article",
           normalizedArticle
         );
-
       } else {
-
-        // ----------------------------------------------------
-        // CREAR
-        // ----------------------------------------------------
-
         content.articles.unshift(
           normalizedArticle
         );
@@ -1718,46 +1753,41 @@ export default async function handler(
         );
       }
 
-      // ------------------------------------------------------
-      // GUARDAR PRIMERO
-      // ------------------------------------------------------
-
       await saveContent(
         content
       );
 
-      // ------------------------------------------------------
-      // EMAIL AUTOMÁTICO
+      // ======================================================
+      // NEWSLETTER AUTOMÁTICO
+      // ======================================================
       //
-      // SOLO:
-      // - noticia nueva
-      // - publicada inmediatamente
+      // Solamente se manda cuando:
       //
-      // NO:
-      // - edición
-      // - noticia programada
-      // - borrador
-      // ------------------------------------------------------
+      // 1. Es una noticia NUEVA.
+      // 2. La noticia queda publicada inmediatamente.
+      //
+      // Si se edita una noticia existente, NO manda otro email.
+      //
+      // Si queda programada, tampoco manda ahora.
+      //
 
-      let emailResult = null;
+      let newsletter = {
+        attempted: 0,
+        sent: 0,
+        failed: 0
+      };
 
-      const shouldSendEmail =
+      if (
         isNewArticle &&
-        normalizedArticle.published ===
-          true &&
-        normalizedArticle.scheduled !==
-          true;
-
-      if (shouldSendEmail) {
-        emailResult =
-          await sendNewArticleEmail(
-            normalizedArticle
+        normalizedArticle.published === true &&
+        normalizedArticle.scheduled !== true
+      ) {
+        newsletter =
+          await sendArticleNewsletter(
+            normalizedArticle,
+            content.subscribers
           );
       }
-
-      // ------------------------------------------------------
-      // RESPUESTA
-      // ------------------------------------------------------
 
       return json(
         res,
@@ -1770,8 +1800,7 @@ export default async function handler(
 
           content,
 
-          email:
-            emailResult
+          newsletter
         }
       );
     }
@@ -1811,7 +1840,9 @@ export default async function handler(
             String(id)
         );
 
-      if (index === -1) {
+      if (
+        index === -1
+      ) {
         return json(
           res,
           404,
@@ -1824,9 +1855,7 @@ export default async function handler(
       }
 
       const removed =
-        content.articles[
-          index
-        ];
+        content.articles[index];
 
       content.articles.splice(
         index,
@@ -1843,10 +1872,8 @@ export default async function handler(
 
       content.trash.unshift({
         ...removed,
-
         deletedAt:
           new Date().toISOString(),
-
         deletedType:
           "article"
       });
@@ -1908,52 +1935,60 @@ export default async function handler(
 
       const incomingFixtureKey =
         fixture.fixtureKey ||
-        fixtureKey(fixture);
+        fixtureKey(
+          fixture
+        );
 
       const fixtureId =
         fixture.id ||
         makeId("fixture");
 
-      const normalizedFixture = {
-        id: fixtureId,
+      const normalizedFixture =
+        {
+          id: fixtureId,
 
-        fixtureKey:
-          incomingFixtureKey,
+          fixtureKey:
+            incomingFixtureKey,
 
-        home:
-          fixture.home ||
-          fixture.team1 ||
-          fixture.local ||
-          "",
+          home:
+            fixture.home ||
+            fixture.team1 ||
+            fixture.local ||
+            "",
 
-        away:
-          fixture.away ||
-          fixture.team2 ||
-          fixture.visitante ||
-          "",
+          away:
+            fixture.away ||
+            fixture.team2 ||
+            fixture.visitante ||
+            "",
 
-        date:
-          fixture.date || "",
+          date:
+            fixture.date ||
+            "",
 
-        time:
-          fixture.time || "",
+          time:
+            fixture.time ||
+            "",
 
-        competition:
-          fixture.competition ||
-          "URBA TOP 14",
+          competition:
+            fixture.competition ||
+            "URBA TOP 14",
 
-        channel:
-          fixture.channel || "",
+          channel:
+            fixture.channel ||
+            "",
 
-        venue:
-          fixture.venue || "",
+          venue:
+            fixture.venue ||
+            "",
 
-        createdAt:
-          fixture.createdAt ||
-          now,
+          createdAt:
+            fixture.createdAt ||
+            now,
 
-        updatedAt: now
-      };
+          updatedAt:
+            now
+        };
 
       const existingIndex =
         content.fixtures.findIndex(
@@ -1963,17 +1998,17 @@ export default async function handler(
               String(
                 item.id || ""
               ) ===
-              String(
-                fixture.id
-              )
+                String(
+                  fixture.id
+                )
             ) ||
             String(
               item.fixtureKey ||
-              fixtureKey(item)
+                fixtureKey(item)
             ) ===
-            String(
-              incomingFixtureKey
-            )
+              String(
+                incomingFixtureKey
+              )
         );
 
       if (
@@ -1988,9 +2023,7 @@ export default async function handler(
           existingIndex
         ] = {
           ...existingFixture,
-
           ...normalizedFixture,
-
           id:
             existingFixture.id ||
             fixtureId
@@ -2002,7 +2035,6 @@ export default async function handler(
           "fixture",
           normalizedFixture
         );
-
       } else {
         content.fixtures.push(
           normalizedFixture
@@ -2025,10 +2057,8 @@ export default async function handler(
         200,
         {
           ok: true,
-
           fixture:
             normalizedFixture,
-
           content
         }
       );
@@ -2065,14 +2095,16 @@ export default async function handler(
           (fixture) =>
             String(
               fixture.id ||
-              fixtureKey(
-                fixture
-              )
+                fixtureKey(
+                  fixture
+                )
             ) ===
             String(id)
         );
 
-      if (index === -1) {
+      if (
+        index === -1
+      ) {
         return json(
           res,
           404,
@@ -2085,9 +2117,7 @@ export default async function handler(
       }
 
       const removed =
-        content.fixtures[
-          index
-        ];
+        content.fixtures[index];
 
       content.fixtures.splice(
         index,
@@ -2104,10 +2134,8 @@ export default async function handler(
 
       content.trash.unshift({
         ...removed,
-
         deletedAt:
           new Date().toISOString(),
-
         deletedType:
           "fixture"
       });
@@ -2172,12 +2200,12 @@ export default async function handler(
             ) ===
               String(
                 result.fixtureId ||
-                ""
+                  ""
               ) ||
             fixtureKey(item) ===
               String(
                 result.fixtureKey ||
-                ""
+                  ""
               )
         );
 
@@ -2193,7 +2221,11 @@ export default async function handler(
         );
       }
 
-      if (!isTop14(fixture)) {
+      if (
+        !isTop14(
+          fixture
+        )
+      ) {
         return json(
           res,
           400,
@@ -2259,13 +2291,11 @@ export default async function handler(
           ).trim();
 
         if (
-          bonusString
-            .toLowerCase() !==
+          bonusString.toLowerCase() !==
             String(home)
               .trim()
               .toLowerCase() &&
-          bonusString
-            .toLowerCase() !==
+          bonusString.toLowerCase() !==
             String(away)
               .trim()
               .toLowerCase()
@@ -2292,41 +2322,49 @@ export default async function handler(
         result.id ||
         makeId("result");
 
-      const normalizedResult = {
-        id: resultId,
+      const normalizedResult =
+        {
+          id: resultId,
 
-        fixtureId:
-          fixture.id ||
-          fixtureKey(fixture),
+          fixtureId:
+            fixture.id ||
+            fixtureKey(
+              fixture
+            ),
 
-        fixtureKey:
-          fixtureKey(fixture),
+          fixtureKey:
+            fixtureKey(
+              fixture
+            ),
 
-        date:
-          fixture.date || "",
+          date:
+            fixture.date ||
+            "",
 
-        time:
-          fixture.time || "",
+          time:
+            fixture.time ||
+            "",
 
-        competition:
-          "URBA TOP 14",
+          competition:
+            "URBA TOP 14",
 
-        home,
+          home,
 
-        away,
+          away,
 
-        homeScore,
+          homeScore,
 
-        awayScore,
+          awayScore,
 
-        bonusTeam,
+          bonusTeam,
 
-        createdAt:
-          result.createdAt ||
-          now,
+          createdAt:
+            result.createdAt ||
+            now,
 
-        updatedAt: now
-      };
+          updatedAt:
+            now
+        };
 
       const existingIndex =
         content.results.findIndex(
@@ -2339,7 +2377,7 @@ export default async function handler(
               ) ||
             String(
               item.fixtureId ||
-              ""
+                ""
             ) ===
               String(
                 normalizedResult.fixtureId
@@ -2355,7 +2393,6 @@ export default async function handler(
           ...content.results[
             existingIndex
           ],
-
           ...normalizedResult
         };
 
@@ -2365,7 +2402,6 @@ export default async function handler(
           "result",
           normalizedResult
         );
-
       } else {
         content.results.push(
           normalizedResult
@@ -2393,13 +2429,10 @@ export default async function handler(
         200,
         {
           ok: true,
-
           result:
             normalizedResult,
-
           standings:
             content.standings,
-
           content
         }
       );
@@ -2440,7 +2473,9 @@ export default async function handler(
             String(id)
         );
 
-      if (index === -1) {
+      if (
+        index === -1
+      ) {
         return json(
           res,
           404,
@@ -2453,9 +2488,7 @@ export default async function handler(
       }
 
       const removed =
-        content.results[
-          index
-        ];
+        content.results[index];
 
       content.results.splice(
         index,
@@ -2514,7 +2547,8 @@ export default async function handler(
             (row) => ({
               team:
                 String(
-                  row.team || ""
+                  row.team ||
+                    ""
                 ).trim(),
 
               pj:
@@ -2567,13 +2601,10 @@ export default async function handler(
         200,
         {
           ok: true,
-
           standingsBase:
             content.standingsBase,
-
           standings:
             content.standings,
-
           content
         }
       );
@@ -2606,10 +2637,8 @@ export default async function handler(
         200,
         {
           ok: true,
-
           standings:
             content.standings,
-
           content
         }
       );
@@ -2656,10 +2685,13 @@ export default async function handler(
           : {};
 
       content.settings.clubLogos =
-        content.settings.clubLogos &&
-        typeof content.settings.clubLogos ===
+        content.settings
+          .clubLogos &&
+        typeof content.settings
+          .clubLogos ===
           "object"
-          ? content.settings.clubLogos
+          ? content.settings
+              .clubLogos
           : {};
 
       if (url) {
@@ -2667,9 +2699,10 @@ export default async function handler(
           clubId
         ] = url;
       } else {
-        delete content.settings.clubLogos[
-          clubId
-        ];
+        delete content.settings
+          .clubLogos[
+            clubId
+          ];
       }
 
       await saveContent(
@@ -2703,7 +2736,6 @@ export default async function handler(
     );
 
   } catch (error) {
-
     console.error(
       "❌ /api/admin ERROR:",
       error
@@ -2714,10 +2746,8 @@ export default async function handler(
       500,
       {
         ok: false,
-
         error:
           "Error interno del servidor.",
-
         detail:
           error?.message ||
           String(error)
@@ -2741,7 +2771,9 @@ const TEAM_ALIASES = {
     "atletico del rosario"
 };
 
-function normalizeTeamKey(name) {
+function normalizeTeamKey(
+  name
+) {
   let key =
     String(name || "")
       .trim()
@@ -2778,16 +2810,16 @@ function calculateStandings(
 
   for (
     const base of
-    content.standingsBase || []
+      content.standingsBase ||
+      []
   ) {
     const cleanName =
       String(
         base.team || ""
       ).trim();
 
-    if (!cleanName) {
+    if (!cleanName)
       continue;
-    }
 
     baseByTeam.set(
       normalizeTeamKey(
@@ -2827,22 +2859,25 @@ function calculateStandings(
     );
   }
 
-  function ensureTeam(name) {
+  function ensureTeam(
+    name
+  ) {
     const clean =
       String(
         name || ""
       ).trim();
 
-    if (!clean) {
+    if (!clean)
       return null;
-    }
 
     const key =
       normalizeTeamKey(
         clean
       );
 
-    if (!teams.has(key)) {
+    if (
+      !teams.has(key)
+    ) {
       const base =
         baseByTeam.get(
           key
@@ -2874,7 +2909,6 @@ function calculateStandings(
               : 0,
 
           pf: 0,
-
           pc: 0,
 
           baseDiff:
@@ -2888,7 +2922,6 @@ function calculateStandings(
               : 0,
 
           diff: 0,
-
           bonus: 0,
 
           pts:
@@ -2906,7 +2939,8 @@ function calculateStandings(
 
   for (
     const base of
-    content.standingsBase || []
+      content.standingsBase ||
+      []
   ) {
     ensureTeam(
       base.team
@@ -2915,32 +2949,32 @@ function calculateStandings(
 
   for (
     const fixture of
-    content.fixtures || []
+      content.fixtures ||
+      []
   ) {
     if (
-      !isTop14(
-        fixture
-      )
+      !isTop14(fixture)
     ) {
       continue;
     }
 
     ensureTeam(
       fixture.home ||
-      fixture.team1 ||
-      fixture.local
+        fixture.team1 ||
+        fixture.local
     );
 
     ensureTeam(
       fixture.away ||
-      fixture.team2 ||
-      fixture.visitante
+        fixture.team2 ||
+        fixture.visitante
     );
   }
 
   for (
     const result of
-    content.results || []
+      content.results ||
+      []
   ) {
     if (
       String(
@@ -2964,7 +2998,10 @@ function calculateStandings(
         result.away
       );
 
-    if (!home || !away) {
+    if (
+      !home ||
+      !away
+    ) {
       continue;
     }
 
@@ -3063,12 +3100,11 @@ function calculateStandings(
 
   for (
     const team of
-    teams.values()
+      teams.values()
   ) {
     team.diff =
       team.baseDiff +
-      (team.pf -
-        team.pc);
+      (team.pf - team.pc);
   }
 
   return [
@@ -3076,12 +3112,9 @@ function calculateStandings(
   ]
     .sort(
       (a, b) =>
-        b.pts -
-          a.pts ||
-        b.diff -
-          a.diff ||
-        b.pf -
-          a.pf ||
+        b.pts - a.pts ||
+        b.diff - a.diff ||
+        b.pf - a.pf ||
         a.team.localeCompare(
           b.team,
           "es"
