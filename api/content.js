@@ -25,15 +25,18 @@ const DEFAULT_STANDINGS_BASE = [
 async function seed() {
   const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
   const fixturesPath = path.join(process.cwd(), 'data', 'fixtures.json');
+  const teamsPath = path.join(process.cwd(), 'data', 'teams.json');
 
-  const [articlesFile, fixturesFile] = await Promise.all([
+  const [articlesFile, fixturesFile, teamsFile] = await Promise.all([
     fs.readFile(articlesPath, 'utf8'),
-    fs.readFile(fixturesPath, 'utf8')
+    fs.readFile(fixturesPath, 'utf8'),
+    fs.readFile(teamsPath, 'utf8')
   ]);
 
   const data = {
     articles: JSON.parse(articlesFile),
     fixtures: JSON.parse(fixturesFile),
+    teams: JSON.parse(teamsFile),
     results: [],
     standingsBase: DEFAULT_STANDINGS_BASE,
     standings: DEFAULT_STANDINGS_BASE.map((row, i) => ({
@@ -66,15 +69,18 @@ async function seed() {
 async function readLocalData() {
   const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
   const fixturesPath = path.join(process.cwd(), 'data', 'fixtures.json');
+  const teamsPath = path.join(process.cwd(), 'data', 'teams.json');
 
-  const [articlesFile, fixturesFile] = await Promise.all([
+  const [articlesFile, fixturesFile, teamsFile] = await Promise.all([
     fs.readFile(articlesPath, 'utf8'),
-    fs.readFile(fixturesPath, 'utf8')
+    fs.readFile(fixturesPath, 'utf8'),
+    fs.readFile(teamsPath, 'utf8')
   ]);
 
   return {
     articles: JSON.parse(articlesFile),
-    fixtures: JSON.parse(fixturesFile)
+    fixtures: JSON.parse(fixturesFile),
+    teams: JSON.parse(teamsFile)
   };
 }
 
