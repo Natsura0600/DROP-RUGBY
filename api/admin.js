@@ -391,61 +391,89 @@ async function readBlobContent() {
 
 async function readLocalContent() {
   try {
-    const articlesPath =
-      path.join(
-        process.cwd(),
-        "data",
-        "articles.json"
-      );
+    const articlesPath = path.join(
+      process.cwd(),
+      "data",
+      "articles.json"
+    );
 
-    const fixturesPath =
-      path.join(
-        process.cwd(),
-        "data",
-        "fixtures.json"
-      );
+    const fixturesPath = path.join(
+      process.cwd(),
+      "data",
+      "fixtures.json"
+    );
 
-    const [
-      articlesRaw,
-      fixturesRaw
-    ] = await Promise.all([
-      fs.readFile(
-        articlesPath,
-        "utf8"
-      ),
-      fs.readFile(
-        fixturesPath,
-        "utf8"
-      )
+    const [articlesRaw, fixturesRaw] = await Promise.all([
+      fs.readFile(articlesPath, "utf8"),
+      fs.readFile(fixturesPath, "utf8")
     ]);
 
     return {
       ...DEFAULT_CONTENT,
-
-      articles:
-        JSON.parse(articlesRaw),
-
-      fixtures:
-        JSON.parse(fixturesRaw)
+      articles: JSON.parse(articlesRaw),
+      fixtures: JSON.parse(fixturesRaw)
     };
   } catch {
-    return {
-      ...DEFAULT_CONTENT
-    };
+    return { ...DEFAULT_CONTENT };
   }
 }
 
-async function readContent() {
-  const blob =
-    await readBlobContent();
+function hasDeletedHistory(content, type) {
+  return Array.isArray(content?.history) && content.history.some((item) =>
+    String(item?.type || "") === type &&
+    /delete|remove/i.test(String(item?.action || ""))
+  );
+}
 
-  if (blob) {
-    return normalizeContent(blob);
+async function repairLegacyBlobContent(blob) {
+  const local = await readLocalContent();
+  const repaired = {
+    ...blob
+  };
+  let changed = false;
+
+  // Si una versión anterior guardó articles/fixtures como arrays vacíos
+  // sin historial de borrado, recuperamos los datos reales del repositorio.
+  // Esto evita que una operación administrativa deje la portada sin noticias.
+  if (
+    Array.isArray(local.articles) &&
+    local.articles.length > 0 &&
+    Array.isArray(blob.articles) &&
+    blob.articles.length === 0 &&
+    !hasDeletedHistory(blob, "article")
+  ) {
+    repaired.articles = local.articles;
+    changed = true;
   }
 
-  const local =
-    await readLocalContent();
+  if (
+    Array.isArray(local.fixtures) &&
+    local.fixtures.length > 0 &&
+    Array.isArray(blob.fixtures) &&
+    blob.fixtures.length === 0 &&
+    !hasDeletedHistory(blob, "fixture")
+  ) {
+    repaired.fixtures = local.fixtures;
+    changed = true;
+  }
 
+  return { content: normalizeContent(repaired), changed };
+}
+
+async function readContent(options = {}) {
+  const blob = await readBlobContent();
+
+  if (blob) {
+    const repaired = await repairLegacyBlobContent(blob);
+
+    if (repaired.changed && options.persistRepair !== false) {
+      await saveContent(repaired.content);
+    }
+
+    return repaired.content;
+  }
+
+  const local = await readLocalContent();
   return normalizeContent(local);
 }
 
@@ -1036,9 +1064,7 @@ export default async function handler(
       const now =
         new Date().toISOString();
 
-      // Si el fixture viene de una versión anterior y no tiene ID,
-      // usamos fixtureKey como referencia estable para poder editarlo
-      // sin crear un partido duplicado.
+      // Compatibilidad con fixtures antiguos que no tenían ID.
       const incomingFixtureKey =
         fixture.fixtureKey || fixtureKey(fixture);
 
@@ -1087,15 +1113,11 @@ export default async function handler(
         updatedAt: now
       };
 
-      // Primero buscamos por ID. Si el partido es antiguo y todavía no
-      // tenía ID, buscamos por fixtureKey para actualizar el registro
-      // existente en lugar de crear uno nuevo.
       const existingIndex =
         content.fixtures.findIndex(
           (item) =>
             (fixture.id &&
-              String(item.id || "") ===
-              String(fixture.id)) ||
+              String(item.id || "") === String(fixture.id)) ||
             String(item.fixtureKey || fixtureKey(item)) ===
               String(incomingFixtureKey)
         );
