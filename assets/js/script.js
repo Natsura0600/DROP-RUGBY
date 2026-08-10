@@ -554,19 +554,17 @@ function setupNewsletter() {
       const message = form.querySelector("#newsletter-message");
 
       if (!input || !message) {
+        console.error("Newsletter: faltan elementos del formulario.");
         return;
       }
 
-      const email = input.value.trim();
+      const email = input.value.trim().toLowerCase();
 
-      if (!email) {
-        message.textContent = "Ingresá tu email para suscribirte.";
-        message.classList.remove("success");
-        message.classList.add("error");
-        return;
-      }
+      // -----------------------------
+      // VALIDAR EMAIL
+      // -----------------------------
 
-      if (!input.checkValidity()) {
+      if (!email || !input.checkValidity()) {
         message.textContent = "Ingresá un email válido.";
         message.classList.remove("success");
         message.classList.add("error");
@@ -574,37 +572,88 @@ function setupNewsletter() {
         return;
       }
 
+      // -----------------------------
+      // ESTADO ENVIANDO
+      // -----------------------------
+
       if (button) {
         button.disabled = true;
-        button.innerHTML = 'Suscribiendo… <span>→</span>';
+        button.innerHTML = 'Enviando… <span>→</span>';
       }
 
       message.textContent = "Procesando suscripción…";
       message.classList.remove("success", "error");
 
-      /*
-       * Si tu newsletter.js / backend maneja realmente
-       * el alta de suscriptores, acá podemos conectarlo.
-       *
-       * Por ahora dejamos confirmada la interacción
-       * del formulario sin recargar la página.
-       */
+      try {
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+        // -----------------------------
+        // LLAMAR AL BACKEND
+        // -----------------------------
 
-      form.classList.add("submitted");
+        const response = await fetch(
+          BASE + "api/newsletter",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              email: email
+            })
+          }
+        );
 
-      message.textContent =
-        "¡Listo! Ya estás suscripto a Drop Rugby.";
+        const data = await response.json().catch(() => ({}));
 
-      message.classList.remove("error");
-      message.classList.add("success");
+        // -----------------------------
+        // ERROR
+        // -----------------------------
 
-      input.value = "";
+        if (!response.ok || !data.ok) {
+          throw new Error(
+            data.error ||
+            "No se pudo completar la suscripción."
+          );
+        }
 
-      if (button) {
-        button.disabled = false;
-        button.innerHTML = 'Suscripto ✓';
+        // -----------------------------
+        // ÉXITO REAL
+        // -----------------------------
+
+        form.classList.add("submitted");
+
+        message.textContent =
+          "¡Listo! Ya estás suscripto a Drop Rugby.";
+
+        message.classList.remove("error");
+        message.classList.add("success");
+
+        input.value = "";
+
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = 'Suscripto ✓';
+        }
+
+      } catch (error) {
+
+        console.error(
+          "NEWSLETTER FRONTEND ERROR:",
+          error
+        );
+
+        message.textContent =
+          error.message ||
+          "No se pudo completar la suscripción.";
+
+        message.classList.remove("success");
+        message.classList.add("error");
+
+        if (button) {
+          button.disabled = false;
+          button.innerHTML =
+            'Suscribirme <span>→</span>';
+        }
       }
     });
   });
