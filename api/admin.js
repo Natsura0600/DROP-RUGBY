@@ -1029,6 +1029,18 @@ export default async function handler(
             source.published ??
             true,
 
+          scheduled:
+            Boolean(source.scheduled),
+
+          publishAt:
+            source.publishAt ||
+            null,
+
+          imageUrl:
+            source.imageUrl ||
+            source.image ||
+            "",
+
           tags:
             Array.isArray(
               source.tags
@@ -1622,6 +1634,215 @@ export default async function handler(
         return json(res, 200, {
           ok: true,
           post,
+          content:
+            saved.content,
+        });
+      }
+
+      // ======================================================
+      // PUBLICAR EN INSTAGRAM
+      // ======================================================
+
+      if (
+        action === "publish-instagram"
+      ) {
+        const content = await loadContent();
+
+        const postId =
+          body.postId ||
+          body.id;
+
+        const postIndex =
+          content.instagram.findIndex(
+            (item) => item.id === postId
+          );
+
+        if (postIndex === -1) {
+          return json(res, 404, {
+            ok: false,
+            error: "Publicación de Instagram no encontrada.",
+          });
+        }
+
+        const post = content.instagram[postIndex];
+
+        let imageUrl = post.imageUrl || "";
+
+        if (!imageUrl && post.articleId) {
+          const article =
+            content.articles.find(
+              (item) => item.id === post.articleId
+            );
+
+          imageUrl =
+            article?.imageUrl ||
+            article?.image ||
+            "";
+        }
+
+        if (!imageUrl) {
+          return json(res, 400, {
+            ok: false,
+            error:
+              "Instagram necesita una URL pública de imagen. Agregá imageUrl a la noticia.",
+          });
+        }
+
+        if (
+          !/^https?:\/\//i.test(imageUrl)
+        ) {
+          const siteUrl =
+            process.env.SITE_URL ||
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            "";
+
+          if (!siteUrl) {
+            return json(res, 400, {
+              ok: false,
+              error:
+                "La imagen no es pública. Configurá SITE_URL o usá una URL https://.",
+            });
+          }
+
+          imageUrl =
+            new URL(
+              imageUrl,
+              siteUrl
+            ).toString();
+        }
+
+        const accessToken =
+          process.env.INSTAGRAM_ACCESS_TOKEN;
+
+        const instagramUserId =
+          process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
+
+        if (
+          !accessToken ||
+          !instagramUserId
+        ) {
+          return json(res, 400, {
+            ok: false,
+            error:
+              "Faltan INSTAGRAM_ACCESS_TOKEN e INSTAGRAM_BUSINESS_ACCOUNT_ID en Vercel.",
+          });
+        }
+
+        const graphVersion =
+          process.env.INSTAGRAM_GRAPH_VERSION ||
+          "v24.0";
+
+        const base =
+          `https://graph.facebook.com/${graphVersion}`;
+
+        const createMedia =
+          await fetch(
+            `${base}/${instagramUserId}/media`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/x-www-form-urlencoded",
+              },
+              body:
+                new URLSearchParams({
+                  image_url:
+                    imageUrl,
+                  caption:
+                    post.caption || "",
+                  access_token:
+                    accessToken,
+                })
+              }
+          );
+
+        const mediaData =
+          await createMedia.json();
+
+        if (
+          !createMedia.ok ||
+          !mediaData.id
+        ) {
+          console.error(
+            "Instagram media error:",
+            mediaData
+          );
+
+          return json(res, 502, {
+            ok: false,
+            error:
+              mediaData?.error?.message ||
+              "Instagram no pudo crear el contenido.",
+          });
+        }
+
+        const publishMedia =
+          await fetch(
+            `${base}/${instagramUserId}/media_publish`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/x-www-form-urlencoded",
+              },
+              body:
+                new URLSearchParams({
+                  creation_id:
+                    mediaData.id,
+                  access_token:
+                    accessToken,
+                })
+              }
+          );
+
+        const publishData =
+          await publishMedia.json();
+
+        if (
+          !publishMedia.ok ||
+          !publishData.id
+        ) {
+          console.error(
+            "Instagram publish error:",
+            publishData
+          );
+
+          return json(res, 502, {
+            ok: false,
+            error:
+              publishData?.error?.message ||
+              "Instagram no pudo publicar el contenido.",
+          });
+        }
+
+        content.instagram[postIndex] = {
+          ...post,
+          imageUrl,
+          status: "PUBLICADO",
+          publishedAt:
+            new Date().toISOString(),
+          instagramMediaId:
+            publishData.id,
+          updatedAt:
+            new Date().toISOString(),
+        };
+
+        addHistory(
+          content,
+          "publish",
+          "instagram",
+          content.instagram[postIndex]
+        );
+
+        const saved =
+          await saveContent(content);
+
+        return json(res, 200, {
+          ok: true,
+          message:
+            "La publicación fue enviada a Instagram.",
+          mediaId:
+            publishData.id,
           content:
             saved.content,
         });
