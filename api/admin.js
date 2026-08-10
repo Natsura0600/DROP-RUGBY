@@ -1641,6 +1641,29 @@ export default async function handler(
 // TABLA URBA TOP 14
 // ============================================================
 
+// Normaliza nombres de equipo para que variantes como "Hindú" / "Hindu",
+// "Club Atlético del Rosario" / "Atletico del Rosario" o
+// "Regatas de Bella Vista" / "Regatas Bella Vista" se traten como el
+// mismo equipo y no aparezcan duplicados en la tabla.
+const TEAM_ALIASES = {
+  "regatas de bella vista": "regatas bella vista",
+  "atletico del rosario uba": "atletico del rosario",
+  "ca atletico del rosario": "atletico del rosario"
+};
+
+function normalizeTeamKey(name) {
+  let key = String(name || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // saca tildes/diéresis
+    .replace(/^club\s+/, "")         // saca "Club " al inicio
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return TEAM_ALIASES[key] || key;
+}
+
 function calculateStandings(
   content
 ) {
@@ -1663,7 +1686,7 @@ function calculateStandings(
     if (!cleanName) continue;
 
     baseByTeam.set(
-      cleanName.toLowerCase(),
+      normalizeTeamKey(cleanName),
       {
         pj: Number(base.pj) || 0,
         pg: Number(base.pg) || 0,
@@ -1685,7 +1708,7 @@ function calculateStandings(
     }
 
     const key =
-      clean.toLowerCase();
+      normalizeTeamKey(clean);
 
     if (!teams.has(key)) {
       const base =
