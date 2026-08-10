@@ -16,7 +16,7 @@ const BASE = window.ASSET_BASE || "";
 */
 const DROP_RUGBY_TEAMS = {
   alumni: { name: "Alumni", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231144578748476/Alumni.png?ex=6a7aa63e&is=6a7954be&hm=9f4164664975b62a1e9f20901996b0d6289ce03daa54e1e9ba4fc5b7d14a75b1", aliases: ["alumni"] },
-  buenos_aires_crc: { name: "Buenos Aires C&RC", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231158994698280/bacrc.png?ex=6a7aa642&is=6a7954c2&hm=c4c43fac190082d97f6a02d90ce7e57856521c6a3b0a472eb7c97cf29bc14a38", aliases: ["biei", "bac", "buenos aires c&rc", "buenos aires"] },
+  buenos_aires_crc: { name: "Buenos Aires C&RC", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231158994698280/bacrc.png?ex=6a7aa642&is=6a7954c2&hm=c4c43fac190082d97f6a02d90ce7e57856521c6a3b0a472eb7c97cf29bc14a38", aliases: ["biei", "buenos aires c&rc", "buenos aires"] },
   belgrano_athletic: { name: "Belgrano Athletic", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231180058493030/belgrano.png?ex=6a7aa647&is=6a7954c7&hm=b8c7a4db0391182c473393e0718ba00eb337462a03e3e74b616bab8c8c295a6f", aliases: ["belgrano", "belgrano athletic", "bac"] },
   casi: { name: "CASI", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231191177592933/CASI.png?ex=6a7aa649&is=6a7954c9&hm=29d8b98d0c855b6449f8a9087945bf2a645ad5919609cf3b0c363e5026960307", aliases: ["casi"] },
   champagnat: { name: "Champagnat", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231198433611856/Champagnat.png?ex=6a7aa64b&is=6a7954cb&hm=3b5c378a760c5da1ad69bb20205ba244cb2020c34b1ab6b5443b6404d32024f7", aliases: ["champa", "champagnat"] },
@@ -45,6 +45,40 @@ function getTeamByName(value) {
     team.aliases.some(alias => normalizeTeamName(alias) === key) ||
     normalizeTeamName(team.name) === key
   ) || null;
+}
+
+let TEAMS_LOADED = false;
+let TEAMS_LOADING = null;
+
+async function loadTeams() {
+  if (TEAMS_LOADED) return DROP_RUGBY_TEAMS;
+  if (TEAMS_LOADING) return TEAMS_LOADING;
+
+  TEAMS_LOADING = (async () => {
+    try {
+      const res = await fetch(BASE + "data/teams.json", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.clubs && typeof data.clubs === "object") {
+          Object.entries(data.clubs).forEach(([id, team]) => {
+            if (!team || typeof team !== "object") return;
+            DROP_RUGBY_TEAMS[id] = {
+              name: team.name || id,
+              logo: team.logo || "",
+              aliases: Array.isArray(team.aliases) ? team.aliases : []
+            };
+          });
+        }
+      }
+    } catch (_) {
+      // Conserva el registro incorporado como fallback.
+    }
+
+    TEAMS_LOADED = true;
+    return DROP_RUGBY_TEAMS;
+  })();
+
+  return TEAMS_LOADING;
 }
 
 function teamShield(value, className = "team-shield") {
@@ -185,6 +219,7 @@ function storyCardHTML(article, opts = {}) {
 
 /* ---------- Render: portada ---------- */
 async function renderHome() {
+  await loadTeams();
   const grid = document.getElementById("home-top-stories");
   const pumasEl = document.getElementById("home-los-pumas");
   const srEl = document.getElementById("home-super-rugby");
@@ -260,6 +295,7 @@ async function renderCategoryPage(categoryName) {
 
 /* ---------- Render: calendario ---------- */
 async function renderCalendar() {
+  await loadTeams();
   const listEl = document.getElementById("calendar-list");
   if (!listEl) return;
   const fixtures = await loadFixtures();
@@ -415,6 +451,7 @@ async function renderCalendar() {
 
 /* ---------- Render: preview del calendario en la home ---------- */
 async function renderCalendarPreview() {
+  await loadTeams();
   const el = document.getElementById("home-calendar-preview");
   if (!el) return;
   const fixtures = (await loadFixtures()).slice().sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -434,6 +471,7 @@ async function renderCalendarPreview() {
 
 /* ---------- Tabla de posiciones URBA TOP 14 ---------- */
 async function renderUrbaStandings() {
+  await loadTeams();
   const el = document.getElementById("urba-standings");
   if (!el) return;
 
