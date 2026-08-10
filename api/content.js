@@ -256,59 +256,39 @@ async function readData() {
 ========================================================= */
 
 function isPublished(article) {
+  if (!article) return false;
 
-  if (!article) {
-    return false;
+  if (article.published === false) return false;
+
+  // Nueva programación: el navegador administra la zona horaria
+  // y guarda publishAt como ISO, por lo que Vercel puede comparar
+  // directamente contra Date.now().
+  if (article.scheduled && article.publishAt) {
+    const publishAt = new Date(article.publishAt);
+
+    if (Number.isNaN(publishAt.getTime())) {
+      return false;
+    }
+
+    return publishAt.getTime() <= Date.now();
   }
 
+  // Compatibilidad con las primeras versiones del panel.
+  if (article.scheduled) {
+    if (!article.date) return false;
 
-  /*
-   * Las noticias normales se muestran.
-   */
+    const time = article.time || "00:00";
+    const publishAt = new Date(`${article.date}T${time}:00`);
 
-  if (!article.scheduled) {
-    return true;
+    if (Number.isNaN(publishAt.getTime())) {
+      return false;
+    }
+
+    return publishAt.getTime() <= Date.now();
   }
 
-
-  /*
-   * Si está programada necesitamos
-   * fecha y hora.
-   */
-
-  if (!article.date) {
-    return false;
-  }
-
-
-  const time =
-    article.time || '00:00';
-
-
-  const publishAt =
-    new Date(
-      `${article.date}T${time}:00`
-    );
-
-
-  if (
-    Number.isNaN(
-      publishAt.getTime()
-    )
-  ) {
-
-    return false;
-
-  }
-
-
-  return (
-    publishAt.getTime() <=
-    Date.now()
-  );
-
+  return true;
 }
-
 
 /* =========================================================
    DATOS PÚBLICOS
