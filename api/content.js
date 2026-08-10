@@ -63,11 +63,59 @@ async function seed() {
   return data;
 }
 
+async function readLocalData() {
+  const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
+  const fixturesPath = path.join(process.cwd(), 'data', 'fixtures.json');
+
+  const [articlesFile, fixturesFile] = await Promise.all([
+    fs.readFile(articlesPath, 'utf8'),
+    fs.readFile(fixturesPath, 'utf8')
+  ]);
+
+  return {
+    articles: JSON.parse(articlesFile),
+    fixtures: JSON.parse(fixturesFile)
+  };
+}
+
+function hasDeletedHistory(content, type) {
+  return Array.isArray(content?.history) && content.history.some((item) =>
+    String(item?.type || '') === type &&
+    /delete|remove/i.test(String(item?.action || ''))
+  );
+}
+
+async function repairBlobData(data) {
+  const local = await readLocalData();
+  const repaired = { ...data };
+  let changed = false;
+
+  if (
+    Array.isArray(local.articles) &&
+    local.articles.length > 0 &&
+    Array.isArray(data.articles) &&
+    data.articles.length === 0 &&
+    !hasDeletedHistory(data, 'article')
+  ) {
+    repaired.articles = local.articles;
+    changed = true;
+  }
+
+  if (
+    Array.isArray(local.fixtures) &&
+    local.fixtures.length > 0 &&
+    Array.isArray(data.fixtures) &&
+    data.fixtures.length === 0 &&
+    !hasDeletedHistory(data, 'fixture')
+  ) {
+    repaired.fixtures = local.fixtures;
+    changed = true;
+  }
+
+  return { repaired, changed };
+}
+
 async function readData() {
-  // Leemos el blob igual que /api/admin: listamos por prefijo y
-  // pedimos el contenido con cache:"no-store" para no servir nunca
-  // una copia vieja del content.json (antes se usaba get(), que
-  // podía devolver una versión cacheada por el CDN del blob).
   const result = await list({
     prefix: BLOB_PATH,
     limit: 10
@@ -87,7 +135,24 @@ async function readData() {
     throw new Error(`No se pudo leer el Blob. Status: ${response.status}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  const { repaired, changed } = await repairBlobData(data);
+
+  if (changed) {
+    await put(
+      BLOB_PATH,
+      JSON.stringify(repaired),
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: 'application/json; charset=utf-8',
+        cacheControlMaxAge: 0
+      }
+    );
+  }
+
+  return repaired;
 }
 
 export default async function handler(req, res) {
