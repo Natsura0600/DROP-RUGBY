@@ -207,7 +207,13 @@ function storyCardHTML(article, opts = {}) {
     : `<div class="story-image ph-image photo-not-clickable ${article.imageClass || 'img-tone-1'}"></div>`;
   const category = String(article.category || 'Rugby').toUpperCase();
   const subcategory = String(article.subcategory || 'ACTUALIDAD').toUpperCase();
-  const articleUrl = article.url || `article.html?id=${encodeURIComponent(article.id || '')}`;
+  // Las noticias administradas usan article.html?id=... como ruta dinámica.
+  // Si el JSON trae una ruta legacy dentro de /noticias/, la convertimos para
+  // evitar enlaces rotos a archivos HTML que no existen físicamente.
+  const articleId = encodeURIComponent(article.id || "");
+  const articleUrl = (article.url && !String(article.url).startsWith("noticias/"))
+    ? article.url
+    : `article.html?id=${articleId}`;
   const title = String(article.title || 'Sin título');
   const excerpt = String(article.excerpt || '');
   const author = String(article.author || 'DropRugby');
@@ -244,7 +250,13 @@ async function renderHome() {
       : `<div class="hero-image ${featured.imageClass || 'img-tone-1'} photo-not-clickable ph-image"><div class="image-overlay"></div><div class="hero-card-caption"><span>TOP STORY · ${featured.category.toUpperCase()}</span><h2>${featured.title}</h2></div></div>`;
     heroEl.innerHTML = `<div class="hero-card-inner">${heroVisual}</div>`;
     const heroLink = document.getElementById("home-hero-link");
-    if (heroLink) heroLink.href = BASE + featured.url;
+    if (heroLink) {
+      const featuredId = encodeURIComponent(featured.id || "");
+      const featuredUrl = (featured.url && !String(featured.url).startsWith("noticias/"))
+        ? featured.url
+        : `article.html?id=${featuredId}`;
+      heroLink.href = BASE + featuredUrl;
+    }
   }
 
   const rest = articles.filter(a => a.id !== (featured && featured.id));
@@ -320,11 +332,9 @@ async function renderCalendar() {
   currentDate.setHours(0,0,0,0);
 
   // Usar la fecha del fixture más próximo si "hoy" no tiene partidos, para que la demo se vea poblada
-  const availableDates = fixtures.map(f => f.date).sort();
-  if (availableDates.length && !fixtures.some(f => f.date === isoFromDate(currentDate))) {
-    currentDate = dateFromISO(availableDates[0]);
-  }
-
+  // No reemplazar HOY por la primera fecha con partidos.
+  // El calendario debe respetar la fecha real del dispositivo aunque ese día
+  // no haya encuentros cargados.
   function groupByDateAndCompetition(items) {
     const byDate = {};
     items.forEach(f => {
