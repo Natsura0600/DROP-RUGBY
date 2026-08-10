@@ -16,7 +16,7 @@ import path from "node:path";
 const BLOB_PATH = "droprugby/content.json";
 const COOKIE_NAME = "droprugby_session";
 const MAX_AGE = 60 * 60 * 24 * 7;
-
+ 
 const resend = new Resend(
   process.env.RESEND_API_KEY
 );
