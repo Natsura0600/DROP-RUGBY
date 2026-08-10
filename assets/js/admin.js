@@ -17,9 +17,12 @@ const state = {
     results: [],
     standings: [],
     standingsBase: [],
-    settings: {}
+    settings: {},
+    media: []
   },
-  section: "dashboard"
+  section: "dashboard",
+  media: [],
+  clubs: {}
 };
 
 const $ = (s) => document.querySelector(s);
@@ -234,7 +237,9 @@ function normalizeContent(content) {
       data.settings &&
       typeof data.settings === "object"
         ? data.settings
-        : {}
+        : {},
+
+    media: Array.isArray(data.media) ? data.media : []
   };
 }
 
@@ -299,7 +304,8 @@ function switchSection(section) {
     dashboard: "Dashboard",
     articles: "Noticias",
     fixtures: "Partidos",
-    results: "Resultados TOP 14"
+    results: "Resultados TOP 14",
+    media: "Media Manager"
   };
 
   if ($("#page-title")) {
@@ -312,6 +318,7 @@ function switchSection(section) {
   if (section === "articles") renderArticles();
   if (section === "fixtures") renderFixtures();
   if (section === "results") renderResults();
+  if (section === "media") loadMedia();
 }
 
 function closeSidebar() {
@@ -325,6 +332,7 @@ function renderAll() {
   renderArticles();
   renderFixtures();
   renderResults();
+  if (state.section === "media") renderMedia();
 }
 
 function renderCounts() {
@@ -1145,14 +1153,16 @@ function articleForm(article = {}) {
         <textarea name="excerpt" rows="3">${esc(article.excerpt || "")}</textarea>
       </label>
 
-      <label class="full">
-        URL de imagen pública
-        <input
-          name="imageUrl"
-          placeholder="https://..."
-          value="${esc(article.imageUrl || article.image || "")}"
-        >
-      </label>
+      <div class="full media-field">
+        <label>Imagen de portada</label>
+        <div class="media-inline">
+          <input name="imageUrl" id="article-image-url" placeholder="Seleccioná una imagen del Media Manager" value="${esc(article.imageUrl || article.image || "")}" readonly>
+          <button type="button" class="action" id="article-pick-image">ELEGIR</button>
+          <label class="action upload-inline">SUBIR<input id="article-inline-upload" type="file" accept="image/*" hidden></label>
+        </div>
+        <div id="article-image-preview" class="article-image-preview">${article.imageUrl || article.image ? `<img src="${esc(article.imageUrl || article.image)}" alt="Vista previa">` : `<span>Sin imagen seleccionada</span>`}</div>
+        <p class="form-help">Las imágenes se guardan en el Media Manager. No necesitás pegar enlaces externos.</p>
+      </div>
 
       <label>
         Fecha de la noticia
@@ -1260,8 +1270,9 @@ function openArticle(article = {}) {
           slugify(value(fd, "title")),
 
         url:
-          article.url ||
-          `article.html?id=${encodeURIComponent(article.id || "")}`,
+          article.id
+            ? `article.html?id=${encodeURIComponent(article.id)}`
+            : "",
 
         category:
           value(fd, "category") ||
@@ -1313,6 +1324,37 @@ function openArticle(article = {}) {
       );
     }
   );
+
+  requestAnimationFrame(bindArticleMediaControls);
+}
+
+// Conecta los controles de imagen de la noticia después de abrir el modal.
+function bindArticleMediaControls() {
+  $("#article-pick-image")?.addEventListener("click", () => {
+    loadMedia().then(() => openMediaPicker((url) => {
+      const input = $("#article-image-url");
+      if (input) input.value = url;
+      updateArticleImagePreview(url);
+    }));
+  });
+
+  $("#article-inline-upload")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const prepared = await optimizeImage(file);
+      const data = await mediaApi("upload", prepared);
+      if (data.media) state.media.unshift(data.media);
+      const input = $("#article-image-url");
+      if (input) input.value = data.media.url;
+      updateArticleImagePreview(data.media.url);
+      renderMedia();
+      toast("Imagen subida", "La imagen quedó seleccionada para la noticia.");
+    } catch (error) {
+      toast("Error al subir", error.message, "error");
+    }
+    event.target.value = "";
+  });
 }
 
 /* =========================================================
@@ -1761,6 +1803,195 @@ async function deleteItem(action, itemId) {
 }
 
 /* =========================================================
+   MEDIA MANAGER
+========================================================= */
+
+async function mediaApi(action, body = {}) {
+  const response = await fetch("/api/media", {
+    method: action === "list" ? "GET" : "POST",
+    credentials: "include",
+    headers: action === "list" ? {} : { "Content-Type": "application/json" },
+    body: action === "list" ? undefined : JSON.stringify({ action, ...body })
+  });
+
+  let data = {};
+  try { data = await response.json(); } catch { throw new Error("Respuesta inválida del servidor."); }
+  if (!response.ok || data.ok === false) throw new Error(data.error || "Error en Media Manager");
+  return data;
+}
+
+async function loadMedia(showToast = false) {
+  try {
+    const data = await mediaApi("list");
+    state.media = Array.isArray(data.media) ? data.media : [];
+    await loadClubs();
+    renderMedia();
+    renderClubLogos();
+    if (showToast) toast("Media actualizado", `${state.media.length} imágenes disponibles.`);
+  } catch (error) {
+    toast("Media Manager", error.message, "error");
+  }
+}
+
+function mediaName(item) {
+  return String(item.pathname || item.url || "").split("/").pop() || "imagen";
+}
+
+function renderMedia() {
+  const grid = $("#media-grid");
+  if (!grid) return;
+  const q = String($("#media-search")?.value || "").trim().toLowerCase();
+  const type = String($("#media-type-filter")?.value || "");
+  const items = state.media.filter(item => {
+    const name = mediaName(item).toLowerCase();
+    return (!q || name.includes(q)) && (!type || item.contentType === type);
+  });
+
+  grid.innerHTML = items.map(item => `
+    <article class="media-card">
+      <div class="media-thumb"><img src="${esc(item.url)}" alt="${esc(mediaName(item))}" loading="lazy"></div>
+      <div class="media-info">
+        <strong title="${esc(mediaName(item))}">${esc(mediaName(item))}</strong>
+        <small>${esc(item.contentType || "imagen")} · ${item.size ? `${Math.round(item.size / 1024)} KB` : ""}</small>
+      </div>
+      <div class="media-actions">
+        <button class="action" data-media-copy="${esc(item.url)}">COPIAR URL</button>
+        <button class="action" data-media-use="${esc(item.url)}">USAR</button>
+        <button class="action danger" data-media-delete="${esc(item.url)}">ELIMINAR</button>
+      </div>
+    </article>
+  `).join("") || `<div class="empty-state">No hay imágenes todavía. Subí la primera desde el botón superior.</div>`;
+
+  $("#nav-media-count") && ($("#nav-media-count").textContent = state.media.length);
+}
+
+async function loadClubs() {
+  if (Object.keys(state.clubs).length) return state.clubs;
+  try {
+    const response = await fetch('/data/teams.json', { cache: 'no-store' });
+    const data = await response.json();
+    state.clubs = data?.clubs || {};
+  } catch {
+    state.clubs = {};
+  }
+  renderClubLogos();
+  return state.clubs;
+}
+
+function renderClubLogos() {
+  const root = $('#club-logo-grid');
+  if (!root) return;
+  const logos = state.content.settings?.clubLogos || {};
+  const clubs = Object.entries(state.clubs);
+  root.innerHTML = clubs.map(([id, club]) => {
+    const current = logos[id] || club.logo || '';
+    return `<div class="club-logo-row">
+      <div class="club-logo-preview">${current ? `<img src="${esc(current)}" alt="${esc(club.name)}">` : '<span>—</span>'}</div>
+      <div class="club-logo-name"><strong>${esc(club.name)}</strong><small>${esc(id)}</small></div>
+      <button class="action" data-club-pick="${esc(id)}">ELEGIR IMAGEN</button>
+      <button class="action" data-club-clear="${esc(id)}">QUITAR</button>
+    </div>`;
+  }).join('') || '<div class="empty-state">No hay clubes configurados.</div>';
+}
+
+async function assignClubLogo(id, url) {
+  const current = { ...(state.content.settings?.clubLogos || {}) };
+  if (url) current[id] = url; else delete current[id];
+  const data = await api('update-club-logo', { clubId: id, url: url || '' });
+  state.content = normalizeContent(data.content || state.content);
+  renderClubLogos();
+  toast('Escudo actualizado', 'El cambio ya queda guardado para todo el sitio.');
+}
+
+function dataUrlToPayload(dataUrl) {
+  const match = String(dataUrl).match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error("No se pudo preparar la imagen.");
+  return { contentType: match[1], base64: match[2] };
+}
+
+function optimizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("La imagen no es válida."));
+      img.onload = () => {
+        const max = 1600;
+        const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const outputType = file.type === "image/png" ? "image/png" : "image/webp";
+        const quality = outputType === "image/png" ? undefined : 0.78;
+        const dataUrl = canvas.toDataURL(outputType, quality);
+        const payload = dataUrlToPayload(dataUrl);
+        // Vercel Functions tienen límites de payload; mantenemos la imagen
+        // optimizada por debajo de ~4 MB antes de enviarla al servidor.
+        const approxBytes = Math.ceil((payload.base64.length * 3) / 4);
+        if (approxBytes > 4 * 1024 * 1024) {
+          reject(new Error("La imagen sigue siendo demasiado pesada. Usá una imagen más chica."));
+          return;
+        }
+        const ext = outputType === "image/png" ? "png" : "webp";
+        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 70) || "imagen";
+        resolve({ ...payload, filename: `${clean}.${ext}` });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadMediaFiles(files) {
+  const list = [...files];
+  if (!list.length) return;
+  for (const file of list) {
+    if (!file.type.startsWith("image/")) {
+      toast("Archivo omitido", `${file.name} no es una imagen.`, "error");
+      continue;
+    }
+    try {
+      const prepared = await optimizeImage(file);
+      const data = await mediaApi("upload", prepared);
+      if (data.media) state.media.unshift(data.media);
+      renderMedia();
+      toast("Imagen subida", file.name);
+    } catch (error) {
+      toast("Error al subir", `${file.name}: ${error.message}`, "error");
+    }
+  }
+}
+
+function openMediaPicker(callback) {
+  const items = state.media;
+  openModal("Elegir imagen", `
+    <div class="media-picker-grid">
+      ${items.map(item => `
+        <button type="button" class="media-picker-item" data-picker-url="${esc(item.url)}">
+          <img src="${esc(item.url)}" alt="${esc(mediaName(item))}">
+          <span>${esc(mediaName(item))}</span>
+        </button>
+      `).join("") || `<div class="empty-state">No hay imágenes cargadas todavía.</div>`}
+    </div>
+  `, async () => {});
+  $("#modal-root")?.querySelectorAll("[data-picker-url]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      callback(btn.dataset.pickerUrl);
+      closeModal();
+    });
+  });
+}
+
+function updateArticleImagePreview(url) {
+  const preview = $("#article-image-preview");
+  if (!preview) return;
+  preview.innerHTML = url ? `<img src="${esc(url)}" alt="Vista previa">` : `<span>Sin imagen seleccionada</span>`;
+}
+
+/* =========================================================
    EVENTOS
 ========================================================= */
 
@@ -1780,6 +2011,45 @@ document.addEventListener("click", (event) => {
 
   if (go) {
     switchSection(go.dataset.go);
+    return;
+  }
+
+  const mediaCopy = event.target.closest("[data-media-copy]");
+  if (mediaCopy) {
+    navigator.clipboard?.writeText(mediaCopy.dataset.mediaCopy);
+    toast("URL copiada", "La dirección quedó en el portapapeles.");
+    return;
+  }
+
+  const mediaUse = event.target.closest("[data-media-use]");
+  if (mediaUse) {
+    navigator.clipboard?.writeText(mediaUse.dataset.mediaUse);
+    toast("Imagen seleccionada", "URL copiada al portapapeles.");
+    return;
+  }
+
+  const clubPick = event.target.closest('[data-club-pick]');
+  if (clubPick) {
+    loadMedia().then(() => openMediaPicker(async (url) => {
+      try { await assignClubLogo(clubPick.dataset.clubPick, url); }
+      catch (error) { toast('Error', error.message, 'error'); }
+    }));
+    return;
+  }
+
+  const clubClear = event.target.closest('[data-club-clear]');
+  if (clubClear) {
+    if (!confirm('¿Quitar el escudo personalizado de este club?')) return;
+    assignClubLogo(clubClear.dataset.clubClear, '').catch(error => toast('Error', error.message, 'error'));
+    return;
+  }
+
+  const mediaDelete = event.target.closest("[data-media-delete]");
+  if (mediaDelete) {
+    if (!confirm("¿Eliminar esta imagen del Media Manager? Si está usada en el sitio, dejará de mostrarse.")) return;
+    mediaApi("delete", { url: mediaDelete.dataset.mediaDelete })
+      .then(() => { toast("Imagen eliminada"); loadMedia(); })
+      .catch(error => toast("Error", error.message, "error"));
     return;
   }
 
@@ -2014,6 +2284,13 @@ $("#article-category-filter")?.addEventListener(
   "change",
   renderArticles
 );
+
+$("#media-search")?.addEventListener("input", renderMedia);
+$("#media-type-filter")?.addEventListener("change", renderMedia);
+$("#media-upload-input")?.addEventListener("change", (event) => {
+  uploadMediaFiles(event.target.files);
+  event.target.value = "";
+});
 
 $("#fixture-search")?.addEventListener(
   "input",
