@@ -1,4 +1,4 @@
-import { get, put } from '@vercel/blob';
+import { list, put } from '@vercel/blob';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -64,25 +64,30 @@ async function seed() {
 }
 
 async function readData() {
-  // Intentar leer directamente el Blob existente
-  const result = await get(BLOB_PATH, {
-    access: 'public'
+  // Leemos el blob igual que /api/admin: listamos por prefijo y
+  // pedimos el contenido con cache:"no-store" para no servir nunca
+  // una copia vieja del content.json (antes se usaba get(), que
+  // podía devolver una versión cacheada por el CDN del blob).
+  const result = await list({
+    prefix: BLOB_PATH,
+    limit: 10
   });
 
-  // Si todavía no existe, crear el contenido inicial
-  if (!result) {
+  if (!result.blobs.length) {
     return await seed();
   }
 
-  if (result.statusCode !== 200 || !result.stream) {
-    throw new Error(
-      `No se pudo leer el Blob. Status: ${result.statusCode}`
-    );
+  const blob =
+    result.blobs.find((item) => item.pathname === BLOB_PATH) ||
+    result.blobs[0];
+
+  const response = await fetch(blob.url, { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error(`No se pudo leer el Blob. Status: ${response.status}`);
   }
 
-  const text = await new Response(result.stream).text();
-
-  return JSON.parse(text);
+  return await response.json();
 }
 
 export default async function handler(req, res) {
