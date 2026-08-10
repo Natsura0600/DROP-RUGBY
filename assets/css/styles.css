@@ -220,6 +220,35 @@ blockquote { font-family: var(--serif); font-size: 28px; line-height: 1.5; font-
 .copyright { color: #8a8a8a; font-size: 10px; align-self: flex-end; }
 
 /* ==========================================================================
+   TABLA DE POSICIONES — URBA TOP 14
+   ========================================================================== */
+.urba-standings-section { padding-bottom: 20px; }
+.urba-standings { border: 1px solid var(--ink-black); }
+.standings-updated { margin: 0; padding: 12px 18px; font-size: 10px; letter-spacing: 1px; font-weight: 700; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--line); }
+.table-scroll { overflow-x: auto; }
+.standings-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+.standings-table thead th { text-align: left; font-size: 10px; letter-spacing: 1px; font-weight: 700; color: var(--muted); padding: 12px 14px; border-bottom: 1px solid var(--ink-black); white-space: nowrap; }
+.standings-table tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+.standings-table tbody tr:last-child td { border-bottom: 0; }
+.standings-table tbody tr:hover { background: var(--surface); }
+.standings-table .col-pos { font-family: var(--serif); font-size: 15px; width: 30px; }
+.standings-table .col-team { font-weight: 700; white-space: normal; min-width: 170px; }
+.standings-table .col-pts { font-weight: 700; }
+.standings-table .is-positive { color: #1a7a1a; }
+.standings-table .is-negative { color: #b32222; }
+.standings-table tr.is-relegation .col-pos { color: #b32222; }
+.standings-legend { display: flex; gap: 22px; padding: 12px 18px; border-top: 1px solid var(--line); font-size: 10px; letter-spacing: .5px; color: var(--muted); }
+.standings-legend span { display: flex; align-items: center; gap: 7px; }
+.standings-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.standings-legend .dot-ok { background: #1a7a1a; }
+.standings-legend .dot-down { background: #b32222; }
+
+@media (max-width: 640px) {
+  .standings-table { font-size: 12px; }
+  .standings-table thead th, .standings-table tbody td { padding: 10px 9px; }
+}
+
+/* ==========================================================================
    CATEGORY PAGES
    ========================================================================== */
 .category-header { padding: 65px 0 35px; border-bottom: 1px solid var(--line); }
