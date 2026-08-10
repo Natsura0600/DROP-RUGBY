@@ -1,1104 +1,2315 @@
 /* =========================================================
-   DROPRUGBY ADMIN — UI FINAL
-   Compatible con admin.html + assets/js/admin.js
+   DROPRUGBY ADMIN
+   Versión simple:
+   - Noticias
+   - Programación de noticias
+   - Partidos (sin resultados)
+   - Resultados URBA TOP 14
+   - Tabla calculada automáticamente
 ========================================================= */
 
-:root{
-  --bg:#f4f4f1;
-  --surface:#ffffff;
-  --surface-2:#fafaf8;
-  --ink:#111111;
-  --muted:#77756e;
-  --muted-2:#9a9891;
-  --line:#deddd7;
-  --line-soft:#ecebe6;
-  --dark:#111111;
-  --dark-2:#1d1d1b;
-  --success:#276749;
-  --danger:#a12626;
-  --warning:#8b6a16;
-  --serif: Georgia,"Times New Roman",serif;
-  --sans: Arial,Helvetica,sans-serif;
-}
-
-*{box-sizing:border-box}
-
-html,body{
-  margin:0;
-  padding:0;
-  min-height:100%;
-}
-
-body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:var(--sans);
-  font-size:14px;
-}
-
-button,input,select,textarea{
-  font:inherit;
-}
-
-button{
-  cursor:pointer;
-}
-
-a{
-  color:inherit;
-}
-
-.hidden{
-  display:none!important;
-}
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-.login-screen{
-  min-height:100vh;
-  display:grid;
-  place-items:center;
-  padding:24px;
-  background:#111;
-}
-
-.login-card{
-  width:min(430px,100%);
-  background:#fff;
-  padding:42px;
-  border-radius:5px;
-  box-shadow:0 24px 70px rgba(0,0,0,.22);
-}
-
-.login-brand{
-  text-align:center;
-  font:400 31px var(--serif);
-  letter-spacing:.5px;
-}
-
-.login-brand span{
-  font-weight:700;
-}
-
-.login-kicker{
-  margin:8px 0 24px;
-  text-align:center;
-  color:#888;
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:2px;
-}
-
-.login-line{
-  height:1px;
-  background:var(--line);
-  margin-bottom:28px;
-}
-
-.login-card h1{
-  margin:0 0 8px;
-  font:400 29px var(--serif);
-}
-
-.muted{
-  color:var(--muted);
-}
-
-.login-card>p.muted{
-  margin:0 0 24px;
-  font-size:12px;
-  line-height:1.6;
-}
-
-#login-form{
-  display:grid;
-  gap:15px;
-}
-
-#login-form label,
-.modal label{
-  display:grid;
-  gap:7px;
-  color:#333;
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:.5px;
-}
-
-#login-form input,
-.modal input,
-.modal select,
-.modal textarea{
-  width:100%;
-  border:1px solid #d6d4ce;
-  background:#fafaf8;
-  color:#111;
-  padding:12px;
-  border-radius:2px;
-  outline:none;
-}
-
-#login-form input:focus,
-.modal input:focus,
-.modal select:focus,
-.modal textarea:focus{
-  border-color:#111;
-  background:#fff;
-}
-
-.error{
-  min-height:15px;
-  margin:0;
-  color:var(--danger);
-  font-size:10px;
-  text-align:center;
-}
-
-/* =========================================================
-   APP / SIDEBAR
-========================================================= */
-
-.app{
-  min-height:100vh;
-}
-
-.sidebar{
-  position:fixed;
-  z-index:50;
-  inset:0 auto 0 0;
-  width:245px;
-  display:flex;
-  flex-direction:column;
-  padding:27px 18px 20px;
-  background:#111;
-  color:#fff;
-}
-
-.side-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  padding:0 10px 27px;
-  border-bottom:1px solid #303030;
-}
-
-.brand{
-  font:400 25px var(--serif);
-  letter-spacing:.4px;
-}
-
-.brand span{
-  font-weight:700;
-}
-
-.side-head small{
-  display:block;
-  margin-top:5px;
-  color:#999;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:1.8px;
-}
-
-.close{
-  display:none;
-  border:0;
-  background:transparent;
-  color:#aaa;
-  font-size:27px;
-}
-
-.sidebar nav{
-  display:grid;
-  gap:4px;
-  padding-top:22px;
-}
-
-.nav-title{
-  margin:13px 10px 5px;
-  color:#777;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:1.8px;
-}
-
-.nav-item{
-  width:100%;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border:0;
-  border-radius:5px;
-  background:transparent;
-  color:#aaa;
-  padding:12px 11px;
-  text-align:left;
-  font-size:12px;
-  font-weight:700;
-  transition:.18s ease;
-}
-
-.nav-item:hover{
-  background:#202020;
-  color:#fff;
-}
-
-.nav-item.active{
-  background:#292929;
-  color:#fff;
-}
-
-.nav-item b{
-  margin-left:auto;
-  min-width:22px;
-  padding:3px 6px;
-  border-radius:20px;
-  background:#333;
-  color:#aaa;
-  font-size:8px;
-  text-align:center;
-}
-
-.nav-item.active b{
-  background:#fff;
-  color:#111;
-}
-
-.side-bottom{
-  display:grid;
-  gap:6px;
-  margin-top:auto;
-}
-
-.side-bottom>a,
-.side-bottom>button{
-  border:0;
-  background:transparent;
-  color:#aaa;
-  padding:9px 11px;
-  text-align:left;
-  text-decoration:none;
-  font-size:10px;
-}
-
-.side-bottom>a:hover,
-.side-bottom>button:hover{
-  color:#fff;
-}
-
-.admin-user{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-top:9px;
-  padding:13px 10px 0;
-  border-top:1px solid #303030;
-}
-
-.admin-user i{
-  width:30px;
-  height:30px;
-  display:grid;
-  place-items:center;
-  border-radius:50%;
-  background:#fff;
-  color:#111;
-  font-style:normal;
-  font-size:11px;
-  font-weight:800;
-}
-
-.admin-user strong{
-  display:block;
-  font-size:11px;
-}
-
-.admin-user small{
-  display:block;
-  margin-top:2px;
-  color:#777;
-  font-size:8px;
-}
-
-/* =========================================================
-   MAIN
-========================================================= */
-
-main{
-  min-height:100vh;
-  margin-left:245px;
-}
-
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:20;
-  min-height:74px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:20px;
-  padding:14px 38px;
-  border-bottom:1px solid var(--line);
-  background:rgba(244,244,241,.96);
-  backdrop-filter:blur(8px);
-}
-
-.topbar>div:nth-child(2){
-  flex:1;
-}
-
-.topbar small{
-  color:#898780;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:1.7px;
-}
-
-.topbar h2{
-  margin:3px 0 0;
-  font:400 22px var(--serif);
-}
-
-.top-actions{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.icon,
-.site-btn{
-  border:1px solid #cfcfc9;
-  background:#fff;
-  color:#111;
-  padding:9px 12px;
-  text-decoration:none;
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:.5px;
-}
-
-.icon{
-  width:34px;
-  height:34px;
-  padding:0;
-  font-size:17px;
-}
-
-.icon:hover,
-.site-btn:hover{
-  border-color:#111;
-}
-
-.hamb{
-  display:none;
-  border:0;
-  background:transparent;
-  font-size:20px;
-}
-
-.content{
-  padding:35px 42px 70px;
-}
-
-.section{
-  display:none;
-}
-
-.section.active{
-  display:block;
-}
-
-.heading{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-end;
-  gap:20px;
-  margin-bottom:27px;
-}
-
-.heading small{
-  color:#88867f;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:1.8px;
-}
-
-.heading h1{
-  margin:5px 0 7px;
-  font:400 36px var(--serif);
-}
-
-.heading p{
-  margin:0;
-  font-size:12px;
-  line-height:1.5;
-}
-
-.btn{
-  border:1px solid #111;
-  border-radius:3px;
-  padding:11px 15px;
-  background:#fff;
-  color:#111;
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.5px;
-}
-
-.btn.primary{
-  background:#111;
-  color:#fff;
-}
-
-.btn:hover{
-  opacity:.86;
-}
-
-/* =========================================================
-   DASHBOARD
-========================================================= */
-
-.stats{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-  margin-bottom:20px;
-}
-
-.stats>div{
-  min-height:118px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:4px;
-  padding:20px;
-}
-
-.stats small{
-  color:#888;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:1.5px;
-}
-
-.stats strong{
-  margin:7px 0 2px;
-  font:400 34px var(--serif);
-}
-
-.stats span{
-  color:#999;
-  font-size:9px;
-}
-
-.grid2{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-bottom:20px;
-}
-
-.panel{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:4px;
-  padding:21px;
-}
-
-.panel-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:15px;
-  margin-bottom:14px;
-}
-
-.panel-head h3{
-  margin:0;
-  font:400 20px var(--serif);
-}
-
-.link-btn{
-  border:0;
-  background:none;
-  color:#555;
-  padding:5px 0;
-  font-size:9px;
-  font-weight:800;
-  letter-spacing:.4px;
-}
-
-.link-btn:hover{
-  color:#000;
-}
-
-.list-item{
-  min-height:55px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:15px;
-  padding:12px 0;
-  border-top:1px solid var(--line-soft);
-}
-
-.list-item:first-child{
-  border-top:0;
-}
-
-.list-item b{
-  display:block;
-  font:400 14px var(--serif);
-  line-height:1.35;
-}
-
-.list-item small{
-  display:block;
-  margin-top:4px;
-  font-size:9px;
-}
-
-.dashboard-results-panel{
-  margin-bottom:0;
-}
-
-/* =========================================================
-   TABLES / TOOLBARS
-========================================================= */
-
-.toolbar{
-  display:flex;
-  gap:10px;
-  margin-bottom:15px;
-}
-
-.toolbar input,
-.toolbar select{
-  min-width:0;
-  border:1px solid var(--line);
-  background:#fff;
-  padding:11px 12px;
-  outline:none;
-  font-size:11px;
-}
-
-.toolbar input{
-  flex:1;
-}
-
-.toolbar input:focus,
-.toolbar select:focus{
-  border-color:#111;
-}
-
-.table-wrap{
-  width:100%;
-  overflow:auto;
-}
-
-.table-wrap.compact{
-  max-height:620px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:650px;
-}
-
-th{
-  padding:11px 10px;
-  border-bottom:1px solid #d8d7d1;
-  color:#888;
-  text-align:left;
-  white-space:nowrap;
-  font-size:8px;
-  font-weight:800;
-  letter-spacing:1px;
-}
-
-td{
-  padding:13px 10px;
-  border-bottom:1px solid var(--line-soft);
-  vertical-align:middle;
-  font-size:10px;
-}
-
-td strong{
-  font:400 14px var(--serif);
-}
-
-.title-cell{
-  min-width:220px;
-}
-
-.title-cell small{
-  display:block;
-  margin-top:4px;
-  color:#999;
-  font-size:8px;
-}
-
-.actions{
-  display:flex;
-  justify-content:flex-end;
-  gap:5px;
-}
-
-.action{
-  border:1px solid #d4d3cd;
-  background:#fff;
-  color:#111;
-  padding:7px 9px;
-  border-radius:2px;
-  font-size:8px;
-  font-weight:800;
-  letter-spacing:.4px;
-}
-
-.action:hover{
-  border-color:#111;
-}
-
-.empty-row{
-  padding:30px!important;
-  color:#999;
-  text-align:center;
-}
-
-/* =========================================================
-   BADGES
-========================================================= */
-
-.badge{
-  display:inline-flex;
-  align-items:center;
-  max-width:100%;
-  padding:5px 8px;
-  border:1px solid #d5d4ce;
-  border-radius:20px;
-  color:#666;
-  background:#fafaf8;
-  font-size:8px;
-  font-weight:800;
-  letter-spacing:.4px;
-}
-
-.badge.live{
-  border-color:#c7ddcf;
-  color:var(--success);
-  background:#f4faf6;
-}
-
-.badge.scheduled{
-  border-color:#e3d7b4;
-  color:var(--warning);
-  background:#fcfaf2;
+"use strict";
+
+const state = {
+  content: {
+    articles: [],
+    fixtures: [],
+    results: [],
+    standings: [],
+    standingsBase: [],
+    settings: {},
+    media: []
+  },
+  section: "dashboard",
+  media: [],
+  clubs: {}
+};
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+
+const esc = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const makeId = (prefix = "item") =>
+  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+function toast(title, message = "", type = "ok") {
+  const container = $("#toast-container");
+
+  if (!container) {
+    console.log(`[${type}] ${title}: ${message}`);
+    return;
+  }
+
+  const element = document.createElement("div");
+  element.className = `toast ${type}`;
+  element.innerHTML =
+    `<strong>${esc(title)}</strong><span>${esc(message)}</span>`;
+
+  container.appendChild(element);
+
+  setTimeout(() => {
+    element.style.opacity = "0";
+    element.style.transform = "translateY(8px)";
+    setTimeout(() => element.remove(), 250);
+  }, 3200);
+}
+
+function fmt(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(date);
+}
+
+function fmtDT(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function fixtureKey(fixture) {
+  return [
+    fixture.date || "",
+    fixture.time || "",
+    fixture.home || fixture.team1 || fixture.local || "",
+    fixture.away || fixture.team2 || fixture.visitante || "",
+    fixture.competition || ""
+  ]
+    .join("|")
+    .toLowerCase();
+}
+
+function isURBATop14(fixture) {
+  return String(fixture?.competition || "")
+    .trim()
+    .toUpperCase() === "URBA TOP 14";
+}
+
+function getFixtureName(fixture) {
+  const home =
+    fixture.home ||
+    fixture.team1 ||
+    fixture.local ||
+    "Local";
+
+  const away =
+    fixture.away ||
+    fixture.team2 ||
+    fixture.visitante ||
+    "Visitante";
+
+  return `${home} vs ${away}`;
+}
+
+async function api(action, body = {}) {
+  const response = await fetch("/api/admin", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action,
+      ...body
+    })
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(
+      `Respuesta inválida del servidor (${response.status})`
+    );
+  }
+
+  if (!response.ok || data.ok === false) {
+    throw new Error(
+      data.error ||
+      data.message ||
+      "Error en el servidor"
+    );
+  }
+
+  return data;
+}
+
+async function getContent(showToast = false) {
+  const response = await fetch(
+    "/api/admin?action=get",
+    {
+      credentials: "include",
+      cache: "no-store"
+    }
+  );
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("No se pudo leer la respuesta del servidor.");
+  }
+
+  if (!response.ok || !data.ok) {
+    throw new Error(
+      data.error ||
+      "No se pudo cargar el contenido"
+    );
+  }
+
+  state.content = normalizeContent(data.content);
+
+  renderAll();
+
+  if (showToast) {
+    toast("Actualizado", "Contenido actualizado.");
+  }
+}
+
+function normalizeContent(content) {
+  const data =
+    content &&
+    typeof content === "object"
+      ? content
+      : {};
+
+  return {
+    articles: Array.isArray(data.articles)
+      ? data.articles
+      : [],
+
+    fixtures: Array.isArray(data.fixtures)
+      ? data.fixtures
+      : [],
+
+    results: Array.isArray(data.results)
+      ? data.results
+      : [],
+
+    standings: Array.isArray(data.standings)
+      ? data.standings
+      : [],
+
+    standingsBase: Array.isArray(data.standingsBase)
+      ? data.standingsBase
+      : [],
+
+    settings:
+      data.settings &&
+      typeof data.settings === "object"
+        ? data.settings
+        : {},
+
+    media: Array.isArray(data.media) ? data.media : []
+  };
+}
+
+function showApp(user = "admin") {
+  $("#login-screen")?.classList.add("hidden");
+  $("#admin-app")?.classList.remove("hidden");
+
+  if ($("#admin-username")) {
+    $("#admin-username").textContent = user;
+  }
+
+  getContent().catch((error) => {
+    toast("Error", error.message, "error");
+  });
+}
+
+function showLogin() {
+  $("#login-screen")?.classList.remove("hidden");
+  $("#admin-app")?.classList.add("hidden");
+}
+
+async function checkSession() {
+  try {
+    const response = await fetch(
+      "/api/admin?action=session",
+      {
+        credentials: "include",
+        cache: "no-store"
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.authenticated) {
+      showApp(data.user || "admin");
+    } else {
+      showLogin();
+    }
+  } catch {
+    showLogin();
+  }
+}
+
+function switchSection(section) {
+  state.section = section;
+
+  $$(".section").forEach((element) => {
+    element.classList.toggle(
+      "active",
+      element.id === `section-${section}`
+    );
+  });
+
+  $$(".nav-item").forEach((element) => {
+    element.classList.toggle(
+      "active",
+      element.dataset.section === section
+    );
+  });
+
+  const titles = {
+    dashboard: "Dashboard",
+    articles: "Noticias",
+    fixtures: "Partidos",
+    results: "Resultados TOP 14",
+    media: "Media Manager"
+  };
+
+  if ($("#page-title")) {
+    $("#page-title").textContent =
+      titles[section] || "Dashboard";
+  }
+
+  closeSidebar();
+
+  if (section === "articles") renderArticles();
+  if (section === "fixtures") renderFixtures();
+  if (section === "results") renderResults();
+  if (section === "media") loadMedia();
+}
+
+function closeSidebar() {
+  $("#sidebar")?.classList.remove("open");
+  $("#sidebar-overlay")?.classList.remove("show");
+}
+
+function renderAll() {
+  renderCounts();
+  renderDashboard();
+  renderArticles();
+  renderFixtures();
+  renderResults();
+  if (state.section === "media") renderMedia();
+}
+
+function renderCounts() {
+  const content = state.content;
+
+  $("#nav-articles-count").textContent =
+    content.articles.length;
+
+  $("#nav-fixtures-count").textContent =
+    content.fixtures.length;
+
+  $("#nav-results-count").textContent =
+    content.results.length;
+
+  $("#stat-articles").textContent =
+    content.articles.length;
+
+  $("#stat-fixtures").textContent =
+    content.fixtures.length;
+
+  $("#stat-results").textContent =
+    content.results.length;
+
+  $("#stat-scheduled").textContent =
+    content.articles.filter(
+      (article) =>
+        article.scheduled &&
+        article.publishAt &&
+        new Date(article.publishAt).getTime() > Date.now()
+    ).length;
+}
+
+function articleStatus(article) {
+  if (
+    article.scheduled &&
+    article.publishAt &&
+    new Date(article.publishAt).getTime() > Date.now()
+  ) {
+    return `
+      <span class="badge scheduled">
+        PROGRAMADA · ${esc(fmtDT(article.publishAt))}
+      </span>
+    `;
+  }
+
+  if (article.published === false) {
+    return `<span class="badge">BORRADOR</span>`;
+  }
+
+  return `<span class="badge live">PUBLICADA</span>`;
+}
+
+function renderDashboard() {
+  const articles =
+    [...state.content.articles]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || 0) -
+          new Date(a.createdAt || a.date || 0)
+      );
+
+  $("#dashboard-articles").innerHTML =
+    articles
+      .slice(0, 6)
+      .map(
+        (article) => `
+          <div class="list-item">
+            <div>
+              <b>${esc(article.title || "Sin título")}</b>
+              <small class="muted">
+                ${esc(article.category || "Rugby")} · ${fmt(article.date)}
+              </small>
+            </div>
+            <div>${articleStatus(article)}</div>
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="list-item muted">No hay noticias.</div>`;
+
+  const scheduled =
+    articles
+      .filter(
+        (article) =>
+          article.scheduled &&
+          article.publishAt &&
+          new Date(article.publishAt).getTime() > Date.now()
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.publishAt) -
+          new Date(b.publishAt)
+      );
+
+  $("#dashboard-scheduled").innerHTML =
+    scheduled
+      .slice(0, 6)
+      .map(
+        (article) => `
+          <div class="list-item">
+            <div>
+              <b>${esc(article.title || "Sin título")}</b>
+              <small class="muted">${esc(article.category || "Rugby")}</small>
+            </div>
+            <span class="badge scheduled">${esc(fmtDT(article.publishAt))}</span>
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="list-item muted">No hay noticias programadas.</div>`;
+
+  const pending =
+    getPendingFixtures();
+
+  $("#dashboard-pending-results").innerHTML =
+    pending
+      .slice(0, 6)
+      .map(
+        (fixture) => `
+          <div class="list-item">
+            <div>
+              <b>${esc(getFixtureName(fixture))}</b>
+              <small class="muted">
+                ${esc(fixture.date || "—")}
+                ${fixture.time ? ` · ${esc(fixture.time)}` : ""}
+              </small>
+            </div>
+            <button class="action" data-add-result="${esc(fixture.id || fixtureKey(fixture))}">
+              CARGAR RESULTADO
+            </button>
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="list-item muted">No hay resultados pendientes.</div>`;
+}
+
+function filteredArticles() {
+  const query =
+    ($("#article-search")?.value || "")
+      .trim()
+      .toLowerCase();
+
+  const category =
+    $("#article-category-filter")?.value || "";
+
+  return state.content.articles.filter(
+    (article) => {
+      const text = [
+        article.title,
+        article.excerpt,
+        article.author,
+        article.category
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return (
+        (!query || text.includes(query)) &&
+        (!category || article.category === category)
+      );
+    }
+  );
+}
+
+function renderArticles() {
+  const rows =
+    filteredArticles().sort(
+      (a, b) =>
+        new Date(b.createdAt || b.date || 0) -
+        new Date(a.createdAt || a.date || 0)
+    );
+
+  $("#articles-table").innerHTML =
+    rows
+      .map(
+        (article) => `
+          <tr>
+            <td class="title-cell">
+              ${esc(article.title || "Sin título")}
+              <small>${esc(article.author || "DropRugby")}</small>
+            </td>
+
+            <td>${esc(article.category || "Rugby")}</td>
+
+            <td>${esc(fmt(article.date))}</td>
+
+            <td>${articleStatus(article)}</td>
+
+            <td>
+              <div class="actions">
+                <button
+                  class="action"
+                  data-edit-article="${esc(article.id)}"
+                >
+                  EDITAR
+                </button>
+
+                <button
+                  class="action"
+                  data-delete-article="${esc(article.id)}"
+                >
+                  BORRAR
+                </button>
+              </div>
+            </td>
+          </tr>
+        `
+      )
+      .join("") ||
+    `<tr><td colspan="5" class="muted">No hay noticias.</td></tr>`;
+}
+
+function filteredFixtures() {
+  const query =
+    ($("#fixture-search")?.value || "")
+      .trim()
+      .toLowerCase();
+
+  const competition =
+    $("#fixture-competition-filter")?.value || "";
+
+  return state.content.fixtures.filter(
+    (fixture) => {
+      const text = [
+        fixture.home,
+        fixture.away,
+        fixture.team1,
+        fixture.team2,
+        fixture.local,
+        fixture.visitante,
+        fixture.competition,
+        fixture.venue,
+        fixture.channel
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return (
+        (!query || text.includes(query)) &&
+        (!competition ||
+          fixture.competition === competition)
+      );
+    }
+  );
+}
+
+function renderFixtures() {
+  const rows =
+    filteredFixtures().sort(
+      (a, b) =>
+        String(a.date || "").localeCompare(
+          String(b.date || "")
+        ) ||
+        String(a.time || "").localeCompare(
+          String(b.time || "")
+        )
+    );
+
+  $("#fixtures-table").innerHTML =
+    rows
+      .map(
+        (fixture) => `
+          <tr>
+            <td class="title-cell">
+              ${esc(getFixtureName(fixture))}
+            </td>
+
+            <td>${esc(fixture.date || fmt(fixture.datetime))}</td>
+
+            <td>${esc(fixture.time || "—")}</td>
+
+            <td>${esc(fixture.competition || "—")}</td>
+
+            <td>
+              <div class="actions">
+                <button
+                  class="action"
+                  data-edit-fixture="${esc(fixture.id || fixtureKey(fixture))}"
+                >
+                  EDITAR
+                </button>
+
+                <button
+                  class="action"
+                  data-delete-fixture="${esc(fixture.id || fixtureKey(fixture))}"
+                >
+                  BORRAR
+                </button>
+              </div>
+            </td>
+          </tr>
+        `
+      )
+      .join("") ||
+    `<tr><td colspan="5" class="muted">No hay partidos.</td></tr>`;
 }
 
 /* =========================================================
    RESULTADOS
 ========================================================= */
 
-.result-info{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:10px;
-  margin-bottom:20px;
+function resultForFixture(fixture) {
+  const key =
+    fixture.id || fixtureKey(fixture);
+
+  return state.content.results.find(
+    (result) =>
+      String(result.fixtureId || "") === String(key) ||
+      String(result.fixtureKey || "") === fixtureKey(fixture)
+  );
 }
 
-.result-info>div{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:13px 14px;
-  border:1px solid var(--line);
-  background:#fff;
-  border-radius:3px;
+function getPendingFixtures() {
+  return state.content.fixtures
+    .filter(isURBATop14)
+    .filter((fixture) => !resultForFixture(fixture))
+    .sort(
+      (a, b) =>
+        String(a.date || "").localeCompare(
+          String(b.date || "")
+        )
+    );
 }
 
-.result-info strong{
-  font-size:10px;
+function renderResults() {
+  const results =
+    [...state.content.results]
+      .filter(
+        (result) =>
+          String(result.competition || "")
+            .toUpperCase() === "URBA TOP 14"
+      )
+      .sort(
+        (a, b) =>
+          String(b.date || "").localeCompare(
+            String(a.date || "")
+          )
+      );
+
+  $("#results-list").innerHTML =
+    results
+      .map(
+        (result) => `
+          <div class="list-item result-row">
+            <div>
+              <b>
+                ${esc(result.home || "Local")}
+                <strong>${esc(result.homeScore)}</strong>
+                —
+                <strong>${esc(result.awayScore)}</strong>
+                ${esc(result.away || "Visitante")}
+              </b>
+
+              <small class="muted">
+                ${esc(result.date || "—")}
+                · Bonus:
+                ${result.bonusTeam ? esc(result.bonusTeam) : "ninguno"}
+              </small>
+            </div>
+
+            <div class="actions">
+              <button
+                class="action"
+                data-edit-result="${esc(result.id)}"
+              >
+                EDITAR
+              </button>
+
+              <button
+                class="action"
+                data-delete-result="${esc(result.id)}"
+              >
+                BORRAR
+              </button>
+            </div>
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="list-item muted">Todavía no hay resultados cargados.</div>`;
+
+  renderStandingsTable();
+  renderStandingsBaseEditor();
+
+  const pending = getPendingFixtures();
+
+  $("#results-pending").innerHTML = pending.length
+    ? `
+      <div class="result-pending-list">
+        <div class="result-pending-title">
+          PARTIDOS SIN RESULTADO
+        </div>
+        ${pending
+          .map(
+            (fixture) => `
+              <div class="list-item">
+                <div>
+                  <b>${esc(getFixtureName(fixture))}</b>
+                  <small class="muted">
+                    ${esc(fixture.date || "—")}
+                    ${fixture.time ? ` · ${esc(fixture.time)}` : ""}
+                  </small>
+                </div>
+                <button
+                  class="action"
+                  data-add-result="${esc(fixture.id || fixtureKey(fixture))}"
+                >
+                  CARGAR
+                </button>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    `
+    : "";
 }
 
-.result-info span{
-  color:#888;
-  font-size:9px;
+function calculateStandings() {
+  const teams = new Map();
+
+  // Tabla base: fechas ya jugadas antes de empezar a cargar
+  // resultado por resultado desde este panel.
+  const baseByTeam = new Map();
+
+  (state.content.standingsBase || []).forEach((base) => {
+    const cleanName = String(base.team || "").trim();
+    if (!cleanName) return;
+
+    baseByTeam.set(cleanName.toLowerCase(), {
+      pj: Number(base.pj) || 0,
+      pg: Number(base.pg) || 0,
+      pe: Number(base.pe) || 0,
+      pp: Number(base.pp) || 0,
+      diff: Number(base.diff) || 0,
+      pts: Number(base.pts) || 0
+    });
+  });
+
+  const ensureTeam = (name) => {
+    const clean = String(name || "").trim();
+
+    if (!clean) return null;
+
+    const key = clean.toLowerCase();
+
+    if (!teams.has(key)) {
+      const base = baseByTeam.get(key);
+
+      teams.set(key, {
+        team: clean,
+        pj: base ? base.pj : 0,
+        pg: base ? base.pg : 0,
+        pe: base ? base.pe : 0,
+        pp: base ? base.pp : 0,
+        pf: 0,
+        pc: 0,
+        baseDiff: base ? base.diff : 0,
+        diff: 0,
+        bonus: 0,
+        pts: base ? base.pts : 0
+      });
+    }
+
+    return teams.get(key);
+  };
+
+  (state.content.standingsBase || []).forEach((base) => ensureTeam(base.team));
+
+  state.content.fixtures
+    .filter(isURBATop14)
+    .forEach((fixture) => {
+      ensureTeam(
+        fixture.home ||
+        fixture.team1 ||
+        fixture.local
+      );
+
+      ensureTeam(
+        fixture.away ||
+        fixture.team2 ||
+        fixture.visitante
+      );
+    });
+
+  state.content.results
+    .filter(
+      (result) =>
+        String(result.competition || "")
+          .toUpperCase() === "URBA TOP 14"
+    )
+    .forEach((result) => {
+      const home = ensureTeam(result.home);
+      const away = ensureTeam(result.away);
+
+      if (!home || !away) return;
+
+      const hs = Number(result.homeScore);
+      const as = Number(result.awayScore);
+
+      if (
+        !Number.isFinite(hs) ||
+        !Number.isFinite(as)
+      ) {
+        return;
+      }
+
+      home.pj++;
+      away.pj++;
+
+      home.pf += hs;
+      home.pc += as;
+
+      away.pf += as;
+      away.pc += hs;
+
+      if (hs > as) {
+        home.pg++;
+        away.pp++;
+        home.pts += 4;
+      } else if (hs < as) {
+        away.pg++;
+        home.pp++;
+        away.pts += 4;
+      } else {
+        home.pe++;
+        away.pe++;
+        home.pts += 2;
+        away.pts += 2;
+      }
+
+      const bonus =
+        String(result.bonusTeam || "")
+          .trim()
+          .toLowerCase();
+
+      if (
+        bonus &&
+        bonus === home.team.toLowerCase()
+      ) {
+        home.bonus++;
+        home.pts++;
+      }
+
+      if (
+        bonus &&
+        bonus === away.team.toLowerCase()
+      ) {
+        away.bonus++;
+        away.pts++;
+      }
+    });
+
+  return [...teams.values()]
+    .map((team) => ({
+      ...team,
+      diff: (team.baseDiff || 0) + (team.pf - team.pc)
+    }))
+    .sort(
+      (a, b) =>
+        b.pts - a.pts ||
+        b.diff - a.diff ||
+        b.pf - a.pf ||
+        a.team.localeCompare(b.team)
+    );
 }
 
-.result-row b{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  font-size:12px;
+function renderStandingsTable() {
+  const standings = calculateStandings();
+
+  $("#results-standings-table").innerHTML =
+    standings
+      .map(
+        (team, index) => `
+          <tr>
+            <td><strong>${index + 1}</strong></td>
+            <td><strong>${esc(team.team)}</strong></td>
+            <td>${team.pj}</td>
+            <td>${team.pg}</td>
+            <td>${team.pe}</td>
+            <td>${team.pp}</td>
+            <td>${team.pf}</td>
+            <td>${team.pc}</td>
+            <td>${team.diff > 0 ? "+" : ""}${team.diff}</td>
+            <td>${team.bonus}</td>
+            <td><strong>${team.pts}</strong></td>
+          </tr>
+        `
+      )
+      .join("") ||
+    `<tr><td colspan="11" class="muted">No hay equipos de URBA TOP 14.</td></tr>`;
 }
 
-.result-row b strong{
-  font-family:var(--serif);
-  font-size:18px;
+function renderStandingsBaseEditor() {
+  const tbody = $("#standings-base-table");
+  if (!tbody) return;
+
+  const rows = state.content.standingsBase?.length
+    ? state.content.standingsBase
+    : [{ team: "", pj: 0, pg: 0, pe: 0, pp: 0, diff: 0, pts: 0 }];
+
+  tbody.innerHTML = rows
+    .map(
+      (row, i) => `
+        <tr data-row="${i}">
+          <td><input type="text" class="sb-team" value="${esc(row.team ?? "")}" placeholder="Nombre del equipo"></td>
+          <td><input type="number" class="sb-pj" value="${Number(row.pj) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-pg" value="${Number(row.pg) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-pe" value="${Number(row.pe) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-pp" value="${Number(row.pp) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-diff" value="${Number(row.diff) || 0}" style="width:64px;"></td>
+          <td><input type="number" class="sb-pts" value="${Number(row.pts) || 0}" style="width:64px;"></td>
+          <td><button class="action sb-remove" data-remove="${i}">✕</button></td>
+        </tr>
+      `
+    )
+    .join("");
+
+  tbody.querySelectorAll(".sb-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const rows = readStandingsBaseFromForm();
+      const idx = Number(btn.dataset.remove);
+      rows.splice(idx, 1);
+      state.content.standingsBase = rows;
+      renderStandingsBaseEditor();
+    });
+  });
 }
 
-.result-pending-title{
-  margin:4px 0 4px;
-  color:#888;
-  font-size:8px;
-  font-weight:800;
-  letter-spacing:1.4px;
+function readStandingsBaseFromForm() {
+  return $$("#standings-base-table tr").map((tr) => ({
+    team: tr.querySelector(".sb-team")?.value.trim() || "",
+    pj: Number(tr.querySelector(".sb-pj")?.value) || 0,
+    pg: Number(tr.querySelector(".sb-pg")?.value) || 0,
+    pe: Number(tr.querySelector(".sb-pe")?.value) || 0,
+    pp: Number(tr.querySelector(".sb-pp")?.value) || 0,
+    diff: Number(tr.querySelector(".sb-diff")?.value) || 0,
+    pts: Number(tr.querySelector(".sb-pts")?.value) || 0
+  }));
+}
+
+$("#standings-base-add-row")?.addEventListener("click", () => {
+  const rows = readStandingsBaseFromForm();
+  rows.push({ team: "", pj: 0, pg: 0, pe: 0, pp: 0, diff: 0, pts: 0 });
+  state.content.standingsBase = rows;
+  renderStandingsBaseEditor();
+});
+
+$("#standings-base-save")?.addEventListener("click", async () => {
+  const rows = readStandingsBaseFromForm().filter((row) => row.team);
+
+  try {
+    const data = await api("save-standings-base", { standingsBase: rows });
+    state.content.standingsBase = data.standingsBase || rows;
+    state.content.standings = data.standings || state.content.standings;
+    renderStandingsBaseEditor();
+    renderStandingsTable();
+    toast("Guardado", "Tabla base actualizada.");
+  } catch (error) {
+    toast("Error", error.message, "error");
+  }
+});
+
+/* =========================================================
+   MODALES
+========================================================= */
+
+function closeModal() {
+  $("#modal-root").innerHTML = "";
+}
+
+function openModal(title, html, onSubmit) {
+  const root = $("#modal-root");
+
+  root.innerHTML = `
+    <div class="modal-back">
+      <div class="modal">
+        <div class="modal-head">
+          <h2>${esc(title)}</h2>
+          <button type="button" class="modal-close">×</button>
+        </div>
+
+        <form id="modal-form">
+          <div class="modal-body">${html}</div>
+
+          <div class="modal-actions">
+            <button type="button" class="action modal-cancel">
+              CANCELAR
+            </button>
+
+            <button class="btn primary" type="submit">
+              GUARDAR
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  root.querySelector(".modal-close").onclick =
+    closeModal;
+
+  root.querySelector(".modal-cancel").onclick =
+    closeModal;
+
+  root.querySelector(".modal-back").addEventListener(
+    "click",
+    (event) => {
+      if (event.target.classList.contains("modal-back")) {
+        closeModal();
+      }
+    }
+  );
+
+  root.querySelector("#modal-form").onsubmit =
+    async (event) => {
+      event.preventDefault();
+
+      const button =
+        event.submitter;
+
+      button.disabled = true;
+
+      try {
+        await onSubmit(
+          new FormData(event.target)
+        );
+
+        closeModal();
+        await getContent();
+        toast(
+          "Guardado",
+          "Los cambios fueron guardados."
+        );
+      } catch (error) {
+        toast(
+          "Error",
+          error.message,
+          "error"
+        );
+
+        button.disabled = false;
+      }
+    };
+}
+
+function value(fd, key) {
+  return String(fd.get(key) || "").trim();
+}
+
+function checked(fd, key) {
+  return fd.get(key) === "on";
 }
 
 /* =========================================================
-   MODAL
+   NOTICIAS
 ========================================================= */
 
-#modal-root{
-  position:relative;
-  z-index:100;
+function articleForm(article = {}) {
+  const publishDate =
+    article.publishAt
+      ? new Date(article.publishAt)
+      : null;
+
+  const localPublish =
+    publishDate &&
+    !Number.isNaN(publishDate.getTime())
+      ? new Date(
+          publishDate.getTime() -
+          publishDate.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16)
+      : "";
+
+  return `
+    <div class="form-grid">
+
+      <label class="full">
+        Título
+        <input
+          name="title"
+          required
+          value="${esc(article.title || "")}"
+        >
+      </label>
+
+      <label>
+        Categoría
+        <select name="category">
+          ${[
+            "Los Pumas",
+            "Super Rugby",
+            "URBA TOP 14",
+            "URBA",
+            "Internacional",
+            "Rugby"
+          ]
+            .map(
+              (category) =>
+                `<option ${article.category === category ? "selected" : ""}>${category}</option>`
+            )
+            .join("")}
+        </select>
+      </label>
+
+      <label>
+        Autor
+        <input
+          name="author"
+          value="${esc(article.author || "DropRugby")}"
+        >
+      </label>
+
+      <label class="full">
+        Bajada / copete
+        <textarea name="excerpt" rows="3">${esc(article.excerpt || "")}</textarea>
+      </label>
+
+      <div class="full media-field">
+        <label>Imagen de portada</label>
+        <div class="media-inline">
+          <input name="imageUrl" id="article-image-url" placeholder="Seleccioná una imagen del Media Manager" value="${esc(article.imageUrl || article.image || "")}" readonly>
+          <button type="button" class="action" id="article-pick-image">ELEGIR</button>
+          <label class="action upload-inline">SUBIR<input id="article-inline-upload" type="file" accept="image/*" hidden></label>
+        </div>
+        <div id="article-image-preview" class="article-image-preview">${article.imageUrl || article.image ? `<img src="${esc(article.imageUrl || article.image)}" alt="Vista previa">` : `<span>Sin imagen seleccionada</span>`}</div>
+        <p class="form-help">Las imágenes se guardan en el Media Manager. No necesitás pegar enlaces externos.</p>
+      </div>
+
+      <label>
+        Fecha de la noticia
+        <input
+          type="date"
+          name="date"
+          value="${esc(
+            String(article.date || "").slice(0, 10) ||
+            new Date().toISOString().slice(0, 10)
+          )}"
+        >
+      </label>
+
+      <label>
+        Programar para
+        <input
+          type="datetime-local"
+          name="publishAt"
+          value="${esc(localPublish)}"
+        >
+      </label>
+
+      <label class="full">
+        Contenido
+        <textarea
+          name="content"
+          rows="12"
+          placeholder="Escribí la noticia. Separá los párrafos con una línea en blanco."
+        >${esc(article.content || "")}</textarea>
+      </label>
+
+      <label class="check">
+        <input
+          type="checkbox"
+          name="featured"
+          ${article.featured ? "checked" : ""}
+        >
+        Noticia destacada
+      </label>
+
+      <label class="check">
+        <input
+          type="checkbox"
+          name="published"
+          ${article.published !== false ? "checked" : ""}
+        >
+        Publicada
+      </label>
+
+      <label class="check">
+        <input
+          type="checkbox"
+          name="scheduled"
+          ${article.scheduled ? "checked" : ""}
+        >
+        Programar publicación
+      </label>
+
+      <p class="form-help full">
+        Si marcás "Programar publicación", la noticia no se mostrará
+        públicamente hasta la fecha y hora elegidas.
+      </p>
+
+    </div>
+  `;
 }
 
-.modal-back{
-  position:fixed;
-  inset:0;
-  display:grid;
-  place-items:center;
-  padding:20px;
-  background:rgba(0,0,0,.68);
+function openArticle(article = {}) {
+  openModal(
+    article.id
+      ? "Editar noticia"
+      : "Nueva noticia",
+    articleForm(article),
+    async (fd) => {
+      let publishAt = null;
+
+      if (value(fd, "publishAt")) {
+        const date = new Date(
+          value(fd, "publishAt")
+        );
+
+        if (Number.isNaN(date.getTime())) {
+          throw new Error(
+            "La fecha de publicación no es válida."
+          );
+        }
+
+        publishAt = date.toISOString();
+      }
+
+      const scheduled =
+        checked(fd, "scheduled") &&
+        Boolean(publishAt);
+
+      const articleData = {
+        id:
+          article.id ||
+          undefined,
+
+        title:
+          value(fd, "title"),
+
+        slug:
+          article.slug ||
+          slugify(value(fd, "title")),
+
+        url:
+          article.id
+            ? `article.html?id=${encodeURIComponent(article.id)}`
+            : "",
+
+        category:
+          value(fd, "category") ||
+          "Rugby",
+
+        subcategory:
+          article.subcategory ||
+          "Actualidad",
+
+        author:
+          value(fd, "author") ||
+          "DropRugby",
+
+        excerpt:
+          value(fd, "excerpt"),
+
+        content:
+          value(fd, "content"),
+
+        imageUrl:
+          value(fd, "imageUrl"),
+
+        date:
+          value(fd, "date"),
+
+        featured:
+          checked(fd, "featured"),
+
+        published:
+          scheduled
+            ? false
+            : checked(fd, "published"),
+
+        scheduled,
+
+        publishAt,
+
+        createdAt:
+          article.createdAt ||
+          new Date().toISOString(),
+
+        updatedAt:
+          new Date().toISOString()
+      };
+
+      await api(
+        "create-article",
+        { article: articleData }
+      );
+    }
+  );
+
+  requestAnimationFrame(bindArticleMediaControls);
 }
 
-.modal{
-  width:min(820px,100%);
-  max-height:92vh;
-  overflow:auto;
-  background:#fff;
-  border-radius:5px;
-  box-shadow:0 25px 80px rgba(0,0,0,.3);
-}
+// Conecta los controles de imagen de la noticia después de abrir el modal.
+function bindArticleMediaControls() {
+  $("#article-pick-image")?.addEventListener("click", () => {
+    loadMedia().then(() => openMediaPicker((url) => {
+      const input = $("#article-image-url");
+      if (input) input.value = url;
+      updateArticleImagePreview(url);
+    }));
+  });
 
-.modal-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:15px;
-  padding:25px 28px 20px;
-  border-bottom:1px solid var(--line-soft);
-}
-
-.modal-head h2{
-  margin:0;
-  font:400 27px var(--serif);
-}
-
-.modal-close{
-  border:0;
-  background:none;
-  color:#777;
-  font-size:28px;
-  line-height:1;
-}
-
-.modal-body{
-  padding:25px 28px;
-}
-
-.modal form{
-  display:block;
-}
-
-.form-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
-
-.form-grid label.full,
-.form-help.full{
-  grid-column:1 / -1;
-}
-
-.modal textarea{
-  resize:vertical;
-  min-height:90px;
-  line-height:1.55;
-}
-
-.modal .check{
-  display:flex;
-  align-items:center;
-  grid-template-columns:none;
-  gap:8px;
-  font-size:10px;
-}
-
-.modal .check input{
-  width:auto;
-  margin:0;
-}
-
-.form-help{
-  margin:0;
-  color:#888;
-  font-size:9px;
-  line-height:1.6;
-}
-
-.empty-state{
-  padding:20px 0;
-  color:#777;
-  font-size:12px;
-  line-height:1.6;
-}
-
-.modal-actions{
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-  padding:17px 28px 25px;
-  border-top:1px solid var(--line-soft);
-}
-
-.modal-actions .action{
-  padding:11px 14px;
-}
-
-.modal-actions .btn{
-  padding:11px 16px;
+  $("#article-inline-upload")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const prepared = await optimizeImage(file);
+      const data = await mediaApi("upload", prepared);
+      if (data.media) state.media.unshift(data.media);
+      const input = $("#article-image-url");
+      if (input) input.value = data.media.url;
+      updateArticleImagePreview(data.media.url);
+      renderMedia();
+      toast("Imagen subida", "La imagen quedó seleccionada para la noticia.");
+    } catch (error) {
+      toast("Error al subir", error.message, "error");
+    }
+    event.target.value = "";
+  });
 }
 
 /* =========================================================
-   TOASTS
+   PARTIDOS
 ========================================================= */
 
-#toast-container{
-  position:fixed;
-  right:22px;
-  bottom:22px;
-  z-index:500;
-  display:grid;
-  gap:8px;
-  width:min(340px,calc(100vw - 44px));
+function fixtureForm(fixture = {}) {
+  return `
+    <div class="form-grid">
+
+      <label>
+        Local
+        <input
+          name="home"
+          required
+          value="${esc(
+            fixture.home ||
+            fixture.team1 ||
+            fixture.local ||
+            ""
+          )}"
+        >
+      </label>
+
+      <label>
+        Visitante
+        <input
+          name="away"
+          required
+          value="${esc(
+            fixture.away ||
+            fixture.team2 ||
+            fixture.visitante ||
+            ""
+          )}"
+        >
+      </label>
+
+      <label>
+        Fecha
+        <input
+          type="date"
+          name="date"
+          required
+          value="${esc(fixture.date || "")}"
+        >
+      </label>
+
+      <label>
+        Hora
+        <input
+          type="time"
+          name="time"
+          value="${esc(fixture.time || "")}"
+        >
+      </label>
+
+      <label>
+        Competición
+        <select name="competition">
+          ${[
+            "Los Pumas",
+            "Super Rugby",
+            "URBA TOP 14",
+            "URBA"
+          ]
+            .map(
+              (competition) =>
+                `<option ${fixture.competition === competition ? "selected" : ""}>${competition}</option>`
+            )
+            .join("")}
+        </select>
+      </label>
+
+      <label>
+        Canal
+        <input
+          name="channel"
+          value="${esc(fixture.channel || "")}"
+          placeholder="ESPN / URBA Play / Disney+"
+        >
+      </label>
+
+      <label class="full">
+        Cancha / sede
+        <input
+          name="venue"
+          value="${esc(fixture.venue || "")}"
+        >
+      </label>
+
+      <p class="form-help full">
+        Los resultados NO se cargan acá. El marcador se administra
+        exclusivamente desde "Resultados TOP 14".
+      </p>
+
+    </div>
+  `;
 }
 
-.toast{
-  display:grid;
-  gap:4px;
-  padding:13px 15px;
-  border-radius:4px;
-  background:#111;
-  color:#fff;
-  box-shadow:0 10px 30px rgba(0,0,0,.2);
-  transition:.25s;
-}
+function openFixture(fixture = {}) {
+  const isExistingFixture =
+    Boolean(fixture.id || fixtureKey(fixture));
 
-.toast strong{
-  font-size:10px;
-}
+  openModal(
+    isExistingFixture
+      ? "Editar partido"
+      : "Nuevo partido",
+    fixtureForm(fixture),
+    async (fd) => {
+      const fixtureData = {
+        id:
+          fixture.id ||
+          undefined,
 
-.toast span{
-  color:#ccc;
-  font-size:9px;
-  line-height:1.4;
-}
+        fixtureKey:
+          fixtureKey(fixture),
 
-.toast.error{
-  background:#7d2020;
+        home:
+          value(fd, "home"),
+
+        away:
+          value(fd, "away"),
+
+        date:
+          value(fd, "date"),
+
+        time:
+          value(fd, "time"),
+
+        competition:
+          value(fd, "competition"),
+
+        channel:
+          value(fd, "channel"),
+
+        venue:
+          value(fd, "venue")
+      };
+
+      await api(
+        "create-fixture",
+        { fixture: fixtureData }
+      );
+    }
+  );
 }
 
 /* =========================================================
-   RESPONSIVE
+   RESULTADOS
 ========================================================= */
 
-.overlay{
-  display:none;
+function getFixtureByReference(reference) {
+  return state.content.fixtures.find(
+    (fixture) => {
+      const id = String(fixture.id || "");
+      const key = fixtureKey(fixture);
+      return id === String(reference) || key === String(reference);
+    }
+  );
 }
 
-@media(max-width:1000px){
-  .sidebar{
-    width:225px;
+function resultForm(existing = {}, selectedFixture = null) {
+  const usedFixtureKeys =
+    new Set(
+      state.content.results
+        .filter(
+          (result) =>
+            !existing.id ||
+            String(result.id) !== String(existing.id)
+        )
+        .map(
+          (result) =>
+            String(result.fixtureId || result.fixtureKey || "")
+        )
+    );
+
+  const fixtures =
+    state.content.fixtures
+      .filter(isURBATop14)
+      .filter((fixture) => {
+        const key =
+          String(
+            fixture.id ||
+            fixtureKey(fixture)
+          );
+
+        return (
+          !usedFixtureKeys.has(key) ||
+          (
+            selectedFixture &&
+            (
+              key ===
+              String(
+                selectedFixture.id ||
+                fixtureKey(selectedFixture)
+              )
+            )
+          )
+        );
+      })
+      .sort(
+        (a, b) =>
+          String(a.date || "").localeCompare(
+            String(b.date || "")
+          )
+      );
+
+  if (
+    !fixtures.length &&
+    !existing.id
+  ) {
+    return `
+      <div class="empty-state">
+        No hay partidos de URBA TOP 14 disponibles
+        para cargar un resultado.
+        Primero creá el partido desde "Partidos".
+      </div>
+    `;
   }
 
-  main{
-    margin-left:225px;
-  }
+  const currentFixture =
+    selectedFixture ||
+    getFixtureByReference(
+      existing.fixtureId ||
+      existing.fixtureKey ||
+      ""
+    );
 
-  .content{
-    padding:30px 25px 60px;
-  }
+  const selectedValue =
+    currentFixture
+      ? String(
+          currentFixture.id ||
+          fixtureKey(currentFixture)
+        )
+      : "";
 
-  .topbar{
-    padding:14px 25px;
-  }
+  return `
+    <div class="form-grid">
 
-  .stats{
-    grid-template-columns:repeat(2,1fr);
-  }
+      <label class="full">
+        Partido
+        <select name="fixtureRef" required>
+          <option value="">Seleccioná un partido...</option>
 
-  .result-info{
-    grid-template-columns:repeat(2,1fr);
-  }
+          ${fixtures
+            .map(
+              (fixture) => {
+                const key =
+                  String(
+                    fixture.id ||
+                    fixtureKey(fixture)
+                  );
+
+                return `
+                  <option
+                    value="${esc(key)}"
+                    ${key === selectedValue ? "selected" : ""}
+                  >
+                    ${esc(getFixtureName(fixture))}
+                    — ${esc(fixture.date || "")}
+                    ${fixture.time ? ` · ${esc(fixture.time)}` : ""}
+                  </option>
+                `;
+              }
+            )
+            .join("")}
+        </select>
+      </label>
+
+      <label>
+        ${esc(currentFixture?.home || "Local")}
+        <input
+          type="number"
+          name="homeScore"
+          min="0"
+          step="1"
+          required
+          value="${esc(existing.homeScore ?? "")}"
+        >
+      </label>
+
+      <label>
+        ${esc(currentFixture?.away || "Visitante")}
+        <input
+          type="number"
+          name="awayScore"
+          min="0"
+          step="1"
+          required
+          value="${esc(existing.awayScore ?? "")}"
+        >
+      </label>
+
+      <label class="full">
+        Punto bonus
+        <select name="bonusTeam">
+          <option value="" ${!existing.bonusTeam ? "selected" : ""}>
+            Ninguno
+          </option>
+          <option
+            value="${esc(currentFixture?.home || "")}"
+            ${existing.bonusTeam === currentFixture?.home ? "selected" : ""}
+          >
+            ${esc(currentFixture?.home || "Local")}
+          </option>
+          <option
+            value="${esc(currentFixture?.away || "")}"
+            ${existing.bonusTeam === currentFixture?.away ? "selected" : ""}
+          >
+            ${esc(currentFixture?.away || "Visitante")}
+          </option>
+        </select>
+      </label>
+
+      <p class="form-help full">
+        Victoria = 4 puntos · Empate = 2 puntos · Derrota = 0 puntos ·
+        Punto bonus = +1 punto.
+      </p>
+
+    </div>
+  `;
 }
 
-@media(max-width:760px){
-  .sidebar{
-    transform:translateX(-100%);
-    transition:transform .2s ease;
-    box-shadow:15px 0 35px rgba(0,0,0,.18);
-  }
+function openResult(existing = {}, fixture = null) {
+  const target =
+    fixture ||
+    getFixtureByReference(
+      existing.fixtureId ||
+      existing.fixtureKey ||
+      ""
+    );
 
-  .sidebar.open{
-    transform:translateX(0);
-  }
+  openModal(
+    existing.id
+      ? "Editar resultado"
+      : "Cargar resultado",
+    resultForm(existing, target),
+    async (fd) => {
+      const fixtureRef =
+        value(fd, "fixtureRef");
 
-  .close{
-    display:block;
-  }
+      const selected =
+        getFixtureByReference(fixtureRef);
 
-  .overlay{
-    position:fixed;
-    inset:0;
-    z-index:40;
-    background:rgba(0,0,0,.55);
-  }
+      if (!selected) {
+        throw new Error(
+          "Seleccioná un partido válido."
+        );
+      }
 
-  .overlay.show{
-    display:block;
-  }
+      const homeScore =
+        Number(value(fd, "homeScore"));
 
-  main{
-    margin-left:0;
-  }
+      const awayScore =
+        Number(value(fd, "awayScore"));
 
-  .hamb{
-    display:block;
-  }
+      if (
+        !Number.isInteger(homeScore) ||
+        homeScore < 0 ||
+        !Number.isInteger(awayScore) ||
+        awayScore < 0
+      ) {
+        throw new Error(
+          "Los resultados deben ser números enteros mayores o iguales a 0."
+        );
+      }
 
-  .topbar{
-    min-height:66px;
-    padding:12px 16px;
-  }
+      const result = {
+        id:
+          existing.id ||
+          undefined,
 
-  .top-actions .site-btn{
-    display:none;
-  }
+        fixtureId:
+          selected.id ||
+          fixtureKey(selected),
 
-  .content{
-    padding:25px 16px 50px;
-  }
+        fixtureKey:
+          fixtureKey(selected),
 
-  .heading{
-    align-items:flex-start;
-    flex-direction:column;
-  }
+        date:
+          selected.date || "",
 
-  .heading h1{
-    font-size:31px;
-  }
+        time:
+          selected.time || "",
 
-  .grid2{
-    grid-template-columns:1fr;
-  }
+        competition:
+          "URBA TOP 14",
 
-  .stats{
-    grid-template-columns:1fr 1fr;
-  }
+        home:
+          selected.home ||
+          selected.team1 ||
+          selected.local ||
+          "",
 
-  .result-info{
-    grid-template-columns:1fr 1fr;
-  }
+        away:
+          selected.away ||
+          selected.team2 ||
+          selected.visitante ||
+          "",
 
-  .form-grid{
-    grid-template-columns:1fr;
-  }
+        homeScore,
 
-  .form-grid label.full,
-  .form-help.full{
-    grid-column:auto;
-  }
+        awayScore,
+
+        bonusTeam:
+          value(fd, "bonusTeam") || null
+      };
+
+      await api(
+        "save-result",
+        { result }
+      );
+    }
+  );
 }
 
-@media(max-width:500px){
-  .login-card{
-    padding:30px 22px;
+/* =========================================================
+   BORRADO
+========================================================= */
+
+async function deleteItem(action, itemId) {
+  if (
+    !confirm(
+      "¿Seguro que querés borrar este elemento?"
+    )
+  ) {
+    return;
   }
 
-  .content{
-    padding:20px 12px 45px;
-  }
+  try {
+    await api(action, { id: itemId });
+    await getContent();
 
-  .panel{
-    padding:16px;
-  }
-
-  .stats{
-    grid-template-columns:1fr;
-  }
-
-  .result-info{
-    grid-template-columns:1fr;
-  }
-
-  .toolbar{
-    flex-direction:column;
-  }
-
-  .heading .btn{
-    width:100%;
-  }
-
-  .modal-back{
-    padding:8px;
-  }
-
-  .modal-head,
-  .modal-body,
-  .modal-actions{
-    padding-left:18px;
-    padding-right:18px;
-  }
-
-  .modal-actions{
-    flex-direction:column-reverse;
-  }
-
-  .modal-actions>*{
-    width:100%;
-  }
-
-  .topbar h2{
-    font-size:19px;
+    toast(
+      "Eliminado",
+      "El elemento fue eliminado."
+    );
+  } catch (error) {
+    toast(
+      "Error",
+      error.message,
+      "error"
+    );
   }
 }
- 
 
 /* =========================================================
    MEDIA MANAGER
 ========================================================= */
-.media-upload-btn{display:inline-flex;align-items:center;cursor:pointer;}
-.media-toolbar{margin-bottom:15px;}
-.media-panel{padding:18px;}
-.media-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
-.media-card{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff;min-width:0;}
-.media-thumb{aspect-ratio:16/10;background:#f1f1ee;display:grid;place-items:center;overflow:hidden;}
-.media-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.media-info{padding:10px 11px 7px;}
-.media-info strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;}
-.media-info small{display:block;margin-top:4px;color:#999;font-size:8px;}
-.media-actions{display:flex;gap:5px;flex-wrap:wrap;padding:0 10px 10px;}
-.media-actions .action{flex:1;min-width:72px;}
-.action.danger{color:#8b2525;border-color:#e1c4c4;}
-.media-inline{display:flex;gap:7px;align-items:center;}
-.media-inline input{flex:1;min-width:0;}
-.upload-inline{cursor:pointer;white-space:nowrap;}
-.article-image-preview{margin-top:10px;min-height:110px;border:1px dashed #d5d4ce;background:#fafaf8;display:grid;place-items:center;color:#999;font-size:9px;overflow:hidden;}
-.article-image-preview img{display:block;width:100%;max-height:230px;object-fit:cover;}
-.media-picker-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
-.media-picker-item{border:1px solid var(--line);background:#fff;padding:6px;text-align:left;cursor:pointer;}
-.media-picker-item:hover{border-color:#111;}
-.media-picker-item img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#f1f1ee;}
-.media-picker-item span{display:block;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;}
-@media(max-width:1100px){.media-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
-@media(max-width:760px){.media-grid,.media-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.media-inline{flex-wrap:wrap;}.media-inline input{flex-basis:100%;}}
-@media(max-width:480px){.media-grid,.media-picker-grid{grid-template-columns:1fr;}}
+
+async function mediaApi(action, body = {}) {
+  const response = await fetch("/api/media", {
+    method: action === "list" ? "GET" : "POST",
+    credentials: "include",
+    headers: action === "list" ? {} : { "Content-Type": "application/json" },
+    body: action === "list" ? undefined : JSON.stringify({ action, ...body })
+  });
+
+  let data = {};
+  try { data = await response.json(); } catch { throw new Error("Respuesta inválida del servidor."); }
+  if (!response.ok || data.ok === false) throw new Error(data.error || "Error en Media Manager");
+  return data;
+}
+
+async function loadMedia(showToast = false) {
+  try {
+    const data = await mediaApi("list");
+    state.media = Array.isArray(data.media) ? data.media : [];
+    await loadClubs();
+    renderMedia();
+    renderClubLogos();
+    if (showToast) toast("Media actualizado", `${state.media.length} imágenes disponibles.`);
+  } catch (error) {
+    toast("Media Manager", error.message, "error");
+  }
+}
+
+function mediaName(item) {
+  return String(item.pathname || item.url || "").split("/").pop() || "imagen";
+}
+
+function renderMedia() {
+  const grid = $("#media-grid");
+  if (!grid) return;
+  const q = String($("#media-search")?.value || "").trim().toLowerCase();
+  const type = String($("#media-type-filter")?.value || "");
+  const items = state.media.filter(item => {
+    const name = mediaName(item).toLowerCase();
+    return (!q || name.includes(q)) && (!type || item.contentType === type);
+  });
+
+  grid.innerHTML = items.map(item => `
+    <article class="media-card">
+      <div class="media-thumb"><img src="${esc(item.url)}" alt="${esc(mediaName(item))}" loading="lazy"></div>
+      <div class="media-info">
+        <strong title="${esc(mediaName(item))}">${esc(mediaName(item))}</strong>
+        <small>${esc(item.contentType || "imagen")} · ${item.size ? `${Math.round(item.size / 1024)} KB` : ""}</small>
+      </div>
+      <div class="media-actions">
+        <button class="action" data-media-copy="${esc(item.url)}">COPIAR URL</button>
+        <button class="action" data-media-use="${esc(item.url)}">USAR</button>
+        <button class="action danger" data-media-delete="${esc(item.url)}">ELIMINAR</button>
+      </div>
+    </article>
+  `).join("") || `<div class="empty-state">No hay imágenes todavía. Subí la primera desde el botón superior.</div>`;
+
+  $("#nav-media-count") && ($("#nav-media-count").textContent = state.media.length);
+}
+
+async function loadClubs() {
+  if (Object.keys(state.clubs).length) return state.clubs;
+  try {
+    const response = await fetch('/data/teams.json', { cache: 'no-store' });
+    const data = await response.json();
+    state.clubs = data?.clubs || {};
+  } catch {
+    state.clubs = {};
+  }
+  renderClubLogos();
+  return state.clubs;
+}
+
+function renderClubLogos() {
+  const root = $('#club-logo-grid');
+  if (!root) return;
+  const logos = state.content.settings?.clubLogos || {};
+  const clubs = Object.entries(state.clubs);
+  root.innerHTML = clubs.map(([id, club]) => {
+    const current = logos[id] || club.logo || '';
+    return `<div class="club-logo-row">
+      <div class="club-logo-preview">${current ? `<img src="${esc(current)}" alt="${esc(club.name)}">` : '<span>—</span>'}</div>
+      <div class="club-logo-name"><strong>${esc(club.name)}</strong><small>${esc(id)}</small></div>
+      <button class="action" data-club-pick="${esc(id)}">ELEGIR IMAGEN</button>
+      <button class="action" data-club-clear="${esc(id)}">QUITAR</button>
+    </div>`;
+  }).join('') || '<div class="empty-state">No hay clubes configurados.</div>';
+}
+
+async function assignClubLogo(id, url) {
+  const current = { ...(state.content.settings?.clubLogos || {}) };
+  if (url) current[id] = url; else delete current[id];
+  const data = await api('update-club-logo', { clubId: id, url: url || '' });
+  state.content = normalizeContent(data.content || state.content);
+  renderClubLogos();
+  toast('Escudo actualizado', 'El cambio ya queda guardado para todo el sitio.');
+}
+
+function dataUrlToPayload(dataUrl) {
+  const match = String(dataUrl).match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error("No se pudo preparar la imagen.");
+  return { contentType: match[1], base64: match[2] };
+}
+
+function optimizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("La imagen no es válida."));
+      img.onload = () => {
+        const max = 1600;
+        const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const outputType = file.type === "image/png" ? "image/png" : "image/webp";
+        const quality = outputType === "image/png" ? undefined : 0.78;
+        const dataUrl = canvas.toDataURL(outputType, quality);
+        const payload = dataUrlToPayload(dataUrl);
+        // Vercel Functions tienen límites de payload; mantenemos la imagen
+        // optimizada por debajo de ~4 MB antes de enviarla al servidor.
+        const approxBytes = Math.ceil((payload.base64.length * 3) / 4);
+        if (approxBytes > 4 * 1024 * 1024) {
+          reject(new Error("La imagen sigue siendo demasiado pesada. Usá una imagen más chica."));
+          return;
+        }
+        const ext = outputType === "image/png" ? "png" : "webp";
+        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 70) || "imagen";
+        resolve({ ...payload, filename: `${clean}.${ext}` });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadMediaFiles(files) {
+  const list = [...files];
+  if (!list.length) return;
+  for (const file of list) {
+    if (!file.type.startsWith("image/")) {
+      toast("Archivo omitido", `${file.name} no es una imagen.`, "error");
+      continue;
+    }
+    try {
+      const prepared = await optimizeImage(file);
+      const data = await mediaApi("upload", prepared);
+      if (data.media) state.media.unshift(data.media);
+      renderMedia();
+      toast("Imagen subida", file.name);
+    } catch (error) {
+      toast("Error al subir", `${file.name}: ${error.message}`, "error");
+    }
+  }
+}
+
+function openMediaPicker(callback) {
+  const items = state.media;
+  openModal("Elegir imagen", `
+    <div class="media-picker-grid">
+      ${items.map(item => `
+        <button type="button" class="media-picker-item" data-picker-url="${esc(item.url)}">
+          <img src="${esc(item.url)}" alt="${esc(mediaName(item))}">
+          <span>${esc(mediaName(item))}</span>
+        </button>
+      `).join("") || `<div class="empty-state">No hay imágenes cargadas todavía.</div>`}
+    </div>
+  `, async () => {});
+  $("#modal-root")?.querySelectorAll("[data-picker-url]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      callback(btn.dataset.pickerUrl);
+      closeModal();
+    });
+  });
+}
+
+function updateArticleImagePreview(url) {
+  const preview = $("#article-image-preview");
+  if (!preview) return;
+  preview.innerHTML = url ? `<img src="${esc(url)}" alt="Vista previa">` : `<span>Sin imagen seleccionada</span>`;
+}
+
+/* =========================================================
+   EVENTOS
+========================================================= */
+
+document.addEventListener("click", (event) => {
+  const nav =
+    event.target.closest(".nav-item");
+
+  if (nav) {
+    switchSection(
+      nav.dataset.section
+    );
+    return;
+  }
+
+  const go =
+    event.target.closest("[data-go]");
+
+  if (go) {
+    switchSection(go.dataset.go);
+    return;
+  }
+
+  const mediaCopy = event.target.closest("[data-media-copy]");
+  if (mediaCopy) {
+    navigator.clipboard?.writeText(mediaCopy.dataset.mediaCopy);
+    toast("URL copiada", "La dirección quedó en el portapapeles.");
+    return;
+  }
+
+  const mediaUse = event.target.closest("[data-media-use]");
+  if (mediaUse) {
+    navigator.clipboard?.writeText(mediaUse.dataset.mediaUse);
+    toast("Imagen seleccionada", "URL copiada al portapapeles.");
+    return;
+  }
+
+  const clubPick = event.target.closest('[data-club-pick]');
+  if (clubPick) {
+    loadMedia().then(() => openMediaPicker(async (url) => {
+      try { await assignClubLogo(clubPick.dataset.clubPick, url); }
+      catch (error) { toast('Error', error.message, 'error'); }
+    }));
+    return;
+  }
+
+  const clubClear = event.target.closest('[data-club-clear]');
+  if (clubClear) {
+    if (!confirm('¿Quitar el escudo personalizado de este club?')) return;
+    assignClubLogo(clubClear.dataset.clubClear, '').catch(error => toast('Error', error.message, 'error'));
+    return;
+  }
+
+  const mediaDelete = event.target.closest("[data-media-delete]");
+  if (mediaDelete) {
+    if (!confirm("¿Eliminar esta imagen del Media Manager? Si está usada en el sitio, dejará de mostrarse.")) return;
+    mediaApi("delete", { url: mediaDelete.dataset.mediaDelete })
+      .then(() => { toast("Imagen eliminada"); loadMedia(); })
+      .catch(error => toast("Error", error.message, "error"));
+    return;
+  }
+
+  if (
+    event.target.closest("#dashboard-new-article") ||
+    event.target.closest("#new-article-button")
+  ) {
+    openArticle();
+    return;
+  }
+
+  if (
+    event.target.closest("#new-fixture-button")
+  ) {
+    openFixture();
+    return;
+  }
+
+  if (
+    event.target.closest("#new-result-button")
+  ) {
+    openResult();
+    return;
+  }
+
+  const addResult =
+    event.target.closest("[data-add-result]");
+
+  if (addResult) {
+    const fixture =
+      getFixtureByReference(
+        addResult.dataset.addResult
+      );
+
+    if (fixture) {
+      openResult({}, fixture);
+    }
+
+    return;
+  }
+
+  const editArticle =
+    event.target.closest(
+      "[data-edit-article]"
+    );
+
+  if (editArticle) {
+    const article =
+      state.content.articles.find(
+        (item) =>
+          String(item.id) ===
+          String(
+            editArticle.dataset.editArticle
+          )
+      );
+
+    if (article) {
+      openArticle(article);
+    }
+
+    return;
+  }
+
+  const deleteArticle =
+    event.target.closest(
+      "[data-delete-article]"
+    );
+
+  if (deleteArticle) {
+    deleteItem(
+      "delete-article",
+      deleteArticle.dataset.deleteArticle
+    );
+
+    return;
+  }
+
+  const editFixture =
+    event.target.closest(
+      "[data-edit-fixture]"
+    );
+
+  if (editFixture) {
+    const fixture =
+      getFixtureByReference(
+        editFixture.dataset.editFixture
+      );
+
+    if (fixture) {
+      openFixture(fixture);
+    }
+
+    return;
+  }
+
+  const deleteFixture =
+    event.target.closest(
+      "[data-delete-fixture]"
+    );
+
+  if (deleteFixture) {
+    deleteItem(
+      "delete-fixture",
+      deleteFixture.dataset.deleteFixture
+    );
+
+    return;
+  }
+
+  const editResult =
+    event.target.closest(
+      "[data-edit-result]"
+    );
+
+  if (editResult) {
+    const result =
+      state.content.results.find(
+        (item) =>
+          String(item.id) ===
+          String(
+            editResult.dataset.editResult
+          )
+      );
+
+    if (result) {
+      openResult(result);
+    }
+
+    return;
+  }
+
+  const deleteResult =
+    event.target.closest(
+      "[data-delete-result]"
+    );
+
+  if (deleteResult) {
+    deleteItem(
+      "delete-result",
+      deleteResult.dataset.deleteResult
+    );
+  }
+});
+
+$("#login-form")?.addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    $("#login-error").textContent = "";
+
+    try {
+      const data = await api(
+        "login",
+        {
+          username:
+            $("#login-user").value,
+
+          password:
+            $("#login-password").value
+        }
+      );
+
+      showApp(
+        data.user || "admin"
+      );
+
+      $("#login-password").value = "";
+    } catch (error) {
+      $("#login-error").textContent =
+        error.message;
+
+      toast(
+        "Error de acceso",
+        error.message,
+        "error"
+      );
+    }
+  }
+);
+
+$("#logout-button")?.addEventListener(
+  "click",
+  async () => {
+    try {
+      await api("logout");
+    } catch {
+      // La sesión visual se limpia igual.
+    }
+
+    showLogin();
+  }
+);
+
+$("#refresh-button")?.addEventListener(
+  "click",
+  () => {
+    getContent(true).catch((error) =>
+      toast(
+        "Error",
+        error.message,
+        "error"
+      )
+    );
+  }
+);
+
+$("#menu-button")?.addEventListener(
+  "click",
+  () => {
+    $("#sidebar")?.classList.add("open");
+    $("#sidebar-overlay")?.classList.add("show");
+  }
+);
+
+$("#sidebar-close")?.addEventListener(
+  "click",
+  closeSidebar
+);
+
+$("#sidebar-overlay")?.addEventListener(
+  "click",
+  closeSidebar
+);
+
+$("#article-search")?.addEventListener(
+  "input",
+  renderArticles
+);
+
+$("#article-category-filter")?.addEventListener(
+  "change",
+  renderArticles
+);
+
+$("#media-search")?.addEventListener("input", renderMedia);
+$("#media-type-filter")?.addEventListener("change", renderMedia);
+$("#media-upload-input")?.addEventListener("change", (event) => {
+  uploadMediaFiles(event.target.files);
+  event.target.value = "";
+});
+
+$("#fixture-search")?.addEventListener(
+  "input",
+  renderFixtures
+);
+
+$("#fixture-competition-filter")?.addEventListener(
+  "change",
+  renderFixtures
+);
+
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.key === "Escape") {
+      closeModal();
+      closeSidebar();
+    }
+  }
+);
+
+checkSession();
