@@ -56,22 +56,37 @@ async function loadTeams() {
 
   TEAMS_LOADING = (async () => {
     try {
-      const res = await fetch(BASE + "data/teams.json", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.clubs && typeof data.clubs === "object") {
-          Object.entries(data.clubs).forEach(([id, team]) => {
+      // Primero toma la configuración administrable desde Vercel Blob.
+      // Si todavía no existe, conserva teams.json como fallback.
+      const apiRes = await fetch(BASE + "api/content?t=" + Date.now(), { cache: "no-store" });
+      if (apiRes.ok) {
+        const content = await apiRes.json();
+        const clubLogos = content?.settings?.clubLogos || {};
+        if (content?.teams?.clubs && typeof content.teams.clubs === "object") {
+          Object.entries(content.teams.clubs).forEach(([id, team]) => {
             if (!team || typeof team !== "object") return;
-            DROP_RUGBY_TEAMS[id] = {
-              name: team.name || id,
-              logo: team.logo || "",
-              aliases: Array.isArray(team.aliases) ? team.aliases : []
-            };
+            DROP_RUGBY_TEAMS[id] = { name: team.name || id, logo: clubLogos[id] || team.logo || "", aliases: Array.isArray(team.aliases) ? team.aliases : [] };
           });
         }
+        Object.entries(clubLogos).forEach(([id, logo]) => {
+          if (DROP_RUGBY_TEAMS[id]) DROP_RUGBY_TEAMS[id].logo = logo;
+        });
       }
     } catch (_) {
-      // Conserva el registro incorporado como fallback.
+      try {
+        const res = await fetch(BASE + "data/teams.json", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.clubs && typeof data.clubs === "object") {
+            Object.entries(data.clubs).forEach(([id, team]) => {
+              if (!team || typeof team !== "object") return;
+              DROP_RUGBY_TEAMS[id] = { name: team.name || id, logo: team.logo || "", aliases: Array.isArray(team.aliases) ? team.aliases : [] };
+            });
+          }
+        }
+      } catch (_) {
+        // Conserva el registro incorporado como fallback.
+      }
     }
 
     TEAMS_LOADED = true;
@@ -207,13 +222,9 @@ function storyCardHTML(article, opts = {}) {
     : `<div class="story-image ph-image photo-not-clickable ${article.imageClass || 'img-tone-1'}"></div>`;
   const category = String(article.category || 'Rugby').toUpperCase();
   const subcategory = String(article.subcategory || 'ACTUALIDAD').toUpperCase();
-  // Las noticias administradas usan article.html?id=... como ruta dinámica.
-  // Si el JSON trae una ruta legacy dentro de /noticias/, la convertimos para
-  // evitar enlaces rotos a archivos HTML que no existen físicamente.
-  const articleId = encodeURIComponent(article.id || "");
-  const articleUrl = (article.url && !String(article.url).startsWith("noticias/"))
-    ? article.url
-    : `article.html?id=${articleId}`;
+  // La URL pública siempre se construye con el ID. Así no quedan
+  // enlaces viejos/rotos aunque el registro tenga una URL antigua.
+  const articleUrl = `article.html?id=${encodeURIComponent(article.id || '')}`;
   const title = String(article.title || 'Sin título');
   const excerpt = String(article.excerpt || '');
   const author = String(article.author || 'DropRugby');
@@ -248,15 +259,10 @@ async function renderHome() {
     const heroVisual = featured.imageUrl
       ? `<div class="hero-image photo-not-clickable"><img src="${String(featured.imageUrl).replace(/"/g, '&quot;')}" alt="" loading="eager"><div class="image-overlay"></div><div class="hero-card-caption"><span>TOP STORY · ${featured.category.toUpperCase()}</span><h2>${featured.title}</h2></div></div>`
       : `<div class="hero-image ${featured.imageClass || 'img-tone-1'} photo-not-clickable ph-image"><div class="image-overlay"></div><div class="hero-card-caption"><span>TOP STORY · ${featured.category.toUpperCase()}</span><h2>${featured.title}</h2></div></div>`;
-    heroEl.innerHTML = `<div class="hero-card-inner">${heroVisual}</div>`;
+    const canonicalHeroUrl = `${BASE}article.html?id=${encodeURIComponent(featured.id || "")}`;
+    heroEl.innerHTML = `<a class="hero-card-inner hero-card-link" href="${canonicalHeroUrl}">${heroVisual}</a>`;
     const heroLink = document.getElementById("home-hero-link");
-    if (heroLink) {
-      const featuredId = encodeURIComponent(featured.id || "");
-      const featuredUrl = (featured.url && !String(featured.url).startsWith("noticias/"))
-        ? featured.url
-        : `article.html?id=${featuredId}`;
-      heroLink.href = BASE + featuredUrl;
-    }
+    if (heroLink) heroLink.href = canonicalHeroUrl;
   }
 
   const rest = articles.filter(a => a.id !== (featured && featured.id));
@@ -332,9 +338,11 @@ async function renderCalendar() {
   currentDate.setHours(0,0,0,0);
 
   // Usar la fecha del fixture más próximo si "hoy" no tiene partidos, para que la demo se vea poblada
-  // No reemplazar HOY por la primera fecha con partidos.
-  // El calendario debe respetar la fecha real del dispositivo aunque ese día
-  // no haya encuentros cargados.
+  const availableDates = fixtures.map(f => f.date).sort();
+  if (availableDates.length && !fixtures.some(f => f.date === isoFromDate(currentDate))) {
+    currentDate = dateFromISO(availableDates[0]);
+  }
+
   function groupByDateAndCompetition(items) {
     const byDate = {};
     items.forEach(f => {
