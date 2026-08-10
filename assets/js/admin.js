@@ -16,6 +16,7 @@ const state = {
     fixtures: [],
     results: [],
     standings: [],
+    standingsBase: [],
     settings: {}
   },
   section: "dashboard"
@@ -223,6 +224,10 @@ function normalizeContent(content) {
 
     standings: Array.isArray(data.standings)
       ? data.standings
+      : [],
+
+    standingsBase: Array.isArray(data.standingsBase)
+      ? data.standingsBase
       : [],
 
     settings:
@@ -703,6 +708,7 @@ function renderResults() {
     `<div class="list-item muted">Todavía no hay resultados cargados.</div>`;
 
   renderStandingsTable();
+  renderStandingsBaseEditor();
 
   const pending = getPendingFixtures();
 
@@ -741,6 +747,24 @@ function renderResults() {
 function calculateStandings() {
   const teams = new Map();
 
+  // Tabla base: fechas ya jugadas antes de empezar a cargar
+  // resultado por resultado desde este panel.
+  const baseByTeam = new Map();
+
+  (state.content.standingsBase || []).forEach((base) => {
+    const cleanName = String(base.team || "").trim();
+    if (!cleanName) return;
+
+    baseByTeam.set(cleanName.toLowerCase(), {
+      pj: Number(base.pj) || 0,
+      pg: Number(base.pg) || 0,
+      pe: Number(base.pe) || 0,
+      pp: Number(base.pp) || 0,
+      diff: Number(base.diff) || 0,
+      pts: Number(base.pts) || 0
+    });
+  });
+
   const ensureTeam = (name) => {
     const clean = String(name || "").trim();
 
@@ -749,22 +773,27 @@ function calculateStandings() {
     const key = clean.toLowerCase();
 
     if (!teams.has(key)) {
+      const base = baseByTeam.get(key);
+
       teams.set(key, {
         team: clean,
-        pj: 0,
-        pg: 0,
-        pe: 0,
-        pp: 0,
+        pj: base ? base.pj : 0,
+        pg: base ? base.pg : 0,
+        pe: base ? base.pe : 0,
+        pp: base ? base.pp : 0,
         pf: 0,
         pc: 0,
+        baseDiff: base ? base.diff : 0,
         diff: 0,
         bonus: 0,
-        pts: 0
+        pts: base ? base.pts : 0
       });
     }
 
     return teams.get(key);
   };
+
+  (state.content.standingsBase || []).forEach((base) => ensureTeam(base.team));
 
   state.content.fixtures
     .filter(isURBATop14)
@@ -853,7 +882,7 @@ function calculateStandings() {
   return [...teams.values()]
     .map((team) => ({
       ...team,
-      diff: team.pf - team.pc
+      diff: (team.baseDiff || 0) + (team.pf - team.pc)
     }))
     .sort(
       (a, b) =>
@@ -889,6 +918,76 @@ function renderStandingsTable() {
       .join("") ||
     `<tr><td colspan="11" class="muted">No hay equipos de URBA TOP 14.</td></tr>`;
 }
+
+function renderStandingsBaseEditor() {
+  const tbody = $("#standings-base-table");
+  if (!tbody) return;
+
+  const rows = state.content.standingsBase?.length
+    ? state.content.standingsBase
+    : [{ team: "", pj: 0, pg: 0, pe: 0, pp: 0, diff: 0, pts: 0 }];
+
+  tbody.innerHTML = rows
+    .map(
+      (row, i) => `
+        <tr data-row="${i}">
+          <td><input type="text" class="sb-team" value="${esc(row.team ?? "")}" placeholder="Nombre del equipo"></td>
+          <td><input type="number" class="sb-pj" value="${Number(row.pj) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-pg" value="${Number(row.pg) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-pe" value="${Number(row.pe) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-pp" value="${Number(row.pp) || 0}" style="width:56px;"></td>
+          <td><input type="number" class="sb-diff" value="${Number(row.diff) || 0}" style="width:64px;"></td>
+          <td><input type="number" class="sb-pts" value="${Number(row.pts) || 0}" style="width:64px;"></td>
+          <td><button class="action sb-remove" data-remove="${i}">✕</button></td>
+        </tr>
+      `
+    )
+    .join("");
+
+  tbody.querySelectorAll(".sb-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const rows = readStandingsBaseFromForm();
+      const idx = Number(btn.dataset.remove);
+      rows.splice(idx, 1);
+      state.content.standingsBase = rows;
+      renderStandingsBaseEditor();
+    });
+  });
+}
+
+function readStandingsBaseFromForm() {
+  return $$("#standings-base-table tr").map((tr) => ({
+    team: tr.querySelector(".sb-team")?.value.trim() || "",
+    pj: Number(tr.querySelector(".sb-pj")?.value) || 0,
+    pg: Number(tr.querySelector(".sb-pg")?.value) || 0,
+    pe: Number(tr.querySelector(".sb-pe")?.value) || 0,
+    pp: Number(tr.querySelector(".sb-pp")?.value) || 0,
+    diff: Number(tr.querySelector(".sb-diff")?.value) || 0,
+    pts: Number(tr.querySelector(".sb-pts")?.value) || 0
+  }));
+}
+
+$("#standings-base-add-row")?.addEventListener("click", () => {
+  const rows = readStandingsBaseFromForm();
+  rows.push({ team: "", pj: 0, pg: 0, pe: 0, pp: 0, diff: 0, pts: 0 });
+  state.content.standingsBase = rows;
+  renderStandingsBaseEditor();
+});
+
+$("#standings-base-save")?.addEventListener("click", async () => {
+  const rows = readStandingsBaseFromForm().filter((row) => row.team);
+
+  try {
+    const data = await api("save-standings-base", { standingsBase: rows });
+    state.content.standingsBase = data.standingsBase || rows;
+    state.content.standings = data.standings || state.content.standings;
+    renderStandingsBaseEditor();
+    renderStandingsTable();
+    toast("Guardado", "Tabla base actualizada.");
+  } catch (error) {
+    toast("Error", error.message, "error");
+  }
+});
 
 /* =========================================================
    MODALES
