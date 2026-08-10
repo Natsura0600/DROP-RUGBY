@@ -2,10 +2,8 @@
 
 <html lang="es">
 <head>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <meta name="robots" content="index, follow">
 
   <title>Artículo | DropRugby</title>
@@ -18,24 +16,16 @@ content="Noticias de rugby en DropRugby."
 >
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
-  >
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <link
     href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
     rel="stylesheet"
   >
 
-  <link
-    rel="stylesheet"
-    href="assets/css/styles.css"
-  >
+  <link rel="stylesheet" href="assets/css/styles.css">
 
   <style>
-
     .dynamic-article {
       max-width: 860px;
       margin: 0 auto;
@@ -59,7 +49,6 @@ content="Noticias de rugby en DropRugby."
       font: 400 19px/1.65 var(--sans);
       color: #666;
       max-width: 720px;
-      margin: 0;
     }
 
     .dynamic-meta {
@@ -81,7 +70,6 @@ content="Noticias de rugby en DropRugby."
       width: 100%;
       height: 100%;
       object-fit: cover;
-      display: block;
     }
 
     .dynamic-body {
@@ -96,36 +84,6 @@ content="Noticias de rugby en DropRugby."
     .dynamic-body h2 {
       font: 400 32px var(--serif);
       margin: 42px 0 15px;
-      line-height: 1.2;
-    }
-
-    .dynamic-body h3 {
-      font: 400 25px var(--serif);
-      margin: 35px 0 12px;
-      line-height: 1.25;
-    }
-
-    .dynamic-body strong {
-      font-weight: 700;
-    }
-
-    .dynamic-body em {
-      font-style: italic;
-    }
-
-    .dynamic-body ul,
-    .dynamic-body ol {
-      margin: 0 0 25px 25px;
-      padding: 0;
-    }
-
-    .dynamic-body li {
-      margin-bottom: 8px;
-    }
-
-    .dynamic-body a {
-      color: inherit;
-      text-decoration: underline;
     }
 
     .dynamic-body blockquote {
@@ -135,77 +93,166 @@ content="Noticias de rugby en DropRugby."
       margin: 35px 0;
     }
 
-    .dynamic-body img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 30px auto;
-    }
-
-    .dynamic-body hr {
-      border: 0;
-      border-top: 1px solid #ddd;
-      margin: 40px 0;
-    }
-
-    .dynamic-back {
-      display: inline-block;
-      margin-top: 35px;
-      font: 700 10px var(--sans);
-      letter-spacing: 1px;
-      text-decoration: none;
-      color: #111;
-    }
-
     /* =====================================================
        COMPARTIR
-    ===================================================== */
+       ===================================================== */
 
     .dynamic-share {
       margin-top: 55px;
       padding-top: 30px;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid #e5e5e5;
     }
 
     .dynamic-share h3 {
-      margin: 0 0 15px;
-      font: 400 25px var(--serif);
+      font: 700 11px var(--sans);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin: 0 0 18px;
+      color: #555;
     }
 
     .share-buttons {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
     }
 
     .share-button {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 40px;
-      padding: 10px 15px;
-      border: 1px solid #111;
-      background: #111;
+
+      min-height: 44px;
+      padding: 0 20px;
+
+      border: 0;
+      border-radius: 12px;
+
       color: #fff;
-      text-decoration: none;
-      font: 600 11px var(--sans);
+
+      font: 700 12px var(--sans);
       letter-spacing: .4px;
+
+      text-decoration: none;
       cursor: pointer;
-      transition: opacity .2s ease;
+
+      overflow: hidden;
+
+      box-shadow:
+        0 5px 14px rgba(0, 0, 0, .10);
+
+      transition:
+        transform .22s ease,
+        box-shadow .22s ease,
+        filter .22s ease;
+    }
+
+    /* Brillo que cruza el botón */
+
+    .share-button::before {
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+      left: -120%;
+
+      width: 70%;
+      height: 100%;
+
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, .28),
+        transparent
+      );
+
+      transform: skewX(-20deg);
+
+      transition: left .55s ease;
+    }
+
+    .share-button:hover::before {
+      left: 140%;
     }
 
     .share-button:hover {
-      opacity: .75;
+      transform: translateY(-3px);
+
+      box-shadow:
+        0 9px 22px rgba(0, 0, 0, .18);
+
+      filter: brightness(1.06);
+    }
+
+    .share-button:active {
+      transform: translateY(-1px) scale(.98);
+    }
+
+    /* X */
+
+    .share-x {
+      background: #000;
+    }
+
+    /* Facebook */
+
+    .share-facebook {
+      background: #1877f2;
+    }
+
+    /* Instagram */
+
+    .share-instagram {
+      background:
+        linear-gradient(
+          135deg,
+          #833ab4 0%,
+          #fd1d1d 48%,
+          #fcb045 100%
+        );
+    }
+
+    /* Animación de entrada */
+
+    .share-button {
+      animation:
+        shareButtonIn .45s ease both;
+    }
+
+    .share-x {
+      animation-delay: .05s;
+    }
+
+    .share-facebook {
+      animation-delay: .12s;
+    }
+
+    .share-instagram {
+      animation-delay: .19s;
+    }
+
+    @keyframes shareButtonIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* =====================================================
-       RELACIONADOS
-    ===================================================== */
+       ARTÍCULOS RELACIONADOS
+       ===================================================== */
 
     .dynamic-related {
-      margin-top: 65px;
+      margin-top: 70px;
       padding-top: 35px;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid #e5e5e5;
     }
 
     .dynamic-related h2 {
@@ -223,6 +270,11 @@ content="Noticias de rugby en DropRugby."
       display: block;
       color: inherit;
       text-decoration: none;
+      transition: transform .2s ease;
+    }
+
+    .related-card:hover {
+      transform: translateY(-4px);
     }
 
     .related-card-image {
@@ -237,34 +289,60 @@ content="Noticias de rugby en DropRugby."
     .related-card-image img {
       width: 100%;
       height: 100%;
-      display: block;
       object-fit: cover;
+      transition: transform .3s ease;
+    }
+
+    .related-card:hover .related-card-image img {
+      transform: scale(1.04);
     }
 
     .related-card-kicker {
+      margin: 0 0 5px;
       font: 700 9px var(--sans);
-      letter-spacing: 1.5px;
+      letter-spacing: 1.4px;
       color: #777;
-      margin: 0 0 7px;
     }
 
     .related-card h3 {
-      font: 400 21px/1.2 var(--serif);
       margin: 0 0 8px;
+      font: 400 21px/1.2 var(--serif);
     }
 
     .related-card-date {
       font: 500 10px var(--sans);
-      color: #777;
+      color: #888;
     }
 
-    .article-loading {
-      color: #777;
-      font: 400 17px var(--sans);
+    .dynamic-back {
+      display: inline-block;
+      margin-top: 35px;
+      font: 700 10px var(--sans);
+      letter-spacing: 1px;
+      text-decoration: none;
+      color: #111;
+      transition: transform .2s ease;
     }
 
-    @media(max-width: 700px) {
+    .dynamic-back:hover {
+      transform: translateX(-4px);
+    }
 
+    /* =====================================================
+       MOBILE
+       ===================================================== */
+
+    @media (max-width: 700px) {
+      .related-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .related-card-image {
+        height: 220px;
+      }
+    }
+
+    @media (max-width: 600px) {
       .dynamic-article {
         padding-top: 45px;
       }
@@ -281,16 +359,15 @@ content="Noticias de rugby en DropRugby."
         font-size: 17px;
       }
 
-      .related-grid {
-        grid-template-columns: 1fr;
+      .share-buttons {
+        flex-direction: column;
       }
 
-      .related-card-image {
-        height: 210px;
+      .share-button {
+        width: 100%;
+        min-height: 48px;
       }
-
     }
-
   </style>
 
 </head>
@@ -301,16 +378,13 @@ content="Noticias de rugby en DropRugby."
 
   <header class="site-header">
 
-```
+
 <div class="header-inner">
 
   <a class="brand" href="index.html">
 
     <div class="logo-mark">
-      <img
-        src="/logo.png"
-        alt="DropRugby"
-      >
+      <img src="/logo.png" alt="DropRugby">
     </div>
 
     <div>
@@ -322,31 +396,12 @@ content="Noticias de rugby en DropRugby."
   </a>
 
   <nav class="main-nav">
-
-    <a href="los-pumas.html">
-      LOS PUMAS
-    </a>
-
-    <a href="super-rugby.html">
-      INTERNACIONAL
-    </a>
-
-    <a href="urba-top-14.html">
-      URBA TOP 14
-    </a>
-
-    <a href="urba.html">
-      URBA
-    </a>
-
-    <a href="calendario.html">
-      CALENDARIO
-    </a>
-
-    <a href="contacto.html">
-      CONTACTO
-    </a>
-
+    <a href="los-pumas.html">LOS PUMAS</a>
+    <a href="super-rugby.html">INTERNACIONAL</a>
+    <a href="urba-top-14.html">URBA TOP 14</a>
+    <a href="urba.html">URBA</a>
+    <a href="calendario.html">CALENDARIO</a>
+    <a href="contacto.html">CONTACTO</a>
   </nav>
 
   <div class="header-actions">
@@ -360,10 +415,7 @@ content="Noticias de rugby en DropRugby."
       INSTAGRAM ↗
     </a>
 
-    <button
-      class="menu-btn"
-      aria-label="Abrir menú"
-    >
+    <button class="menu-btn" aria-label="Abrir menú">
       <span></span>
       <span></span>
     </button>
@@ -373,43 +425,21 @@ content="Noticias de rugby en DropRugby."
 </div>
 
 <div class="mobile-nav">
-
-  <a href="los-pumas.html">
-    LOS PUMAS
-  </a>
-
-  <a href="super-rugby.html">
-    INTERNACIONAL
-  </a>
-
-  <a href="urba-top-14.html">
-    URBA TOP 14
-  </a>
-
-  <a href="urba.html">
-    URBA
-  </a>
-
-  <a href="calendario.html">
-    CALENDARIO
-  </a>
-
-  <a href="contacto.html">
-    CONTACTO
-  </a>
-
+  <a href="los-pumas.html">LOS PUMAS</a>
+  <a href="super-rugby.html">INTERNACIONAL</a>
+  <a href="urba-top-14.html">URBA TOP 14</a>
+  <a href="urba.html">URBA</a>
+  <a href="calendario.html">CALENDARIO</a>
+  <a href="contacto.html">CONTACTO</a>
 </div>
-```
+
 
   </header>
 
   <main>
 
-```
-<article
-  class="dynamic-article"
-  id="article-root"
->
+
+<article class="dynamic-article" id="article-root">
 
   <p class="article-kicker">
     DROP RUGBY
@@ -420,13 +450,13 @@ content="Noticias de rugby en DropRugby."
   </h1>
 
 </article>
-```
+
 
   </main>
 
   <footer class="footer">
 
-```
+
 <div class="footer-brand">
 
   <div class="brand-name">
@@ -440,825 +470,476 @@ content="Noticias de rugby en DropRugby."
 </div>
 
 <div class="footer-links">
-
-  <a href="los-pumas.html">
-    Los Pumas
-  </a>
-
-  <a href="super-rugby.html">
-    Super Rugby
-  </a>
-
-  <a href="urba-top-14.html">
-    URBA Top 14
-  </a>
-
-  <a href="urba.html">
-    URBA
-  </a>
-
-  <a href="calendario.html">
-    Calendario
-  </a>
-
+  <a href="los-pumas.html">Los Pumas</a>
+  <a href="super-rugby.html">Super Rugby</a>
+  <a href="urba-top-14.html">URBA Top 14</a>
+  <a href="urba.html">URBA</a>
+  <a href="calendario.html">Calendario</a>
 </div>
 
 <p class="copyright">
   © 2026 DropRugby. Todos los derechos reservados.
 </p>
-```
+
 
   </footer>
 
   <script src="assets/js/script.js"></script>
 
   <script>
+    (async () => {
 
-  (async function () {
+      const id =
+        new URLSearchParams(location.search).get('id');
 
-    "use strict";
+      const root =
+        document.getElementById('article-root');
 
-    const id =
-      new URLSearchParams(
-        window.location.search
-      ).get("id");
+      function esc(s) {
+        return String(s ?? '').replace(
+          /[&<>"']/g,
+          c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+          }[c])
+        );
+      }
 
-    const root =
-      document.getElementById(
-        "article-root"
-      );
-
-    if (!root) {
-      return;
-    }
-
-    /* =====================================================
-       ESCAPE PARA TEXTO
-    ===================================================== */
-
-    function esc(value) {
-
-      return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-
-    }
-
-    /* =====================================================
-       URL CANÓNICA
-    ===================================================== */
-
-    function canonicalUrl(articleId) {
-
-      return new URL(
-        "article.html?id=" +
-        encodeURIComponent(articleId),
-        window.location.href
-      ).href;
-
-    }
-
-    /* =====================================================
-       CUERPO DE LA NOTICIA
-       
-       Si Admin guardó HTML:
-       <p>Texto</p>
-       <h2>Título</h2>
-       <strong>Texto</strong>
-
-       se interpreta como HTML.
-
-       Si guardó texto plano:
-       se convierte automáticamente
-       en párrafos.
-    ===================================================== */
-
-    function renderBody(value) {
-
-      const text =
-        String(value ?? "").trim();
-
-      if (!text) {
-        return "";
+      function canonicalUrl(articleId) {
+        return new URL(
+          `article.html?id=${encodeURIComponent(articleId)}`,
+          location.href
+        ).href;
       }
 
       /*
-       * Detectamos si el contenido ya tiene HTML.
+       * Convierte el contenido del Admin en HTML.
+       *
+       * El Admin guarda texto.
+       * Los párrafos separados por una línea en blanco
+       * se transforman en <p>.
+       *
+       * También soporta algunos elementos escritos
+       * directamente en el contenido.
        */
 
-      const hasHtml =
-        /<\/?[a-z][\s\S]*>/i.test(text);
+      function renderBody(value) {
 
-      if (hasHtml) {
+        const text =
+          String(value ?? '').trim();
 
-        return text;
+        if (!text) return '';
 
+        /*
+         * Si el contenido ya contiene HTML,
+         * lo dejamos renderizar como HTML.
+         */
+
+        if (/<(p|h2|h3|blockquote|ul|ol|li|strong|em|a|br)\b/i.test(text)) {
+          return text;
+        }
+
+        /*
+         * Si es texto plano, lo convertimos
+         * automáticamente en párrafos.
+         */
+
+        return text
+          .split(/\n\s*\n/)
+          .map(
+            paragraph =>
+              `<p>${esc(paragraph).replace(/\n/g, '<br>')}</p>`
+          )
+          .join('');
       }
 
-      /*
-       * Texto plano.
-       * Dos saltos de línea = nuevo párrafo.
-       */
+      function articleImage(a, compact = false) {
 
-      return text
-        .split(/\n\s*\n/)
-        .map(function (paragraph) {
+        if (a.imageUrl) {
 
-          return (
-            "<p>" +
-            esc(paragraph)
-              .replace(/\n/g, "<br>") +
-            "</p>"
+          return `
+            <div class="${compact ? 'related-card-image' : 'dynamic-image'}">
+              <img
+                src="${esc(a.imageUrl)}"
+                alt="${esc(a.title || '')}"
+                loading="${compact ? 'lazy' : 'eager'}"
+              >
+            </div>
+          `;
+
+        }
+
+        return compact
+
+          ? `
+            <div class="related-card-image ${esc(
+              a.imageClass || 'img-tone-1'
+            )}">
+            </div>
+          `
+
+          : `
+            <div class="dynamic-image ${esc(
+              a.imageClass || 'img-tone-1'
+            )}">
+            </div>
+          `;
+      }
+
+      function getRelated(all, current) {
+
+        const others =
+          all.filter(a =>
+            String(a.id) !== String(current.id) &&
+            a.published !== false &&
+            !a.scheduled
           );
 
-        })
-        .join("");
+        const sameCategory =
+          others
+            .filter(
+              a =>
+                String(a.category || '') ===
+                String(current.category || '')
+            )
+            .sort(
+              (a, b) =>
+                String(b.date || '').localeCompare(
+                  String(a.date || '')
+                )
+            );
 
-    }
+        const sameSubcategory =
+          others
+            .filter(
+              a =>
+                String(a.subcategory || '') ===
+                  String(current.subcategory || '') &&
+                String(a.category || '') !==
+                  String(current.category || '')
+            )
+            .sort(
+              (a, b) =>
+                String(b.date || '').localeCompare(
+                  String(a.date || '')
+                )
+            );
 
-    /* =====================================================
-       IMAGEN DEL ARTÍCULO
-    ===================================================== */
+        const rest =
+          others
+            .filter(
+              a =>
+                !sameCategory.includes(a) &&
+                !sameSubcategory.includes(a)
+            )
+            .sort(
+              (a, b) =>
+                String(b.date || '').localeCompare(
+                  String(a.date || '')
+                )
+            );
 
-    function articleImage(
-      article,
-      compact = false
-    ) {
+        return [
+          ...sameCategory,
+          ...sameSubcategory,
+          ...rest
+        ].slice(0, 3);
+      }
 
-      const image =
-        article.imageUrl ||
-        article.image ||
-        "";
+      function renderRelated(items) {
 
-      if (image) {
+        if (!items.length) return '';
 
         return `
-          <div class="${
-            compact
-              ? "related-card-image"
-              : "dynamic-image"
-          }">
+          <section class="dynamic-related">
 
-            <img
-              src="${esc(image)}"
-              alt="${esc(
-                article.title ||
-                "Noticia de rugby"
-              )}"
-              loading="${
-                compact
-                  ? "lazy"
-                  : "eager"
-              }"
-            >
+            <h2>
+              Artículos relacionados
+            </h2>
 
-          </div>
-        `;
+            <div class="related-grid">
 
-      }
-
-      if (compact) {
-
-        return `
-          <div class="related-card-image"></div>
-        `;
-
-      }
-
-      return `
-        <div class="dynamic-image"></div>
-      `;
-
-    }
-
-    /* =====================================================
-       ARTÍCULOS RELACIONADOS
-    ===================================================== */
-
-    function getRelated(
-      all,
-      current
-    ) {
-
-      const others =
-        all.filter(function (article) {
-
-          return (
-            String(article.id) !==
-              String(current.id) &&
-            article.published !== false &&
-            !article.scheduled
-          );
-
-        });
-
-      const sameCategory =
-        others
-          .filter(function (article) {
-
-            return (
-              String(
-                article.category || ""
-              ) ===
-              String(
-                current.category || ""
-              )
-            );
-
-          })
-          .sort(function (a, b) {
-
-            return String(
-              b.date || ""
-            ).localeCompare(
-              String(a.date || "")
-            );
-
-          });
-
-      const sameSubcategory =
-        others
-          .filter(function (article) {
-
-            return (
-              String(
-                article.subcategory || ""
-              ) ===
-              String(
-                current.subcategory || ""
-              ) &&
-              String(
-                article.category || ""
-              ) !==
-              String(
-                current.category || ""
-              )
-            );
-
-          })
-          .sort(function (a, b) {
-
-            return String(
-              b.date || ""
-            ).localeCompare(
-              String(a.date || "")
-            );
-
-          });
-
-      const rest =
-        others
-          .filter(function (article) {
-
-            return (
-              !sameCategory.includes(article) &&
-              !sameSubcategory.includes(article)
-            );
-
-          })
-          .sort(function (a, b) {
-
-            return String(
-              b.date || ""
-            ).localeCompare(
-              String(a.date || "")
-            );
-
-          });
-
-      return [
-        ...sameCategory,
-        ...sameSubcategory,
-        ...rest
-      ].slice(0, 3);
-
-    }
-
-    function renderRelated(items) {
-
-      if (!items.length) {
-        return "";
-      }
-
-      return `
-
-        <section class="dynamic-related">
-
-          <h2>
-            Artículos relacionados
-          </h2>
-
-          <div class="related-grid">
-
-            ${items.map(function (article) {
-
-              return `
+              ${items.map(a => `
 
                 <a
                   class="related-card"
-                  href="article.html?id=${encodeURIComponent(
-                    article.id || ""
-                  )}"
+                  href="article.html?id=${encodeURIComponent(a.id || '')}"
                 >
 
-                  ${articleImage(
-                    article,
-                    true
-                  )}
+                  ${articleImage(a, true)}
 
                   <p class="related-card-kicker">
                     ${esc(
                       String(
-                        article.category ||
-                        "RUGBY"
+                        a.category || 'RUGBY'
                       ).toUpperCase()
                     )}
                   </p>
 
                   <h3>
-                    ${esc(
-                      article.title ||
-                      "Sin título"
-                    )}
+                    ${esc(a.title || 'Sin título')}
                   </h3>
 
                   <div class="related-card-date">
-                    ${esc(
-                      article.date || ""
-                    )}
+                    ${esc(a.date || '')}
                   </div>
 
                 </a>
 
-              `;
+              `).join('')}
 
-            }).join("")}
+            </div>
 
-          </div>
-
-        </section>
-
-      `;
-
-    }
-
-    /* =====================================================
-       CARGA DEL CONTENIDO
-    ===================================================== */
-
-    try {
-
-      if (!id) {
-
-        throw new Error(
-          "No se indicó el artículo."
-        );
-
+          </section>
+        `;
       }
-
-      let data;
-
-      /*
-       * Primero intentamos la API.
-       */
 
       try {
 
-        const response =
-          await fetch(
-            "/api/content?t=" +
-            Date.now(),
-            {
-              cache: "no-store"
-            }
+        let data;
+
+        try {
+
+          const res =
+            await fetch(
+              '/api/content?t=' + Date.now(),
+              {
+                cache: 'no-store'
+              }
+            );
+
+          if (!res.ok) {
+            throw new Error();
+          }
+
+          data = await res.json();
+
+        } catch (_) {
+
+          const res =
+            await fetch(
+              'data/articles.json',
+              {
+                cache: 'no-store'
+              }
+            );
+
+          if (!res.ok) {
+            throw new Error();
+          }
+
+          data = {
+            articles: await res.json()
+          };
+        }
+
+        const a =
+          (data.articles || []).find(
+            x => String(x.id) === String(id)
           );
 
-        if (!response.ok) {
+        if (!a) {
           throw new Error();
         }
 
-        data =
-          await response.json();
+        const url =
+          canonicalUrl(a.id);
 
-      } catch (apiError) {
+        const title =
+          String(a.title || 'Artículo');
 
-        /*
-         * Respaldo antiguo.
-         */
+        const excerpt =
+          String(a.excerpt || '');
 
-        const response =
-          await fetch(
-            "data/articles.json",
-            {
-              cache: "no-store"
-            }
+        const all =
+          Array.isArray(data.articles)
+            ? data.articles
+            : [];
+
+        document.title =
+          `${title} | DropRugby`;
+
+        const description =
+          document.getElementById(
+            'meta-description'
           );
 
-        if (!response.ok) {
-          throw new Error();
+        if (description) {
+          description.content = excerpt;
         }
 
-        data = {
-          articles:
-            await response.json()
-        };
+        const shareText =
+          encodeURIComponent(title);
 
-      }
+        const shareUrl =
+          encodeURIComponent(url);
 
-      const articles =
-        Array.isArray(data.articles)
-          ? data.articles
-          : [];
+        const related =
+          getRelated(all, a);
 
-      /*
-       * Buscamos por ID.
-       *
-       * String() evita problemas si un ID
-       * viene como número en algún archivo.
-       */
+        root.innerHTML = `
 
-      const article =
-        articles.find(function (item) {
+          <p class="article-kicker">
+            ${esc(
+              String(
+                a.category || 'RUGBY'
+              ).toUpperCase()
+            )}
+            ·
+            ${esc(
+              String(
+                a.subcategory || 'ACTUALIDAD'
+              ).toUpperCase()
+            )}
+          </p>
 
-          return (
-            String(item.id) ===
-            String(id)
-          );
+          <h1>
+            ${esc(title)}
+          </h1>
 
-        });
+          <p class="lead">
+            ${esc(excerpt)}
+          </p>
 
-      if (!article) {
-
-        throw new Error(
-          "Artículo no encontrado."
-        );
-
-      }
-
-      /*
-       * Las noticias no publicadas no
-       * deberían mostrarse públicamente.
-       */
-
-      if (
-        article.published === false ||
-        article.scheduled === true
-      ) {
-
-        throw new Error(
-          "Artículo no disponible."
-        );
-
-      }
-
-      /* =================================================
-         DATOS
-      ================================================= */
-
-      const title =
-        String(
-          article.title ||
-          "Artículo"
-        );
-
-      const excerpt =
-        String(
-          article.excerpt ||
-          ""
-        );
-
-      const category =
-        String(
-          article.category ||
-          "Rugby"
-        );
-
-      const subcategory =
-        String(
-          article.subcategory ||
-          "Actualidad"
-        );
-
-      const author =
-        String(
-          article.author ||
-          "DropRugby"
-        );
-
-      const date =
-        String(
-          article.date ||
-          ""
-        );
-
-      const url =
-        canonicalUrl(
-          article.id
-        );
-
-      /* =================================================
-         SEO
-      ================================================= */
-
-      document.title =
-        title +
-        " | DropRugby";
-
-      const meta =
-        document.getElementById(
-          "meta-description"
-        );
-
-      if (meta) {
-
-        meta.setAttribute(
-          "content",
-          excerpt || title
-        );
-
-      }
-
-      /* =================================================
-         IMAGEN
-      ================================================= */
-
-      const image =
-        articleImage(
-          article,
-          false
-        );
-
-      /* =================================================
-         CUERPO
-      ================================================= */
-
-      const body =
-        renderBody(
-          article.content
-        );
-
-      /* =================================================
-         RELACIONADOS
-      ================================================= */
-
-      const related =
-        getRelated(
-          articles,
-          article
-        );
-
-      /* =================================================
-         COMPARTIR
-      ================================================= */
-
-      const shareText =
-        encodeURIComponent(
-          title
-        );
-
-      const shareUrl =
-        encodeURIComponent(
-          url
-        );
-
-      /* =================================================
-         RENDER FINAL
-      ================================================= */
-
-      root.innerHTML = `
-
-        <p class="article-kicker">
-          ${esc(
-            category.toUpperCase()
-          )}
-          ·
-          ${esc(
-            subcategory.toUpperCase()
-          )}
-        </p>
-
-        <h1>
-          ${esc(title)}
-        </h1>
-
-        ${
-          excerpt
-            ? `
-              <p class="lead">
-                ${esc(excerpt)}
-              </p>
-            `
-            : ""
-        }
-
-        <div class="dynamic-meta">
-
-          POR
-          ${esc(
-            author.toUpperCase()
-          )}
-
-          ${
-            date
-              ? " · " + esc(date)
-              : ""
-          }
-
-        </div>
-
-        ${image}
-
-        <div class="dynamic-body">
-
-          ${
-            body ||
-            (
-              excerpt
-                ? `<p>${esc(
-                    excerpt
-                  )}</p>`
-                : `
-                  <p>
-                    Esta noticia todavía
-                    no tiene contenido.
-                  </p>
-                `
-            )
-          }
-
-        </div>
-
-        <!-- =========================================
-             COMPARTIR
-        ========================================== -->
-
-        <section
-          class="dynamic-share"
-          aria-label="Compartir este artículo"
-        >
-
-          <h3>
-            Compartir este artículo
-          </h3>
-
-          <div class="share-buttons">
-
-            <a
-              class="share-button"
-              href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}"
-              target="_blank"
-              rel="noopener"
-            >
-              Compartir en X
-            </a>
-
-            <a
-              class="share-button"
-              href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}"
-              target="_blank"
-              rel="noopener"
-            >
-              Compartir en Facebook
-            </a>
-
-            <button
-              class="share-button"
-              type="button"
-              id="share-instagram"
-            >
-              Compartir en Instagram
-            </button>
-
+          <div class="dynamic-meta">
+            POR
+            ${esc(
+              String(
+                a.author || 'DROPRUGBY'
+              ).toUpperCase()
+            )}
+            ·
+            ${esc(a.date || '')}
           </div>
 
-        </section>
+          ${articleImage(a)}
 
-        ${renderRelated(related)}
+          <div class="dynamic-body">
+            ${
+              renderBody(a.content) ||
+              `<p>${esc(excerpt)}</p>`
+            }
+          </div>
 
-        <a
-          class="dynamic-back"
-          href="index.html"
-        >
-          ← VOLVER A DROP RUGBY
-        </a>
+          <section
+            class="dynamic-share"
+            aria-label="Compartir este artículo"
+          >
 
-      `;
+            <h3>
+              Compartir este artículo
+            </h3>
 
-      /* =================================================
-         INSTAGRAM / COMPARTIR NATIVO
-      ================================================= */
+            <div class="share-buttons">
 
-      const instagramButton =
-        document.getElementById(
-          "share-instagram"
-        );
+              <a
+                class="share-button share-x"
+                href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}"
+                target="_blank"
+                rel="noopener"
+              >
+                𝕏&nbsp;&nbsp; Compartir en X
+              </a>
 
-      if (instagramButton) {
+              <a
+                class="share-button share-facebook"
+                href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}"
+                target="_blank"
+                rel="noopener"
+              >
+                f&nbsp;&nbsp; Compartir en Facebook
+              </a>
 
-        instagramButton.addEventListener(
-          "click",
-          async function () {
+              <button
+                class="share-button share-instagram"
+                type="button"
+                id="share-instagram"
+              >
+                ◎&nbsp;&nbsp; Compartir en Instagram
+              </button>
 
-            try {
+            </div>
 
-              /*
-               * En celulares y navegadores
-               * compatibles usamos el sistema
-               * nativo de compartir.
-               */
+          </section>
 
-              if (
-                navigator.share
-              ) {
+          ${renderRelated(related)}
 
-                await navigator.share({
-                  title: title,
-                  text: title,
-                  url: url
-                });
+          <a
+            class="dynamic-back"
+            href="index.html"
+          >
+            ← VOLVER A DROP RUGBY
+          </a>
 
-                return;
+        `;
 
-              }
+        document
+          .getElementById('share-instagram')
+          ?.addEventListener(
+            'click',
+            async () => {
 
-              /*
-               * Si no existe navigator.share,
-               * copiamos el enlace.
-               */
+              try {
 
-              if (
-                navigator.clipboard
-              ) {
+                if (navigator.share) {
 
-                await navigator.clipboard.writeText(
+                  await navigator.share({
+                    title,
+                    url
+                  });
+
+                  return;
+                }
+
+                await navigator.clipboard?.writeText(
                   url
                 );
 
-              }
+                window.open(
+                  'https://www.instagram.com/',
+                  '_blank',
+                  'noopener'
+                );
 
-              window.open(
-                "https://www.instagram.com/",
-                "_blank",
-                "noopener"
-              );
+                alert(
+                  'Copiamos el enlace del artículo. Pegalo en Instagram para compartirlo.'
+                );
 
-              alert(
-                "Copiamos el enlace del artículo. Pegalo en Instagram para compartirlo."
-              );
-
-            } catch (error) {
-
-              console.log(
-                "Compartir cancelado:",
-                error
-              );
+              } catch (_) {}
 
             }
+          );
 
-          }
-        );
+      } catch (e) {
+
+        root.innerHTML = `
+          <p class="article-kicker">
+            DROP RUGBY
+          </p>
+
+          <h1>
+            Artículo no encontrado.
+          </h1>
+
+          <p class="lead">
+            La publicación puede haber sido eliminada
+            o todavía no está disponible.
+          </p>
+
+          <a
+            class="dynamic-back"
+            href="index.html"
+          >
+            ← VOLVER A DROP RUGBY
+          </a>
+        `;
 
       }
 
-    } catch (error) {
-
-      console.error(
-        "Error cargando artículo:",
-        error
-      );
-
-      root.innerHTML = `
-
-        <p class="article-kicker">
-          DROP RUGBY
-        </p>
-
-        <h1>
-          Artículo no encontrado.
-        </h1>
-
-        <p class="lead">
-          La publicación puede haber sido
-          eliminada o todavía no está
-          disponible.
-        </p>
-
-        <a
-          class="dynamic-back"
-          href="index.html"
-        >
-          ← VOLVER A DROP RUGBY
-        </a>
-
-      `;
-
-    }
-
-  })();
-
+    })();
   </script>
 
 </body>
