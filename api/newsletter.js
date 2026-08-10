@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
       // IMPORTANTE:
       // Volvemos al remitente del newsletter original.
-      from: 'DropRugby <onboarding@resend.dev>',
+     from: 'Drop Rugby <newsletter@droprugby.com>',
 
       to: [emailClean],
 
