@@ -9,6 +9,54 @@
 
 const BASE = window.ASSET_BASE || "";
 
+/* ---------- Escudos de clubes ----------
+   Los escudos entregados por el usuario se sirven desde sus URLs originales.
+   Los alias permiten resolver diferencias entre el nombre visual y el nombre
+   usado en fixtures/tabla sin duplicar datos.
+*/
+const DROP_RUGBY_TEAMS = {
+  alumni: { name: "Alumni", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231144578748476/Alumni.png?ex=6a7aa63e&is=6a7954be&hm=9f4164664975b62a1e9f20901996b0d6289ce03daa54e1e9ba4fc5b7d14a75b1", aliases: ["alumni"] },
+  buenos_aires_crc: { name: "Buenos Aires C&RC", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231158994698280/bacrc.png?ex=6a7aa642&is=6a7954c2&hm=c4c43fac190082d97f6a02d90ce7e57856521c6a3b0a472eb7c97cf29bc14a38", aliases: ["biei", "bac", "buenos aires c&rc", "buenos aires"] },
+  belgrano_athletic: { name: "Belgrano Athletic", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231180058493030/belgrano.png?ex=6a7aa647&is=6a7954c7&hm=b8c7a4db0391182c473393e0718ba00eb337462a03e3e74b616bab8c8c295a6f", aliases: ["belgrano", "belgrano athletic", "bac"] },
+  casi: { name: "CASI", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231191177592933/CASI.png?ex=6a7aa649&is=6a7954c9&hm=29d8b98d0c855b6449f8a9087945bf2a645ad5919609cf3b0c363e5026960307", aliases: ["casi"] },
+  champagnat: { name: "Champagnat", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231198433611856/Champagnat.png?ex=6a7aa64b&is=6a7954cb&hm=3b5c378a760c5da1ad69bb20205ba244cb2020c34b1ab6b5443b6404d32024f7", aliases: ["champa", "champagnat"] },
+  cuba: { name: "CUBA", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231210794229770/cuba.png?ex=6a7aa64e&is=6a7954ce&hm=4ff0286bf047c3abb1c730949064e0409fa406b41455bb18fa602bcd0554a8f2", aliases: ["cuba"] },
+  newman: { name: "Newman", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231225570893844/escudo-NWM.png?ex=6a7aa651&is=6a7954d1&hm=0c44dcb4d688acba0b8a6c990da8a95728cb1ad2e992ab8fdc7b5727142afc3d", aliases: ["newman"] },
+  hindu: { name: "Hindú", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231245988503602/Hindu_.png?ex=6a7aa656&is=6a7954d6&hm=1f5db71c31d3a19d794877f4de81e570980dd2d8407534d880c00a3c04d8e238", aliases: ["hindu", "hindú"] },
+  la_plata: { name: "La Plata", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231255010578452/La_Plata.png?ex=6a7aa658&is=6a7954d8&hm=f75842ee416b247f0d6e74caf492804f0a5d015a8417db8bb185040708af4c0d", aliases: ["la plata"] },
+  los_tilos: { name: "Los Tilos", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231263948509274/lostilos.png?ex=6a7aa65b&is=6a7954db&hm=a199264f70210b93f4a6cc58af6cb4b875a842160d4f05bce3420e383a1786cc", aliases: ["los tilos"] },
+  los_matreros: { name: "Los Matreros", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231275109552228/Matereros_.png?ex=6a7aa65d&is=6a7954dd&hm=17229d6d8869fbe875ca22a8c97f2679b48ccf0e73ec50db16a3cca8301f953b", aliases: ["los matreros", "matreros"] },
+  regatas_bella_vista: { name: "Regatas Bella Vista", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231286635634729/REGATAS_bv.png?ex=6a7aa660&is=6a7954e0&hm=e26cce232240881c54d25a0e8d43bc1841c71f3950aa4699fd45b65d20c643bd", aliases: ["regatas", "regatas bella vista"] },
+  atletico_del_rosario: { name: "Atletico del Rosario", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231293858226186/rosario.png?ex=6a7aa662&is=6a7954e2&hm=94ec235340236bf245fd7380de7905518da04584180a7314140d35185156f7fb", aliases: ["plaza", "atletico del rosario", "atlético del rosario"] },
+  sic: { name: "SIC", logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231304788578314/SIC_.png?ex=6a7aa664&is=6a7954e4&hm=7dec2e5910159475effa86892ca268033077a628aec7163bd7baf07336ad9557", aliases: ["sic"] }
+};
+
+function normalizeTeamName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function getTeamByName(value) {
+  const key = normalizeTeamName(value);
+  return Object.values(DROP_RUGBY_TEAMS).find(team =>
+    team.aliases.some(alias => normalizeTeamName(alias) === key) ||
+    normalizeTeamName(team.name) === key
+  ) || null;
+}
+
+function teamShield(value, className = "team-shield") {
+  const team = getTeamByName(value);
+  if (!team) {
+    const initials = String(value || "?").trim().split(/\s+/).slice(0, 2).map(word => word[0]).join("").toUpperCase() || "?";
+    return `<span class="${className} team-shield-fallback" aria-hidden="true">${initials}</span>`;
+  }
+  return `<img class="${className}" src="${team.logo}" alt="Escudo de ${team.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('span'),{className:'${className} team-shield-fallback',textContent:'${team.name.slice(0,2).toUpperCase()}'}))">`;
+}
+
+
 /* ---------- Menú mobile ---------- */
 const menuBtn = document.querySelector(".menu-btn");
 const mobileNav = document.querySelector(".mobile-nav");
@@ -304,7 +352,11 @@ async function renderCalendar() {
         const rows = comps[compName].sort((a,b) => a.time.localeCompare(b.time)).map(f => `
           <div class="match-row">
             <div class="match-time">${f.time}</div>
-            <div class="match-teams">${f.home} vs. ${f.away}</div>
+            <div class="match-teams team-matchup">
+              <span class="team-side">${teamShield(f.home)}<span>${f.home}</span></span>
+              <span class="team-vs">vs.</span>
+              <span class="team-side team-side-away"><span>${f.away}</span>${teamShield(f.away)}</span>
+            </div>
             <div class="match-channel">${f.channel}</div>
           </div>`).join("");
         return `
@@ -370,7 +422,12 @@ async function renderCalendarPreview() {
   el.innerHTML = upcoming.map(f => `
     <div class="match-row">
       <div class="match-time">${f.time}</div>
-      <div class="match-teams">${f.home} vs. ${f.away} <span style="color:var(--muted-light); font-weight:400;">— ${f.competition}</span></div>
+      <div class="match-teams team-matchup">
+        <span class="team-side">${teamShield(f.home)}<span>${f.home}</span></span>
+        <span class="team-vs">vs.</span>
+        <span class="team-side team-side-away"><span>${f.away}</span>${teamShield(f.away)}</span>
+        <span style="color:var(--muted-light); font-weight:400;">— ${f.competition}</span>
+      </div>
       <div class="match-channel">${f.channel}</div>
     </div>`).join("");
 }
@@ -413,7 +470,7 @@ async function renderUrbaStandings() {
           ${standings.map((team, i) => `
             <tr class="${i >= relegationFrom ? "is-relegation" : ""}">
               <td class="col-pos">${i + 1}</td>
-              <td class="col-team">${team.team}</td>
+              <td class="col-team"><span class="team-cell">${teamShield(team.team)}<span>${team.team}</span></span></td>
               <td>${team.pj}</td>
               <td>${team.pg}</td>
               <td>${team.pe}</td>
