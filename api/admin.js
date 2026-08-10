@@ -1,218 +1,443 @@
-import { list, put } from '@vercel/blob';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import crypto from 'node:crypto';
+// ============================================================
+// DROPRUGBY - API ADMIN
+// /api/admin.js
+// ============================================================
 
-const BLOB_PATH = 'droprugby/content.json';
-const COOKIE = 'droprugby_session';
+import { list, put } from "@vercel/blob";
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+
+const BLOB_PATH = "droprugby/content.json";
+const COOKIE_NAME = "droprugby_session";
 const MAX_AGE = 60 * 60 * 24 * 7;
 
-/* =========================================================
-   CONFIGURACIÓN
-========================================================= */
+// ============================================================
+// CONTENIDO POR DEFECTO
+// ============================================================
 
-function secret() {
+const DEFAULT_CONTENT = {
+  articles: [],
+  fixtures: [],
+  results: [],
+  standings: [],
+  players: [],
+  instagram: [],
+  trash: [],
+  history: [],
+
+  settings: {
+    siteName: "DropRugby",
+    description: "Noticias de rugby"
+  }
+};
+
+// ============================================================
+// UTILIDADES
+// ============================================================
+
+function getSecret() {
   return (
     process.env.ADMIN_SESSION_SECRET ||
     process.env.ADMIN_PASSWORD ||
-    'change-this-secret-in-vercel'
+    "droprugby-secret-change-this"
   );
 }
 
-/* =========================================================
-   SESIONES
-========================================================= */
+function makeId(prefix = "item") {
+  return `${prefix}_${Date.now()}_${crypto
+    .randomBytes(5)
+    .toString("hex")}`;
+}
 
-function sign(value) {
-  return crypto
-    .createHmac('sha256', secret())
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function fixtureKey(fixture) {
+  return [
+    fixture.date || "",
+    fixture.time || "",
+    fixture.home ||
+      fixture.team1 ||
+      fixture.local ||
+      "",
+    fixture.away ||
+      fixture.team2 ||
+      fixture.visitante ||
+      "",
+    fixture.competition || ""
+  ]
+    .join("|")
+    .toLowerCase();
+}
+
+function isTop14(fixture) {
+  return (
+    String(fixture?.competition || "")
+      .trim()
+      .toUpperCase() === "URBA TOP 14"
+  );
+}
+
+// ============================================================
+// COOKIES
+// ============================================================
+
+function parseCookies(req) {
+  const header = req.headers.cookie || "";
+  const cookies = {};
+
+  header.split(";").forEach((part) => {
+    const index = part.indexOf("=");
+
+    if (index === -1) return;
+
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+
+    try {
+      cookies[key] = decodeURIComponent(value);
+    } catch {
+      cookies[key] = value;
+    }
+  });
+
+  return cookies;
+}
+
+function createToken() {
+  const timestamp = Date.now();
+  const random = crypto
+    .randomBytes(24)
+    .toString("hex");
+
+  const value = `${timestamp}.${random}`;
+
+  const signature = crypto
+    .createHmac("sha256", getSecret())
     .update(value)
-    .digest('hex');
-}
+    .digest("hex");
 
-function makeToken() {
-  const value = `${Date.now()}.${crypto.randomBytes(16).toString('hex')}`;
-  return `${value}.${sign(value)}`;
-}
-
-function getCookie(req) {
-  const raw = req.headers.cookie || '';
-
-  const match = raw.match(
-    new RegExp(`${COOKIE}=([^;]+)`)
-  );
-
-  if (!match) return null;
-
-  return decodeURIComponent(match[1]);
+  return `${value}.${signature}`;
 }
 
 function validToken(req) {
   try {
-    const token = getCookie(req);
+    const cookies = parseCookies(req);
+    const token = cookies[COOKIE_NAME];
 
     if (!token) return false;
 
-    const parts = token.split('.');
+    const parts = token.split(".");
 
-    if (parts.length < 3) {
+    if (parts.length !== 3) {
       return false;
     }
 
-    const value = parts.slice(0, 2).join('.');
     const timestamp = Number(parts[0]);
 
     if (!Number.isFinite(timestamp)) {
       return false;
     }
 
-    if (Date.now() - timestamp > MAX_AGE * 1000) {
+    if (
+      Date.now() - timestamp >
+      MAX_AGE * 1000
+    ) {
       return false;
     }
 
-    const expected = sign(value);
+    const value =
+      `${parts[0]}.${parts[1]}`;
 
-    const providedBuffer = Buffer.from(parts[2]);
-    const expectedBuffer = Buffer.from(expected);
+    const expected = crypto
+      .createHmac("sha256", getSecret())
+      .update(value)
+      .digest("hex");
 
-    if (providedBuffer.length !== expectedBuffer.length) {
+    const receivedBuffer =
+      Buffer.from(parts[2]);
+
+    const expectedBuffer =
+      Buffer.from(expected);
+
+    if (
+      receivedBuffer.length !==
+      expectedBuffer.length
+    ) {
       return false;
     }
 
     return crypto.timingSafeEqual(
-      providedBuffer,
+      receivedBuffer,
       expectedBuffer
     );
-  } catch (error) {
-    console.error('[session] Error validando sesión:', error);
+  } catch {
     return false;
   }
 }
 
-function setCookie(res, value, maxAge = MAX_AGE) {
+function setCookie(res, token) {
   res.setHeader(
-    'Set-Cookie',
-    `${COOKIE}=${encodeURIComponent(value)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`
+    "Set-Cookie",
+    `${COOKIE_NAME}=${encodeURIComponent(
+      token
+    )}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${MAX_AGE}`
   );
 }
 
-/* =========================================================
-   DATOS
-========================================================= */
-
-function normalizeData(data) {
-  return {
-    articles: Array.isArray(data?.articles)
-      ? data.articles
-      : [],
-
-    fixtures: Array.isArray(data?.fixtures)
-      ? data.fixtures
-      : [],
-
-    results: Array.isArray(data?.results)
-      ? data.results
-      : []
-  };
+function clearCookie(res) {
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  );
 }
 
-async function readData() {
-  try {
-    const result = await list({
-      prefix: BLOB_PATH,
-      limit: 1
+// ============================================================
+// RESPUESTAS
+// ============================================================
+
+function json(res, status, data) {
+  return res
+    .status(status)
+    .json(data);
+}
+
+// ============================================================
+// BODY
+// ============================================================
+
+async function getBody(req) {
+  if (
+    req.body &&
+    typeof req.body === "object" &&
+    !Buffer.isBuffer(req.body)
+  ) {
+    return req.body;
+  }
+
+  return new Promise((resolve, reject) => {
+    let raw = "";
+
+    req.on("data", (chunk) => {
+      raw += chunk;
     });
 
-    if (result.blobs.length) {
-      const blob = result.blobs[0];
-
-      const response = await fetch(blob.url, {
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `No se pudo leer content.json (${response.status})`
-        );
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
       }
 
-      const data = await response.json();
+      try {
+        resolve(JSON.parse(raw));
+      } catch (error) {
+        reject(error);
+      }
+    });
 
-      return normalizeData(data);
-    }
-  } catch (error) {
-    console.error(
-      '[readData] Error leyendo Blob:',
-      error
-    );
-  }
+    req.on("error", reject);
+  });
+}
 
-  /*
-   * Si todavía no existe el Blob, usamos los JSON
-   * iniciales del proyecto.
-   */
+// ============================================================
+// NORMALIZACIÓN
+// ============================================================
 
-  let articles = [];
-  let fixtures = [];
-
-  try {
-    const articlesFile = await fs.readFile(
-      path.join(
-        process.cwd(),
-        'data',
-        'articles.json'
-      ),
-      'utf8'
-    );
-
-    articles = JSON.parse(articlesFile);
-  } catch (error) {
-    console.log(
-      '[readData] No existe data/articles.json'
-    );
-  }
-
-  try {
-    const fixturesFile = await fs.readFile(
-      path.join(
-        process.cwd(),
-        'data',
-        'fixtures.json'
-      ),
-      'utf8'
-    );
-
-    fixtures = JSON.parse(fixturesFile);
-  } catch (error) {
-    console.log(
-      '[readData] No existe data/fixtures.json'
-    );
-  }
+function normalizeContent(data) {
+  const content =
+    data &&
+    typeof data === "object"
+      ? data
+      : {};
 
   return {
-    articles: Array.isArray(articles)
-      ? articles
+    ...DEFAULT_CONTENT,
+
+    ...content,
+
+    articles: Array.isArray(
+      content.articles
+    )
+      ? content.articles
       : [],
 
-    fixtures: Array.isArray(fixtures)
-      ? fixtures
+    fixtures: Array.isArray(
+      content.fixtures
+    )
+      ? content.fixtures
       : [],
 
-    results: []
+    results: Array.isArray(
+      content.results
+    )
+      ? content.results
+      : [],
+
+    standings: Array.isArray(
+      content.standings
+    )
+      ? content.standings
+      : [],
+
+    players: Array.isArray(
+      content.players
+    )
+      ? content.players
+      : [],
+
+    instagram: Array.isArray(
+      content.instagram
+    )
+      ? content.instagram
+      : [],
+
+    trash: Array.isArray(
+      content.trash
+    )
+      ? content.trash
+      : [],
+
+    history: Array.isArray(
+      content.history
+    )
+      ? content.history
+      : [],
+
+    settings:
+      content.settings &&
+      typeof content.settings === "object"
+        ? content.settings
+        : {
+            ...DEFAULT_CONTENT.settings
+          }
   };
 }
 
-async function saveData(data) {
-  const normalized = normalizeData(data);
+// ============================================================
+// BLOB
+// ============================================================
+
+async function readBlobContent() {
+  const result = await list({
+    prefix: BLOB_PATH,
+    limit: 10
+  });
+
+  if (!result.blobs.length) {
+    return null;
+  }
+
+  const blob =
+    result.blobs.find(
+      (item) =>
+        item.pathname === BLOB_PATH
+    ) ||
+    result.blobs[0];
+
+  const response = await fetch(
+    blob.url,
+    {
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `No se pudo leer Vercel Blob (${response.status})`
+    );
+  }
+
+  return await response.json();
+}
+
+async function readLocalContent() {
+  try {
+    const articlesPath =
+      path.join(
+        process.cwd(),
+        "data",
+        "articles.json"
+      );
+
+    const fixturesPath =
+      path.join(
+        process.cwd(),
+        "data",
+        "fixtures.json"
+      );
+
+    const [
+      articlesRaw,
+      fixturesRaw
+    ] = await Promise.all([
+      fs.readFile(
+        articlesPath,
+        "utf8"
+      ),
+      fs.readFile(
+        fixturesPath,
+        "utf8"
+      )
+    ]);
+
+    return {
+      ...DEFAULT_CONTENT,
+
+      articles:
+        JSON.parse(articlesRaw),
+
+      fixtures:
+        JSON.parse(fixturesRaw)
+    };
+  } catch {
+    return {
+      ...DEFAULT_CONTENT
+    };
+  }
+}
+
+async function readContent() {
+  const blob =
+    await readBlobContent();
+
+  if (blob) {
+    return normalizeContent(blob);
+  }
+
+  const local =
+    await readLocalContent();
+
+  return normalizeContent(local);
+}
+
+async function saveContent(content) {
+  const normalized =
+    normalizeContent(content);
 
   await put(
     BLOB_PATH,
-    JSON.stringify(normalized),
+    JSON.stringify(
+      normalized,
+      null,
+      2
+    ),
     {
-      access: 'public',
+      access: "public",
       addRandomSuffix: false,
       allowOverwrite: true,
-      contentType: 'application/json; charset=utf-8',
+      contentType:
+        "application/json; charset=utf-8",
       cacheControlMaxAge: 0
     }
   );
@@ -220,293 +445,1380 @@ async function saveData(data) {
   return normalized;
 }
 
-/* =========================================================
-   LOGIN
-========================================================= */
+// ============================================================
+// HISTORIAL
+// ============================================================
 
-async function login(body, res) {
-  const user =
-    process.env.ADMIN_USER || 'admin';
-
-  const password =
-    process.env.ADMIN_PASSWORD;
-
-  if (!password) {
-    return res.status(500).json({
-      error:
-        'Falta configurar ADMIN_PASSWORD en Vercel.'
-    });
+function addHistory(
+  content,
+  action,
+  type,
+  item
+) {
+  if (!Array.isArray(content.history)) {
+    content.history = [];
   }
 
-  if (
-    body.username !== user ||
-    body.password !== password
-  ) {
-    return res.status(401).json({
-      error:
-        'Usuario o contraseña incorrectos.'
-    });
-  }
-
-  const token = makeToken();
-
-  setCookie(res, token);
-
-  return res.status(200).json({
-    ok: true
+  content.history.unshift({
+    id: makeId("history"),
+    action,
+    type,
+    itemId: item?.id || null,
+    title:
+      item?.title ||
+      item?.home
+        ? `${item?.home || ""} vs ${
+            item?.away || ""
+          }`
+        : "",
+    date:
+      new Date().toISOString()
   });
+
+  content.history =
+    content.history.slice(0, 200);
 }
 
-/* =========================================================
-   HANDLER
-========================================================= */
+// ============================================================
+// PROGRAMACIÓN
+// ============================================================
 
-export default async function handler(req, res) {
+function processScheduledArticles(
+  content
+) {
+  const now = Date.now();
+  let changed = false;
+
+  content.articles =
+    content.articles.map((article) => {
+      if (
+        article.scheduled &&
+        article.publishAt
+      ) {
+        const publishTime =
+          new Date(
+            article.publishAt
+          ).getTime();
+
+        if (
+          Number.isFinite(
+            publishTime
+          ) &&
+          publishTime <= now
+        ) {
+          changed = true;
+
+          return {
+            ...article,
+            scheduled: false,
+            published: true,
+            updatedAt:
+              new Date().toISOString()
+          };
+        }
+      }
+
+      return article;
+    });
+
+  return changed;
+}
+
+// ============================================================
+// HANDLER
+// ============================================================
+
+export default async function handler(
+  req,
+  res
+) {
   try {
-    /*
-     * =====================================================
-     * GET
-     *
-     * El panel utiliza GET /api/admin para comprobar
-     * la sesión y cargar el contenido.
-     * =====================================================
-     */
+    // ========================================================
+    // GET
+    // ========================================================
 
-    if (req.method === 'GET') {
-      if (!validToken(req)) {
-        return res.status(401).json({
-          error: 'Sesión no válida o expirada.'
+    if (req.method === "GET") {
+      const action =
+        req.query?.action;
+
+      // ------------------------------------------------------
+      // SESSION
+      // ------------------------------------------------------
+
+      if (
+        action === "session" ||
+        action === "check-session" ||
+        action === "me"
+      ) {
+        const authenticated =
+          validToken(req);
+
+        return json(res, 200, {
+          authenticated,
+          user: authenticated
+            ? process.env.ADMIN_USER ||
+              "admin"
+            : null
         });
       }
 
-      const data = await readData();
+      // ------------------------------------------------------
+      // GET CONTENT
+      // ------------------------------------------------------
 
-      return res.status(200).json({
-        ok: true,
-        ...data
+      if (
+        action === "get" ||
+        action === "load"
+      ) {
+        if (!validToken(req)) {
+          return json(res, 401, {
+            ok: false,
+            error:
+              "Sesión no válida o expirada."
+          });
+        }
+
+        const content =
+          await readContent();
+
+        const changed =
+          processScheduledArticles(
+            content
+          );
+
+        if (changed) {
+          await saveContent(content);
+        }
+
+        return json(res, 200, {
+          ok: true,
+          content
+        });
+      }
+
+      return json(res, 400, {
+        ok: false,
+        error: "Acción desconocida."
       });
     }
 
-    /*
-     * =====================================================
-     * POST
-     * =====================================================
-     */
+    // ========================================================
+    // POST
+    // ========================================================
 
-    if (req.method !== 'POST') {
-      return res.status(405).json({
-        error: 'Método no permitido.'
+    if (req.method !== "POST") {
+      return json(res, 405, {
+        ok: false,
+        error:
+          "Método no permitido."
       });
     }
 
     const body =
-      typeof req.body === 'string'
-        ? JSON.parse(req.body)
-        : req.body || {};
+      await getBody(req);
 
-    /* =====================================================
-       LOGIN
-    ===================================================== */
+    const action =
+      body.action ||
+      req.query?.action ||
+      "";
 
-    if (body.action === 'login') {
-      return await login(body, res);
-    }
+    // ========================================================
+    // LOGIN
+    // ========================================================
 
-    /* =====================================================
-       LOGOUT
-    ===================================================== */
+    if (
+      action === "login" ||
+      action === "authenticate"
+    ) {
+      const username =
+        process.env.ADMIN_USER ||
+        "admin";
 
-    if (body.action === 'logout') {
-      setCookie(res, '', 0);
+      const password =
+        process.env.ADMIN_PASSWORD;
 
-      return res.status(200).json({
-        ok: true
-      });
-    }
-
-    /* =====================================================
-       SESSION
-    ===================================================== */
-
-    if (body.action === 'session') {
-      if (!validToken(req)) {
-        return res.status(401).json({
-          error: 'Sesión no válida.'
+      if (!password) {
+        return json(res, 500, {
+          ok: false,
+          error:
+            "Falta configurar ADMIN_PASSWORD en Vercel."
         });
       }
 
-      return res.status(200).json({
+      if (
+        String(body.username || "") !==
+          String(username) ||
+        String(body.password || "") !==
+          String(password)
+      ) {
+        return json(res, 401, {
+          ok: false,
+          error:
+            "Usuario o contraseña incorrectos."
+        });
+      }
+
+      const token =
+        createToken();
+
+      setCookie(res, token);
+
+      return json(res, 200, {
+        ok: true,
+        authenticated: true,
+        user: username
+      });
+    }
+
+    // ========================================================
+    // LOGOUT
+    // ========================================================
+
+    if (
+      action === "logout" ||
+      action === "signout"
+    ) {
+      clearCookie(res);
+
+      return json(res, 200, {
         ok: true
       });
     }
 
-    /* =====================================================
-       CUALQUIER OTRA ACCIÓN REQUIERE SESIÓN
-    ===================================================== */
+    // ========================================================
+    // TODO LO DEMÁS REQUIERE SESIÓN
+    // ========================================================
 
     if (!validToken(req)) {
-      return res.status(401).json({
+      return json(res, 401, {
+        ok: false,
         error:
-          'Sesión no válida o expirada.'
+          "Sesión no válida o expirada."
       });
     }
 
-    /* =====================================================
-       LOAD
-    ===================================================== */
+    // ========================================================
+    // GET CONTENT POR POST
+    // ========================================================
 
-    if (body.action === 'load') {
-      const data = await readData();
+    if (
+      action === "get" ||
+      action === "load"
+    ) {
+      const content =
+        await readContent();
 
-      return res.status(200).json({
+      const changed =
+        processScheduledArticles(
+          content
+        );
+
+      if (changed) {
+        await saveContent(content);
+      }
+
+      return json(res, 200, {
         ok: true,
-        ...data
+        content
       });
     }
 
-    /* =====================================================
-       SAVE
-    ===================================================== */
+    // ========================================================
+    // SAVE GENERAL
+    // ========================================================
 
-    if (body.action === 'save') {
-      const articles =
-        Array.isArray(body.articles)
-          ? body.articles
-          : null;
+    if (
+      action === "save" ||
+      action === "save-all" ||
+      action === "update"
+    ) {
+      const incoming =
+        body.content &&
+        typeof body.content === "object"
+          ? body.content
+          : body;
 
-      const fixtures =
-        Array.isArray(body.fixtures)
-          ? body.fixtures
-          : null;
+      const current =
+        await readContent();
 
-      const results =
-        Array.isArray(body.results)
-          ? body.results
-          : [];
+      const merged =
+        normalizeContent({
+          ...current,
+          ...incoming
+        });
 
-      if (!articles || !fixtures) {
-        return res.status(400).json({
-          error: 'Datos inválidos.'
+      await saveContent(
+        merged
+      );
+
+      return json(res, 200, {
+        ok: true,
+        content: merged
+      });
+    }
+
+    // ========================================================
+    // CREAR / EDITAR NOTICIA
+    // ========================================================
+
+    if (
+      action === "create-article" ||
+      action === "add-article" ||
+      action === "article-create"
+    ) {
+      const article =
+        body.article;
+
+      if (
+        !article ||
+        typeof article !== "object"
+      ) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Datos de noticia inválidos."
         });
       }
 
-      const data = {
-        articles,
-        fixtures,
-        results
+      const content =
+        await readContent();
+
+      const now =
+        new Date().toISOString();
+
+      const articleId =
+        article.id ||
+        makeId("article");
+
+      const existingIndex =
+        content.articles.findIndex(
+          (item) =>
+            String(item.id) ===
+            String(articleId)
+        );
+
+      const normalizedArticle = {
+        id: articleId,
+
+        title:
+          String(
+            article.title || ""
+          ).trim(),
+
+        slug:
+          article.slug ||
+          slugify(article.title),
+
+        category:
+          article.category ||
+          "Rugby",
+
+        author:
+          article.author ||
+          "DropRugby",
+
+        excerpt:
+          article.excerpt || "",
+
+        content:
+          article.content || "",
+
+        imageUrl:
+          article.imageUrl ||
+          article.image ||
+          "",
+
+        date:
+          article.date ||
+          now.slice(0, 10),
+
+        featured:
+          Boolean(
+            article.featured
+          ),
+
+        published:
+          article.scheduled
+            ? false
+            : article.published !== false,
+
+        scheduled:
+          Boolean(
+            article.scheduled
+          ),
+
+        publishAt:
+          article.publishAt ||
+          null,
+
+        createdAt:
+          article.createdAt ||
+          now,
+
+        updatedAt: now
       };
 
-      await saveData(data);
+      if (
+        existingIndex >= 0
+      ) {
+        content.articles[
+          existingIndex
+        ] = {
+          ...content.articles[
+            existingIndex
+          ],
+          ...normalizedArticle
+        };
 
-      return res.status(200).json({
+        addHistory(
+          content,
+          "edit",
+          "article",
+          normalizedArticle
+        );
+      } else {
+        content.articles.unshift(
+          normalizedArticle
+        );
+
+        addHistory(
+          content,
+          "create",
+          "article",
+          normalizedArticle
+        );
+      }
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
         ok: true,
-        articles: articles.length,
-        fixtures: fixtures.length,
-        results: results.length
+        article:
+          normalizedArticle,
+        content
       });
     }
 
-    /* =====================================================
-       SAVE ARTICLES
-    ===================================================== */
+    // ========================================================
+    // BORRAR NOTICIA
+    // ========================================================
 
-    if (body.action === 'saveArticles') {
-      if (!Array.isArray(body.articles)) {
-        return res.status(400).json({
-          error: 'articles debe ser un array.'
+    if (
+      action === "delete-article" ||
+      action === "remove-article"
+    ) {
+      const id =
+        body.id;
+
+      if (!id) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Falta el ID de la noticia."
         });
       }
 
-      const current = await readData();
+      const content =
+        await readContent();
 
-      const data = {
-        articles: body.articles,
-        fixtures: current.fixtures,
-        results: current.results
-      };
+      const index =
+        content.articles.findIndex(
+          (article) =>
+            String(article.id) ===
+            String(id)
+        );
 
-      await saveData(data);
-
-      return res.status(200).json({
-        ok: true,
-        articles: data.articles.length
-      });
-    }
-
-    /* =====================================================
-       SAVE FIXTURES
-    ===================================================== */
-
-    if (body.action === 'saveFixtures') {
-      if (!Array.isArray(body.fixtures)) {
-        return res.status(400).json({
-          error: 'fixtures debe ser un array.'
+      if (index === -1) {
+        return json(res, 404, {
+          ok: false,
+          error:
+            "Noticia no encontrada."
         });
       }
 
-      const current = await readData();
+      const removed =
+        content.articles[index];
 
-      const data = {
-        articles: current.articles,
-        fixtures: body.fixtures,
-        results: current.results
-      };
+      content.articles.splice(
+        index,
+        1
+      );
 
-      await saveData(data);
+      if (
+        !Array.isArray(
+          content.trash
+        )
+      ) {
+        content.trash = [];
+      }
 
-      return res.status(200).json({
+      content.trash.unshift({
+        ...removed,
+        deletedAt:
+          new Date().toISOString(),
+        deletedType:
+          "article"
+      });
+
+      addHistory(
+        content,
+        "delete",
+        "article",
+        removed
+      );
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
         ok: true,
-        fixtures: data.fixtures.length
+        content
       });
     }
 
-    /* =====================================================
-       SAVE RESULTS
-    ===================================================== */
+    // ========================================================
+    // CREAR / EDITAR PARTIDO
+    // ========================================================
 
-    if (body.action === 'saveResults') {
-      if (!Array.isArray(body.results)) {
-        return res.status(400).json({
-          error: 'results debe ser un array.'
+    if (
+      action === "create-fixture" ||
+      action === "add-fixture" ||
+      action === "fixture-create"
+    ) {
+      const fixture =
+        body.fixture;
+
+      if (
+        !fixture ||
+        typeof fixture !== "object"
+      ) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Datos de partido inválidos."
         });
       }
 
-      const current = await readData();
+      const content =
+        await readContent();
 
-      const data = {
-        articles: current.articles,
-        fixtures: current.fixtures,
-        results: body.results
+      const now =
+        new Date().toISOString();
+
+      const fixtureId =
+        fixture.id ||
+        makeId("fixture");
+
+      const normalizedFixture = {
+        id: fixtureId,
+
+        fixtureKey:
+          fixture.fixtureKey ||
+          fixtureKey(fixture),
+
+        home:
+          fixture.home ||
+          fixture.team1 ||
+          fixture.local ||
+          "",
+
+        away:
+          fixture.away ||
+          fixture.team2 ||
+          fixture.visitante ||
+          "",
+
+        date:
+          fixture.date || "",
+
+        time:
+          fixture.time || "",
+
+        competition:
+          fixture.competition ||
+          "URBA TOP 14",
+
+        channel:
+          fixture.channel || "",
+
+        venue:
+          fixture.venue || "",
+
+        createdAt:
+          fixture.createdAt ||
+          now,
+
+        updatedAt: now
       };
 
-      await saveData(data);
+      const existingIndex =
+        content.fixtures.findIndex(
+          (item) =>
+            String(item.id) ===
+            String(fixtureId)
+        );
 
-      return res.status(200).json({
+      if (
+        existingIndex >= 0
+      ) {
+        content.fixtures[
+          existingIndex
+        ] = {
+          ...content.fixtures[
+            existingIndex
+          ],
+          ...normalizedFixture
+        };
+
+        addHistory(
+          content,
+          "edit",
+          "fixture",
+          normalizedFixture
+        );
+      } else {
+        content.fixtures.push(
+          normalizedFixture
+        );
+
+        addHistory(
+          content,
+          "create",
+          "fixture",
+          normalizedFixture
+        );
+      }
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
         ok: true,
-        results: data.results.length
+        fixture:
+          normalizedFixture,
+        content
       });
     }
 
-    /* =====================================================
-       ACCIÓN DESCONOCIDA
-    ===================================================== */
+    // ========================================================
+    // BORRAR PARTIDO
+    // ========================================================
 
-    return res.status(400).json({
-      error: 'Acción desconocida.'
+    if (
+      action === "delete-fixture" ||
+      action === "remove-fixture"
+    ) {
+      const id =
+        body.id;
+
+      if (!id) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Falta el ID del partido."
+        });
+      }
+
+      const content =
+        await readContent();
+
+      const index =
+        content.fixtures.findIndex(
+          (fixture) =>
+            String(
+              fixture.id ||
+                fixtureKey(fixture)
+            ) ===
+            String(id)
+        );
+
+      if (index === -1) {
+        return json(res, 404, {
+          ok: false,
+          error:
+            "Partido no encontrado."
+        });
+      }
+
+      const removed =
+        content.fixtures[index];
+
+      content.fixtures.splice(
+        index,
+        1
+      );
+
+      if (
+        !Array.isArray(
+          content.trash
+        )
+      ) {
+        content.trash = [];
+      }
+
+      content.trash.unshift({
+        ...removed,
+        deletedAt:
+          new Date().toISOString(),
+        deletedType:
+          "fixture"
+      });
+
+      addHistory(
+        content,
+        "delete",
+        "fixture",
+        removed
+      );
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
+        ok: true,
+        content
+      });
+    }
+
+    // ========================================================
+    // GUARDAR RESULTADO TOP 14
+    // ========================================================
+
+    if (
+      action === "save-result" ||
+      action === "create-result" ||
+      action === "update-result"
+    ) {
+      const result =
+        body.result;
+
+      if (
+        !result ||
+        typeof result !== "object"
+      ) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Datos de resultado inválidos."
+        });
+      }
+
+      const content =
+        await readContent();
+
+      // ------------------------------------------------------
+      // VALIDAR PARTIDO
+      // ------------------------------------------------------
+
+      const fixture =
+        content.fixtures.find(
+          (item) =>
+            String(
+              item.id || ""
+            ) ===
+              String(
+                result.fixtureId ||
+                  ""
+              ) ||
+            fixtureKey(item) ===
+              String(
+                result.fixtureKey ||
+                  ""
+              )
+        );
+
+      if (!fixture) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "No se encontró el partido asociado al resultado."
+        });
+      }
+
+      if (!isTop14(fixture)) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Solo se pueden cargar resultados de URBA TOP 14."
+        });
+      }
+
+      // ------------------------------------------------------
+      // VALIDAR MARCADOR
+      // ------------------------------------------------------
+
+      const homeScore =
+        Number(
+          result.homeScore
+        );
+
+      const awayScore =
+        Number(
+          result.awayScore
+        );
+
+      if (
+        !Number.isInteger(
+          homeScore
+        ) ||
+        homeScore < 0 ||
+        !Number.isInteger(
+          awayScore
+        ) ||
+        awayScore < 0
+      ) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Los marcadores deben ser números enteros mayores o iguales a 0."
+        });
+      }
+
+      // ------------------------------------------------------
+      // VALIDAR BONUS
+      // ------------------------------------------------------
+
+      const home =
+        fixture.home ||
+        fixture.team1 ||
+        fixture.local ||
+        "";
+
+      const away =
+        fixture.away ||
+        fixture.team2 ||
+        fixture.visitante ||
+        "";
+
+      let bonusTeam =
+        result.bonusTeam || null;
+
+      if (bonusTeam) {
+        const bonusString =
+          String(
+            bonusTeam
+          ).trim();
+
+        if (
+          bonusString.toLowerCase() !==
+            String(home)
+              .trim()
+              .toLowerCase() &&
+          bonusString.toLowerCase() !==
+            String(away)
+              .trim()
+              .toLowerCase()
+        ) {
+          return json(res, 400, {
+            ok: false,
+            error:
+              "El punto bonus debe pertenecer a uno de los dos equipos."
+          });
+        }
+
+        bonusTeam =
+          bonusString;
+      }
+
+      const now =
+        new Date().toISOString();
+
+      const resultId =
+        result.id ||
+        makeId("result");
+
+      const normalizedResult = {
+        id: resultId,
+
+        fixtureId:
+          fixture.id ||
+          fixtureKey(fixture),
+
+        fixtureKey:
+          fixtureKey(fixture),
+
+        date:
+          fixture.date || "",
+
+        time:
+          fixture.time || "",
+
+        competition:
+          "URBA TOP 14",
+
+        home,
+
+        away,
+
+        homeScore,
+
+        awayScore,
+
+        bonusTeam,
+
+        createdAt:
+          result.createdAt ||
+          now,
+
+        updatedAt: now
+      };
+
+      // ------------------------------------------------------
+      // EVITAR DUPLICADOS
+      // ------------------------------------------------------
+
+      const existingIndex =
+        content.results.findIndex(
+          (item) =>
+            String(item.id) ===
+              String(resultId) ||
+            String(
+              item.fixtureId || ""
+            ) ===
+              String(
+                normalizedResult.fixtureId
+              )
+        );
+
+      if (
+        existingIndex >= 0
+      ) {
+        content.results[
+          existingIndex
+        ] = {
+          ...content.results[
+            existingIndex
+          ],
+          ...normalizedResult
+        };
+
+        addHistory(
+          content,
+          "edit",
+          "result",
+          normalizedResult
+        );
+      } else {
+        content.results.push(
+          normalizedResult
+        );
+
+        addHistory(
+          content,
+          "create",
+          "result",
+          normalizedResult
+        );
+      }
+
+      // ------------------------------------------------------
+      // CALCULAR TABLA
+      // ------------------------------------------------------
+
+      content.standings =
+        calculateStandings(
+          content
+        );
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
+        ok: true,
+        result:
+          normalizedResult,
+        standings:
+          content.standings,
+        content
+      });
+    }
+
+    // ========================================================
+    // BORRAR RESULTADO
+    // ========================================================
+
+    if (
+      action === "delete-result" ||
+      action === "remove-result"
+    ) {
+      const id =
+        body.id;
+
+      if (!id) {
+        return json(res, 400, {
+          ok: false,
+          error:
+            "Falta el ID del resultado."
+        });
+      }
+
+      const content =
+        await readContent();
+
+      const index =
+        content.results.findIndex(
+          (result) =>
+            String(result.id) ===
+            String(id)
+        );
+
+      if (index === -1) {
+        return json(res, 404, {
+          ok: false,
+          error:
+            "Resultado no encontrado."
+        });
+      }
+
+      const removed =
+        content.results[index];
+
+      content.results.splice(
+        index,
+        1
+      );
+
+      content.standings =
+        calculateStandings(
+          content
+        );
+
+      addHistory(
+        content,
+        "delete",
+        "result",
+        removed
+      );
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
+        ok: true,
+        content
+      });
+    }
+
+    // ========================================================
+    // CALCULAR / ACTUALIZAR TABLA
+    // ========================================================
+
+    if (
+      action === "calculate-standings" ||
+      action === "update-standings"
+    ) {
+      const content =
+        await readContent();
+
+      content.standings =
+        calculateStandings(
+          content
+        );
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
+        ok: true,
+        standings:
+          content.standings,
+        content
+      });
+    }
+
+    // ========================================================
+    // ACCIÓN DESCONOCIDA
+    // ========================================================
+
+    return json(res, 400, {
+      ok: false,
+      error:
+        `Acción desconocida: ${action || "(vacía)"}`
     });
-
   } catch (error) {
     console.error(
-      '[api/admin] ERROR:',
+      "❌ /api/admin ERROR:",
       error
     );
 
-    return res.status(500).json({
-      error: 'Error interno del servidor.',
+    return json(res, 500, {
+      ok: false,
+      error:
+        "Error interno del servidor.",
       detail:
-        process.env.NODE_ENV === 'development'
-          ? error.message
-          : undefined
+        error?.message ||
+        String(error)
     });
   }
+}
+
+// ============================================================
+// TABLA URBA TOP 14
+// ============================================================
+
+function calculateStandings(
+  content
+) {
+  const teams =
+    new Map();
+
+  function ensureTeam(name) {
+    const clean =
+      String(name || "")
+        .trim();
+
+    if (!clean) {
+      return null;
+    }
+
+    const key =
+      clean.toLowerCase();
+
+    if (!teams.has(key)) {
+      teams.set(key, {
+        team: clean,
+        pj: 0,
+        pg: 0,
+        pe: 0,
+        pp: 0,
+        pf: 0,
+        pc: 0,
+        diff: 0,
+        bonus: 0,
+        pts: 0
+      });
+    }
+
+    return teams.get(key);
+  }
+
+  // ----------------------------------------------------------
+  // AGREGAR TODOS LOS EQUIPOS DEL FIXTURE
+  // ----------------------------------------------------------
+
+  for (
+    const fixture of
+      content.fixtures || []
+  ) {
+    if (!isTop14(fixture)) {
+      continue;
+    }
+
+    ensureTeam(
+      fixture.home ||
+        fixture.team1 ||
+        fixture.local
+    );
+
+    ensureTeam(
+      fixture.away ||
+        fixture.team2 ||
+        fixture.visitante
+    );
+  }
+
+  // ----------------------------------------------------------
+  // PROCESAR RESULTADOS
+  // ----------------------------------------------------------
+
+  for (
+    const result of
+      content.results || []
+  ) {
+    if (
+      String(
+        result.competition || ""
+      )
+        .trim()
+        .toUpperCase() !==
+      "URBA TOP 14"
+    ) {
+      continue;
+    }
+
+    const home =
+      ensureTeam(
+        result.home
+      );
+
+    const away =
+      ensureTeam(
+        result.away
+      );
+
+    if (!home || !away) {
+      continue;
+    }
+
+    const homeScore =
+      Number(
+        result.homeScore
+      );
+
+    const awayScore =
+      Number(
+        result.awayScore
+      );
+
+    if (
+      !Number.isInteger(
+        homeScore
+      ) ||
+      !Number.isInteger(
+        awayScore
+      )
+    ) {
+      continue;
+    }
+
+    // --------------------------------------------------------
+    // PARTIDOS JUGADOS
+    // --------------------------------------------------------
+
+    home.pj++;
+    away.pj++;
+
+    // --------------------------------------------------------
+    // PUNTOS A FAVOR / CONTRA
+    // --------------------------------------------------------
+
+    home.pf += homeScore;
+    home.pc += awayScore;
+
+    away.pf += awayScore;
+    away.pc += homeScore;
+
+    // --------------------------------------------------------
+    // VICTORIA / EMPATE / DERROTA
+    // --------------------------------------------------------
+
+    if (
+      homeScore >
+      awayScore
+    ) {
+      home.pg++;
+      away.pp++;
+
+      home.pts += 4;
+    } else if (
+      homeScore <
+      awayScore
+    ) {
+      away.pg++;
+      home.pp++;
+
+      away.pts += 4;
+    } else {
+      home.pe++;
+      away.pe++;
+
+      home.pts += 2;
+      away.pts += 2;
+    }
+
+    // --------------------------------------------------------
+    // PUNTO BONUS
+    // --------------------------------------------------------
+
+    const bonus =
+      String(
+        result.bonusTeam || ""
+      )
+        .trim()
+        .toLowerCase();
+
+    if (
+      bonus &&
+      bonus ===
+        home.team
+          .trim()
+          .toLowerCase()
+    ) {
+      home.bonus++;
+      home.pts++;
+    }
+
+    if (
+      bonus &&
+      bonus ===
+        away.team
+          .trim()
+          .toLowerCase()
+    ) {
+      away.bonus++;
+      away.pts++;
+    }
+  }
+
+  // ----------------------------------------------------------
+  // DIFERENCIA
+  // ----------------------------------------------------------
+
+  for (
+    const team of teams.values()
+  ) {
+    team.diff =
+      team.pf -
+      team.pc;
+  }
+
+  // ----------------------------------------------------------
+  // ORDEN DE TABLA
+  // ----------------------------------------------------------
+
+  return [...teams.values()]
+    .sort(
+      (a, b) =>
+        b.pts - a.pts ||
+        b.diff - a.diff ||
+        b.pf - a.pf ||
+        a.team.localeCompare(
+          b.team,
+          "es"
+        )
+    )
+    .map(
+      (team, index) => ({
+        position:
+          index + 1,
+
+        team:
+          team.team,
+
+        pj:
+          team.pj,
+
+        pg:
+          team.pg,
+
+        pe:
+          team.pe,
+
+        pp:
+          team.pp,
+
+        pf:
+          team.pf,
+
+        pc:
+          team.pc,
+
+        diff:
+          team.diff,
+
+        bonus:
+          team.bonus,
+
+        pts:
+          team.pts
+      })
+    );
 }
