@@ -14,7 +14,7 @@
     <div class="login-kicker">PANEL DE ADMINISTRACIÓN</div>
     <div class="login-line"></div>
     <h1>Iniciar sesión</h1>
-    <p class="muted">Administrá las noticias y el contenido de DropRugby.</p>
+    <p class="muted">Administrá las noticias y los partidos de DropRugby.</p>
     <form id="login-form">
       <label>Usuario<input id="login-user" value="admin" autocomplete="username" required></label>
       <label>Contraseña<input id="login-password" type="password" autocomplete="current-password" required></label>
@@ -30,93 +30,180 @@
       <div><div class="brand">DROP<span>RUGBY</span></div><small>ADMINISTRATION</small></div>
       <button id="sidebar-close" class="close">×</button>
     </div>
+
     <nav>
       <div class="nav-title">PRINCIPAL</div>
       <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
+
       <div class="nav-title">CONTENIDO</div>
       <button class="nav-item" data-section="articles">▤ <span>Noticias</span><b id="nav-articles-count">0</b></button>
       <button class="nav-item" data-section="fixtures">◷ <span>Partidos</span><b id="nav-fixtures-count">0</b></button>
-      <button class="nav-item" data-section="standings">▥ <span>Posiciones</span></button>
-      <button class="nav-item" data-section="players">♟ <span>Jugadores</span><b id="nav-players-count">0</b></button>
-      <button class="nav-item" data-section="instagram">◎ <span>Instagram</span></button>
-      <div class="nav-title">SISTEMA</div>
-      <button class="nav-item" data-section="trash">⌫ <span>Papelera</span><b id="nav-trash-count">0</b></button>
-      <button class="nav-item" data-section="history">↶ <span>Historial</span></button>
-      <button class="nav-item" data-section="settings">⚙ <span>Configuración</span></button>
+      <button class="nav-item" data-section="results">▥ <span>Resultados TOP 14</span><b id="nav-results-count">0</b></button>
     </nav>
+
     <div class="side-bottom">
       <a href="/" target="_blank">↗ Ver sitio web</a>
       <button id="logout-button">⇥ Cerrar sesión</button>
       <div class="admin-user"><i>A</i><div><strong id="admin-username">admin</strong><small>Administrador</small></div></div>
     </div>
   </aside>
+
   <div id="sidebar-overlay" class="overlay"></div>
 
   <main>
     <header class="topbar">
       <button id="menu-button" class="hamb">☰</button>
-      <div><small id="page-kicker">ADMINISTRATION</small><h2 id="page-title">Dashboard</h2></div>
-      <div class="top-actions"><button id="refresh-button" class="icon">↻</button><a href="/" target="_blank" class="site-btn">VER SITIO ↗</a></div>
+      <div><small>ADMINISTRATION</small><h2 id="page-title">Dashboard</h2></div>
+      <div class="top-actions">
+        <button id="refresh-button" class="icon" title="Actualizar">↻</button>
+        <a href="/" target="_blank" class="site-btn">VER SITIO ↗</a>
+      </div>
     </header>
 
     <div class="content">
+
       <section id="section-dashboard" class="section active">
-        <div class="heading"><div><small>RESUMEN</small><h1>Dashboard</h1><p class="muted">Todo lo importante de DropRugby en un solo lugar.</p></div><button id="dashboard-new-article" class="btn primary">+ NUEVA NOTICIA</button></div>
+        <div class="heading">
+          <div>
+            <small>RESUMEN</small>
+            <h1>Dashboard</h1>
+            <p class="muted">Noticias, partidos y resultados de URBA TOP 14.</p>
+          </div>
+          <button id="dashboard-new-article" class="btn primary">+ NUEVA NOTICIA</button>
+        </div>
+
         <div class="stats">
           <div><small>NOTICIAS</small><strong id="stat-articles">0</strong><span>registradas</span></div>
           <div><small>PARTIDOS</small><strong id="stat-fixtures">0</strong><span>registrados</span></div>
-          <div><small>EQUIPOS</small><strong id="stat-teams">0</strong><span>en posiciones</span></div>
-          <div><small>JUGADORES</small><strong id="stat-players">0</strong><span>registrados</span></div>
+          <div><small>RESULTADOS</small><strong id="stat-results">0</strong><span>cargados</span></div>
+          <div><small>PROGRAMADAS</small><strong id="stat-scheduled">0</strong><span>pendientes</span></div>
         </div>
+
         <div class="grid2">
-          <div class="panel"><div class="panel-head"><h3>Últimas noticias</h3><button class="link-btn" data-go="articles">VER TODAS →</button></div><div id="dashboard-articles"></div></div>
-          <div class="panel"><div class="panel-head"><h3>Próximas publicaciones</h3><button class="link-btn" data-go="articles">VER NOTICIAS →</button></div><div id="dashboard-scheduled"></div></div>
+          <div class="panel">
+            <div class="panel-head"><h3>Últimas noticias</h3><button class="link-btn" data-go="articles">VER TODAS →</button></div>
+            <div id="dashboard-articles"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Próximas publicaciones</h3><button class="link-btn" data-go="articles">VER NOTICIAS →</button></div>
+            <div id="dashboard-scheduled"></div>
+          </div>
+        </div>
+
+        <div class="panel dashboard-results-panel">
+          <div class="panel-head">
+            <div>
+              <h3>URBA TOP 14</h3>
+              <small class="muted">Resultados pendientes de cargar</small>
+            </div>
+            <button class="link-btn" data-go="results">IR A RESULTADOS →</button>
+          </div>
+          <div id="dashboard-pending-results"></div>
         </div>
       </section>
 
       <section id="section-articles" class="section">
-        <div class="heading"><div><small>CONTENIDO</small><h1>Noticias</h1><p class="muted">Creá, editá, programá y publicá tus noticias.</p></div><button id="new-article-button" class="btn primary">+ NUEVA NOTICIA</button></div>
-        <div class="toolbar"><input id="article-search" placeholder="Buscar noticia..."><select id="article-category-filter"><option value="">Todas las categorías</option><option>Los Pumas</option><option>Super Rugby</option><option>URBA TOP 14</option><option>URBA</option><option>Internacional</option></select></div>
-        <div class="panel table-wrap"><table><thead><tr><th>NOTICIA</th><th>CATEGORÍA</th><th>FECHA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead><tbody id="articles-table"></tbody></table></div>
+        <div class="heading">
+          <div>
+            <small>CONTENIDO</small>
+            <h1>Noticias</h1>
+            <p class="muted">Creá, editá, publicá o programá tus noticias.</p>
+          </div>
+          <button id="new-article-button" class="btn primary">+ NUEVA NOTICIA</button>
+        </div>
+
+        <div class="toolbar">
+          <input id="article-search" placeholder="Buscar noticia..." autocomplete="off">
+          <select id="article-category-filter">
+            <option value="">Todas las categorías</option>
+            <option>Los Pumas</option>
+            <option>Super Rugby</option>
+            <option>URBA TOP 14</option>
+            <option>URBA</option>
+            <option>Internacional</option>
+            <option>Rugby</option>
+          </select>
+        </div>
+
+        <div class="panel table-wrap">
+          <table>
+            <thead>
+              <tr><th>NOTICIA</th><th>CATEGORÍA</th><th>FECHA</th><th>ESTADO</th><th>ACCIONES</th></tr>
+            </thead>
+            <tbody id="articles-table"></tbody>
+          </table>
+        </div>
       </section>
 
       <section id="section-fixtures" class="section">
-        <div class="heading"><div><small>CONTENIDO</small><h1>Partidos</h1></div><button id="new-fixture-button" class="btn primary">+ NUEVO PARTIDO</button></div>
-        <div class="toolbar"><input id="fixture-search" placeholder="Buscar partido..."><select id="fixture-status-filter"><option value="">Todos</option><option value="upcoming">Próximos</option><option value="finished">Finalizados</option></select></div>
-        <div class="panel table-wrap"><table><thead><tr><th>PARTIDO</th><th>FECHA</th><th>COMPETICIÓN</th><th>RESULTADO</th><th>ACCIONES</th></tr></thead><tbody id="fixtures-table"></tbody></table></div>
+        <div class="heading">
+          <div>
+            <small>CONTENIDO</small>
+            <h1>Partidos</h1>
+            <p class="muted">El fixture es independiente de los resultados.</p>
+          </div>
+          <button id="new-fixture-button" class="btn primary">+ NUEVO PARTIDO</button>
+        </div>
+
+        <div class="toolbar">
+          <input id="fixture-search" placeholder="Buscar partido..." autocomplete="off">
+          <select id="fixture-competition-filter">
+            <option value="">Todas las competiciones</option>
+            <option>Los Pumas</option>
+            <option>Super Rugby</option>
+            <option>URBA TOP 14</option>
+            <option>URBA</option>
+          </select>
+        </div>
+
+        <div class="panel table-wrap">
+          <table>
+            <thead>
+              <tr><th>PARTIDO</th><th>FECHA</th><th>HORA</th><th>COMPETICIÓN</th><th>ACCIONES</th></tr>
+            </thead>
+            <tbody id="fixtures-table"></tbody>
+          </table>
+        </div>
       </section>
 
-      <section id="section-standings" class="section">
-        <div class="heading"><div><small>CONTENIDO</small><h1>Posiciones</h1></div><button id="new-team-button" class="btn primary">+ NUEVO EQUIPO</button></div>
-        <div class="panel table-wrap"><table><thead><tr><th>EQUIPO</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>PUNTOS</th><th>ACCIONES</th></tr></thead><tbody id="standings-table"></tbody></table></div>
+      <section id="section-results" class="section">
+        <div class="heading">
+          <div>
+            <small>URBA TOP 14</small>
+            <h1>Resultados</h1>
+            <p class="muted">Cargá únicamente el marcador y el punto bonus. La tabla se calcula sola.</p>
+          </div>
+          <button id="new-result-button" class="btn primary">+ CARGAR RESULTADO</button>
+        </div>
+
+        <div class="result-info">
+          <div><strong>Victoria</strong><span>4 pts</span></div>
+          <div><strong>Empate</strong><span>2 pts</span></div>
+          <div><strong>Derrota</strong><span>0 pts</span></div>
+          <div><strong>Punto bonus</strong><span>+1 pt</span></div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-head"><h3>Resultados cargados</h3></div>
+            <div id="results-pending"></div><div id="results-list"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Tabla actual</h3></div>
+            <div class="table-wrap compact">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>EQUIPO</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>PF</th><th>PC</th><th>DIF</th><th>BONUS</th><th>PTS</th></tr>
+                </thead>
+                <tbody id="results-standings-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section id="section-players" class="section">
-        <div class="heading"><div><small>CONTENIDO</small><h1>Jugadores</h1></div><button id="new-player-button" class="btn primary">+ NUEVO JUGADOR</button></div>
-        <div class="toolbar"><input id="player-search" placeholder="Buscar jugador..."></div>
-        <div id="players-grid" class="cards"></div>
-      </section>
-
-      <section id="section-instagram" class="section">
-        <div class="heading"><div><small>REDES</small><h1>Instagram</h1><p class="muted">Prepará y publicá una noticia directamente desde el panel.</p></div><button id="new-instagram-button" class="btn primary">+ NUEVA PUBLICACIÓN</button></div>
-        <div class="notice">Para publicación automática necesitás configurar <b>INSTAGRAM_ACCESS_TOKEN</b>, <b>INSTAGRAM_BUSINESS_ACCOUNT_ID</b> y una imagen pública (<b>imageUrl</b>) en la noticia.</div>
-        <div id="instagram-grid" class="cards"></div>
-      </section>
-
-      <section id="section-trash" class="section">
-        <div class="heading"><div><small>SISTEMA</small><h1>Papelera</h1></div><button id="empty-trash-button" class="btn danger">VACIAR PAPELERA</button></div>
-        <div id="trash-list" class="list"></div>
-      </section>
-
-      <section id="section-history" class="section">
-        <div class="heading"><div><small>SISTEMA</small><h1>Historial</h1></div><button id="clear-history-button" class="btn danger">LIMPIAR HISTORIAL</button></div>
-        <div id="history-list" class="list"></div>
-      </section>
-
-      <section id="section-settings" class="section">
-        <div class="heading"><div><small>SISTEMA</small><h1>Configuración</h1></div></div>
-        <div class="panel form-panel"><form id="settings-form"><label>Nombre del sitio<input id="settings-site-name"></label><label>Descripción<textarea id="settings-site-description" rows="4"></textarea></label><button class="btn primary">GUARDAR CONFIGURACIÓN</button></form></div>
-      </section>
     </div>
   </main>
 </div>
