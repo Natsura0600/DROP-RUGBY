@@ -1259,9 +1259,17 @@ function openArticle(article = {}) {
           article.slug ||
           slugify(value(fd, "title")),
 
+        url:
+          article.url ||
+          `article.html?id=${encodeURIComponent(article.id || "")}`,
+
         category:
           value(fd, "category") ||
           "Rugby",
+
+        subcategory:
+          article.subcategory ||
+          "Actualidad",
 
         author:
           value(fd, "author") ||
@@ -2028,4 +2036,3 @@ document.addEventListener(
 );
 
 checkSession();
- 
