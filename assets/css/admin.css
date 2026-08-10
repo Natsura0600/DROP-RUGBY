@@ -4,17 +4,16 @@
    ========================================================= */
 
 :root {
+  --sans: Arial, Helvetica, sans-serif;
+  --serif: Georgia, "Times New Roman", serif;
+
   --admin-bg: #f4f4f1;
-  --admin-panel: #ffffff;
+  --admin-panel: #fff;
   --admin-border: #dddcd7;
   --admin-dark: #101010;
   --admin-muted: #77756e;
   --admin-accent: #151515;
-
-  --admin-serif: Georgia, "Times New Roman", serif;
-  --admin-sans: Arial, Helvetica, sans-serif;
 }
-
 /* =========================================================
    RESET
    ========================================================= */
