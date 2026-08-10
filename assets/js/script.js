@@ -1,7 +1,15 @@
 /* ==========================================================================
-   DropRugby V4 — script.js
-   Menú mobile, animaciones al scroll, buscador global, filtros de categoría,
-   calendario dinámico y render de noticias desde API / JSON.
+   DropRugby V5 — script.js
+   Optimizado para:
+   - Una sola carga de /api/content por página
+   - Caché de datos en memoria
+   - Calendario con fecha real
+   - Escudos de clubes
+   - Noticias
+   - Buscador
+   - Tabla URBA
+   - Menú mobile
+   - Fallbacks locales
    ========================================================================== */
 
 const BASE = window.ASSET_BASE || "";
@@ -98,7 +106,7 @@ const DROP_RUGBY_TEAMS = {
 
 
 /* ==========================================================================
-   EQUIPOS
+   UTILIDADES DE EQUIPOS
    ========================================================================== */
 
 function normalizeTeamName(value) {
@@ -118,101 +126,34 @@ function getTeamByName(value) {
   ) || null;
 }
 
-let TEAMS_LOADED = false;
-let TEAMS_LOADING = null;
+function applyTeamData(content) {
+  if (!content) return;
 
-async function loadTeams() {
-  if (TEAMS_LOADED) return DROP_RUGBY_TEAMS;
-  if (TEAMS_LOADING) return TEAMS_LOADING;
+  const clubLogos = content?.settings?.clubLogos || {};
 
-  TEAMS_LOADING = (async () => {
-    try {
-      const apiRes = await fetch(
-        BASE + "api/content?t=" + Date.now(),
-        { cache: "no-store" }
-      );
+  if (content?.teams?.clubs && typeof content.teams.clubs === "object") {
+    Object.entries(content.teams.clubs).forEach(([id, team]) => {
+      if (!team || typeof team !== "object") return;
 
-      if (apiRes.ok) {
-        const content = await apiRes.json();
+      DROP_RUGBY_TEAMS[id] = {
+        name: team.name || id,
+        logo: clubLogos[id] || team.logo || "",
+        aliases: Array.isArray(team.aliases) ? team.aliases : []
+      };
+    });
+  }
 
-        const clubLogos = content?.settings?.clubLogos || {};
-
-        if (
-          content?.teams?.clubs &&
-          typeof content.teams.clubs === "object"
-        ) {
-          Object.entries(content.teams.clubs).forEach(([id, team]) => {
-            if (!team || typeof team !== "object") return;
-
-            DROP_RUGBY_TEAMS[id] = {
-              name: team.name || id,
-              logo: clubLogos[id] || team.logo || "",
-              aliases: Array.isArray(team.aliases)
-                ? team.aliases
-                : []
-            };
-          });
-        }
-
-        Object.entries(clubLogos).forEach(([id, logo]) => {
-          if (DROP_RUGBY_TEAMS[id] && logo) {
-            DROP_RUGBY_TEAMS[id].logo = logo;
-          }
-        });
-      }
-    } catch (error) {
-      /* Se usa el registro incorporado como fallback. */
+  Object.entries(clubLogos).forEach(([id, logo]) => {
+    if (DROP_RUGBY_TEAMS[id]) {
+      DROP_RUGBY_TEAMS[id].logo = logo;
     }
-
-    /*
-      Segundo fallback: teams.json.
-      No reemplaza los equipos ya conocidos si no hay información.
-    */
-    try {
-      const res = await fetch(
-        BASE + "data/teams.json?t=" + Date.now(),
-        { cache: "no-store" }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-
-        if (data?.clubs && typeof data.clubs === "object") {
-          Object.entries(data.clubs).forEach(([id, team]) => {
-            if (!team || typeof team !== "object") return;
-
-            const existing = DROP_RUGBY_TEAMS[id];
-
-            DROP_RUGBY_TEAMS[id] = {
-              name: team.name || existing?.name || id,
-              logo: team.logo || existing?.logo || "",
-              aliases: Array.isArray(team.aliases)
-                ? team.aliases
-                : existing?.aliases || []
-            };
-          });
-        }
-      }
-    } catch (error) {
-      /* Fallback incorporado. */
-    }
-
-    TEAMS_LOADED = true;
-    return DROP_RUGBY_TEAMS;
-  })();
-
-  return TEAMS_LOADING;
+  });
 }
-
-
-/* ==========================================================================
-   ESCUDO
-   ========================================================================== */
 
 function teamShield(value, className = "team-shield") {
   const team = getTeamByName(value);
 
-  if (!team) {
+  if (!team || !team.logo) {
     const initials =
       String(value || "?")
         .trim()
@@ -222,174 +163,133 @@ function teamShield(value, className = "team-shield") {
         .join("")
         .toUpperCase() || "?";
 
-    return `
-      <span
-        class="${className} team-shield-fallback"
-        aria-hidden="true"
-      >${initials}</span>
-    `;
+    return `<span class="${className} team-shield-fallback" aria-hidden="true">${initials}</span>`;
   }
 
-  const logo = String(team.logo || "").replace(/"/g, "&quot;");
-  const name = String(team.name || value).replace(/"/g, "&quot;");
-
-  if (!logo) {
-    const initials =
-      String(team.name || value)
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map(word => word[0])
-        .join("")
-        .toUpperCase();
-
-    return `
-      <span
-        class="${className} team-shield-fallback"
-        aria-label="Escudo de ${name}"
-      >${initials}</span>
-    `;
-  }
+  const safeLogo = String(team.logo).replace(/"/g, "&quot;");
+  const safeName = String(team.name).replace(/"/g, "&quot;");
 
   return `
     <img
       class="${className}"
-      src="${logo}"
-      alt="Escudo de ${name}"
+      src="${safeLogo}"
+      alt="Escudo de ${safeName}"
       loading="lazy"
+      decoding="async"
       referrerpolicy="no-referrer"
-      onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='inline-flex';"
+      onerror="this.onerror=null;this.style.display='none';"
     >
-    <span
-      class="${className} team-shield-fallback"
-      style="display:none"
-      aria-hidden="true"
-    >${name.slice(0, 2).toUpperCase()}</span>
   `;
 }
 
 
 /* ==========================================================================
-   MENÚ MOBILE
+   DATOS GLOBALES
    ========================================================================== */
 
-const menuBtn = document.querySelector(".menu-btn");
-const mobileNav = document.querySelector(".mobile-nav");
+let CONTENT_CACHE = null;
+let CONTENT_LOADING = null;
 
-if (menuBtn && mobileNav) {
-  menuBtn.addEventListener("click", () => {
-    const open = mobileNav.classList.toggle("open");
-    menuBtn.setAttribute("aria-expanded", String(open));
-  });
-
-  mobileNav.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      mobileNav.classList.remove("open");
-      menuBtn.setAttribute("aria-expanded", "false");
-    });
-  });
-}
+let ARTICLES_CACHE = null;
+let FIXTURES_CACHE = null;
+let STANDINGS_CACHE = null;
+let TEAMS_LOADED = false;
 
 
 /* ==========================================================================
-   ANIMACIONES
+   CARGA ÚNICA DE API
    ========================================================================== */
 
-let observer = null;
+async function loadContent() {
+  if (CONTENT_CACHE) {
+    return CONTENT_CACHE;
+  }
 
-if ("IntersectionObserver" in window) {
-  observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
+  if (CONTENT_LOADING) {
+    return CONTENT_LOADING;
+  }
+
+  CONTENT_LOADING = (async () => {
+    try {
+      const response = await fetch(
+        BASE + "api/content",
+        {
+          cache: "no-store"
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("API unavailable");
       }
-    });
-  }, {
-    threshold: 0.12
-  });
+
+      const data = await response.json();
+
+      CONTENT_CACHE = data || {};
+
+      applyTeamData(CONTENT_CACHE);
+
+      return CONTENT_CACHE;
+
+    } catch (error) {
+      CONTENT_CACHE = null;
+      return null;
+    }
+  })();
+
+  return CONTENT_LOADING;
 }
-
-function observeReveals(root = document) {
-  if (!observer) return;
-
-  root
-    .querySelectorAll(".reveal:not(.visible)")
-    .forEach(el => observer.observe(el));
-}
-
-observeReveals();
-
-
-/* ==========================================================================
-   NEWSLETTER
-   ========================================================================== */
-
-document.querySelectorAll(".newsletter-form").forEach(form => {
-  form.addEventListener("submit", e => {
-    e.preventDefault();
-    form.classList.add("submitted");
-  });
-});
 
 
 /* ==========================================================================
    ARTÍCULOS
    ========================================================================== */
 
-let ARTICLES_CACHE = null;
-
 async function loadArticles() {
-  if (ARTICLES_CACHE) return ARTICLES_CACHE;
-
-  try {
-    const res = await fetch(
-      BASE + "api/content?t=" + Date.now(),
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) throw new Error("API unavailable");
-
-    const data = await res.json();
-
-    ARTICLES_CACHE = Array.isArray(data.articles)
-      ? data.articles
-      : [];
-
+  if (ARTICLES_CACHE) {
     return ARTICLES_CACHE;
-  } catch (error) {
-    /* Continúa con fallbacks. */
+  }
+
+  const content = await loadContent();
+
+  if (content && Array.isArray(content.articles)) {
+    ARTICLES_CACHE = content.articles;
+    return ARTICLES_CACHE;
   }
 
   try {
-    const local = localStorage.getItem("droprugby_articles");
+    const localStorageData = localStorage.getItem("droprugby_articles");
 
-    if (local) {
-      ARTICLES_CACHE = JSON.parse(local);
+    if (localStorageData) {
+      ARTICLES_CACHE = JSON.parse(localStorageData);
 
       if (Array.isArray(ARTICLES_CACHE)) {
         return ARTICLES_CACHE;
       }
     }
-  } catch (error) {}
+  } catch (_) {}
 
-  if (window.DROP_RUGBY_DATA?.articles) {
+  if (Array.isArray(window.DROP_RUGBY_DATA?.articles)) {
     ARTICLES_CACHE = window.DROP_RUGBY_DATA.articles;
     return ARTICLES_CACHE;
   }
 
   try {
-    const res = await fetch(
-      BASE + "data/articles.json?t=" + Date.now(),
-      { cache: "no-store" }
+    const response = await fetch(
+      BASE + "data/articles.json",
+      { cache: "default" }
     );
 
-    ARTICLES_CACHE = await res.json();
+    if (!response.ok) {
+      throw new Error();
+    }
+
+    ARTICLES_CACHE = await response.json();
 
     if (!Array.isArray(ARTICLES_CACHE)) {
       ARTICLES_CACHE = [];
     }
-  } catch (error) {
+
+  } catch (_) {
     ARTICLES_CACHE = [];
   }
 
@@ -401,59 +301,52 @@ async function loadArticles() {
    FIXTURES
    ========================================================================== */
 
-let FIXTURES_CACHE = null;
-
 async function loadFixtures() {
-  if (FIXTURES_CACHE) return FIXTURES_CACHE;
-
-  try {
-    const res = await fetch(
-      BASE + "api/content?t=" + Date.now(),
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) throw new Error("API unavailable");
-
-    const data = await res.json();
-
-    FIXTURES_CACHE = Array.isArray(data.fixtures)
-      ? data.fixtures
-      : [];
-
+  if (FIXTURES_CACHE) {
     return FIXTURES_CACHE;
-  } catch (error) {
-    /* Continúa con fallbacks. */
+  }
+
+  const content = await loadContent();
+
+  if (content && Array.isArray(content.fixtures)) {
+    FIXTURES_CACHE = content.fixtures;
+    return FIXTURES_CACHE;
   }
 
   try {
-    const local = localStorage.getItem("droprugby_fixtures");
+    const localStorageData = localStorage.getItem("droprugby_fixtures");
 
-    if (local) {
-      FIXTURES_CACHE = JSON.parse(local);
+    if (localStorageData) {
+      FIXTURES_CACHE = JSON.parse(localStorageData);
 
       if (Array.isArray(FIXTURES_CACHE)) {
         return FIXTURES_CACHE;
       }
     }
-  } catch (error) {}
+  } catch (_) {}
 
-  if (window.DROP_RUGBY_DATA?.fixtures) {
+  if (Array.isArray(window.DROP_RUGBY_DATA?.fixtures)) {
     FIXTURES_CACHE = window.DROP_RUGBY_DATA.fixtures;
     return FIXTURES_CACHE;
   }
 
   try {
-    const res = await fetch(
-      BASE + "data/fixtures.json?t=" + Date.now(),
-      { cache: "no-store" }
+    const response = await fetch(
+      BASE + "data/fixtures.json",
+      { cache: "default" }
     );
 
-    FIXTURES_CACHE = await res.json();
+    if (!response.ok) {
+      throw new Error();
+    }
+
+    FIXTURES_CACHE = await response.json();
 
     if (!Array.isArray(FIXTURES_CACHE)) {
       FIXTURES_CACHE = [];
     }
-  } catch (error) {
+
+  } catch (_) {
     FIXTURES_CACHE = [];
   }
 
@@ -465,29 +358,22 @@ async function loadFixtures() {
    TABLA
    ========================================================================== */
 
-let STANDINGS_CACHE = null;
-
 async function loadStandings() {
-  if (STANDINGS_CACHE) return STANDINGS_CACHE;
+  if (STANDINGS_CACHE) {
+    return STANDINGS_CACHE;
+  }
 
-  try {
-    const res = await fetch(
-      BASE + "api/content?t=" + Date.now(),
-      { cache: "no-store" }
-    );
+  const content = await loadContent();
 
-    if (!res.ok) throw new Error("API unavailable");
-
-    const data = await res.json();
-
-    if (Array.isArray(data.standings)) {
-      STANDINGS_CACHE = data.standings;
-      return STANDINGS_CACHE;
-    }
-  } catch (error) {}
+  if (content && Array.isArray(content.standings)) {
+    STANDINGS_CACHE = content.standings;
+    return STANDINGS_CACHE;
+  }
 
   STANDINGS_CACHE =
-    window.DROP_RUGBY_DATA?.standings || [];
+    Array.isArray(window.DROP_RUGBY_DATA?.standings)
+      ? window.DROP_RUGBY_DATA.standings
+      : [];
 
   return STANDINGS_CACHE;
 }
@@ -522,116 +408,217 @@ const DIAS = [
   "SÁBADO"
 ];
 
+function formatDateShort(iso) {
+  if (!iso) return "";
 
-/*
-  IMPORTANTE:
-  Nunca usamos new Date("YYYY-MM-DD") porque JavaScript puede interpretarlo
-  como UTC y provocar un día de diferencia según la zona horaria.
-*/
+  const parts = String(iso).split("-").map(Number);
 
-function dateFromISO(iso) {
-  const parts = String(iso || "").split("-").map(Number);
-
-  if (
-    parts.length !== 3 ||
-    !parts[0] ||
-    !parts[1] ||
-    !parts[2]
-  ) {
-    return null;
+  if (parts.length !== 3 || parts.some(Number.isNaN)) {
+    return String(iso);
   }
 
-  const [y, m, d] = parts;
+  const [year, month, day] = parts;
 
-  return new Date(y, m - 1, d);
+  return `${String(day).padStart(2, "0")} ${MESES[month - 1]} ${year}`;
 }
 
-function isoFromDate(dt) {
-  if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) {
-    return "";
-  }
+function dateFromISO(iso) {
+  const [year, month, day] = String(iso).split("-").map(Number);
 
+  return new Date(
+    year,
+    month - 1,
+    day
+  );
+}
+
+function isoFromDate(date) {
   return [
-    dt.getFullYear(),
-    String(dt.getMonth() + 1).padStart(2, "0"),
-    String(dt.getDate()).padStart(2, "0")
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
   ].join("-");
 }
 
 function getTodayISO() {
-  const now = new Date();
+  const today = new Date();
 
-  return isoFromDate(now);
-}
+  today.setHours(0, 0, 0, 0);
 
-function formatDateShort(iso) {
-  const dt = dateFromISO(iso);
-
-  if (!dt) return "";
-
-  return `${String(dt.getDate()).padStart(2, "0")} ${
-    MESES[dt.getMonth()]
-  } ${dt.getFullYear()}`;
+  return isoFromDate(today);
 }
 
 
 /* ==========================================================================
-   STORY CARD
+   HTML / SEGURIDAD
    ========================================================================== */
 
-function storyCardHTML(article, opts = {}) {
-  const featuredClass = opts.featured
-    ? "story-featured"
-    : "";
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char]));
+}
+
+
+/* ==========================================================================
+   MENÚ MOBILE
+   ========================================================================== */
+
+function setupMobileMenu() {
+  const menuBtn = document.querySelector(".menu-btn");
+  const mobileNav = document.querySelector(".mobile-nav");
+
+  if (!menuBtn || !mobileNav) return;
+
+  menuBtn.addEventListener("click", () => {
+    const open = mobileNav.classList.toggle("open");
+
+    menuBtn.setAttribute(
+      "aria-expanded",
+      String(open)
+    );
+  });
+
+  mobileNav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      mobileNav.classList.remove("open");
+
+      menuBtn.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+    });
+  });
+}
+
+
+/* ==========================================================================
+   ANIMACIONES
+   ========================================================================== */
+
+let revealObserver = null;
+
+function setupRevealObserver() {
+  if (!("IntersectionObserver" in window)) {
+    document
+      .querySelectorAll(".reveal")
+      .forEach(el => el.classList.add("visible"));
+
+    return;
+  }
+
+  revealObserver = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+
+        entry.target.classList.add("visible");
+
+        revealObserver.unobserve(entry.target);
+      });
+    },
+    {
+      threshold: 0.12
+    }
+  );
+}
+
+function observeReveals(root = document) {
+  if (!revealObserver) return;
+
+  root
+    .querySelectorAll(".reveal:not(.visible)")
+    .forEach(el => revealObserver.observe(el));
+}
+
+
+/* ==========================================================================
+   NEWSLETTER
+   ========================================================================== */
+
+function setupNewsletter() {
+  document
+    .querySelectorAll(".newsletter-form")
+    .forEach(form => {
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+
+        form.classList.add("submitted");
+      });
+    });
+}
+
+
+/* ==========================================================================
+   TARJETAS DE NOTICIAS
+   ========================================================================== */
+
+function storyCardHTML(article, options = {}) {
+  const featuredClass =
+    options.featured
+      ? "story-featured"
+      : "";
+
+  const title =
+    escapeHTML(article.title || "Sin título");
+
+  const excerpt =
+    escapeHTML(article.excerpt || "");
+
+  const category =
+    escapeHTML(
+      String(article.category || "Rugby").toUpperCase()
+    );
+
+  const subcategory =
+    escapeHTML(
+      String(article.subcategory || "ACTUALIDAD").toUpperCase()
+    );
+
+  const author =
+    escapeHTML(article.author || "DropRugby");
+
+  const date =
+    article.date ||
+    getTodayISO();
 
   const visual = article.imageUrl
     ? `
       <div class="story-image photo-not-clickable">
         <img
-          src="${String(article.imageUrl).replace(/"/g, "&quot;")}"
+          src="${escapeHTML(article.imageUrl)}"
           alt=""
           loading="lazy"
+          decoding="async"
         >
       </div>
     `
     : `
-      <div class="story-image ph-image photo-not-clickable ${
+      <div class="story-image ph-image photo-not-clickable ${escapeHTML(
         article.imageClass || "img-tone-1"
-      }"></div>
+      )}"></div>
     `;
 
-  const category =
-    String(article.category || "Rugby").toUpperCase();
-
-  const subcategory =
-    String(article.subcategory || "ACTUALIDAD").toUpperCase();
-
   const articleUrl =
-    `article.html?id=${encodeURIComponent(article.id || "")}`;
-
-  const title =
-    String(article.title || "Sin título");
-
-  const excerpt =
-    String(article.excerpt || "");
-
-  const author =
-    String(article.author || "DropRugby");
-
-  const date =
-    article.date || getTodayISO();
+    `${BASE}article.html?id=${encodeURIComponent(article.id || "")}`;
 
   return `
     <article class="story ${featuredClass} reveal">
       ${visual}
 
       <div class="story-body">
+
         <p class="category">
           ${category} · ${subcategory}
         </p>
 
         <h3>
-          <a href="${BASE}${articleUrl}">
+          <a href="${articleUrl}">
             ${title}
           </a>
         </h3>
@@ -641,6 +628,7 @@ function storyCardHTML(article, opts = {}) {
         <div class="meta">
           Por ${author} · ${formatDateShort(date).toUpperCase()}
         </div>
+
       </div>
     </article>
   `;
@@ -652,24 +640,21 @@ function storyCardHTML(article, opts = {}) {
    ========================================================================== */
 
 async function renderHome() {
-  await loadTeams();
-
   const grid = document.getElementById("home-top-stories");
   const pumasEl = document.getElementById("home-los-pumas");
   const srEl = document.getElementById("home-super-rugby");
-  const urbaTop14El =
-    document.getElementById("home-urba-top14");
-  const urbaEl =
-    document.getElementById("home-urba");
-  const heroEl =
-    document.getElementById("home-hero");
+  const urbaTop14El = document.getElementById("home-urba-top14");
+  const urbaEl = document.getElementById("home-urba");
+  const heroEl = document.getElementById("home-hero");
 
-  if (!grid && !heroEl) return;
+  if (!grid && !heroEl && !pumasEl && !srEl && !urbaTop14El && !urbaEl) {
+    return;
+  }
 
   const articles = (await loadArticles())
-    .filter(a =>
-      a.published !== false &&
-      !a.scheduled
+    .filter(article =>
+      article.published !== false &&
+      !article.scheduled
     )
     .slice()
     .sort((a, b) =>
@@ -679,54 +664,53 @@ async function renderHome() {
     );
 
   const featured =
-    articles.find(a => a.featured) ||
+    articles.find(article => article.featured) ||
     articles[0];
 
   if (heroEl && featured) {
+    const category =
+      escapeHTML(
+        String(featured.category || "RUGBY").toUpperCase()
+      );
+
+    const title =
+      escapeHTML(featured.title || "");
+
     const heroVisual = featured.imageUrl
       ? `
         <div class="hero-image photo-not-clickable">
           <img
-            src="${String(featured.imageUrl).replace(/"/g, "&quot;")}"
+            src="${escapeHTML(featured.imageUrl)}"
             alt=""
             loading="eager"
+            decoding="async"
           >
+
           <div class="image-overlay"></div>
 
           <div class="hero-card-caption">
-            <span>
-              TOP STORY · ${String(
-                featured.category || "RUGBY"
-              ).toUpperCase()}
-            </span>
-
-            <h2>${featured.title}</h2>
+            <span>TOP STORY · ${category}</span>
+            <h2>${title}</h2>
           </div>
         </div>
       `
       : `
-        <div class="hero-image ${
+        <div class="hero-image ${escapeHTML(
           featured.imageClass || "img-tone-1"
-        } photo-not-clickable ph-image">
+        )} photo-not-clickable ph-image">
 
           <div class="image-overlay"></div>
 
           <div class="hero-card-caption">
-            <span>
-              TOP STORY · ${String(
-                featured.category || "RUGBY"
-              ).toUpperCase()}
-            </span>
-
-            <h2>${featured.title}</h2>
+            <span>TOP STORY · ${category}</span>
+            <h2>${title}</h2>
           </div>
+
         </div>
       `;
 
     const canonicalHeroUrl =
-      `${BASE}article.html?id=${encodeURIComponent(
-        featured.id || ""
-      )}`;
+      `${BASE}article.html?id=${encodeURIComponent(featured.id || "")}`;
 
     heroEl.innerHTML = `
       <a
@@ -745,46 +729,72 @@ async function renderHome() {
     }
   }
 
-  const rest = articles.filter(
-    a => a.id !== (featured && featured.id)
-  );
+  const featuredId =
+    featured ? featured.id : null;
+
+  const rest =
+    articles.filter(article =>
+      article.id !== featuredId
+    );
 
   if (grid) {
-    grid.innerHTML = rest
-      .slice(0, 3)
-      .map((a, i) =>
-        storyCardHTML(a, {
-          featured: i === 0
-        })
-      )
-      .join("");
+    grid.innerHTML =
+      rest
+        .slice(0, 3)
+        .map((article, index) =>
+          storyCardHTML(
+            article,
+            { featured: index === 0 }
+          )
+        )
+        .join("");
   }
 
-  const byCategory = (name, el, n = 3) => {
-    if (!el) return;
+  function renderCategory(
+    categoryName,
+    element,
+    amount = 3
+  ) {
+    if (!element) return;
 
-    const items = articles
-      .filter(a =>
-        a.category === name &&
-        a.published !== false &&
-        !a.scheduled
-      )
-      .slice(0, n);
+    const items =
+      articles
+        .filter(article =>
+          article.category === categoryName
+        )
+        .slice(0, amount);
 
-    el.innerHTML = items.length
-      ? items.map(a => storyCardHTML(a)).join("")
-      : `
-        <p class="empty-state">
-          Todavía no hay noticias publicadas
-          en esta categoría.
-        </p>
-      `;
-  };
+    element.innerHTML =
+      items.length
+        ? items.map(article =>
+            storyCardHTML(article)
+          ).join("")
+        : `
+          <p class="empty-state">
+            Todavía no hay noticias publicadas en esta categoría.
+          </p>
+        `;
+  }
 
-  byCategory("Los Pumas", pumasEl);
-  byCategory("Super Rugby", srEl);
-  byCategory("URBA TOP 14", urbaTop14El);
-  byCategory("URBA", urbaEl);
+  renderCategory(
+    "Los Pumas",
+    pumasEl
+  );
+
+  renderCategory(
+    "Super Rugby",
+    srEl
+  );
+
+  renderCategory(
+    "URBA TOP 14",
+    urbaTop14El
+  );
+
+  renderCategory(
+    "URBA",
+    urbaEl
+  );
 
   observeReveals();
 }
@@ -800,17 +810,18 @@ async function renderCategoryPage(categoryName) {
 
   if (!grid) return;
 
-  const articles = (await loadArticles())
-    .filter(a =>
-      a.category === categoryName &&
-      a.published !== false &&
-      !a.scheduled
-    )
-    .sort((a, b) =>
-      String(b.date || "").localeCompare(
-        String(a.date || "")
+  const articles =
+    (await loadArticles())
+      .filter(article =>
+        article.category === categoryName &&
+        article.published !== false &&
+        !article.scheduled
       )
-    );
+      .sort((a, b) =>
+        String(b.date || "").localeCompare(
+          String(a.date || "")
+        )
+      );
 
   const chips =
     document.querySelectorAll(
@@ -823,26 +834,29 @@ async function renderCategoryPage(categoryName) {
     const filtered =
       activeFilter === "TODAS"
         ? articles
-        : articles.filter(a =>
-            String(a.subcategory || "")
+        : articles.filter(article =>
+            String(article.subcategory || "")
               .toUpperCase() === activeFilter
           );
 
-    grid.innerHTML = filtered.length
-      ? filtered.map(a => storyCardHTML(a)).join("")
-      : `
-        <p class="empty-state">
-          No hay noticias para este filtro todavía.
-        </p>
-      `;
+    grid.innerHTML =
+      filtered.length
+        ? filtered.map(article =>
+            storyCardHTML(article)
+          ).join("")
+        : `
+          <p class="empty-state">
+            No hay noticias para este filtro todavía.
+          </p>
+        `;
 
     observeReveals();
   }
 
   chips.forEach(chip => {
     chip.addEventListener("click", () => {
-      chips.forEach(c =>
-        c.classList.remove("active")
+      chips.forEach(button =>
+        button.classList.remove("active")
       );
 
       chip.classList.add("active");
@@ -863,14 +877,13 @@ async function renderCategoryPage(categoryName) {
    ========================================================================== */
 
 async function renderCalendar() {
-  await loadTeams();
-
   const listEl =
     document.getElementById("calendar-list");
 
   if (!listEl) return;
 
-  const fixtures = await loadFixtures();
+  const fixtures =
+    await loadFixtures();
 
   const compBtns =
     document.querySelectorAll(
@@ -895,122 +908,59 @@ async function renderCalendar() {
     document.getElementById("day-today");
 
   let activeCompetition = "TODAS";
-
   let mode = "dia";
 
   /*
-    ESTA ES LA CORRECCIÓN PRINCIPAL.
-
-    currentDate SIEMPRE comienza en HOY.
-    No se modifica buscando el primer fixture disponible.
+    IMPORTANTE:
+    La fecha inicial SIEMPRE es la fecha real del dispositivo.
+    No se reemplaza por el primer fixture disponible.
   */
+
   let currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
 
-
-  /* ----------------------------------------------------------
-     Normalización de fixtures
-     ---------------------------------------------------------- */
-
-  const normalizedFixtures = fixtures
-    .filter(f => f && f.date)
-    .map(f => ({
-      ...f,
-      date: String(f.date).slice(0, 10),
-      time: String(f.time || "00:00"),
-      competition: String(
-        f.competition || "RUGBY"
-      ),
-      home: String(f.home || "Local"),
-      away: String(f.away || "Visitante"),
-      channel: String(f.channel || "")
-    }))
-    .filter(f => dateFromISO(f.date));
+  currentDate.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
 
   function groupByDateAndCompetition(items) {
-    const byDate = {};
+    const grouped = {};
 
-    items.forEach(f => {
-      if (!byDate[f.date]) {
-        byDate[f.date] = {};
+    items.forEach(fixture => {
+      if (!fixture || !fixture.date) {
+        return;
       }
 
-      if (!byDate[f.date][f.competition]) {
-        byDate[f.date][f.competition] = [];
+      if (!grouped[fixture.date]) {
+        grouped[fixture.date] = {};
       }
 
-      byDate[f.date][f.competition].push(f);
+      const competition =
+        fixture.competition || "RUGBY";
+
+      if (!grouped[fixture.date][competition]) {
+        grouped[fixture.date][competition] = [];
+      }
+
+      grouped[fixture.date][competition].push(
+        fixture
+      );
     });
 
-    return byDate;
+    return grouped;
   }
 
 
   function getRangeDates() {
-    /*
-      DÍA
-    */
-    if (mode === "dia") {
-      return [
-        isoFromDate(currentDate)
-      ];
-    }
-
-
-    /*
-      MAÑANA
-    */
-    if (mode === "manana") {
-      const d = new Date(currentDate);
-
-      d.setDate(
-        d.getDate() + 1
-      );
-
-      return [
-        isoFromDate(d)
-      ];
-    }
-
-
-    /*
-      FIN DE SEMANA
-    */
-    if (mode === "finde") {
-      const start = new Date(currentDate);
-
-      const day = start.getDay();
-
-      const diffToSat =
-        (6 - day + 7) % 7;
-
-      const sat = new Date(start);
-
-      sat.setDate(
-        sat.getDate() + diffToSat
-      );
-
-      const sun = new Date(sat);
-
-      sun.setDate(
-        sun.getDate() + 1
-      );
-
-      return [
-        isoFromDate(sat),
-        isoFromDate(sun)
-      ];
-    }
-
-
-    /*
-      TODA LA SEMANA
-    */
     if (mode === "semana") {
-      const start = new Date(currentDate);
+      const start =
+        new Date(currentDate);
 
-      const day = start.getDay();
+      const day =
+        start.getDay();
 
       const diffToMonday =
         (day + 6) % 7;
@@ -1021,17 +971,64 @@ async function renderCalendar() {
 
       return Array.from(
         { length: 7 },
-        (_, i) => {
-          const d = new Date(start);
+        (_, index) => {
+          const date =
+            new Date(start);
 
-          d.setDate(
-            start.getDate() + i
+          date.setDate(
+            start.getDate() + index
           );
 
-          return isoFromDate(d);
+          return isoFromDate(date);
         }
       );
     }
+
+
+    if (mode === "finde") {
+      const start =
+        new Date(currentDate);
+
+      const day =
+        start.getDay();
+
+      const diffToSaturday =
+        (6 - day + 7) % 7;
+
+      const saturday =
+        new Date(start);
+
+      saturday.setDate(
+        saturday.getDate() + diffToSaturday
+      );
+
+      const sunday =
+        new Date(saturday);
+
+      sunday.setDate(
+        sunday.getDate() + 1
+      );
+
+      return [
+        isoFromDate(saturday),
+        isoFromDate(sunday)
+      ];
+    }
+
+
+    if (mode === "manana") {
+      const tomorrow =
+        new Date(currentDate);
+
+      tomorrow.setDate(
+        tomorrow.getDate() + 1
+      );
+
+      return [
+        isoFromDate(tomorrow)
+      ];
+    }
+
 
     return [
       isoFromDate(currentDate)
@@ -1043,25 +1040,27 @@ async function renderCalendar() {
     if (!dayLabel) return;
 
     if (mode === "dia") {
+      const date =
+        isoFromDate(currentDate);
+
       dayLabel.textContent =
-        `${DIAS[currentDate.getDay()]} · ${formatDateShort(
-          isoFromDate(currentDate)
-        )}`;
+        `${DIAS[currentDate.getDay()]} · ${formatDateShort(date)}`;
 
       return;
     }
 
 
     if (mode === "manana") {
-      const d = new Date(currentDate);
+      const tomorrow =
+        new Date(currentDate);
 
-      d.setDate(
-        d.getDate() + 1
+      tomorrow.setDate(
+        tomorrow.getDate() + 1
       );
 
       dayLabel.textContent =
-        `${DIAS[d.getDay()]} · ${formatDateShort(
-          isoFromDate(d)
+        `${DIAS[tomorrow.getDay()]} · ${formatDateShort(
+          isoFromDate(tomorrow)
         )}`;
 
       return;
@@ -1076,10 +1075,8 @@ async function renderCalendar() {
     }
 
 
-    if (mode === "semana") {
-      dayLabel.textContent =
-        "TODA LA SEMANA";
-    }
+    dayLabel.textContent =
+      "TODA LA SEMANA";
   }
 
 
@@ -1090,23 +1087,22 @@ async function renderCalendar() {
       getRangeDates();
 
     let filtered =
-      normalizedFixtures.filter(
-        f => dates.includes(f.date)
+      fixtures.filter(fixture =>
+        dates.includes(fixture.date)
       );
-
 
     if (activeCompetition !== "TODAS") {
       filtered =
-        filtered.filter(f =>
-          String(f.competition)
-            .toUpperCase() ===
-          activeCompetition.toUpperCase()
+        filtered.filter(fixture =>
+          String(fixture.competition || "")
+            .toUpperCase() === activeCompetition
         );
     }
 
-
     const grouped =
-      groupByDateAndCompetition(filtered);
+      groupByDateAndCompetition(
+        filtered
+      );
 
     const sortedDates =
       Object.keys(grouped).sort();
@@ -1126,66 +1122,90 @@ async function renderCalendar() {
 
     listEl.innerHTML =
       sortedDates.map(date => {
-
         const dt =
           dateFromISO(date);
 
-        const comps =
+        const competitions =
           grouped[date];
 
-
-        const compsHTML =
-          Object.keys(comps)
+        const competitionsHTML =
+          Object.keys(competitions)
             .sort()
-            .map(compName => {
+            .map(competitionName => {
 
               const rows =
-                comps[compName]
+                competitions[competitionName]
                   .slice()
                   .sort((a, b) =>
-                    String(a.time).localeCompare(
-                      String(b.time)
-                    )
+                    String(a.time || "")
+                      .localeCompare(
+                        String(b.time || "")
+                      )
                   )
-                  .map(f => `
-                    <div class="match-row">
+                  .map(fixture => {
 
-                      <div class="match-time">
-                        ${f.time}
+                    const home =
+                      escapeHTML(
+                        fixture.home || ""
+                      );
+
+                    const away =
+                      escapeHTML(
+                        fixture.away || ""
+                      );
+
+                    const time =
+                      escapeHTML(
+                        fixture.time || ""
+                      );
+
+                    const channel =
+                      escapeHTML(
+                        fixture.channel || ""
+                      );
+
+                    return `
+                      <div class="match-row">
+
+                        <div class="match-time">
+                          ${time}
+                        </div>
+
+                        <div class="match-teams team-matchup">
+
+                          <span class="team-side">
+                            ${teamShield(fixture.home)}
+                            <span>${home}</span>
+                          </span>
+
+                          <span class="team-vs">
+                            vs.
+                          </span>
+
+                          <span class="team-side team-side-away">
+                            <span>${away}</span>
+                            ${teamShield(fixture.away)}
+                          </span>
+
+                        </div>
+
+                        <div class="match-channel">
+                          ${channel}
+                        </div>
+
                       </div>
-
-                      <div class="match-teams team-matchup">
-
-                        <span class="team-side">
-                          ${teamShield(f.home)}
-                          <span>${f.home}</span>
-                        </span>
-
-                        <span class="team-vs">
-                          vs.
-                        </span>
-
-                        <span class="team-side team-side-away">
-                          <span>${f.away}</span>
-                          ${teamShield(f.away)}
-                        </span>
-
-                      </div>
-
-                      <div class="match-channel">
-                        ${f.channel}
-                      </div>
-
-                    </div>
-                  `)
+                    `;
+                  })
                   .join("");
-
 
               return `
                 <div class="competition-block">
 
                   <div class="competition-name">
-                    ${compName.toUpperCase()}
+                    ${escapeHTML(
+                      String(competitionName)
+                        .toUpperCase()
+                    )}
                   </div>
 
                   ${rows}
@@ -1211,7 +1231,7 @@ async function renderCalendar() {
 
             </div>
 
-            ${compsHTML}
+            ${competitionsHTML}
 
           </div>
         `;
@@ -1220,126 +1240,104 @@ async function renderCalendar() {
   }
 
 
-  /* ----------------------------------------------------------
-     Competición
-     ---------------------------------------------------------- */
+  compBtns.forEach(button => {
+    button.addEventListener("click", () => {
 
-  compBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-
-      compBtns.forEach(b =>
-        b.classList.remove("active")
+      compBtns.forEach(btn =>
+        btn.classList.remove("active")
       );
 
-      btn.classList.add("active");
+      button.classList.add("active");
 
       activeCompetition =
-        btn.dataset.filter || "TODAS";
+        button.dataset.filter ||
+        "TODAS";
 
       paint();
     });
   });
 
 
-  /* ----------------------------------------------------------
-     Fecha
-     ---------------------------------------------------------- */
+  dateBtns.forEach(button => {
+    button.addEventListener("click", () => {
 
-  dateBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-
-      dateBtns.forEach(b =>
-        b.classList.remove("active")
+      dateBtns.forEach(btn =>
+        btn.classList.remove("active")
       );
 
-      btn.classList.add("active");
+      button.classList.add("active");
 
       mode =
-        btn.dataset.mode || "dia";
+        button.dataset.mode ||
+        "dia";
 
       paint();
     });
   });
 
 
-  /* ----------------------------------------------------------
-     Día anterior
-     ---------------------------------------------------------- */
-
   if (prevBtn) {
-    prevBtn.addEventListener("click", () => {
+    prevBtn.addEventListener(
+      "click",
+      () => {
 
-      if (mode === "semana") {
         currentDate.setDate(
-          currentDate.getDate() - 7
+          currentDate.getDate() -
+          (mode === "semana" ? 7 : 1)
         );
-      } else {
-        currentDate.setDate(
-          currentDate.getDate() - 1
-        );
+
+        paint();
       }
-
-      paint();
-    });
+    );
   }
 
-
-  /* ----------------------------------------------------------
-     Día siguiente
-     ---------------------------------------------------------- */
 
   if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
+    nextBtn.addEventListener(
+      "click",
+      () => {
 
-      if (mode === "semana") {
         currentDate.setDate(
-          currentDate.getDate() + 7
+          currentDate.getDate() +
+          (mode === "semana" ? 7 : 1)
         );
-      } else {
-        currentDate.setDate(
-          currentDate.getDate() + 1
-        );
+
+        paint();
       }
-
-      paint();
-    });
+    );
   }
 
-
-  /* ----------------------------------------------------------
-     HOY
-     ---------------------------------------------------------- */
 
   if (todayBtn) {
-    todayBtn.addEventListener("click", () => {
+    todayBtn.addEventListener(
+      "click",
+      () => {
 
-      currentDate = new Date();
+        currentDate =
+          new Date();
 
-      currentDate.setHours(
-        0,
-        0,
-        0,
-        0
-      );
-
-      mode = "dia";
-
-      dateBtns.forEach(b => {
-        b.classList.toggle(
-          "active",
-          b.dataset.mode === "dia"
+        currentDate.setHours(
+          0,
+          0,
+          0,
+          0
         );
-      });
 
-      paint();
-    });
+        mode = "dia";
+
+        dateBtns.forEach(button => {
+          button.classList.toggle(
+            "active",
+            button.dataset.mode === "dia"
+          );
+        });
+
+        paint();
+      }
+    );
   }
 
 
-  /*
-    Pintamos inicialmente HOY.
-    NO buscamos el primer partido disponible.
-  */
   paint();
 }
 
@@ -1349,45 +1347,30 @@ async function renderCalendar() {
    ========================================================================== */
 
 async function renderCalendarPreview() {
-  await loadTeams();
-
-  const el =
+  const element =
     document.getElementById(
       "home-calendar-preview"
     );
 
-  if (!el) return;
-
-  const today =
-    getTodayISO();
+  if (!element) return;
 
   const fixtures =
     (await loadFixtures())
-      .filter(f =>
-        f &&
-        f.date &&
-        String(f.date).slice(0, 10) >= today
-      )
       .slice()
       .sort((a, b) =>
-        (
-          String(a.date) +
-          String(a.time || "")
-        ).localeCompare(
-          String(b.date) +
-          String(b.time || "")
-        )
+        `${a.date || ""}${a.time || ""}`
+          .localeCompare(
+            `${b.date || ""}${b.time || ""}`
+          )
       );
-
 
   const upcoming =
     fixtures.slice(0, 6);
 
-
   if (!upcoming.length) {
-    el.innerHTML = `
+    element.innerHTML = `
       <p class="empty-state">
-        No hay próximos partidos cargados.
+        No hay partidos cargados.
       </p>
     `;
 
@@ -1395,47 +1378,49 @@ async function renderCalendarPreview() {
   }
 
 
-  el.innerHTML =
-    upcoming.map(f => `
-      <div class="match-row">
+  element.innerHTML =
+    upcoming.map(fixture => {
 
-        <div class="match-time">
-          ${f.time || ""}
+      return `
+        <div class="match-row">
+
+          <div class="match-time">
+            ${escapeHTML(fixture.time || "")}
+          </div>
+
+          <div class="match-teams team-matchup">
+
+            <span class="team-side">
+              ${teamShield(fixture.home)}
+              <span>
+                ${escapeHTML(fixture.home || "")}
+              </span>
+            </span>
+
+            <span class="team-vs">
+              vs.
+            </span>
+
+            <span class="team-side team-side-away">
+              <span>
+                ${escapeHTML(fixture.away || "")}
+              </span>
+              ${teamShield(fixture.away)}
+            </span>
+
+            <span style="color:var(--muted-light);font-weight:400;">
+              — ${escapeHTML(fixture.competition || "")}
+            </span>
+
+          </div>
+
+          <div class="match-channel">
+            ${escapeHTML(fixture.channel || "")}
+          </div>
+
         </div>
-
-        <div class="match-teams team-matchup">
-
-          <span class="team-side">
-            ${teamShield(f.home)}
-            <span>${f.home}</span>
-          </span>
-
-          <span class="team-vs">
-            vs.
-          </span>
-
-          <span class="team-side team-side-away">
-            <span>${f.away}</span>
-            ${teamShield(f.away)}
-          </span>
-
-          <span
-            style="
-              color:var(--muted-light);
-              font-weight:400;
-            "
-          >
-            — ${f.competition || ""}
-          </span>
-
-        </div>
-
-        <div class="match-channel">
-          ${f.channel || ""}
-        </div>
-
-      </div>
-    `)
+      `;
+    })
     .join("");
 }
 
@@ -1445,26 +1430,25 @@ async function renderCalendarPreview() {
    ========================================================================== */
 
 async function renderUrbaStandings() {
-  await loadTeams();
-
-  const el =
+  const element =
     document.getElementById(
       "urba-standings"
     );
 
-  if (!el) return;
+  if (!element) return;
 
   const standings =
     (await loadStandings())
       .slice()
       .sort((a, b) =>
-        (Number(b.pts) - Number(a.pts)) ||
-        (Number(b.diff) - Number(a.diff))
+        (Number(b.pts) || 0) -
+        (Number(a.pts) || 0) ||
+        (Number(b.diff) || 0) -
+        (Number(a.diff) || 0)
       );
 
-
   if (!standings.length) {
-    el.innerHTML = `
+    element.innerHTML = `
       <p class="muted">
         Todavía no hay tabla cargada.
       </p>
@@ -1475,7 +1459,7 @@ async function renderUrbaStandings() {
 
 
   const updated =
-    window.DROP_RUGBY_DATA?.standingsUpdated;
+    window.DROP_RUGBY_DATA?.standingsUpdated || "";
 
   const updatedLabel =
     updated
@@ -1485,12 +1469,12 @@ async function renderUrbaStandings() {
 
   const relegationFrom =
     Math.max(
-      standings.length - 2,
-      0
+      0,
+      standings.length - 2
     );
 
 
-  el.innerHTML = `
+  element.innerHTML = `
     ${
       updatedLabel
         ? `<div class="standings-updated">
@@ -1518,47 +1502,58 @@ async function renderUrbaStandings() {
 
         <tbody>
 
-          ${standings.map((team, i) => `
-            <tr class="${
-              i >= relegationFrom
+          ${standings.map((team, index) => {
+
+            const diff =
+              Number(team.diff) || 0;
+
+            const pts =
+              Number(team.pts) || 0;
+
+            const rowClass =
+              index >= relegationFrom
                 ? "is-relegation"
-                : ""
-            }">
+                : "";
 
-              <td>
-                ${i + 1}
-              </td>
+            const diffClass =
+              diff > 0
+                ? "is-positive"
+                : diff < 0
+                  ? "is-negative"
+                  : "";
 
-              <td class="standing-team">
-                ${teamShield(team.team)}
-                <span>${team.team}</span>
-              </td>
+            return `
+              <tr class="${rowClass}">
 
-              <td>${team.pj ?? 0}</td>
-              <td>${team.pg ?? 0}</td>
-              <td>${team.pe ?? 0}</td>
-              <td>${team.pp ?? 0}</td>
+                <td class="col-pos">
+                  ${index + 1}
+                </td>
 
-              <td class="${
-                Number(team.diff) > 0
-                  ? "is-positive"
-                  : Number(team.diff) < 0
-                    ? "is-negative"
-                    : ""
-              }">
-                ${
-                  Number(team.diff) > 0
-                    ? "+"
-                    : ""
-                }${team.diff ?? 0}
-              </td>
+                <td class="col-team">
+                  <div class="standing-team">
+                    ${teamShield(team.team)}
+                    <span>
+                      ${escapeHTML(team.team || "")}
+                    </span>
+                  </div>
+                </td>
 
-              <td>
-                ${team.pts ?? 0}
-              </td>
+                <td>${Number(team.pj) || 0}</td>
+                <td>${Number(team.pg) || 0}</td>
+                <td>${Number(team.pe) || 0}</td>
+                <td>${Number(team.pp) || 0}</td>
 
-            </tr>
-          `).join("")}
+                <td class="${diffClass}">
+                  ${diff > 0 ? "+" : ""}${diff}
+                </td>
+
+                <td>
+                  ${pts}
+                </td>
+
+              </tr>
+            `;
+          }).join("")}
 
         </tbody>
 
@@ -1584,19 +1579,21 @@ async function renderUrbaStandings() {
 
 
 /* ==========================================================================
-   BUSCADOR GLOBAL
+   BUSCADOR
    ========================================================================== */
 
 function setupSearch() {
-  const openBtns =
-    document.querySelectorAll(".search-btn");
+  const openButtons =
+    document.querySelectorAll(
+      ".search-btn"
+    );
 
   const overlay =
     document.getElementById(
       "search-overlay"
     );
 
-  const closeBtn =
+  const closeButton =
     document.getElementById(
       "search-close"
     );
@@ -1606,35 +1603,34 @@ function setupSearch() {
       "search-input"
     );
 
-  const resultsEl =
+  const results =
     document.getElementById(
       "search-results"
     );
 
-
   if (
     !overlay ||
-    !openBtns.length ||
+    !openButtons.length ||
     !input ||
-    !resultsEl
+    !results
   ) {
     return;
   }
 
 
-  let articlesForSearch = [];
+  let articlesForSearch = null;
 
 
-  async function ensureData() {
-    if (!articlesForSearch.length) {
+  async function ensureSearchData() {
+    if (!articlesForSearch) {
       articlesForSearch =
         await loadArticles();
     }
   }
 
 
-  openBtns.forEach(btn => {
-    btn.addEventListener(
+  openButtons.forEach(button => {
+    button.addEventListener(
       "click",
       async () => {
 
@@ -1642,14 +1638,14 @@ function setupSearch() {
 
         input.focus();
 
-        await ensureData();
+        await ensureSearchData();
       }
     );
   });
 
 
-  if (closeBtn) {
-    closeBtn.addEventListener(
+  if (closeButton) {
+    closeButton.addEventListener(
       "click",
       () => {
         overlay.classList.remove("open");
@@ -1660,8 +1656,8 @@ function setupSearch() {
 
   overlay.addEventListener(
     "click",
-    e => {
-      if (e.target === overlay) {
+    event => {
+      if (event.target === overlay) {
         overlay.classList.remove("open");
       }
     }
@@ -1670,8 +1666,8 @@ function setupSearch() {
 
   document.addEventListener(
     "keydown",
-    e => {
-      if (e.key === "Escape") {
+    event => {
+      if (event.key === "Escape") {
         overlay.classList.remove("open");
       }
     }
@@ -1682,111 +1678,157 @@ function setupSearch() {
     "input",
     () => {
 
-      const q =
+      const query =
         input.value
           .trim()
           .toLowerCase();
 
 
-      if (!q) {
-        resultsEl.innerHTML = "";
+      if (!query) {
+        results.innerHTML = "";
         return;
       }
 
 
       const matches =
-        articlesForSearch.filter(a => {
+        (articlesForSearch || [])
+          .filter(article => {
 
-          const title =
-            String(a.title || "")
-              .toLowerCase();
+            const title =
+              String(article.title || "")
+                .toLowerCase();
+
+            const category =
+              String(article.category || "")
+                .toLowerCase();
+
+            const subcategory =
+              String(article.subcategory || "")
+                .toLowerCase();
+
+            const excerpt =
+              String(article.excerpt || "")
+                .toLowerCase();
+
+            return (
+              title.includes(query) ||
+              category.includes(query) ||
+              subcategory.includes(query) ||
+              excerpt.includes(query)
+            );
+          });
+
+
+      if (!matches.length) {
+        results.innerHTML = `
+          <p class="search-empty">
+            Sin resultados para "${escapeHTML(input.value)}".
+          </p>
+        `;
+
+        return;
+      }
+
+
+      results.innerHTML =
+        matches.map(article => {
 
           const category =
-            String(a.category || "")
-              .toLowerCase();
+            escapeHTML(
+              String(
+                article.category || "RUGBY"
+              ).toUpperCase()
+            );
 
           const subcategory =
-            String(a.subcategory || "")
-              .toLowerCase();
+            escapeHTML(
+              String(
+                article.subcategory ||
+                "ACTUALIDAD"
+              ).toUpperCase()
+            );
 
-          const excerpt =
-            String(a.excerpt || "")
-              .toLowerCase();
+          const title =
+            escapeHTML(
+              article.title || ""
+            );
 
-          return (
-            title.includes(q) ||
-            category.includes(q) ||
-            subcategory.includes(q) ||
-            excerpt.includes(q)
-          );
-        });
+          const url =
+            `${BASE}article.html?id=${encodeURIComponent(
+              article.id || ""
+            )}`;
 
+          return `
+            <a
+              class="search-result"
+              href="${url}"
+            >
 
-      resultsEl.innerHTML =
-        matches.length
+              <p class="category">
+                ${category} · ${subcategory}
+              </p>
 
-          ? matches.map(a => `
-              <a
-                class="search-result"
-                href="${BASE}article.html?id=${encodeURIComponent(
-                  a.id || ""
-                )}"
-              >
+              <h3>
+                ${title}
+              </h3>
 
-                <p class="category">
-                  ${String(
-                    a.category || "RUGBY"
-                  ).toUpperCase()}
-                  ·
-                  ${String(
-                    a.subcategory || "ACTUALIDAD"
-                  ).toUpperCase()}
-                </p>
-
-                <h3>
-                  ${a.title || "Sin título"}
-                </h3>
-
-              </a>
-            `).join("")
-
-          : `
-            <p class="search-empty">
-              Sin resultados para "${input.value}".
-            </p>
+            </a>
           `;
+        })
+        .join("");
     }
   );
 }
 
 
 /* ==========================================================================
-   INIT
+   INICIALIZACIÓN
    ========================================================================== */
 
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
+async function initDropRugby() {
+  setupMobileMenu();
 
-    setupSearch();
+  setupRevealObserver();
 
-    renderHome();
+  setupNewsletter();
 
-    renderCalendarPreview();
+  setupSearch();
 
-    renderCalendar();
+  /*
+    Las funciones comprueban internamente si los elementos existen.
+    Por eso podemos lanzarlas sin hacer peticiones innecesarias.
+  */
 
-    renderUrbaStandings();
+  await Promise.all([
+    renderHome(),
+    renderCalendarPreview(),
+    renderCalendar(),
+    renderUrbaStandings()
+  ]);
 
-    const catEl =
-      document.getElementById(
-        "category-grid"
-      );
+  const categoryGrid =
+    document.getElementById(
+      "category-grid"
+    );
 
-    if (catEl) {
-      renderCategoryPage(
-        catEl.dataset.category
-      );
-    }
+  if (categoryGrid) {
+    await renderCategoryPage(
+      categoryGrid.dataset.category
+    );
   }
-);
+
+  observeReveals();
+}
+
+
+if (
+  document.readyState === "loading"
+) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initDropRugby,
+    { once: true }
+  );
+} else {
+  initDropRugby();
+}
