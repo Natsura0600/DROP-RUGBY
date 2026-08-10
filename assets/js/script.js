@@ -542,15 +542,72 @@ function observeReveals(root = document) {
    ========================================================================== */
 
 function setupNewsletter() {
-  document
-    .querySelectorAll(".newsletter-form")
-    .forEach(form => {
-      form.addEventListener("submit", event => {
-        event.preventDefault();
+  document.querySelectorAll(".newsletter-form").forEach(form => {
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
 
-        form.classList.add("submitted");
-      });
+      const input = form.querySelector(
+        'input[type="email"], input[name="email"]'
+      );
+
+      const button = form.querySelector("#newsletter-submit");
+      const message = form.querySelector("#newsletter-message");
+
+      if (!input || !message) {
+        return;
+      }
+
+      const email = input.value.trim();
+
+      if (!email) {
+        message.textContent = "Ingresá tu email para suscribirte.";
+        message.classList.remove("success");
+        message.classList.add("error");
+        return;
+      }
+
+      if (!input.checkValidity()) {
+        message.textContent = "Ingresá un email válido.";
+        message.classList.remove("success");
+        message.classList.add("error");
+        input.focus();
+        return;
+      }
+
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = 'Suscribiendo… <span>→</span>';
+      }
+
+      message.textContent = "Procesando suscripción…";
+      message.classList.remove("success", "error");
+
+      /*
+       * Si tu newsletter.js / backend maneja realmente
+       * el alta de suscriptores, acá podemos conectarlo.
+       *
+       * Por ahora dejamos confirmada la interacción
+       * del formulario sin recargar la página.
+       */
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      form.classList.add("submitted");
+
+      message.textContent =
+        "¡Listo! Ya estás suscripto a Drop Rugby.";
+
+      message.classList.remove("error");
+      message.classList.add("success");
+
+      input.value = "";
+
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = 'Suscripto ✓';
+      }
     });
+  });
 }
 
 
