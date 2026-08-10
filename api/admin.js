@@ -865,9 +865,17 @@ export default async function handler(
           article.slug ||
           slugify(article.title),
 
+        url:
+          article.url ||
+          `article.html?id=${encodeURIComponent(articleId)}`,
+
         category:
           article.category ||
           "Rugby",
+
+        subcategory:
+          article.subcategory ||
+          "Actualidad",
 
         author:
           article.author ||
