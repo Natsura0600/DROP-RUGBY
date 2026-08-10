@@ -53,7 +53,7 @@ let ARTICLES_CACHE = null;
 async function loadArticles() {
   if (ARTICLES_CACHE) return ARTICLES_CACHE;
   try {
-    const res = await fetch(BASE + "api/content", { cache: "no-store" });
+    const res = await fetch(BASE + "api/content?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("API unavailable");
     const data = await res.json();
     ARTICLES_CACHE = Array.isArray(data.articles) ? data.articles : [];
@@ -71,7 +71,7 @@ let FIXTURES_CACHE = null;
 async function loadFixtures() {
   if (FIXTURES_CACHE) return FIXTURES_CACHE;
   try {
-    const res = await fetch(BASE + "api/content", { cache: "no-store" });
+    const res = await fetch(BASE + "api/content?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("API unavailable");
     const data = await res.json();
     FIXTURES_CACHE = Array.isArray(data.fixtures) ? data.fixtures : [];
@@ -89,7 +89,7 @@ let STANDINGS_CACHE = null;
 async function loadStandings() {
   if (STANDINGS_CACHE) return STANDINGS_CACHE;
   try {
-    const res = await fetch(BASE + "api/content", { cache: "no-store" });
+    const res = await fetch(BASE + "api/content?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("API unavailable");
     const data = await res.json();
     if (Array.isArray(data.standings) && data.standings.length) {
