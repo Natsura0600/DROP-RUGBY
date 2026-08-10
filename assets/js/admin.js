@@ -34,7 +34,7 @@ const esc = (value) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/'/g, "&#39;");
 
 const makeId = (prefix = "item") =>
   `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
