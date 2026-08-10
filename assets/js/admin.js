@@ -2028,3 +2028,4 @@ document.addEventListener(
 );
 
 checkSession();
+ 
