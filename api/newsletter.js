@@ -1,72 +1,232 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
+import { list, put } from "@vercel/blob";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const BLOB_PATH = "droprugby/content.json";
+
+function json(res, status, data) {
+  return res.status(status).json(data);
+}
+
+async function readContent() {
+  const result = await list({
+    prefix: BLOB_PATH,
+    limit: 10
+  });
+
+  if (!result.blobs.length) {
+    return {
+      articles: [],
+      fixtures: [],
+      results: [],
+      standings: [],
+      standingsBase: [],
+      players: [],
+      instagram: [],
+      trash: [],
+      history: [],
+      subscribers: [],
+      settings: {},
+      teams: {
+        clubs: {},
+        nations: {}
+      }
+    };
+  }
+
+  const blob =
+    result.blobs.find(
+      (item) => item.pathname === BLOB_PATH
+    ) || result.blobs[0];
+
+  const response = await fetch(blob.url, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `No se pudo leer content.json (${response.status})`
+    );
+  }
+
+  const data = await response.json();
+
+  return {
+    ...data,
+
+    articles: Array.isArray(data.articles)
+      ? data.articles
+      : [],
+
+    fixtures: Array.isArray(data.fixtures)
+      ? data.fixtures
+      : [],
+
+    results: Array.isArray(data.results)
+      ? data.results
+      : [],
+
+    standings: Array.isArray(data.standings)
+      ? data.standings
+      : [],
+
+    standingsBase: Array.isArray(data.standingsBase)
+      ? data.standingsBase
+      : [],
+
+    players: Array.isArray(data.players)
+      ? data.players
+      : [],
+
+    instagram: Array.isArray(data.instagram)
+      ? data.instagram
+      : [],
+
+    trash: Array.isArray(data.trash)
+      ? data.trash
+      : [],
+
+    history: Array.isArray(data.history)
+      ? data.history
+      : [],
+
+    subscribers: Array.isArray(data.subscribers)
+      ? data.subscribers
+      : [],
+
+    settings:
+      data.settings &&
+      typeof data.settings === "object"
+        ? data.settings
+        : {},
+
+    teams:
+      data.teams &&
+      typeof data.teams === "object"
+        ? data.teams
+        : {
+            clubs: {},
+            nations: {}
+          }
+  };
+}
+
+async function saveContent(content) {
+  await put(
+    BLOB_PATH,
+    JSON.stringify(content, null, 2),
+    {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json; charset=utf-8",
+      cacheControlMaxAge: 0
+    }
+  );
+
+  return content;
+}
+
+function normalizeEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
+function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export default async function handler(req, res) {
-
-  // =====================================================
-  // MÉTODO
-  // =====================================================
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({
-      error: 'Método no permitido'
+  if (req.method !== "POST") {
+    return json(res, 405, {
+      error: "Método no permitido"
     });
   }
 
   try {
-
-    // =====================================================
-    // OBTENER EMAIL
-    // =====================================================
-
     const { email } = req.body || {};
 
-    if (!email || typeof email !== 'string') {
-      return res.status(400).json({
-        error: 'Ingresá un email válido.'
+    const emailClean = normalizeEmail(email);
+
+    if (!emailClean || !validEmail(emailClean)) {
+      return json(res, 400, {
+        error: "Ingresá un email válido."
       });
     }
-
-    const emailClean = email.trim().toLowerCase();
-
-    // =====================================================
-    // VERIFICAR API KEY
-    // =====================================================
 
     if (!process.env.RESEND_API_KEY) {
-      return res.status(500).json({
-        error: 'Resend no está configurado correctamente.'
+      return json(res, 500, {
+        error:
+          "Resend no está configurado correctamente."
       });
     }
 
-    // =====================================================
-    // ENVIAR EMAIL
-    // =====================================================
+    const content = await readContent();
 
-    const { data, error } = await resend.emails.send({
+    if (!Array.isArray(content.subscribers)) {
+      content.subscribers = [];
+    }
 
-      // IMPORTANTE:
-      // Volvemos al remitente del newsletter original.
-     from: 'Drop Rugby <newsletter@droprugby.com>',
+    const alreadySubscribed =
+      content.subscribers.some(
+        (subscriber) =>
+          normalizeEmail(
+            typeof subscriber === "string"
+              ? subscriber
+              : subscriber?.email
+          ) === emailClean
+      );
 
-      to: [emailClean],
+    if (alreadySubscribed) {
+      return json(res, 200, {
+        ok: true,
+        alreadySubscribed: true,
+        message:
+          "Este email ya está suscripto."
+      });
+    }
 
-      subject: 'Ya sos parte de DropRugby 🏉',
+    const subscriber = {
+      email: emailClean,
+      subscribedAt:
+        new Date().toISOString()
+    };
 
-      html: `
+    content.subscribers.push(subscriber);
+
+    await saveContent(content);
+
+    const { data, error } =
+      await resend.emails.send({
+        from:
+          "DropRugby <onboarding@resend.dev>",
+
+        to: [emailClean],
+
+        subject:
+          "Ya sos parte de DropRugby 🏉",
+
+        html: `
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>Bienvenido a DropRugby</title>
+<meta charset="UTF-8">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+<title>Bienvenido a DropRugby</title>
 </head>
 
 <body
@@ -74,355 +234,301 @@ export default async function handler(req, res) {
     margin:0;
     padding:0;
     background:#eeeeeb;
-    font-family:Arial, Helvetica, sans-serif;
+    font-family:Arial,Helvetica,sans-serif;
   "
 >
 
-  <table
-    width="100%"
-    cellpadding="0"
-    cellspacing="0"
-    border="0"
-    style="
-      background:#eeeeeb;
-      padding:35px 15px;
-    "
-  >
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="background:#eeeeeb;"
+>
 
-    <tr>
+<tr>
+<td align="center">
 
-      <td align="center">
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="
+    max-width:620px;
+    background:#ffffff;
+  "
+>
 
-        <!-- CONTENEDOR -->
+<tr>
+<td
+  style="
+    background:#111111;
+    padding:30px 35px;
+  "
+>
 
-        <table
-          width="100%"
-          cellpadding="0"
-          cellspacing="0"
-          border="0"
-          style="
-            max-width:620px;
-            background:#ffffff;
-          "
-        >
+<div
+  style="
+    font-size:30px;
+    line-height:1;
+    font-weight:700;
+    letter-spacing:-1.5px;
+    color:#ffffff;
+  "
+>
+  DROP<span style="font-weight:400;">RUGBY</span>
+</div>
 
-          <!-- HEADER -->
+<div
+  style="
+    margin-top:10px;
+    font-size:10px;
+    line-height:1.4;
+    letter-spacing:2px;
+    color:#bcbcbc;
+    font-weight:700;
+  "
+>
+  MEDIO DIGITAL DE RUGBY
+</div>
 
-          <tr>
+</td>
+</tr>
 
-            <td
-              style="
-                background:#111111;
-                padding:30px 35px;
-              "
-            >
+<tr>
+<td style="padding:45px 40px 15px;">
 
-              <div
-                style="
-                  font-size:30px;
-                  line-height:1;
-                  font-weight:700;
-                  letter-spacing:-1.5px;
-                  color:#ffffff;
-                "
-              >
-                DROP<span style="font-weight:400;">RUGBY</span>
-              </div>
+<div
+  style="
+    font-size:10px;
+    line-height:1.4;
+    letter-spacing:2px;
+    color:#777777;
+    font-weight:700;
+    margin-bottom:14px;
+  "
+>
+  BIENVENIDO A DROP RUGBY
+</div>
 
-              <div
-                style="
-                  margin-top:10px;
-                  font-size:10px;
-                  line-height:1.4;
-                  letter-spacing:2px;
-                  color:#bcbcbc;
-                  font-weight:700;
-                "
-              >
-                MEDIO DIGITAL DE RUGBY
-              </div>
+<h1
+  style="
+    margin:0;
+    font-size:34px;
+    line-height:1.1;
+    letter-spacing:-1px;
+    font-weight:700;
+    color:#111111;
+  "
+>
+  El rugby,<br>
+  directo a tu bandeja.
+</h1>
 
-            </td>
+</td>
+</tr>
 
-          </tr>
+<tr>
+<td style="padding:15px 40px 5px;">
 
+<p
+  style="
+    margin:0 0 20px;
+    font-size:16px;
+    line-height:1.7;
+    color:#444444;
+  "
+>
+  Gracias por suscribirte a
+  <strong>DropRugby</strong>.
+</p>
 
-          <!-- INTRO -->
+<p
+  style="
+    margin:0 0 20px;
+    font-size:16px;
+    line-height:1.7;
+    color:#444444;
+  "
+>
+  Desde ahora vas a recibir las
+  principales noticias, análisis,
+  resultados y novedades del mundo
+  del rugby.
+</p>
 
-          <tr>
+<p
+  style="
+    margin:0;
+    font-size:16px;
+    line-height:1.7;
+    color:#444444;
+  "
+>
+  Queremos que tengas la información
+  que importa, cuando importa.
+</p>
 
-            <td
-              style="
-                padding:45px 40px 15px;
-              "
-            >
+</td>
+</tr>
 
-              <div
-                style="
-                  font-size:10px;
-                  line-height:1.4;
-                  letter-spacing:2px;
-                  color:#777777;
-                  font-weight:700;
-                  margin-bottom:14px;
-                "
-              >
-                BIENVENIDO A DROP RUGBY
-              </div>
+<tr>
+<td style="padding:30px 40px 10px;">
 
-              <h1
-                style="
-                  margin:0;
-                  font-size:34px;
-                  line-height:1.1;
-                  letter-spacing:-1px;
-                  font-weight:700;
-                  color:#111111;
-                "
-              >
-                El rugby,<br>
-                directo a tu bandeja.
-              </h1>
+<div
+  style="
+    height:1px;
+    background:#ddddda;
+    width:100%;
+  "
+></div>
 
-            </td>
+</td>
+</tr>
 
-          </tr>
+<tr>
+<td style="padding:25px 40px 10px;">
 
+<div
+  style="
+    font-size:10px;
+    letter-spacing:2px;
+    font-weight:700;
+    color:#777777;
+    margin-bottom:15px;
+  "
+>
+  NUESTRA COBERTURA
+</div>
 
-          <!-- TEXTO -->
+<p
+  style="
+    margin:0;
+    font-size:18px;
+    line-height:1.6;
+    font-weight:700;
+    color:#111111;
+  "
+>
+  LOS PUMAS
+  <span style="color:#aaaaaa;"> · </span>
+  INTERNACIONAL
+  <span style="color:#aaaaaa;"> · </span>
+  URBA
+</p>
 
-          <tr>
+</td>
+</tr>
 
-            <td
-              style="
-                padding:15px 40px 5px;
-              "
-            >
+<tr>
+<td
+  align="left"
+  style="padding:30px 40px 40px;"
+>
 
-              <p
-                style="
-                  margin:0 0 20px;
-                  font-size:16px;
-                  line-height:1.7;
-                  color:#444444;
-                "
-              >
-                Gracias por suscribirte a
-                <strong>DropRugby</strong>.
-              </p>
+<a
+  href="https://droprugby.com"
+  target="_blank"
+  style="
+    display:inline-block;
+    background:#111111;
+    color:#ffffff;
+    text-decoration:none;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.2px;
+    padding:16px 24px;
+  "
+>
+  ENTRAR A DROPRUGBY &nbsp;→
+</a>
 
-              <p
-                style="
-                  margin:0 0 20px;
-                  font-size:16px;
-                  line-height:1.7;
-                  color:#444444;
-                "
-              >
-                Desde ahora vas a recibir las
-                principales noticias, análisis,
-                resultados y novedades del mundo
-                del rugby.
-              </p>
+</td>
+</tr>
 
-              <p
-                style="
-                  margin:0;
-                  font-size:16px;
-                  line-height:1.7;
-                  color:#444444;
-                "
-              >
-                Queremos que tengas la información
-                que importa, cuando importa.
-              </p>
+<tr>
+<td
+  style="
+    background:#f5f5f2;
+    padding:25px 40px;
+  "
+>
 
-            </td>
+<p
+  style="
+    margin:0 0 8px;
+    font-size:12px;
+    line-height:1.5;
+    color:#777777;
+  "
+>
+  Gracias por ser parte de la comunidad
+  DropRugby.
+</p>
 
-          </tr>
+<p
+  style="
+    margin:0;
+    font-size:11px;
+    line-height:1.5;
+    color:#999999;
+  "
+>
+  Rugby es una pasión.
+</p>
 
+</td>
+</tr>
 
-          <!-- SEPARADOR -->
+</table>
 
-          <tr>
+</td>
+</tr>
 
-            <td
-              style="
-                padding:30px 40px 10px;
-              "
-            >
-
-              <div
-                style="
-                  height:1px;
-                  background:#ddddda;
-                  width:100%;
-                "
-              ></div>
-
-            </td>
-
-          </tr>
-
-
-          <!-- COBERTURA -->
-
-          <tr>
-
-            <td
-              style="
-                padding:25px 40px 10px;
-              "
-            >
-
-              <div
-                style="
-                  font-size:10px;
-                  letter-spacing:2px;
-                  font-weight:700;
-                  color:#777777;
-                  margin-bottom:15px;
-                "
-              >
-                NUESTRA COBERTURA
-              </div>
-
-              <p
-                style="
-                  margin:0;
-                  font-size:18px;
-                  line-height:1.6;
-                  font-weight:700;
-                  color:#111111;
-                "
-              >
-                LOS PUMAS
-                <span style="color:#aaaaaa;"> · </span>
-                INTERNACIONAL
-                <span style="color:#aaaaaa;"> · </span>
-                URBA
-              </p>
-
-            </td>
-
-          </tr>
-
-
-          <!-- BOTÓN -->
-
-          <tr>
-
-            <td
-              align="left"
-              style="
-                padding:30px 40px 40px;
-              "
-            >
-
-              <a
-                href="https://droprugby.com"
-                target="_blank"
-                style="
-                  display:inline-block;
-                  background:#111111;
-                  color:#ffffff;
-                  text-decoration:none;
-                  font-size:11px;
-                  font-weight:700;
-                  letter-spacing:1.2px;
-                  padding:16px 24px;
-                "
-              >
-                ENTRAR A DROPRUGBY &nbsp;→
-              </a>
-
-            </td>
-
-          </tr>
-
-
-          <!-- FOOTER -->
-
-          <tr>
-
-            <td
-              style="
-                background:#f5f5f2;
-                padding:25px 40px;
-              "
-            >
-
-              <p
-                style="
-                  margin:0 0 8px;
-                  font-size:12px;
-                  line-height:1.5;
-                  color:#777777;
-                "
-              >
-                Gracias por ser parte de la comunidad
-                DropRugby.
-              </p>
-
-              <p
-                style="
-                  margin:0;
-                  font-size:11px;
-                  line-height:1.5;
-                  color:#999999;
-                "
-              >
-                Rugby es una pasión.
-              </p>
-
-            </td>
-
-          </tr>
-
-        </table>
-
-      </td>
-
-    </tr>
-
-  </table>
+</table>
 
 </body>
-
 </html>
-      `
-    });
-
-    // =====================================================
-    // ERROR RESEND
-    // =====================================================
+        `
+      });
 
     if (error) {
+      console.error(
+        "RESEND NEWSLETTER ERROR:",
+        error
+      );
 
-      console.error('RESEND ERROR:', error);
-
-      return res.status(500).json({
-        error: 'No se pudo enviar el email.',
-        detail: error.message || 'Error de Resend'
+      return json(res, 200, {
+        ok: true,
+        subscribed: true,
+        welcomeEmailSent: false,
+        message:
+          "Suscripción guardada, pero no se pudo enviar el email de bienvenida.",
+        detail:
+          error?.message ||
+          "Error de Resend"
       });
     }
 
-    // =====================================================
-    // ÉXITO
-    // =====================================================
-
-    return res.status(200).json({
+    return json(res, 200, {
       ok: true,
+      subscribed: true,
+      welcomeEmailSent: true,
       id: data?.id || null,
-      message: '¡Suscripción realizada correctamente!'
+      message:
+        "¡Suscripción realizada correctamente!"
     });
 
   } catch (error) {
+    console.error(
+      "NEWSLETTER ERROR:",
+      error
+    );
 
-    console.error('NEWSLETTER ERROR:', error);
-
-    return res.status(500).json({
-      error: 'Error interno del servidor.',
+    return json(res, 500, {
+      error:
+        "Error interno del servidor.",
       detail:
         error instanceof Error
           ? error.message
