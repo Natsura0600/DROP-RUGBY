@@ -33,7 +33,16 @@
       const root=document.getElementById('article-root');
       function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
       try{
-        const res=await fetch('/api/content',{cache:'no-store'}); if(!res.ok) throw new Error(); const data=await res.json();
+        let data;
+        try {
+          const res = await fetch('api/content?t=' + Date.now(), {cache:'no-store'});
+          if (!res.ok) throw new Error();
+          data = await res.json();
+        } catch (_) {
+          const res = await fetch('data/articles.json', {cache:'no-store'});
+          if (!res.ok) throw new Error();
+          data = { articles: await res.json() };
+        }
         const a=(data.articles||[]).find(x=>x.id===id);
         if(!a) throw new Error();
         document.title=`${a.title} | DropRugby`; document.getElementById('meta-description').content=a.excerpt||'';
