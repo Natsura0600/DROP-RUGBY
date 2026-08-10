@@ -120,7 +120,8 @@ async function saveContent(content) {
       access: "public",
       addRandomSuffix: false,
       allowOverwrite: true,
-      contentType: "application/json; charset=utf-8",
+      contentType:
+        "application/json; charset=utf-8",
       cacheControlMaxAge: 0
     }
   );
@@ -197,20 +198,18 @@ export default async function handler(req, res) {
       });
     }
 
-    const subscriber = {
+    content.subscribers.push({
       email: emailClean,
       subscribedAt:
         new Date().toISOString()
-    };
-
-    content.subscribers.push(subscriber);
+    });
 
     await saveContent(content);
 
     const { data, error } =
       await resend.emails.send({
         from:
-          "DropRugby <onboarding@resend.dev>",
+          "DropRugby <newsletter@droprugby.com>",
 
         to: [emailClean],
 
@@ -219,21 +218,20 @@ export default async function handler(req, res) {
 
         html: `
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta
   name="viewport"
   content="width=device-width, initial-scale=1.0"
 >
-<title>Bienvenido a DropRugby</title>
 </head>
 
 <body
   style="
     margin:0;
     padding:0;
-    background:#eeeeeb;
+    background:#f5f5f2;
     font-family:Arial,Helvetica,sans-serif;
   "
 >
@@ -243,9 +241,7 @@ export default async function handler(req, res) {
   cellpadding="0"
   cellspacing="0"
   border="0"
-  style="background:#eeeeeb;"
 >
-
 <tr>
 <td align="center">
 
@@ -297,12 +293,15 @@ export default async function handler(req, res) {
 </tr>
 
 <tr>
-<td style="padding:45px 40px 15px;">
+<td
+  style="
+    padding:45px 40px 15px;
+  "
+>
 
 <div
   style="
     font-size:10px;
-    line-height:1.4;
     letter-spacing:2px;
     color:#777777;
     font-weight:700;
@@ -352,10 +351,9 @@ export default async function handler(req, res) {
     color:#444444;
   "
 >
-  Desde ahora vas a recibir las
-  principales noticias, análisis,
-  resultados y novedades del mundo
-  del rugby.
+  Desde ahora vas a recibir las principales
+  noticias, análisis, resultados y novedades
+  del mundo del rugby.
 </p>
 
 <p
@@ -375,7 +373,6 @@ export default async function handler(req, res) {
 
 <tr>
 <td style="padding:30px 40px 10px;">
-
 <div
   style="
     height:1px;
@@ -383,7 +380,6 @@ export default async function handler(req, res) {
     width:100%;
   "
 ></div>
-
 </td>
 </tr>
 
@@ -485,7 +481,6 @@ export default async function handler(req, res) {
 
 </td>
 </tr>
-
 </table>
 
 </body>
@@ -504,7 +499,7 @@ export default async function handler(req, res) {
         subscribed: true,
         welcomeEmailSent: false,
         message:
-          "Suscripción guardada, pero no se pudo enviar el email de bienvenida.",
+          "Suscripción guardada, pero no se pudo enviar el email.",
         detail:
           error?.message ||
           "Error de Resend"
