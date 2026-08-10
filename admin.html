@@ -39,6 +39,7 @@
       <button class="nav-item" data-section="articles">▤ <span>Noticias</span><b id="nav-articles-count">0</b></button>
       <button class="nav-item" data-section="fixtures">◷ <span>Partidos</span><b id="nav-fixtures-count">0</b></button>
       <button class="nav-item" data-section="results">▥ <span>Resultados TOP 14</span><b id="nav-results-count">0</b></button>
+      <button class="nav-item" data-section="media">▧ <span>Media Manager</span><b id="nav-media-count">0</b></button>
     </nav>
 
     <div class="side-bottom">
@@ -224,6 +225,38 @@
           <div style="padding:14px 18px;">
             <button id="standings-base-save" class="btn primary">GUARDAR TABLA BASE</button>
           </div>
+        </div>
+      </section>
+
+      <section id="section-media" class="section">
+        <div class="heading">
+          <div>
+            <small>RECURSOS</small>
+            <h1>Media Manager</h1>
+            <p class="muted">Subí y administrá imágenes para noticias, escudos, jugadores y cualquier contenido del sitio.</p>
+          </div>
+          <label class="btn primary media-upload-btn">+ SUBIR IMÁGENES<input id="media-upload-input" type="file" accept="image/*" multiple hidden></label>
+        </div>
+
+        <div class="toolbar media-toolbar">
+          <input id="media-search" placeholder="Buscar imagen..." autocomplete="off">
+          <select id="media-type-filter">
+            <option value="">Todas las imágenes</option>
+            <option value="image/jpeg">JPG / JPEG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="image/gif">GIF</option>
+          </select>
+        </div>
+
+        <div class="panel media-panel">
+          <div class="panel-head"><h3>Biblioteca de imágenes</h3><span class="muted">Noticias, escudos, jugadores y demás recursos</span></div>
+          <div id="media-grid" class="media-grid"></div>
+        </div>
+
+        <div class="panel media-panel club-logo-panel">
+          <div class="panel-head"><h3>Escudos de clubes</h3><span class="muted">Elegí una imagen de la biblioteca y queda guardada para todo el sitio.</span></div>
+          <div id="club-logo-grid" class="club-logo-grid"></div>
         </div>
       </section>
 
