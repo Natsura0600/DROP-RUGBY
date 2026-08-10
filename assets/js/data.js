@@ -278,7 +278,7 @@ window.DROP_RUGBY_DATA = {
   standings: [
     { position: 1, team: "Newman", pj: 17, pg: 16, pe: 0, pp: 1, diff: 255, pts: 71 },
     { position: 2, team: "CASI", pj: 17, pg: 13, pe: 0, pp: 4, diff: 179, pts: 60 },
-    { position: 3, team: "Hindu", pj: 17, pg: 12, pe: 0, pp: 5, diff: 160, pts: 57 },
+    { position: 3, team: "Hindú", pj: 17, pg: 12, pe: 0, pp: 5, diff: 160, pts: 57 },
     { position: 4, team: "Alumni", pj: 17, pg: 11, pe: 0, pp: 6, diff: 220, pts: 56 },
     { position: 5, team: "SIC", pj: 17, pg: 11, pe: 0, pp: 6, diff: 127, pts: 51 },
     { position: 6, team: "Regatas Bella Vista", pj: 17, pg: 9, pe: 0, pp: 8, diff: 63, pts: 45 },
