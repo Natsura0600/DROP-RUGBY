@@ -2,92 +2,174 @@
 
 <html lang="es">
 <head>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="robots" content="index, follow">
 
   <title>Artículo | DropRugby</title>
 
 <meta
 id="meta-description"
 name="description"
-content="Noticias de rugby de DropRugby"
+content="Noticias de rugby en DropRugby."
 
 >
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="assets/css/styles.css"
+  >
 
   <style>
+
     .dynamic-article {
-      max-width: 1000px;
+      max-width: 860px;
       margin: 0 auto;
-      padding: 40px 20px 80px;
+      padding: 70px 24px 100px;
     }
 
-    .article-kicker {
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
+    .dynamic-article .article-kicker {
+      font: 700 10px var(--sans);
+      letter-spacing: 2px;
+      color: #777;
+      margin: 0 0 12px;
     }
 
     .dynamic-article h1 {
-      font-size: clamp(34px, 6vw, 64px);
-      line-height: 1.05;
+      font: 400 clamp(38px, 6vw, 72px) var(--serif);
+      line-height: 1.04;
       margin: 0 0 18px;
     }
 
     .dynamic-article .lead {
-      font-size: 20px;
-      line-height: 1.55;
-      opacity: .8;
-      margin: 0 0 20px;
+      font: 400 19px/1.65 var(--sans);
+      color: #666;
+      max-width: 720px;
+      margin: 0;
     }
 
     .dynamic-meta {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .05em;
-      margin-bottom: 30px;
-      opacity: .7;
+      margin: 24px 0 34px;
+      font: 600 10px var(--sans);
+      letter-spacing: .8px;
+      color: #777;
     }
 
     .dynamic-image {
-      width: 100%;
-      margin: 0 0 35px;
+      height: 430px;
+      margin: 0 0 42px;
+      border-radius: 3px;
       overflow: hidden;
-      border-radius: 12px;
-      background: #eee;
+      background: #ddd;
     }
 
     .dynamic-image img {
-      display: block;
       width: 100%;
-      height: auto;
-      max-height: 650px;
+      height: 100%;
       object-fit: cover;
+      display: block;
     }
 
     .dynamic-body {
-      max-width: 780px;
-      margin: 0 auto;
-      font-size: 19px;
-      line-height: 1.8;
+      font: 400 17px/1.9 var(--sans);
+      color: #272727;
     }
 
     .dynamic-body p {
       margin: 0 0 24px;
     }
 
+    .dynamic-body h2 {
+      font: 400 32px var(--serif);
+      margin: 42px 0 15px;
+      line-height: 1.2;
+    }
+
+    .dynamic-body h3 {
+      font: 400 25px var(--serif);
+      margin: 35px 0 12px;
+      line-height: 1.25;
+    }
+
+    .dynamic-body strong {
+      font-weight: 700;
+    }
+
+    .dynamic-body em {
+      font-style: italic;
+    }
+
+    .dynamic-body ul,
+    .dynamic-body ol {
+      margin: 0 0 25px 25px;
+      padding: 0;
+    }
+
+    .dynamic-body li {
+      margin-bottom: 8px;
+    }
+
+    .dynamic-body a {
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    .dynamic-body blockquote {
+      font: italic 25px/1.5 var(--serif);
+      border-left: 3px solid #111;
+      padding: 8px 0 8px 22px;
+      margin: 35px 0;
+    }
+
+    .dynamic-body img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 30px auto;
+    }
+
+    .dynamic-body hr {
+      border: 0;
+      border-top: 1px solid #ddd;
+      margin: 40px 0;
+    }
+
+    .dynamic-back {
+      display: inline-block;
+      margin-top: 35px;
+      font: 700 10px var(--sans);
+      letter-spacing: 1px;
+      text-decoration: none;
+      color: #111;
+    }
+
+    /* =====================================================
+       COMPARTIR
+    ===================================================== */
+
     .dynamic-share {
-      max-width: 780px;
-      margin: 50px auto 0;
+      margin-top: 55px;
       padding-top: 30px;
-      border-top: 1px solid rgba(0,0,0,.12);
+      border-top: 1px solid #ddd;
     }
 
     .dynamic-share h3 {
-      margin-bottom: 15px;
+      margin: 0 0 15px;
+      font: 400 25px var(--serif);
     }
 
     .share-buttons {
@@ -100,27 +182,35 @@ content="Noticias de rugby de DropRugby"
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 16px;
-      border-radius: 6px;
-      text-decoration: none;
-      border: 0;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .share-x,
-    .share-facebook,
-    .share-instagram {
+      min-height: 40px;
+      padding: 10px 15px;
+      border: 1px solid #111;
       background: #111;
       color: #fff;
+      text-decoration: none;
+      font: 600 11px var(--sans);
+      letter-spacing: .4px;
+      cursor: pointer;
+      transition: opacity .2s ease;
     }
 
+    .share-button:hover {
+      opacity: .75;
+    }
+
+    /* =====================================================
+       RELACIONADOS
+    ===================================================== */
+
     .dynamic-related {
-      margin-top: 60px;
+      margin-top: 65px;
+      padding-top: 35px;
+      border-top: 1px solid #ddd;
     }
 
     .dynamic-related h2 {
-      margin-bottom: 25px;
+      font: 400 32px var(--serif);
+      margin: 0 0 25px;
     }
 
     .related-grid {
@@ -137,141 +227,366 @@ content="Noticias de rugby de DropRugby"
 
     .related-card-image {
       width: 100%;
-      aspect-ratio: 16 / 9;
-      overflow: hidden;
-      border-radius: 8px;
-      background: #eee;
+      height: 170px;
       margin-bottom: 12px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #ddd;
     }
 
     .related-card-image img {
-      display: block;
       width: 100%;
       height: 100%;
+      display: block;
       object-fit: cover;
     }
 
     .related-card-kicker {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .06em;
-      margin: 0 0 6px;
-      opacity: .7;
+      font: 700 9px var(--sans);
+      letter-spacing: 1.5px;
+      color: #777;
+      margin: 0 0 7px;
     }
 
     .related-card h3 {
-      font-size: 18px;
-      line-height: 1.25;
+      font: 400 21px/1.2 var(--serif);
       margin: 0 0 8px;
     }
 
     .related-card-date {
-      font-size: 12px;
-      opacity: .6;
+      font: 500 10px var(--sans);
+      color: #777;
     }
 
-    .dynamic-back {
-      display: inline-block;
-      margin-top: 50px;
-      font-weight: 800;
-      text-decoration: none;
+    .article-loading {
+      color: #777;
+      font: 400 17px var(--sans);
     }
 
-    .article-error {
-      max-width: 780px;
-      margin: 80px auto;
-      padding: 30px 20px;
-    }
+    @media(max-width: 700px) {
 
-    @media (max-width: 800px) {
+      .dynamic-article {
+        padding-top: 45px;
+      }
+
+      .dynamic-image {
+        height: 260px;
+      }
+
+      .dynamic-body {
+        font-size: 16px;
+      }
+
+      .dynamic-article .lead {
+        font-size: 17px;
+      }
+
       .related-grid {
         grid-template-columns: 1fr;
       }
 
-      .dynamic-article {
-        padding-top: 25px;
+      .related-card-image {
+        height: 210px;
       }
 
-      .dynamic-body {
-        font-size: 17px;
-      }
     }
+
   </style>
 
 </head>
 
 <body>
 
-  <main
-    id="article-root"
-    class="dynamic-article"
-    aria-live="polite"
-  >
-    <p>Cargando artículo...</p>
+  <div class="topline"></div>
+
+  <header class="site-header">
+
+```
+<div class="header-inner">
+
+  <a class="brand" href="index.html">
+
+    <div class="logo-mark">
+      <img
+        src="/logo.png"
+        alt="DropRugby"
+      >
+    </div>
+
+    <div>
+      <div class="brand-name">
+        DROP<span>RUGBY</span>
+      </div>
+    </div>
+
+  </a>
+
+  <nav class="main-nav">
+
+    <a href="los-pumas.html">
+      LOS PUMAS
+    </a>
+
+    <a href="super-rugby.html">
+      INTERNACIONAL
+    </a>
+
+    <a href="urba-top-14.html">
+      URBA TOP 14
+    </a>
+
+    <a href="urba.html">
+      URBA
+    </a>
+
+    <a href="calendario.html">
+      CALENDARIO
+    </a>
+
+    <a href="contacto.html">
+      CONTACTO
+    </a>
+
+  </nav>
+
+  <div class="header-actions">
+
+    <a
+      class="social-btn"
+      href="https://www.instagram.com/drop_rugby/"
+      target="_blank"
+      rel="noopener"
+    >
+      INSTAGRAM ↗
+    </a>
+
+    <button
+      class="menu-btn"
+      aria-label="Abrir menú"
+    >
+      <span></span>
+      <span></span>
+    </button>
+
+  </div>
+
+</div>
+
+<div class="mobile-nav">
+
+  <a href="los-pumas.html">
+    LOS PUMAS
+  </a>
+
+  <a href="super-rugby.html">
+    INTERNACIONAL
+  </a>
+
+  <a href="urba-top-14.html">
+    URBA TOP 14
+  </a>
+
+  <a href="urba.html">
+    URBA
+  </a>
+
+  <a href="calendario.html">
+    CALENDARIO
+  </a>
+
+  <a href="contacto.html">
+    CONTACTO
+  </a>
+
+</div>
+```
+
+  </header>
+
+  <main>
+
+```
+<article
+  class="dynamic-article"
+  id="article-root"
+>
+
+  <p class="article-kicker">
+    DROP RUGBY
+  </p>
+
+  <h1>
+    Cargando artículo…
+  </h1>
+
+</article>
+```
+
   </main>
 
+  <footer class="footer">
+
+```
+<div class="footer-brand">
+
+  <div class="brand-name">
+    DROP<span>RUGBY</span>
+  </div>
+
+  <p>
+    Medio digital de rugby: noticias, análisis y opinión.
+  </p>
+
+</div>
+
+<div class="footer-links">
+
+  <a href="los-pumas.html">
+    Los Pumas
+  </a>
+
+  <a href="super-rugby.html">
+    Super Rugby
+  </a>
+
+  <a href="urba-top-14.html">
+    URBA Top 14
+  </a>
+
+  <a href="urba.html">
+    URBA
+  </a>
+
+  <a href="calendario.html">
+    Calendario
+  </a>
+
+</div>
+
+<p class="copyright">
+  © 2026 DropRugby. Todos los derechos reservados.
+</p>
+```
+
+  </footer>
+
+  <script src="assets/js/script.js"></script>
+
   <script>
+
   (async function () {
 
     "use strict";
 
-    const root = document.getElementById("article-root");
+    const id =
+      new URLSearchParams(
+        window.location.search
+      ).get("id");
+
+    const root =
+      document.getElementById(
+        "article-root"
+      );
 
     if (!root) {
       return;
     }
 
+    /* =====================================================
+       ESCAPE PARA TEXTO
+    ===================================================== */
+
     function esc(value) {
-      return String(value ?? "").replace(
-        /[&<>"']/g,
-        function (char) {
-          return {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;"
-          }[char];
-        }
-      );
+
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
     }
 
-    function getArticleId() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("id") || "";
-    }
+    /* =====================================================
+       URL CANÓNICA
+    ===================================================== */
 
     function canonicalUrl(articleId) {
+
       return new URL(
         "article.html?id=" +
         encodeURIComponent(articleId),
         window.location.href
       ).href;
+
     }
 
-   function renderBody(value) {
-  const text = String(value ?? "").trim();
+    /* =====================================================
+       CUERPO DE LA NOTICIA
+       
+       Si Admin guardó HTML:
+       <p>Texto</p>
+       <h2>Título</h2>
+       <strong>Texto</strong>
 
-  if (!text) {
-    return "";
-  }
+       se interpreta como HTML.
 
-  // Si la noticia ya contiene HTML, lo renderizamos directamente.
-  if (/<\/?[a-z][\s\S]*>/i.test(text)) {
-    return text;
-  }
+       Si guardó texto plano:
+       se convierte automáticamente
+       en párrafos.
+    ===================================================== */
 
-  // Si es texto plano, convertimos los saltos de línea
-  // en párrafos y <br>.
-  return text
-    .split(/\n\s*\n/)
-    .map(function (paragraph) {
-      return `<p>${esc(paragraph).replace(/\n/g, "<br>")}</p>`;
-    })
-    .join("");
-}
+    function renderBody(value) {
 
-    function articleImage(article, compact) {
+      const text =
+        String(value ?? "").trim();
+
+      if (!text) {
+        return "";
+      }
+
+      /*
+       * Detectamos si el contenido ya tiene HTML.
+       */
+
+      const hasHtml =
+        /<\/?[a-z][\s\S]*>/i.test(text);
+
+      if (hasHtml) {
+
+        return text;
+
+      }
+
+      /*
+       * Texto plano.
+       * Dos saltos de línea = nuevo párrafo.
+       */
+
+      return text
+        .split(/\n\s*\n/)
+        .map(function (paragraph) {
+
+          return (
+            "<p>" +
+            esc(paragraph)
+              .replace(/\n/g, "<br>") +
+            "</p>"
+          );
+
+        })
+        .join("");
+
+    }
+
+    /* =====================================================
+       IMAGEN DEL ARTÍCULO
+    ===================================================== */
+
+    function articleImage(
+      article,
+      compact = false
+    ) {
 
       const image =
         article.imageUrl ||
@@ -289,84 +604,137 @@ content="Noticias de rugby de DropRugby"
 
             <img
               src="${esc(image)}"
-              alt="${esc(article.title || "Noticia")}"
-              loading="${compact ? "lazy" : "eager"}"
+              alt="${esc(
+                article.title ||
+                "Noticia de rugby"
+              )}"
+              loading="${
+                compact
+                  ? "lazy"
+                  : "eager"
+              }"
             >
 
           </div>
         `;
+
       }
 
-      return compact
-        ? `<div class="related-card-image"></div>`
-        : `<div class="dynamic-image"></div>`;
+      if (compact) {
+
+        return `
+          <div class="related-card-image"></div>
+        `;
+
+      }
+
+      return `
+        <div class="dynamic-image"></div>
+      `;
+
     }
 
-    function getRelated(all, current) {
+    /* =====================================================
+       ARTÍCULOS RELACIONADOS
+    ===================================================== */
 
-      const others = all.filter(function (article) {
+    function getRelated(
+      all,
+      current
+    ) {
 
-        return (
-          String(article.id) !== String(current.id) &&
-          article.published !== false &&
-          !article.scheduled
-        );
-
-      });
-
-      const sameCategory = others
-        .filter(function (article) {
-
-          return String(article.category || "") ===
-                 String(current.category || "");
-
-        })
-        .sort(function (a, b) {
-
-          return String(b.date || "")
-            .localeCompare(String(a.date || ""));
-
-        });
-
-      const sameSubcategory = others
-        .filter(function (article) {
+      const others =
+        all.filter(function (article) {
 
           return (
-            String(article.subcategory || "") ===
-              String(current.subcategory || "") &&
-            String(article.category || "") !==
-              String(current.category || "")
+            String(article.id) !==
+              String(current.id) &&
+            article.published !== false &&
+            !article.scheduled
           );
-
-        })
-        .sort(function (a, b) {
-
-          return String(b.date || "")
-            .localeCompare(String(a.date || ""));
 
         });
 
-      const rest = others
-        .filter(function (article) {
+      const sameCategory =
+        others
+          .filter(function (article) {
 
-          return (
-            !sameCategory.includes(article) &&
-            !sameSubcategory.includes(article)
-          );
+            return (
+              String(
+                article.category || ""
+              ) ===
+              String(
+                current.category || ""
+              )
+            );
 
-        })
-        .sort(function (a, b) {
+          })
+          .sort(function (a, b) {
 
-          return String(b.date || "")
-            .localeCompare(String(a.date || ""));
+            return String(
+              b.date || ""
+            ).localeCompare(
+              String(a.date || "")
+            );
 
-        });
+          });
+
+      const sameSubcategory =
+        others
+          .filter(function (article) {
+
+            return (
+              String(
+                article.subcategory || ""
+              ) ===
+              String(
+                current.subcategory || ""
+              ) &&
+              String(
+                article.category || ""
+              ) !==
+              String(
+                current.category || ""
+              )
+            );
+
+          })
+          .sort(function (a, b) {
+
+            return String(
+              b.date || ""
+            ).localeCompare(
+              String(a.date || "")
+            );
+
+          });
+
+      const rest =
+        others
+          .filter(function (article) {
+
+            return (
+              !sameCategory.includes(article) &&
+              !sameSubcategory.includes(article)
+            );
+
+          })
+          .sort(function (a, b) {
+
+            return String(
+              b.date || ""
+            ).localeCompare(
+              String(a.date || "")
+            );
+
+          });
 
       return [
         ...sameCategory,
         ...sameSubcategory,
         ...rest
       ].slice(0, 3);
+
     }
 
     function renderRelated(items) {
@@ -376,41 +744,55 @@ content="Noticias de rugby de DropRugby"
       }
 
       return `
+
         <section class="dynamic-related">
 
-          <h2>Artículos relacionados</h2>
+          <h2>
+            Artículos relacionados
+          </h2>
 
           <div class="related-grid">
 
             ${items.map(function (article) {
 
               return `
+
                 <a
                   class="related-card"
-                  href="article.html?id=${encodeURIComponent(article.id || "")}"
+                  href="article.html?id=${encodeURIComponent(
+                    article.id || ""
+                  )}"
                 >
 
-                  ${articleImage(article, true)}
+                  ${articleImage(
+                    article,
+                    true
+                  )}
 
                   <p class="related-card-kicker">
                     ${esc(
                       String(
-                        article.category || "RUGBY"
+                        article.category ||
+                        "RUGBY"
                       ).toUpperCase()
                     )}
                   </p>
 
                   <h3>
                     ${esc(
-                      article.title || "Sin título"
+                      article.title ||
+                      "Sin título"
                     )}
                   </h3>
 
                   <div class="related-card-date">
-                    ${esc(article.date || "")}
+                    ${esc(
+                      article.date || ""
+                    )}
                   </div>
 
                 </a>
+
               `;
 
             }).join("")}
@@ -418,70 +800,73 @@ content="Noticias de rugby de DropRugby"
           </div>
 
         </section>
+
       `;
+
     }
 
-    function renderError(message) {
-
-      root.innerHTML = `
-        <div class="article-error">
-
-          <p class="article-kicker">
-            DROP RUGBY
-          </p>
-
-          <h1>
-            Artículo no encontrado.
-          </h1>
-
-          <p class="lead">
-            ${esc(message)}
-          </p>
-
-          <a
-            class="dynamic-back"
-            href="index.html"
-          >
-            ← VOLVER A DROP RUGBY
-          </a>
-
-        </div>
-      `;
-    }
+    /* =====================================================
+       CARGA DEL CONTENIDO
+    ===================================================== */
 
     try {
 
-      const articleId = getArticleId();
-
-      if (!articleId) {
-
-        renderError(
-          "No se indicó qué artículo se debe mostrar."
-        );
-
-        return;
-      }
-
-      /*
-       * Cargamos el contenido público.
-       */
-
-      const response = await fetch(
-        "/api/content?t=" + Date.now(),
-        {
-          cache: "no-store"
-        }
-      );
-
-      if (!response.ok) {
+      if (!id) {
 
         throw new Error(
-          "No se pudo cargar el contenido."
+          "No se indicó el artículo."
         );
 
       }
 
-      const data = await response.json();
+      let data;
+
+      /*
+       * Primero intentamos la API.
+       */
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/content?t=" +
+            Date.now(),
+            {
+              cache: "no-store"
+            }
+          );
+
+        if (!response.ok) {
+          throw new Error();
+        }
+
+        data =
+          await response.json();
+
+      } catch (apiError) {
+
+        /*
+         * Respaldo antiguo.
+         */
+
+        const response =
+          await fetch(
+            "data/articles.json",
+            {
+              cache: "no-store"
+            }
+          );
+
+        if (!response.ok) {
+          throw new Error();
+        }
+
+        data = {
+          articles:
+            await response.json()
+        };
+
+      }
 
       const articles =
         Array.isArray(data.articles)
@@ -489,27 +874,33 @@ content="Noticias de rugby de DropRugby"
           : [];
 
       /*
-       * Buscamos la noticia por ID.
+       * Buscamos por ID.
+       *
+       * String() evita problemas si un ID
+       * viene como número en algún archivo.
        */
 
-      const article = articles.find(function (item) {
+      const article =
+        articles.find(function (item) {
 
-        return String(item.id) ===
-               String(articleId);
+          return (
+            String(item.id) ===
+            String(id)
+          );
 
-      });
+        });
 
       if (!article) {
 
-        renderError(
-          "La publicación puede haber sido eliminada o todavía no está disponible."
+        throw new Error(
+          "Artículo no encontrado."
         );
 
-        return;
       }
 
       /*
-       * No mostramos borradores ni noticias programadas.
+       * Las noticias no publicadas no
+       * deberían mostrarse públicamente.
        */
 
       if (
@@ -517,80 +908,101 @@ content="Noticias de rugby de DropRugby"
         article.scheduled === true
       ) {
 
-        renderError(
-          "Esta publicación todavía no está disponible."
+        throw new Error(
+          "Artículo no disponible."
         );
 
-        return;
       }
+
+      /* =================================================
+         DATOS
+      ================================================= */
 
       const title =
         String(
-          article.title || "Artículo"
+          article.title ||
+          "Artículo"
         );
 
       const excerpt =
         String(
-          article.excerpt || ""
-        );
-
-      const author =
-        String(
-          article.author || "DropRugby"
+          article.excerpt ||
+          ""
         );
 
       const category =
         String(
-          article.category || "Rugby"
+          article.category ||
+          "Rugby"
         );
 
       const subcategory =
         String(
-          article.subcategory || "Actualidad"
+          article.subcategory ||
+          "Actualidad"
+        );
+
+      const author =
+        String(
+          article.author ||
+          "DropRugby"
         );
 
       const date =
         String(
-          article.date || ""
+          article.date ||
+          ""
         );
 
       const url =
-        canonicalUrl(article.id);
+        canonicalUrl(
+          article.id
+        );
 
-      /*
-       * SEO
-       */
+      /* =================================================
+         SEO
+      ================================================= */
 
       document.title =
-        title + " | DropRugby";
+        title +
+        " | DropRugby";
 
-      const description =
+      const meta =
         document.getElementById(
           "meta-description"
         );
 
-      if (description) {
+      if (meta) {
 
-        description.setAttribute(
+        meta.setAttribute(
           "content",
           excerpt || title
         );
 
       }
 
-      /*
-       * Compartir
-       */
+      /* =================================================
+         IMAGEN
+      ================================================= */
 
-      const shareText =
-        encodeURIComponent(title);
+      const image =
+        articleImage(
+          article,
+          false
+        );
 
-      const shareUrl =
-        encodeURIComponent(url);
+      /* =================================================
+         CUERPO
+      ================================================= */
 
-      /*
-       * Relacionadas
-       */
+      const body =
+        renderBody(
+          article.content
+        );
+
+      /* =================================================
+         RELACIONADOS
+      ================================================= */
 
       const related =
         getRelated(
@@ -598,25 +1010,34 @@ content="Noticias de rugby de DropRugby"
           article
         );
 
-      /*
-       * Contenido.
-       *
-       * IMPORTANTE:
-       * article.content sigue siendo texto.
-       * renderBody() lo transforma en HTML.
-       */
+      /* =================================================
+         COMPARTIR
+      ================================================= */
 
-      const body =
-        renderBody(
-          article.content
+      const shareText =
+        encodeURIComponent(
+          title
         );
+
+      const shareUrl =
+        encodeURIComponent(
+          url
+        );
+
+      /* =================================================
+         RENDER FINAL
+      ================================================= */
 
       root.innerHTML = `
 
         <p class="article-kicker">
-          ${esc(category.toUpperCase())}
+          ${esc(
+            category.toUpperCase()
+          )}
           ·
-          ${esc(subcategory.toUpperCase())}
+          ${esc(
+            subcategory.toUpperCase()
+          )}
         </p>
 
         <h1>
@@ -635,13 +1056,20 @@ content="Noticias de rugby de DropRugby"
 
         <div class="dynamic-meta">
 
-          POR ${esc(author.toUpperCase())}
+          POR
+          ${esc(
+            author.toUpperCase()
+          )}
 
-          ${date ? ` · ${esc(date)}` : ""}
+          ${
+            date
+              ? " · " + esc(date)
+              : ""
+          }
 
         </div>
 
-        ${articleImage(article, false)}
+        ${image}
 
         <div class="dynamic-body">
 
@@ -649,12 +1077,23 @@ content="Noticias de rugby de DropRugby"
             body ||
             (
               excerpt
-                ? `<p>${esc(excerpt)}</p>`
-                : "<p>Esta noticia todavía no tiene contenido.</p>"
+                ? `<p>${esc(
+                    excerpt
+                  )}</p>`
+                : `
+                  <p>
+                    Esta noticia todavía
+                    no tiene contenido.
+                  </p>
+                `
             )
           }
 
         </div>
+
+        <!-- =========================================
+             COMPARTIR
+        ========================================== -->
 
         <section
           class="dynamic-share"
@@ -668,7 +1107,7 @@ content="Noticias de rugby de DropRugby"
           <div class="share-buttons">
 
             <a
-              class="share-button share-x"
+              class="share-button"
               href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}"
               target="_blank"
               rel="noopener"
@@ -677,7 +1116,7 @@ content="Noticias de rugby de DropRugby"
             </a>
 
             <a
-              class="share-button share-facebook"
+              class="share-button"
               href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}"
               target="_blank"
               rel="noopener"
@@ -686,7 +1125,7 @@ content="Noticias de rugby de DropRugby"
             </a>
 
             <button
-              class="share-button share-instagram"
+              class="share-button"
               type="button"
               id="share-instagram"
             >
@@ -708,17 +1147,28 @@ content="Noticias de rugby de DropRugby"
 
       `;
 
-      /*
-       * Instagram / compartir.
-       */
+      /* =================================================
+         INSTAGRAM / COMPARTIR NATIVO
+      ================================================= */
 
-      document
-        .getElementById("share-instagram")
-        ?.addEventListener(
+      const instagramButton =
+        document.getElementById(
+          "share-instagram"
+        );
+
+      if (instagramButton) {
+
+        instagramButton.addEventListener(
           "click",
           async function () {
 
             try {
+
+              /*
+               * En celulares y navegadores
+               * compatibles usamos el sistema
+               * nativo de compartir.
+               */
 
               if (
                 navigator.share
@@ -726,11 +1176,18 @@ content="Noticias de rugby de DropRugby"
 
                 await navigator.share({
                   title: title,
+                  text: title,
                   url: url
                 });
 
                 return;
+
               }
+
+              /*
+               * Si no existe navigator.share,
+               * copiamos el enlace.
+               */
 
               if (
                 navigator.clipboard
@@ -755,7 +1212,7 @@ content="Noticias de rugby de DropRugby"
             } catch (error) {
 
               console.log(
-                "Compartir cancelado",
+                "Compartir cancelado:",
                 error
               );
 
@@ -764,6 +1221,8 @@ content="Noticias de rugby de DropRugby"
           }
         );
 
+      }
+
     } catch (error) {
 
       console.error(
@@ -771,13 +1230,35 @@ content="Noticias de rugby de DropRugby"
         error
       );
 
-      renderError(
-        "Ocurrió un error al cargar la noticia."
-      );
+      root.innerHTML = `
+
+        <p class="article-kicker">
+          DROP RUGBY
+        </p>
+
+        <h1>
+          Artículo no encontrado.
+        </h1>
+
+        <p class="lead">
+          La publicación puede haber sido
+          eliminada o todavía no está
+          disponible.
+        </p>
+
+        <a
+          class="dynamic-back"
+          href="index.html"
+        >
+          ← VOLVER A DROP RUGBY
+        </a>
+
+      `;
 
     }
 
   })();
+
   </script>
 
 </body>
