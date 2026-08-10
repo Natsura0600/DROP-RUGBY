@@ -7,6 +7,7 @@ import { list, put } from "@vercel/blob";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { Resend } from "resend";
 
 // ============================================================
 // CONFIGURACIÓN
@@ -15,6 +16,23 @@ import path from "node:path";
 const BLOB_PATH = "droprugby/content.json";
 const COOKIE_NAME = "droprugby_session";
 const MAX_AGE = 60 * 60 * 24 * 7;
+
+// ============================================================
+// RESEND
+// ============================================================
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
+
+const DEFAULT_FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL ||
+  "DropRugby <newsletter@droprugby.com>";
+
+const NEWSLETTER_NOTIFY_EMAIL =
+  process.env.NEWSLETTER_NOTIFY_EMAIL ||
+  process.env.ADMIN_EMAIL ||
+  "";
 
 // ============================================================
 // CONTENIDO POR DEFECTO
@@ -26,25 +44,133 @@ const DEFAULT_CONTENT = {
   results: [],
   standings: [],
 
-  // Tabla base de URBA TOP 14: refleja las fechas ya jugadas antes de que
-  // el sitio empezara a cargar resultado por resultado. calculateStandings()
-  // parte de estos valores y les suma los resultados que se van cargando
-  // desde el panel de admin, así no hace falta re-tipear cada partido viejo.
   standingsBase: [
-    { team: "Newman", pj: 17, pg: 16, pe: 0, pp: 1, diff: 255, pts: 71 },
-    { team: "CASI", pj: 17, pg: 13, pe: 0, pp: 4, diff: 179, pts: 60 },
-    { team: "Hindu", pj: 17, pg: 12, pe: 0, pp: 5, diff: 160, pts: 57 },
-    { team: "Alumni", pj: 17, pg: 11, pe: 0, pp: 6, diff: 220, pts: 56 },
-    { team: "SIC", pj: 17, pg: 11, pe: 0, pp: 6, diff: 127, pts: 51 },
-    { team: "Regatas Bella Vista", pj: 17, pg: 9, pe: 0, pp: 8, diff: 63, pts: 45 },
-    { team: "Los Tilos", pj: 17, pg: 9, pe: 1, pp: 7, diff: -48, pts: 42 },
-    { team: "Belgrano Athletic", pj: 17, pg: 8, pe: 1, pp: 8, diff: -15, pts: 41 },
-    { team: "CUBA", pj: 17, pg: 6, pe: 0, pp: 11, diff: 9, pts: 35 },
-    { team: "Atletico del Rosario", pj: 17, pg: 6, pe: 0, pp: 11, diff: -96, pts: 29 },
-    { team: "Los Matreros", pj: 17, pg: 6, pe: 0, pp: 11, diff: -246, pts: 27 },
-    { team: "La Plata", pj: 17, pg: 4, pe: 0, pp: 13, diff: -92, pts: 25 },
-    { team: "Buenos Aires C&RC", pj: 17, pg: 4, pe: 0, pp: 13, diff: -210, pts: 19 },
-    { team: "Champagnat", pj: 17, pg: 3, pe: 0, pp: 14, diff: -306, pts: 14 }
+    {
+      team: "Newman",
+      pj: 17,
+      pg: 16,
+      pe: 0,
+      pp: 1,
+      diff: 255,
+      pts: 71
+    },
+    {
+      team: "CASI",
+      pj: 17,
+      pg: 13,
+      pe: 0,
+      pp: 4,
+      diff: 179,
+      pts: 60
+    },
+    {
+      team: "Hindu",
+      pj: 17,
+      pg: 12,
+      pe: 0,
+      pp: 5,
+      diff: 160,
+      pts: 57
+    },
+    {
+      team: "Alumni",
+      pj: 17,
+      pg: 11,
+      pe: 0,
+      pp: 6,
+      diff: 220,
+      pts: 56
+    },
+    {
+      team: "SIC",
+      pj: 17,
+      pg: 11,
+      pe: 0,
+      pp: 6,
+      diff: 127,
+      pts: 51
+    },
+    {
+      team: "Regatas Bella Vista",
+      pj: 17,
+      pg: 9,
+      pe: 0,
+      pp: 8,
+      diff: 63,
+      pts: 45
+    },
+    {
+      team: "Los Tilos",
+      pj: 17,
+      pg: 9,
+      pe: 1,
+      pp: 7,
+      diff: -48,
+      pts: 42
+    },
+    {
+      team: "Belgrano Athletic",
+      pj: 17,
+      pg: 8,
+      pe: 1,
+      pp: 8,
+      diff: -15,
+      pts: 41
+    },
+    {
+      team: "CUBA",
+      pj: 17,
+      pg: 6,
+      pe: 0,
+      pp: 11,
+      diff: 9,
+      pts: 35
+    },
+    {
+      team: "Atletico del Rosario",
+      pj: 17,
+      pg: 6,
+      pe: 0,
+      pp: 11,
+      diff: -96,
+      pts: 29
+    },
+    {
+      team: "Los Matreros",
+      pj: 17,
+      pg: 6,
+      pe: 0,
+      pp: 11,
+      diff: -246,
+      pts: 27
+    },
+    {
+      team: "La Plata",
+      pj: 17,
+      pg: 4,
+      pe: 0,
+      pp: 13,
+      diff: -92,
+      pts: 25
+    },
+    {
+      team: "Buenos Aires C&RC",
+      pj: 17,
+      pg: 4,
+      pe: 0,
+      pp: 13,
+      diff: -210,
+      pts: 19
+    },
+    {
+      team: "Champagnat",
+      pj: 17,
+      pg: 3,
+      pe: 0,
+      pp: 14,
+      diff: -306,
+      pts: 14
+    }
   ],
 
   players: [],
@@ -57,7 +183,11 @@ const DEFAULT_CONTENT = {
     description: "Noticias de rugby",
     clubLogos: {}
   },
-  teams: { clubs: {}, nations: {} }
+
+  teams: {
+    clubs: {},
+    nations: {}
+  }
 };
 
 // ============================================================
@@ -114,61 +244,444 @@ function isTop14(fixture) {
 }
 
 // ============================================================
+// ESCAPAR HTML PARA EMAIL
+// ============================================================
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ============================================================
+// EMAIL AUTOMÁTICO DE NUEVA NOTICIA
+// ============================================================
+
+async function sendNewArticleEmail(article) {
+  if (!resend) {
+    console.warn(
+      "NEWSLETTER: RESEND_API_KEY no está configurada."
+    );
+
+    return {
+      ok: false,
+      skipped: true,
+      reason: "missing_api_key"
+    };
+  }
+
+  if (!NEWSLETTER_NOTIFY_EMAIL) {
+    console.warn(
+      "NEWSLETTER: NEWSLETTER_NOTIFY_EMAIL no está configurado."
+    );
+
+    return {
+      ok: false,
+      skipped: true,
+      reason: "missing_recipient"
+    };
+  }
+
+  const title =
+    escapeHtml(article.title || "Nueva noticia");
+
+  const excerpt =
+    escapeHtml(
+      article.excerpt ||
+      "Nueva noticia publicada en DropRugby."
+    );
+
+  const imageUrl =
+    article.imageUrl ||
+    article.image ||
+    "";
+
+  const articleUrl =
+    article.url ||
+    `https://droprugby.com/article.html?id=${encodeURIComponent(
+      article.id
+    )}`;
+
+  const safeArticleUrl =
+    escapeHtml(articleUrl);
+
+  const imageBlock = imageUrl
+    ? `
+      <tr>
+        <td style="padding:0 40px;">
+          <img
+            src="${escapeHtml(imageUrl)}"
+            alt="${title}"
+            width="100%"
+            style="
+              display:block;
+              width:100%;
+              max-width:540px;
+              height:auto;
+              object-fit:cover;
+            "
+          >
+        </td>
+      </tr>
+    `
+    : "";
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>${title}</title>
+</head>
+
+<body
+  style="
+    margin:0;
+    padding:0;
+    background:#eeeeeb;
+    font-family:Arial,Helvetica,sans-serif;
+  "
+>
+
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="background:#eeeeeb;"
+>
+  <tr>
+    <td align="center">
+
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        style="
+          max-width:620px;
+          background:#ffffff;
+        "
+      >
+
+        <!-- HEADER -->
+
+        <tr>
+          <td
+            style="
+              background:#111111;
+              padding:30px 35px;
+            "
+          >
+
+            <div
+              style="
+                font-size:30px;
+                line-height:1;
+                font-weight:700;
+                letter-spacing:-1.5px;
+                color:#ffffff;
+              "
+            >
+              DROP<span style="font-weight:400;">RUGBY</span>
+            </div>
+
+            <div
+              style="
+                margin-top:10px;
+                font-size:10px;
+                line-height:1.4;
+                letter-spacing:2px;
+                color:#bcbcbc;
+                font-weight:700;
+              "
+            >
+              NUEVA NOTICIA
+            </div>
+
+          </td>
+        </tr>
+
+        <!-- INTRO -->
+
+        <tr>
+          <td
+            style="
+              padding:40px 40px 20px;
+            "
+          >
+
+            <div
+              style="
+                font-size:10px;
+                line-height:1.4;
+                letter-spacing:2px;
+                color:#777777;
+                font-weight:700;
+                margin-bottom:14px;
+              "
+            >
+              DROP RUGBY · ACTUALIDAD
+            </div>
+
+            <h1
+              style="
+                margin:0;
+                font-size:32px;
+                line-height:1.15;
+                letter-spacing:-1px;
+                font-weight:700;
+                color:#111111;
+              "
+            >
+              ${title}
+            </h1>
+
+          </td>
+        </tr>
+
+        ${imageBlock}
+
+        <!-- TEXTO -->
+
+        <tr>
+          <td
+            style="
+              padding:25px 40px 10px;
+            "
+          >
+
+            <p
+              style="
+                margin:0;
+                font-size:16px;
+                line-height:1.7;
+                color:#444444;
+              "
+            >
+              ${excerpt}
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- BOTÓN -->
+
+        <tr>
+          <td
+            align="left"
+            style="
+              padding:30px 40px 40px;
+            "
+          >
+
+            <a
+              href="${safeArticleUrl}"
+              target="_blank"
+              style="
+                display:inline-block;
+                background:#111111;
+                color:#ffffff;
+                text-decoration:none;
+                font-size:11px;
+                font-weight:700;
+                letter-spacing:1.2px;
+                padding:16px 24px;
+              "
+            >
+              LEER LA NOTICIA &nbsp;→
+            </a>
+
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+
+        <tr>
+          <td
+            style="
+              background:#f5f5f2;
+              padding:25px 40px;
+            "
+          >
+
+            <p
+              style="
+                margin:0 0 8px;
+                font-size:12px;
+                line-height:1.5;
+                color:#777777;
+              "
+            >
+              DropRugby · Noticias de rugby.
+            </p>
+
+            <p
+              style="
+                margin:0;
+                font-size:11px;
+                line-height:1.5;
+                color:#999999;
+              "
+            >
+              Rugby es una pasión.
+            </p>
+
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+  try {
+    const result =
+      await resend.emails.send({
+        from: DEFAULT_FROM_EMAIL,
+        to: [NEWSLETTER_NOTIFY_EMAIL],
+        subject:
+          `DropRugby · ${article.title || "Nueva noticia"}`,
+        html
+      });
+
+    if (result.error) {
+      console.error(
+        "❌ RESEND ERROR AL ENVIAR NOTICIA:",
+        result.error
+      );
+
+      return {
+        ok: false,
+        error:
+          result.error.message ||
+          "Error de Resend"
+      };
+    }
+
+    console.log(
+      "✅ EMAIL DE NUEVA NOTICIA ENVIADO:",
+      result.data?.id || null
+    );
+
+    return {
+      ok: true,
+      id: result.data?.id || null
+    };
+
+  } catch (error) {
+    console.error(
+      "❌ EXCEPCIÓN RESEND:",
+      error
+    );
+
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error)
+    };
+  }
+}
+
+// ============================================================
 // COOKIES
 // ============================================================
 
 function parseCookies(req) {
-  const header = req.headers.cookie || "";
+  const header =
+    req.headers.cookie || "";
+
   const cookies = {};
 
-  header.split(";").forEach((part) => {
-    const index = part.indexOf("=");
+  header
+    .split(";")
+    .forEach((part) => {
+      const index =
+        part.indexOf("=");
 
-    if (index === -1) return;
+      if (index === -1) return;
 
-    const key = part.slice(0, index).trim();
-    const value = part.slice(index + 1).trim();
+      const key =
+        part
+          .slice(0, index)
+          .trim();
 
-    try {
-      cookies[key] = decodeURIComponent(value);
-    } catch {
-      cookies[key] = value;
-    }
-  });
+      const value =
+        part
+          .slice(index + 1)
+          .trim();
+
+      try {
+        cookies[key] =
+          decodeURIComponent(value);
+      } catch {
+        cookies[key] =
+          value;
+      }
+    });
 
   return cookies;
 }
 
 function createToken() {
-  const timestamp = Date.now();
-  const random = crypto
-    .randomBytes(24)
-    .toString("hex");
+  const timestamp =
+    Date.now();
 
-  const value = `${timestamp}.${random}`;
+  const random =
+    crypto
+      .randomBytes(24)
+      .toString("hex");
 
-  const signature = crypto
-    .createHmac("sha256", getSecret())
-    .update(value)
-    .digest("hex");
+  const value =
+    `${timestamp}.${random}`;
+
+  const signature =
+    crypto
+      .createHmac(
+        "sha256",
+        getSecret()
+      )
+      .update(value)
+      .digest("hex");
 
   return `${value}.${signature}`;
 }
 
 function validToken(req) {
   try {
-    const cookies = parseCookies(req);
-    const token = cookies[COOKIE_NAME];
+    const cookies =
+      parseCookies(req);
 
-    if (!token) return false;
+    const token =
+      cookies[COOKIE_NAME];
 
-    const parts = token.split(".");
+    if (!token) {
+      return false;
+    }
+
+    const parts =
+      token.split(".");
 
     if (parts.length !== 3) {
       return false;
     }
 
-    const timestamp = Number(parts[0]);
+    const timestamp =
+      Number(parts[0]);
 
     if (!Number.isFinite(timestamp)) {
       return false;
@@ -184,10 +697,14 @@ function validToken(req) {
     const value =
       `${parts[0]}.${parts[1]}`;
 
-    const expected = crypto
-      .createHmac("sha256", getSecret())
-      .update(value)
-      .digest("hex");
+    const expected =
+      crypto
+        .createHmac(
+          "sha256",
+          getSecret()
+        )
+        .update(value)
+        .digest("hex");
 
     const receivedBuffer =
       Buffer.from(parts[2]);
@@ -206,6 +723,7 @@ function validToken(req) {
       receivedBuffer,
       expectedBuffer
     );
+
   } catch {
     return false;
   }
@@ -250,28 +768,41 @@ async function getBody(req) {
     return req.body;
   }
 
-  return new Promise((resolve, reject) => {
-    let raw = "";
+  return new Promise(
+    (resolve, reject) => {
+      let raw = "";
 
-    req.on("data", (chunk) => {
-      raw += chunk;
-    });
+      req.on(
+        "data",
+        (chunk) => {
+          raw += chunk;
+        }
+      );
 
-    req.on("end", () => {
-      if (!raw) {
-        resolve({});
-        return;
-      }
+      req.on(
+        "end",
+        () => {
+          if (!raw) {
+            resolve({});
+            return;
+          }
 
-      try {
-        resolve(JSON.parse(raw));
-      } catch (error) {
-        reject(error);
-      }
-    });
+          try {
+            resolve(
+              JSON.parse(raw)
+            );
+          } catch (error) {
+            reject(error);
+          }
+        }
+      );
 
-    req.on("error", reject);
-  });
+      req.on(
+        "error",
+        reject
+      );
+    }
+  );
 }
 
 // ============================================================
@@ -290,70 +821,83 @@ function normalizeContent(data) {
 
     ...content,
 
-    articles: Array.isArray(
-      content.articles
-    )
-      ? content.articles
-      : [],
+    articles:
+      Array.isArray(
+        content.articles
+      )
+        ? content.articles
+        : [],
 
-    fixtures: Array.isArray(
-      content.fixtures
-    )
-      ? content.fixtures
-      : [],
+    fixtures:
+      Array.isArray(
+        content.fixtures
+      )
+        ? content.fixtures
+        : [],
 
-    results: Array.isArray(
-      content.results
-    )
-      ? content.results
-      : [],
+    results:
+      Array.isArray(
+        content.results
+      )
+        ? content.results
+        : [],
 
-    standings: Array.isArray(
-      content.standings
-    )
-      ? content.standings
-      : [],
+    standings:
+      Array.isArray(
+        content.standings
+      )
+        ? content.standings
+        : [],
 
-    standingsBase: Array.isArray(
-      content.standingsBase
-    ) && content.standingsBase.length
-      ? content.standingsBase
-      : DEFAULT_CONTENT.standingsBase,
+    standingsBase:
+      Array.isArray(
+        content.standingsBase
+      ) &&
+      content.standingsBase.length
+        ? content.standingsBase
+        : DEFAULT_CONTENT.standingsBase,
 
-    players: Array.isArray(
-      content.players
-    )
-      ? content.players
-      : [],
+    players:
+      Array.isArray(
+        content.players
+      )
+        ? content.players
+        : [],
 
-    instagram: Array.isArray(
-      content.instagram
-    )
-      ? content.instagram
-      : [],
+    instagram:
+      Array.isArray(
+        content.instagram
+      )
+        ? content.instagram
+        : [],
 
-    trash: Array.isArray(
-      content.trash
-    )
-      ? content.trash
-      : [],
+    trash:
+      Array.isArray(
+        content.trash
+      )
+        ? content.trash
+        : [],
 
-    history: Array.isArray(
-      content.history
-    )
-      ? content.history
-      : [],
+    history:
+      Array.isArray(
+        content.history
+      )
+        ? content.history
+        : [],
 
     settings:
       content.settings &&
-      typeof content.settings === "object"
+      typeof content.settings ===
+        "object"
         ? content.settings
         : {
             ...DEFAULT_CONTENT.settings
           },
 
     teams:
-      content.teams && typeof content.teams === "object"
+      content.teams &&
+      typeof content.teams ===
+        "object"
         ? content.teams
         : DEFAULT_CONTENT.teams
   };
@@ -364,10 +908,11 @@ function normalizeContent(data) {
 // ============================================================
 
 async function readBlobContent() {
-  const result = await list({
-    prefix: BLOB_PATH,
-    limit: 10
-  });
+  const result =
+    await list({
+      prefix: BLOB_PATH,
+      limit: 10
+    });
 
   if (!result.blobs.length) {
     return null;
@@ -376,16 +921,18 @@ async function readBlobContent() {
   const blob =
     result.blobs.find(
       (item) =>
-        item.pathname === BLOB_PATH
+        item.pathname ===
+        BLOB_PATH
     ) ||
     result.blobs[0];
 
-  const response = await fetch(
-    blob.url,
-    {
-      cache: "no-store"
-    }
-  );
+  const response =
+    await fetch(
+      blob.url,
+      {
+        cache: "no-store"
+      }
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -398,99 +945,195 @@ async function readBlobContent() {
 
 async function readLocalContent() {
   try {
-    const articlesPath = path.join(
-      process.cwd(),
-      "data",
-      "articles.json"
-    );
+    const articlesPath =
+      path.join(
+        process.cwd(),
+        "data",
+        "articles.json"
+      );
 
-    const fixturesPath = path.join(
-      process.cwd(),
-      "data",
-      "fixtures.json"
-    );
+    const fixturesPath =
+      path.join(
+        process.cwd(),
+        "data",
+        "fixtures.json"
+      );
 
-    const teamsPath = path.join(process.cwd(), "data", "teams.json");
+    const teamsPath =
+      path.join(
+        process.cwd(),
+        "data",
+        "teams.json"
+      );
 
-    const [articlesRaw, fixturesRaw, teamsRaw] = await Promise.all([
-      fs.readFile(articlesPath, "utf8"),
-      fs.readFile(fixturesPath, "utf8"),
-      fs.readFile(teamsPath, "utf8")
+    const [
+      articlesRaw,
+      fixturesRaw,
+      teamsRaw
+    ] = await Promise.all([
+      fs.readFile(
+        articlesPath,
+        "utf8"
+      ),
+      fs.readFile(
+        fixturesPath,
+        "utf8"
+      ),
+      fs.readFile(
+        teamsPath,
+        "utf8"
+      )
     ]);
 
     return {
       ...DEFAULT_CONTENT,
-      articles: JSON.parse(articlesRaw),
-      fixtures: JSON.parse(fixturesRaw),
-      teams: JSON.parse(teamsRaw)
+
+      articles:
+        JSON.parse(
+          articlesRaw
+        ),
+
+      fixtures:
+        JSON.parse(
+          fixturesRaw
+        ),
+
+      teams:
+        JSON.parse(
+          teamsRaw
+        )
     };
+
   } catch {
-    return { ...DEFAULT_CONTENT };
+    return {
+      ...DEFAULT_CONTENT
+    };
   }
 }
 
-function hasDeletedHistory(content, type) {
-  return Array.isArray(content?.history) && content.history.some((item) =>
-    String(item?.type || "") === type &&
-    /delete|remove/i.test(String(item?.action || ""))
+function hasDeletedHistory(
+  content,
+  type
+) {
+  return (
+    Array.isArray(
+      content?.history
+    ) &&
+    content.history.some(
+      (item) =>
+        String(
+          item?.type || ""
+        ) === type &&
+        /delete|remove/i.test(
+          String(
+            item?.action || ""
+          )
+        )
+    )
   );
 }
 
-async function repairLegacyBlobContent(blob) {
-  const local = await readLocalContent();
+async function repairLegacyBlobContent(
+  blob
+) {
+  const local =
+    await readLocalContent();
+
   const repaired = {
     ...blob
   };
+
   let changed = false;
 
-  // Si una versión anterior guardó articles/fixtures como arrays vacíos
-  // sin historial de borrado, recuperamos los datos reales del repositorio.
-  // Esto evita que una operación administrativa deje la portada sin noticias.
   if (
-    Array.isArray(local.articles) &&
+    Array.isArray(
+      local.articles
+    ) &&
     local.articles.length > 0 &&
-    Array.isArray(blob.articles) &&
+    Array.isArray(
+      blob.articles
+    ) &&
     blob.articles.length === 0 &&
-    !hasDeletedHistory(blob, "article")
+    !hasDeletedHistory(
+      blob,
+      "article"
+    )
   ) {
-    repaired.articles = local.articles;
+    repaired.articles =
+      local.articles;
+
     changed = true;
   }
 
   if (
-    Array.isArray(local.fixtures) &&
+    Array.isArray(
+      local.fixtures
+    ) &&
     local.fixtures.length > 0 &&
-    Array.isArray(blob.fixtures) &&
+    Array.isArray(
+      blob.fixtures
+    ) &&
     blob.fixtures.length === 0 &&
-    !hasDeletedHistory(blob, "fixture")
+    !hasDeletedHistory(
+      blob,
+      "fixture"
+    )
   ) {
-    repaired.fixtures = local.fixtures;
+    repaired.fixtures =
+      local.fixtures;
+
     changed = true;
   }
 
-  return { content: normalizeContent(repaired), changed };
+  return {
+    content:
+      normalizeContent(
+        repaired
+      ),
+    changed
+  };
 }
 
-async function readContent(options = {}) {
-  const blob = await readBlobContent();
+async function readContent(
+  options = {}
+) {
+  const blob =
+    await readBlobContent();
 
   if (blob) {
-    const repaired = await repairLegacyBlobContent(blob);
+    const repaired =
+      await repairLegacyBlobContent(
+        blob
+      );
 
-    if (repaired.changed && options.persistRepair !== false) {
-      await saveContent(repaired.content);
+    if (
+      repaired.changed &&
+      options.persistRepair !==
+        false
+    ) {
+      await saveContent(
+        repaired.content
+      );
     }
 
     return repaired.content;
   }
 
-  const local = await readLocalContent();
-  return normalizeContent(local);
+  const local =
+    await readLocalContent();
+
+  return normalizeContent(
+    local
+  );
 }
 
-async function saveContent(content) {
+async function saveContent(
+  content
+) {
   const normalized =
-    normalizeContent(content);
+    normalizeContent(
+      content
+    );
 
   await put(
     BLOB_PATH,
@@ -522,28 +1165,43 @@ function addHistory(
   type,
   item
 ) {
-  if (!Array.isArray(content.history)) {
+  if (
+    !Array.isArray(
+      content.history
+    )
+  ) {
     content.history = [];
   }
 
   content.history.unshift({
     id: makeId("history"),
+
     action,
+
     type,
-    itemId: item?.id || null,
+
+    itemId:
+      item?.id || null,
+
     title:
       item?.title ||
-      item?.home
-        ? `${item?.home || ""} vs ${
-            item?.away || ""
-          }`
-        : "",
+      (
+        item?.home
+          ? `${item?.home || ""} vs ${
+              item?.away || ""
+            }`
+          : ""
+      ),
+
     date:
       new Date().toISOString()
   });
 
   content.history =
-    content.history.slice(0, 200);
+    content.history.slice(
+      0,
+      200
+    );
 }
 
 // ============================================================
@@ -553,40 +1211,47 @@ function addHistory(
 function processScheduledArticles(
   content
 ) {
-  const now = Date.now();
+  const now =
+    Date.now();
+
   let changed = false;
 
   content.articles =
-    content.articles.map((article) => {
-      if (
-        article.scheduled &&
-        article.publishAt
-      ) {
-        const publishTime =
-          new Date(
-            article.publishAt
-          ).getTime();
-
+    content.articles.map(
+      (article) => {
         if (
-          Number.isFinite(
-            publishTime
-          ) &&
-          publishTime <= now
+          article.scheduled &&
+          article.publishAt
         ) {
-          changed = true;
+          const publishTime =
+            new Date(
+              article.publishAt
+            ).getTime();
 
-          return {
-            ...article,
-            scheduled: false,
-            published: true,
-            updatedAt:
-              new Date().toISOString()
-          };
+          if (
+            Number.isFinite(
+              publishTime
+            ) &&
+            publishTime <= now
+          ) {
+            changed = true;
+
+            return {
+              ...article,
+
+              scheduled: false,
+
+              published: true,
+
+              updatedAt:
+                new Date().toISOString()
+            };
+          }
         }
-      }
 
-      return article;
-    });
+        return article;
+      }
+    );
 
   return changed;
 }
@@ -600,11 +1265,13 @@ export default async function handler(
   res
 ) {
   try {
+
     // ========================================================
     // GET
     // ========================================================
 
     if (req.method === "GET") {
+
       const action =
         req.query?.action;
 
@@ -620,13 +1287,19 @@ export default async function handler(
         const authenticated =
           validToken(req);
 
-        return json(res, 200, {
-          authenticated,
-          user: authenticated
-            ? process.env.ADMIN_USER ||
-              "admin"
-            : null
-        });
+        return json(
+          res,
+          200,
+          {
+            authenticated,
+
+            user:
+              authenticated
+                ? process.env.ADMIN_USER ||
+                  "admin"
+                : null
+          }
+        );
       }
 
       // ------------------------------------------------------
@@ -637,12 +1310,18 @@ export default async function handler(
         action === "get" ||
         action === "load"
       ) {
-        if (!validToken(req)) {
-          return json(res, 401, {
-            ok: false,
-            error:
-              "Sesión no válida o expirada."
-          });
+        if (
+          !validToken(req)
+        ) {
+          return json(
+            res,
+            401,
+            {
+              ok: false,
+              error:
+                "Sesión no válida o expirada."
+            }
+          );
         }
 
         const content =
@@ -654,19 +1333,30 @@ export default async function handler(
           );
 
         if (changed) {
-          await saveContent(content);
+          await saveContent(
+            content
+          );
         }
 
-        return json(res, 200, {
-          ok: true,
-          content
-        });
+        return json(
+          res,
+          200,
+          {
+            ok: true,
+            content
+          }
+        );
       }
 
-      return json(res, 400, {
-        ok: false,
-        error: "Acción desconocida."
-      });
+      return json(
+        res,
+        400,
+        {
+          ok: false,
+          error:
+            "Acción desconocida."
+        }
+      );
     }
 
     // ========================================================
@@ -674,11 +1364,15 @@ export default async function handler(
     // ========================================================
 
     if (req.method !== "POST") {
-      return json(res, 405, {
-        ok: false,
-        error:
-          "Método no permitido."
-      });
+      return json(
+        res,
+        405,
+        {
+          ok: false,
+          error:
+            "Método no permitido."
+        }
+      );
     }
 
     const body =
@@ -705,36 +1399,54 @@ export default async function handler(
         process.env.ADMIN_PASSWORD;
 
       if (!password) {
-        return json(res, 500, {
-          ok: false,
-          error:
-            "Falta configurar ADMIN_PASSWORD en Vercel."
-        });
+        return json(
+          res,
+          500,
+          {
+            ok: false,
+            error:
+              "Falta configurar ADMIN_PASSWORD en Vercel."
+          }
+        );
       }
 
       if (
-        String(body.username || "") !==
-          String(username) ||
-        String(body.password || "") !==
-          String(password)
+        String(
+          body.username || ""
+        ) !== String(username) ||
+        String(
+          body.password || ""
+        ) !== String(password)
       ) {
-        return json(res, 401, {
-          ok: false,
-          error:
-            "Usuario o contraseña incorrectos."
-        });
+        return json(
+          res,
+          401,
+          {
+            ok: false,
+            error:
+              "Usuario o contraseña incorrectos."
+          }
+        );
       }
 
       const token =
         createToken();
 
-      setCookie(res, token);
+      setCookie(
+        res,
+        token
+      );
 
-      return json(res, 200, {
-        ok: true,
-        authenticated: true,
-        user: username
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          authenticated:
+            true,
+          user: username
+        }
+      );
     }
 
     // ========================================================
@@ -747,9 +1459,13 @@ export default async function handler(
     ) {
       clearCookie(res);
 
-      return json(res, 200, {
-        ok: true
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true
+        }
+      );
     }
 
     // ========================================================
@@ -757,11 +1473,15 @@ export default async function handler(
     // ========================================================
 
     if (!validToken(req)) {
-      return json(res, 401, {
-        ok: false,
-        error:
-          "Sesión no válida o expirada."
-      });
+      return json(
+        res,
+        401,
+        {
+          ok: false,
+          error:
+            "Sesión no válida o expirada."
+        }
+      );
     }
 
     // ========================================================
@@ -781,13 +1501,19 @@ export default async function handler(
         );
 
       if (changed) {
-        await saveContent(content);
+        await saveContent(
+          content
+        );
       }
 
-      return json(res, 200, {
-        ok: true,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content
+        }
+      );
     }
 
     // ========================================================
@@ -801,7 +1527,8 @@ export default async function handler(
     ) {
       const incoming =
         body.content &&
-        typeof body.content === "object"
+        typeof body.content ===
+          "object"
           ? body.content
           : body;
 
@@ -818,10 +1545,14 @@ export default async function handler(
         merged
       );
 
-      return json(res, 200, {
-        ok: true,
-        content: merged
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content: merged
+        }
+      );
     }
 
     // ========================================================
@@ -838,13 +1569,18 @@ export default async function handler(
 
       if (
         !article ||
-        typeof article !== "object"
+        typeof article !==
+          "object"
       ) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Datos de noticia inválidos."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Datos de noticia inválidos."
+          }
+        );
       }
 
       const content =
@@ -864,6 +1600,9 @@ export default async function handler(
             String(articleId)
         );
 
+      const isNewArticle =
+        existingIndex < 0;
+
       const normalizedArticle = {
         id: articleId,
 
@@ -874,10 +1613,14 @@ export default async function handler(
 
         slug:
           article.slug ||
-          slugify(article.title),
+          slugify(
+            article.title
+          ),
 
         url:
-          `article.html?id=${encodeURIComponent(articleId)}`,
+          `article.html?id=${encodeURIComponent(
+            articleId
+          )}`,
 
         category:
           article.category ||
@@ -914,7 +1657,8 @@ export default async function handler(
         published:
           article.scheduled
             ? false
-            : article.published !== false,
+            : article.published !==
+              false,
 
         scheduled:
           Boolean(
@@ -932,6 +1676,10 @@ export default async function handler(
         updatedAt: now
       };
 
+      // ------------------------------------------------------
+      // EDITAR
+      // ------------------------------------------------------
+
       if (
         existingIndex >= 0
       ) {
@@ -941,6 +1689,7 @@ export default async function handler(
           ...content.articles[
             existingIndex
           ],
+
           ...normalizedArticle
         };
 
@@ -950,7 +1699,13 @@ export default async function handler(
           "article",
           normalizedArticle
         );
+
       } else {
+
+        // ----------------------------------------------------
+        // CREAR
+        // ----------------------------------------------------
+
         content.articles.unshift(
           normalizedArticle
         );
@@ -963,16 +1718,62 @@ export default async function handler(
         );
       }
 
+      // ------------------------------------------------------
+      // GUARDAR PRIMERO
+      // ------------------------------------------------------
+
       await saveContent(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        article:
-          normalizedArticle,
-        content
-      });
+      // ------------------------------------------------------
+      // EMAIL AUTOMÁTICO
+      //
+      // SOLO:
+      // - noticia nueva
+      // - publicada inmediatamente
+      //
+      // NO:
+      // - edición
+      // - noticia programada
+      // - borrador
+      // ------------------------------------------------------
+
+      let emailResult = null;
+
+      const shouldSendEmail =
+        isNewArticle &&
+        normalizedArticle.published ===
+          true &&
+        normalizedArticle.scheduled !==
+          true;
+
+      if (shouldSendEmail) {
+        emailResult =
+          await sendNewArticleEmail(
+            normalizedArticle
+          );
+      }
+
+      // ------------------------------------------------------
+      // RESPUESTA
+      // ------------------------------------------------------
+
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+
+          article:
+            normalizedArticle,
+
+          content,
+
+          email:
+            emailResult
+        }
+      );
     }
 
     // ========================================================
@@ -987,11 +1788,15 @@ export default async function handler(
         body.id;
 
       if (!id) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Falta el ID de la noticia."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Falta el ID de la noticia."
+          }
+        );
       }
 
       const content =
@@ -1000,20 +1805,28 @@ export default async function handler(
       const index =
         content.articles.findIndex(
           (article) =>
-            String(article.id) ===
+            String(
+              article.id
+            ) ===
             String(id)
         );
 
       if (index === -1) {
-        return json(res, 404, {
-          ok: false,
-          error:
-            "Noticia no encontrada."
-        });
+        return json(
+          res,
+          404,
+          {
+            ok: false,
+            error:
+              "Noticia no encontrada."
+          }
+        );
       }
 
       const removed =
-        content.articles[index];
+        content.articles[
+          index
+        ];
 
       content.articles.splice(
         index,
@@ -1030,8 +1843,10 @@ export default async function handler(
 
       content.trash.unshift({
         ...removed,
+
         deletedAt:
           new Date().toISOString(),
+
         deletedType:
           "article"
       });
@@ -1047,10 +1862,14 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content
+        }
+      );
     }
 
     // ========================================================
@@ -1067,13 +1886,18 @@ export default async function handler(
 
       if (
         !fixture ||
-        typeof fixture !== "object"
+        typeof fixture !==
+          "object"
       ) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Datos de partido inválidos."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Datos de partido inválidos."
+          }
+        );
       }
 
       const content =
@@ -1082,9 +1906,9 @@ export default async function handler(
       const now =
         new Date().toISOString();
 
-      // Compatibilidad con fixtures antiguos que no tenían ID.
       const incomingFixtureKey =
-        fixture.fixtureKey || fixtureKey(fixture);
+        fixture.fixtureKey ||
+        fixtureKey(fixture);
 
       const fixtureId =
         fixture.id ||
@@ -1134,22 +1958,42 @@ export default async function handler(
       const existingIndex =
         content.fixtures.findIndex(
           (item) =>
-            (fixture.id &&
-              String(item.id || "") === String(fixture.id)) ||
-            String(item.fixtureKey || fixtureKey(item)) ===
-              String(incomingFixtureKey)
+            (
+              fixture.id &&
+              String(
+                item.id || ""
+              ) ===
+              String(
+                fixture.id
+              )
+            ) ||
+            String(
+              item.fixtureKey ||
+              fixtureKey(item)
+            ) ===
+            String(
+              incomingFixtureKey
+            )
         );
 
       if (
         existingIndex >= 0
       ) {
         const existingFixture =
-          content.fixtures[existingIndex];
+          content.fixtures[
+            existingIndex
+          ];
 
-        content.fixtures[existingIndex] = {
+        content.fixtures[
+          existingIndex
+        ] = {
           ...existingFixture,
+
           ...normalizedFixture,
-          id: existingFixture.id || fixtureId
+
+          id:
+            existingFixture.id ||
+            fixtureId
         };
 
         addHistory(
@@ -1158,6 +2002,7 @@ export default async function handler(
           "fixture",
           normalizedFixture
         );
+
       } else {
         content.fixtures.push(
           normalizedFixture
@@ -1175,12 +2020,18 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        fixture:
-          normalizedFixture,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+
+          fixture:
+            normalizedFixture,
+
+          content
+        }
+      );
     }
 
     // ========================================================
@@ -1195,11 +2046,15 @@ export default async function handler(
         body.id;
 
       if (!id) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Falta el ID del partido."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Falta el ID del partido."
+          }
+        );
       }
 
       const content =
@@ -1210,21 +2065,29 @@ export default async function handler(
           (fixture) =>
             String(
               fixture.id ||
-                fixtureKey(fixture)
+              fixtureKey(
+                fixture
+              )
             ) ===
             String(id)
         );
 
       if (index === -1) {
-        return json(res, 404, {
-          ok: false,
-          error:
-            "Partido no encontrado."
-        });
+        return json(
+          res,
+          404,
+          {
+            ok: false,
+            error:
+              "Partido no encontrado."
+          }
+        );
       }
 
       const removed =
-        content.fixtures[index];
+        content.fixtures[
+          index
+        ];
 
       content.fixtures.splice(
         index,
@@ -1241,8 +2104,10 @@ export default async function handler(
 
       content.trash.unshift({
         ...removed,
+
         deletedAt:
           new Date().toISOString(),
+
         deletedType:
           "fixture"
       });
@@ -1258,10 +2123,14 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content
+        }
+      );
     }
 
     // ========================================================
@@ -1278,21 +2147,22 @@ export default async function handler(
 
       if (
         !result ||
-        typeof result !== "object"
+        typeof result !==
+          "object"
       ) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Datos de resultado inválidos."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Datos de resultado inválidos."
+          }
+        );
       }
 
       const content =
         await readContent();
-
-      // ------------------------------------------------------
-      // VALIDAR PARTIDO
-      // ------------------------------------------------------
 
       const fixture =
         content.fixtures.find(
@@ -1302,34 +2172,38 @@ export default async function handler(
             ) ===
               String(
                 result.fixtureId ||
-                  ""
+                ""
               ) ||
             fixtureKey(item) ===
               String(
                 result.fixtureKey ||
-                  ""
+                ""
               )
         );
 
       if (!fixture) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "No se encontró el partido asociado al resultado."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "No se encontró el partido asociado al resultado."
+          }
+        );
       }
 
       if (!isTop14(fixture)) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Solo se pueden cargar resultados de URBA TOP 14."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Solo se pueden cargar resultados de URBA TOP 14."
+          }
+        );
       }
-
-      // ------------------------------------------------------
-      // VALIDAR MARCADOR
-      // ------------------------------------------------------
 
       const homeScore =
         Number(
@@ -1351,16 +2225,16 @@ export default async function handler(
         ) ||
         awayScore < 0
       ) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Los marcadores deben ser números enteros mayores o iguales a 0."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Los marcadores deben ser números enteros mayores o iguales a 0."
+          }
+        );
       }
-
-      // ------------------------------------------------------
-      // VALIDAR BONUS
-      // ------------------------------------------------------
 
       const home =
         fixture.home ||
@@ -1375,7 +2249,8 @@ export default async function handler(
         "";
 
       let bonusTeam =
-        result.bonusTeam || null;
+        result.bonusTeam ||
+        null;
 
       if (bonusTeam) {
         const bonusString =
@@ -1384,20 +2259,26 @@ export default async function handler(
           ).trim();
 
         if (
-          bonusString.toLowerCase() !==
+          bonusString
+            .toLowerCase() !==
             String(home)
               .trim()
               .toLowerCase() &&
-          bonusString.toLowerCase() !==
+          bonusString
+            .toLowerCase() !==
             String(away)
               .trim()
               .toLowerCase()
         ) {
-          return json(res, 400, {
-            ok: false,
-            error:
-              "El punto bonus debe pertenecer a uno de los dos equipos."
-          });
+          return json(
+            res,
+            400,
+            {
+              ok: false,
+              error:
+                "El punto bonus debe pertenecer a uno de los dos equipos."
+            }
+          );
         }
 
         bonusTeam =
@@ -1447,17 +2328,18 @@ export default async function handler(
         updatedAt: now
       };
 
-      // ------------------------------------------------------
-      // EVITAR DUPLICADOS
-      // ------------------------------------------------------
-
       const existingIndex =
         content.results.findIndex(
           (item) =>
-            String(item.id) ===
-              String(resultId) ||
             String(
-              item.fixtureId || ""
+              item.id
+            ) ===
+              String(
+                resultId
+              ) ||
+            String(
+              item.fixtureId ||
+              ""
             ) ===
               String(
                 normalizedResult.fixtureId
@@ -1473,6 +2355,7 @@ export default async function handler(
           ...content.results[
             existingIndex
           ],
+
           ...normalizedResult
         };
 
@@ -1482,6 +2365,7 @@ export default async function handler(
           "result",
           normalizedResult
         );
+
       } else {
         content.results.push(
           normalizedResult
@@ -1495,10 +2379,6 @@ export default async function handler(
         );
       }
 
-      // ------------------------------------------------------
-      // CALCULAR TABLA
-      // ------------------------------------------------------
-
       content.standings =
         calculateStandings(
           content
@@ -1508,14 +2388,21 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        result:
-          normalizedResult,
-        standings:
-          content.standings,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+
+          result:
+            normalizedResult,
+
+          standings:
+            content.standings,
+
+          content
+        }
+      );
     }
 
     // ========================================================
@@ -1530,11 +2417,15 @@ export default async function handler(
         body.id;
 
       if (!id) {
-        return json(res, 400, {
-          ok: false,
-          error:
-            "Falta el ID del resultado."
-        });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Falta el ID del resultado."
+          }
+        );
       }
 
       const content =
@@ -1543,20 +2434,28 @@ export default async function handler(
       const index =
         content.results.findIndex(
           (result) =>
-            String(result.id) ===
+            String(
+              result.id
+            ) ===
             String(id)
         );
 
       if (index === -1) {
-        return json(res, 404, {
-          ok: false,
-          error:
-            "Resultado no encontrado."
-        });
+        return json(
+          res,
+          404,
+          {
+            ok: false,
+            error:
+              "Resultado no encontrado."
+          }
+        );
       }
 
       const removed =
-        content.results[index];
+        content.results[
+          index
+        ];
 
       content.results.splice(
         index,
@@ -1579,23 +2478,30 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content
+        }
+      );
     }
 
     // ========================================================
-    // GUARDAR TABLA BASE (fechas ya jugadas antes de cargar
-    // resultado por resultado)
+    // GUARDAR TABLA BASE
     // ========================================================
 
     if (
-      action === "save-standings-base" ||
-      action === "update-standings-base"
+      action ===
+        "save-standings-base" ||
+      action ===
+        "update-standings-base"
     ) {
       const rows =
-        Array.isArray(body.standingsBase)
+        Array.isArray(
+          body.standingsBase
+        )
           ? body.standingsBase
           : [];
 
@@ -1604,16 +2510,48 @@ export default async function handler(
 
       content.standingsBase =
         rows
-          .map((row) => ({
-            team: String(row.team || "").trim(),
-            pj: Number(row.pj) || 0,
-            pg: Number(row.pg) || 0,
-            pe: Number(row.pe) || 0,
-            pp: Number(row.pp) || 0,
-            diff: Number(row.diff) || 0,
-            pts: Number(row.pts) || 0
-          }))
-          .filter((row) => row.team);
+          .map(
+            (row) => ({
+              team:
+                String(
+                  row.team || ""
+                ).trim(),
+
+              pj:
+                Number(
+                  row.pj
+                ) || 0,
+
+              pg:
+                Number(
+                  row.pg
+                ) || 0,
+
+              pe:
+                Number(
+                  row.pe
+                ) || 0,
+
+              pp:
+                Number(
+                  row.pp
+                ) || 0,
+
+              diff:
+                Number(
+                  row.diff
+                ) || 0,
+
+              pts:
+                Number(
+                  row.pts
+                ) || 0
+            })
+          )
+          .filter(
+            (row) =>
+              row.team
+          );
 
       content.standings =
         calculateStandings(
@@ -1624,14 +2562,21 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        standingsBase:
-          content.standingsBase,
-        standings:
-          content.standings,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+
+          standingsBase:
+            content.standingsBase,
+
+          standings:
+            content.standings,
+
+          content
+        }
+      );
     }
 
     // ========================================================
@@ -1639,8 +2584,10 @@ export default async function handler(
     // ========================================================
 
     if (
-      action === "calculate-standings" ||
-      action === "update-standings"
+      action ===
+        "calculate-standings" ||
+      action ===
+        "update-standings"
     ) {
       const content =
         await readContent();
@@ -1654,65 +2601,128 @@ export default async function handler(
         content
       );
 
-      return json(res, 200, {
-        ok: true,
-        standings:
-          content.standings,
-        content
-      });
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+
+          standings:
+            content.standings,
+
+          content
+        }
+      );
     }
 
     // ========================================================
     // ACTUALIZAR ESCUDO DE CLUB
     // ========================================================
 
-    if (action === "update-club-logo") {
-      const clubId = String(body.clubId || "").trim();
-      const url = String(body.url || "").trim();
+    if (
+      action ===
+      "update-club-logo"
+    ) {
+      const clubId =
+        String(
+          body.clubId || ""
+        ).trim();
+
+      const url =
+        String(
+          body.url || ""
+        ).trim();
 
       if (!clubId) {
-        return json(res, 400, { ok: false, error: "Falta el club." });
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Falta el club."
+          }
+        );
       }
 
-      const content = await readContent();
-      content.settings = content.settings && typeof content.settings === "object"
-        ? content.settings
-        : {};
-      content.settings.clubLogos = content.settings.clubLogos && typeof content.settings.clubLogos === "object"
-        ? content.settings.clubLogos
-        : {};
+      const content =
+        await readContent();
 
-      if (url) content.settings.clubLogos[clubId] = url;
-      else delete content.settings.clubLogos[clubId];
+      content.settings =
+        content.settings &&
+        typeof content.settings ===
+          "object"
+          ? content.settings
+          : {};
 
-      await saveContent(content);
+      content.settings.clubLogos =
+        content.settings.clubLogos &&
+        typeof content.settings.clubLogos ===
+          "object"
+          ? content.settings.clubLogos
+          : {};
 
-      return json(res, 200, { ok: true, content });
+      if (url) {
+        content.settings.clubLogos[
+          clubId
+        ] = url;
+      } else {
+        delete content.settings.clubLogos[
+          clubId
+        ];
+      }
+
+      await saveContent(
+        content
+      );
+
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content
+        }
+      );
     }
 
     // ========================================================
     // ACCIÓN DESCONOCIDA
     // ========================================================
 
-    return json(res, 400, {
-      ok: false,
-      error:
-        `Acción desconocida: ${action || "(vacía)"}`
-    });
+    return json(
+      res,
+      400,
+      {
+        ok: false,
+        error:
+          `Acción desconocida: ${
+            action || "(vacía)"
+          }`
+      }
+    );
+
   } catch (error) {
+
     console.error(
       "❌ /api/admin ERROR:",
       error
     );
 
-    return json(res, 500, {
-      ok: false,
-      error:
-        "Error interno del servidor.",
-      detail:
-        error?.message ||
-        String(error)
-    });
+    return json(
+      res,
+      500,
+      {
+        ok: false,
+
+        error:
+          "Error interno del servidor.",
+
+        detail:
+          error?.message ||
+          String(error)
+      }
+    );
   }
 }
 
@@ -1720,27 +2730,41 @@ export default async function handler(
 // TABLA URBA TOP 14
 // ============================================================
 
-// Normaliza nombres de equipo para que variantes como "Hindú" / "Hindu",
-// "Club Atlético del Rosario" / "Atletico del Rosario" o
-// "Regatas de Bella Vista" / "Regatas Bella Vista" se traten como el
-// mismo equipo y no aparezcan duplicados en la tabla.
 const TEAM_ALIASES = {
-  "regatas de bella vista": "regatas bella vista",
-  "atletico del rosario uba": "atletico del rosario",
-  "ca atletico del rosario": "atletico del rosario"
+  "regatas de bella vista":
+    "regatas bella vista",
+
+  "atletico del rosario uba":
+    "atletico del rosario",
+
+  "ca atletico del rosario":
+    "atletico del rosario"
 };
 
 function normalizeTeamKey(name) {
-  let key = String(name || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // saca tildes/diéresis
-    .replace(/^club\s+/, "")         // saca "Club " al inicio
-    .replace(/\s+/g, " ")
-    .trim();
+  let key =
+    String(name || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /^club\s+/,
+        ""
+      )
+      .replace(
+        /\s+/g,
+        " "
+      )
+      .trim();
 
-  return TEAM_ALIASES[key] || key;
+  return (
+    TEAM_ALIASES[key] ||
+    key
+  );
 }
 
 function calculateStandings(
@@ -1749,114 +2773,179 @@ function calculateStandings(
   const teams =
     new Map();
 
-  // Tabla base (fechas ya jugadas antes de cargar resultado por
-  // resultado). Se indexa por nombre de equipo en minúsculas.
   const baseByTeam =
     new Map();
 
   for (
     const base of
-      content.standingsBase || []
+    content.standingsBase || []
   ) {
     const cleanName =
-      String(base.team || "")
-        .trim();
+      String(
+        base.team || ""
+      ).trim();
 
-    if (!cleanName) continue;
+    if (!cleanName) {
+      continue;
+    }
 
     baseByTeam.set(
-      normalizeTeamKey(cleanName),
+      normalizeTeamKey(
+        cleanName
+      ),
       {
-        pj: Number(base.pj) || 0,
-        pg: Number(base.pg) || 0,
-        pe: Number(base.pe) || 0,
-        pp: Number(base.pp) || 0,
-        diff: Number(base.diff) || 0,
-        pts: Number(base.pts) || 0
+        pj:
+          Number(
+            base.pj
+          ) || 0,
+
+        pg:
+          Number(
+            base.pg
+          ) || 0,
+
+        pe:
+          Number(
+            base.pe
+          ) || 0,
+
+        pp:
+          Number(
+            base.pp
+          ) || 0,
+
+        diff:
+          Number(
+            base.diff
+          ) || 0,
+
+        pts:
+          Number(
+            base.pts
+          ) || 0
       }
     );
   }
 
   function ensureTeam(name) {
     const clean =
-      String(name || "")
-        .trim();
+      String(
+        name || ""
+      ).trim();
 
     if (!clean) {
       return null;
     }
 
     const key =
-      normalizeTeamKey(clean);
+      normalizeTeamKey(
+        clean
+      );
 
     if (!teams.has(key)) {
       const base =
-        baseByTeam.get(key);
+        baseByTeam.get(
+          key
+        );
 
-      teams.set(key, {
-        team: clean,
-        pj: base ? base.pj : 0,
-        pg: base ? base.pg : 0,
-        pe: base ? base.pe : 0,
-        pp: base ? base.pp : 0,
-        pf: 0,
-        pc: 0,
-        baseDiff: base ? base.diff : 0,
-        basePts: base ? base.pts : 0,
-        diff: 0,
-        bonus: 0,
-        pts: base ? base.pts : 0
-      });
+      teams.set(
+        key,
+        {
+          team: clean,
+
+          pj:
+            base
+              ? base.pj
+              : 0,
+
+          pg:
+            base
+              ? base.pg
+              : 0,
+
+          pe:
+            base
+              ? base.pe
+              : 0,
+
+          pp:
+            base
+              ? base.pp
+              : 0,
+
+          pf: 0,
+
+          pc: 0,
+
+          baseDiff:
+            base
+              ? base.diff
+              : 0,
+
+          basePts:
+            base
+              ? base.pts
+              : 0,
+
+          diff: 0,
+
+          bonus: 0,
+
+          pts:
+            base
+              ? base.pts
+              : 0
+        }
+      );
     }
 
-    return teams.get(key);
+    return teams.get(
+      key
+    );
   }
 
-  // Equipos que solo existen en la tabla base (por si todavía no
-  // tienen ningún fixture cargado en el sitio).
   for (
     const base of
-      content.standingsBase || []
+    content.standingsBase || []
   ) {
-    ensureTeam(base.team);
+    ensureTeam(
+      base.team
+    );
   }
-
-  // ----------------------------------------------------------
-  // AGREGAR TODOS LOS EQUIPOS DEL FIXTURE
-  // ----------------------------------------------------------
 
   for (
     const fixture of
-      content.fixtures || []
+    content.fixtures || []
   ) {
-    if (!isTop14(fixture)) {
+    if (
+      !isTop14(
+        fixture
+      )
+    ) {
       continue;
     }
 
     ensureTeam(
       fixture.home ||
-        fixture.team1 ||
-        fixture.local
+      fixture.team1 ||
+      fixture.local
     );
 
     ensureTeam(
       fixture.away ||
-        fixture.team2 ||
-        fixture.visitante
+      fixture.team2 ||
+      fixture.visitante
     );
   }
 
-  // ----------------------------------------------------------
-  // PROCESAR RESULTADOS
-  // ----------------------------------------------------------
-
   for (
     const result of
-      content.results || []
+    content.results || []
   ) {
     if (
       String(
-        result.competition || ""
+        result.competition ||
+          ""
       )
         .trim()
         .toUpperCase() !==
@@ -1900,26 +2989,20 @@ function calculateStandings(
       continue;
     }
 
-    // --------------------------------------------------------
-    // PARTIDOS JUGADOS
-    // --------------------------------------------------------
-
     home.pj++;
     away.pj++;
 
-    // --------------------------------------------------------
-    // PUNTOS A FAVOR / CONTRA
-    // --------------------------------------------------------
+    home.pf +=
+      homeScore;
 
-    home.pf += homeScore;
-    home.pc += awayScore;
+    home.pc +=
+      awayScore;
 
-    away.pf += awayScore;
-    away.pc += homeScore;
+    away.pf +=
+      awayScore;
 
-    // --------------------------------------------------------
-    // VICTORIA / EMPATE / DERROTA
-    // --------------------------------------------------------
+    away.pc +=
+      homeScore;
 
     if (
       homeScore >
@@ -1929,6 +3012,7 @@ function calculateStandings(
       away.pp++;
 
       home.pts += 4;
+
     } else if (
       homeScore <
       awayScore
@@ -1937,6 +3021,7 @@ function calculateStandings(
       home.pp++;
 
       away.pts += 4;
+
     } else {
       home.pe++;
       away.pe++;
@@ -1945,13 +3030,10 @@ function calculateStandings(
       away.pts += 2;
     }
 
-    // --------------------------------------------------------
-    // PUNTO BONUS
-    // --------------------------------------------------------
-
     const bonus =
       String(
-        result.bonusTeam || ""
+        result.bonusTeam ||
+          ""
       )
         .trim()
         .toLowerCase();
@@ -1979,35 +3061,37 @@ function calculateStandings(
     }
   }
 
-  // ----------------------------------------------------------
-  // DIFERENCIA (base + resultados cargados)
-  // ----------------------------------------------------------
-
   for (
-    const team of teams.values()
+    const team of
+    teams.values()
   ) {
     team.diff =
       team.baseDiff +
-      (team.pf - team.pc);
+      (team.pf -
+        team.pc);
   }
 
-  // ----------------------------------------------------------
-  // ORDEN DE TABLA
-  // ----------------------------------------------------------
-
-  return [...teams.values()]
+  return [
+    ...teams.values()
+  ]
     .sort(
       (a, b) =>
-        b.pts - a.pts ||
-        b.diff - a.diff ||
-        b.pf - a.pf ||
+        b.pts -
+          a.pts ||
+        b.diff -
+          a.diff ||
+        b.pf -
+          a.pf ||
         a.team.localeCompare(
           b.team,
           "es"
         )
     )
     .map(
-      (team, index) => ({
+      (
+        team,
+        index
+      ) => ({
         position:
           index + 1,
 
