@@ -1406,8 +1406,11 @@ function fixtureForm(fixture = {}) {
 }
 
 function openFixture(fixture = {}) {
+  const isExistingFixture =
+    Boolean(fixture.id || fixtureKey(fixture));
+
   openModal(
-    fixture.id
+    isExistingFixture
       ? "Editar partido"
       : "Nuevo partido",
     fixtureForm(fixture),
@@ -1456,9 +1459,11 @@ function openFixture(fixture = {}) {
 
 function getFixtureByReference(reference) {
   return state.content.fixtures.find(
-    (fixture) =>
-      String(fixture.id || "") === String(reference) ||
-      fixtureKey(fixture) === String(reference)
+    (fixture) => {
+      const id = String(fixture.id || "");
+      const key = fixtureKey(fixture);
+      return id === String(reference) || key === String(reference);
+    }
   );
 }
 
@@ -2023,4 +2028,3 @@ document.addEventListener(
 );
 
 checkSession();
- 
