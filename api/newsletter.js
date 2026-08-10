@@ -110,11 +110,6 @@ export default async function handler(req, res) {
         createError.message
       );
 
-      /*
-       * Resend permite actualizar un contacto
-       * directamente usando su email.
-       */
-
       const {
         data: updatedContact,
         error: updateError
@@ -238,6 +233,13 @@ export default async function handler(req, res) {
 
     /* ===================================================
        3. EMAIL DE BIENVENIDA
+       
+       Solo modificamos:
+       - asunto
+       - diseño
+       - contenido
+       
+       La lógica de Resend permanece igual.
     =================================================== */
 
     const {
@@ -246,7 +248,7 @@ export default async function handler(req, res) {
     } =
       await resend.emails.send({
 
-        from: 
+        from:
           'DropRugby <newsletter@droprugby.com>',
 
         to: [
@@ -254,125 +256,327 @@ export default async function handler(req, res) {
         ],
 
         subject:
-          'Bienvenido a DropRugby 🏉',
+          'Ya sos parte de DropRugby 🏉',
 
         html: `
-          <!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="es">
 
-          <html lang="es">
+<head>
+  <meta charset="UTF-8">
 
-          <head>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-            <meta charset="UTF-8">
+  <title>Ya sos parte de DropRugby</title>
+</head>
 
-            <meta
-              name="viewport"
-              content="width=device-width, initial-scale=1.0"
+<body style="
+  margin:0;
+  padding:0;
+  background:#eeeeeb;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#171717;
+">
+
+  <!-- CONTENEDOR GENERAL -->
+
+  <table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+      background:#eeeeeb;
+      margin:0;
+      padding:0;
+    "
+  >
+
+    <tr>
+      <td
+        align="center"
+        style="
+          padding:35px 15px;
+        "
+      >
+
+        <!-- EMAIL -->
+
+        <table
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+          style="
+            max-width:620px;
+            background:#ffffff;
+          "
+        >
+
+          <!-- HEADER -->
+
+          <tr>
+
+            <td
+              style="
+                background:#111111;
+                padding:30px 35px;
+              "
             >
 
-            <title>
-              Bienvenido a DropRugby
-            </title>
-
-          </head>
-
-          <body style="
-            margin:0;
-            padding:0;
-            background:#f4f4f2;
-            font-family:Arial,Helvetica,sans-serif;
-          ">
-
-            <div style="
-              max-width:600px;
-              margin:40px auto;
-              background:#ffffff;
-              padding:40px;
-            ">
-
-              <h1 style="
-                margin:0 0 10px;
-                font-size:32px;
-                letter-spacing:-1px;
-                color:#111;
+              <div style="
+                font-size:30px;
+                line-height:1;
+                font-weight:700;
+                letter-spacing:-1.5px;
+                color:#ffffff;
               ">
-
                 DROP<span style="
                   font-weight:400;
                 ">RUGBY</span>
-
-              </h1>
-
-              <p style="
-                color:#777;
-                margin-bottom:35px;
-                font-size:14px;
-              ">
-
-                Rugby es una pasión.
-
-              </p>
-
-              <h2 style="
-                color:#111;
-                font-size:24px;
-              ">
-
-                ¡Gracias por suscribirte! 🏉
-
-              </h2>
-
-              <p style="
-                font-size:16px;
-                line-height:1.6;
-                color:#333;
-              ">
-
-                Ya estás dentro de la newsletter
-                de DropRugby.
-
-              </p>
-
-              <p style="
-                font-size:16px;
-                line-height:1.6;
-                color:#333;
-              ">
-
-                A partir de ahora recibirás las
-                principales noticias, análisis y
-                novedades del mundo del rugby.
-
-              </p>
+              </div>
 
               <div style="
-                margin:30px 0;
-                padding:20px;
-                background:#f5f5f5;
+                margin-top:10px;
+                font-size:10px;
+                line-height:1.4;
+                letter-spacing:2px;
+                color:#bcbcbc;
+                font-weight:700;
               ">
+                MEDIO DIGITAL DE RUGBY
+              </div>
 
-                <strong>
+            </td>
 
-                  Los Pumas · Internacional · URBA
+          </tr>
 
-                </strong>
 
+          <!-- INTRO -->
+
+          <tr>
+
+            <td
+              style="
+                padding:45px 40px 15px;
+              "
+            >
+
+              <div style="
+                font-size:10px;
+                line-height:1.4;
+                letter-spacing:2px;
+                color:#777777;
+                font-weight:700;
+                margin-bottom:14px;
+              ">
+                BIENVENIDO A DROP RUGBY
+              </div>
+
+              <h1 style="
+                margin:0;
+                font-size:34px;
+                line-height:1.1;
+                letter-spacing:-1px;
+                font-weight:700;
+                color:#111111;
+              ">
+                El rugby,<br>
+                directo a tu bandeja.
+              </h1>
+
+            </td>
+
+          </tr>
+
+
+          <!-- TEXTO -->
+
+          <tr>
+
+            <td
+              style="
+                padding:15px 40px 5px;
+              "
+            >
+
+              <p style="
+                margin:0 0 20px;
+                font-size:16px;
+                line-height:1.7;
+                color:#444444;
+              ">
+                Gracias por suscribirte a
+                <strong>DropRugby</strong>.
+              </p>
+
+              <p style="
+                margin:0 0 20px;
+                font-size:16px;
+                line-height:1.7;
+                color:#444444;
+              ">
+                Desde ahora vas a recibir las
+                principales noticias, análisis,
+                resultados y novedades del mundo
+                del rugby.
+              </p>
+
+              <p style="
+                margin:0;
+                font-size:16px;
+                line-height:1.7;
+                color:#444444;
+              ">
+                Queremos que tengas la información
+                que importa, cuando importa.
+              </p>
+
+            </td>
+
+          </tr>
+
+
+          <!-- SEPARADOR -->
+
+          <tr>
+
+            <td
+              style="
+                padding:30px 40px 10px;
+              "
+            >
+
+              <div style="
+                height:1px;
+                background:#ddddda;
+                width:100%;
+              "></div>
+
+            </td>
+
+          </tr>
+
+
+          <!-- COBERTURA -->
+
+          <tr>
+
+            <td
+              style="
+                padding:25px 40px 10px;
+              "
+            >
+
+              <div style="
+                font-size:10px;
+                letter-spacing:2px;
+                font-weight:700;
+                color:#777777;
+                margin-bottom:15px;
+              ">
+                NUESTRA COBERTURA
               </div>
 
               <p style="
-                font-size:14px;
-                color:#888;
+                margin:0;
+                font-size:18px;
+                line-height:1.6;
+                font-weight:700;
+                color:#111111;
               ">
-
-                Gracias por ser parte de DropRugby.
-
+                LOS PUMAS
+                <span style="color:#aaaaaa;"> · </span>
+                INTERNACIONAL
+                <span style="color:#aaaaaa;"> · </span>
+                URBA
               </p>
 
-            </div>
+            </td>
 
-          </body>
+          </tr>
 
-          </html>
+
+          <!-- BOTÓN -->
+
+          <tr>
+
+            <td
+              align="left"
+              style="
+                padding:30px 40px 40px;
+              "
+            >
+
+              <a
+                href="https://droprugby.com"
+                target="_blank"
+                style="
+                  display:inline-block;
+                  background:#111111;
+                  color:#ffffff;
+                  text-decoration:none;
+                  font-size:11px;
+                  font-weight:700;
+                  letter-spacing:1.2px;
+                  padding:16px 24px;
+                "
+              >
+                ENTRAR A DROPRUGBY&nbsp; →
+              </a>
+
+            </td>
+
+          </tr>
+
+
+          <!-- FOOTER -->
+
+          <tr>
+
+            <td
+              style="
+                background:#f5f5f2;
+                padding:25px 40px;
+              "
+            >
+
+              <p style="
+                margin:0 0 8px;
+                font-size:12px;
+                line-height:1.5;
+                color:#777777;
+              ">
+                Gracias por ser parte de la comunidad
+                DropRugby.
+              </p>
+
+              <p style="
+                margin:0;
+                font-size:11px;
+                line-height:1.5;
+                color:#999999;
+              ">
+                Rugby es una pasión.
+              </p>
+
+            </td>
+
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+
+  </table>
+
+</body>
+
+</html>
         `
       });
 
@@ -446,5 +650,7 @@ export default async function handler(req, res) {
           ? error.message
           : String(error)
     });
+
   }
 }
+
