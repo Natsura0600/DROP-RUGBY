@@ -85,6 +85,23 @@ async function loadFixtures() {
   return FIXTURES_CACHE;
 }
 
+let STANDINGS_CACHE = null;
+async function loadStandings() {
+  if (STANDINGS_CACHE) return STANDINGS_CACHE;
+  try {
+    const res = await fetch(BASE + "api/content", { cache: "no-store" });
+    if (!res.ok) throw new Error("API unavailable");
+    const data = await res.json();
+    if (Array.isArray(data.standings) && data.standings.length) {
+      STANDINGS_CACHE = data.standings;
+      return STANDINGS_CACHE;
+    }
+    throw new Error("empty");
+  } catch (_) {}
+  STANDINGS_CACHE = window.DROP_RUGBY_DATA?.standings || [];
+  return STANDINGS_CACHE;
+}
+
 /* ---------- Utilidades ---------- */
 const MESES = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
 const DIAS = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
@@ -358,6 +375,63 @@ async function renderCalendarPreview() {
     </div>`).join("");
 }
 
+/* ---------- Tabla de posiciones URBA TOP 14 ---------- */
+async function renderUrbaStandings() {
+  const el = document.getElementById("urba-standings");
+  if (!el) return;
+
+  const standings = (await loadStandings())
+    .slice()
+    .sort((a, b) => (b.pts - a.pts) || (b.diff - a.diff));
+
+  if (!standings.length) {
+    el.innerHTML = `<p class="muted">Todavía no hay tabla cargada.</p>`;
+    return;
+  }
+
+  const updated = window.DROP_RUGBY_DATA?.standingsUpdated;
+  const updatedLabel = updated ? formatDateShort(updated) : "";
+  const relegationFrom = standings.length - 2; // últimos 2 equipos: descenso
+
+  el.innerHTML = `
+    ${updatedLabel ? `<p class="standings-updated">Actualizada · ${updatedLabel}</p>` : ""}
+    <div class="table-scroll">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th class="col-pos">#</th>
+            <th class="col-team">Equipo</th>
+            <th>PJ</th>
+            <th>PG</th>
+            <th>PE</th>
+            <th>PP</th>
+            <th>DIF</th>
+            <th>PTS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${standings.map((team, i) => `
+            <tr class="${i >= relegationFrom ? "is-relegation" : ""}">
+              <td class="col-pos">${i + 1}</td>
+              <td class="col-team">${team.team}</td>
+              <td>${team.pj}</td>
+              <td>${team.pg}</td>
+              <td>${team.pe}</td>
+              <td>${team.pp}</td>
+              <td class="${team.diff > 0 ? "is-positive" : team.diff < 0 ? "is-negative" : ""}">${team.diff > 0 ? "+" : ""}${team.diff}</td>
+              <td class="col-pts">${team.pts}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+    <div class="standings-legend">
+      <span><i class="dot dot-ok"></i>Permanencia</span>
+      <span><i class="dot dot-down"></i>Descenso</span>
+    </div>
+  `;
+}
+
 /* ---------- Buscador global ---------- */
 function setupSearch() {
   const openBtns = document.querySelectorAll(".search-btn");
@@ -407,6 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderHome();
   renderCalendarPreview();
   renderCalendar();
+  renderUrbaStandings();
   const catEl = document.getElementById("category-grid");
   if (catEl) renderCategoryPage(catEl.dataset.category);
 });
