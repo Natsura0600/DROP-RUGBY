@@ -202,6 +202,29 @@
             </div>
           </div>
         </div>
+
+        <div class="panel" style="margin-top:22px;">
+          <div class="panel-head">
+            <h3>Tabla base (fechas ya jugadas)</h3>
+            <button id="standings-base-add-row" class="action">+ EQUIPO</button>
+          </div>
+          <p class="muted" style="padding:0 18px 12px;">
+            Cargá acá el estado de la tabla al día de hoy (PJ, PG, PE, PP, DIF y PTS de cada equipo).
+            A partir de esta base, cada resultado que cargues arriba se va sumando solo — no hace falta
+            tipear partido por partido de las fechas que ya se jugaron.
+          </p>
+          <div class="table-wrap compact">
+            <table>
+              <thead>
+                <tr><th>EQUIPO</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>DIF</th><th>PTS</th><th></th></tr>
+              </thead>
+              <tbody id="standings-base-table"></tbody>
+            </table>
+          </div>
+          <div style="padding:14px 18px;">
+            <button id="standings-base-save" class="btn primary">GUARDAR TABLA BASE</button>
+          </div>
+        </div>
       </section>
 
     </div>
