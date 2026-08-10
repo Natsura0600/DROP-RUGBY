@@ -25,6 +25,28 @@ const DEFAULT_CONTENT = {
   fixtures: [],
   results: [],
   standings: [],
+
+  // Tabla base de URBA TOP 14: refleja las fechas ya jugadas antes de que
+  // el sitio empezara a cargar resultado por resultado. calculateStandings()
+  // parte de estos valores y les suma los resultados que se van cargando
+  // desde el panel de admin, así no hace falta re-tipear cada partido viejo.
+  standingsBase: [
+    { team: "Newman", pj: 17, pg: 16, pe: 0, pp: 1, diff: 255, pts: 71 },
+    { team: "CASI", pj: 17, pg: 13, pe: 0, pp: 4, diff: 179, pts: 60 },
+    { team: "Hindu", pj: 17, pg: 12, pe: 0, pp: 5, diff: 160, pts: 57 },
+    { team: "Alumni", pj: 17, pg: 11, pe: 0, pp: 6, diff: 220, pts: 56 },
+    { team: "SIC", pj: 17, pg: 11, pe: 0, pp: 6, diff: 127, pts: 51 },
+    { team: "Regatas Bella Vista", pj: 17, pg: 9, pe: 0, pp: 8, diff: 63, pts: 45 },
+    { team: "Los Tilos", pj: 17, pg: 9, pe: 1, pp: 7, diff: -48, pts: 42 },
+    { team: "Belgrano Athletic", pj: 17, pg: 8, pe: 1, pp: 8, diff: -15, pts: 41 },
+    { team: "CUBA", pj: 17, pg: 6, pe: 0, pp: 11, diff: 9, pts: 35 },
+    { team: "Atletico del Rosario", pj: 17, pg: 6, pe: 0, pp: 11, diff: -96, pts: 29 },
+    { team: "Los Matreros", pj: 17, pg: 6, pe: 0, pp: 11, diff: -246, pts: 27 },
+    { team: "La Plata", pj: 17, pg: 4, pe: 0, pp: 13, diff: -92, pts: 25 },
+    { team: "Buenos Aires C&RC", pj: 17, pg: 4, pe: 0, pp: 13, diff: -210, pts: 19 },
+    { team: "Champagnat", pj: 17, pg: 3, pe: 0, pp: 14, diff: -306, pts: 14 }
+  ],
+
   players: [],
   instagram: [],
   trash: [],
@@ -289,6 +311,12 @@ function normalizeContent(data) {
     )
       ? content.standings
       : [],
+
+    standingsBase: Array.isArray(
+      content.standingsBase
+    ) && content.standingsBase.length
+      ? content.standingsBase
+      : DEFAULT_CONTENT.standingsBase,
 
     players: Array.isArray(
       content.players
@@ -1507,6 +1535,55 @@ export default async function handler(
     }
 
     // ========================================================
+    // GUARDAR TABLA BASE (fechas ya jugadas antes de cargar
+    // resultado por resultado)
+    // ========================================================
+
+    if (
+      action === "save-standings-base" ||
+      action === "update-standings-base"
+    ) {
+      const rows =
+        Array.isArray(body.standingsBase)
+          ? body.standingsBase
+          : [];
+
+      const content =
+        await readContent();
+
+      content.standingsBase =
+        rows
+          .map((row) => ({
+            team: String(row.team || "").trim(),
+            pj: Number(row.pj) || 0,
+            pg: Number(row.pg) || 0,
+            pe: Number(row.pe) || 0,
+            pp: Number(row.pp) || 0,
+            diff: Number(row.diff) || 0,
+            pts: Number(row.pts) || 0
+          }))
+          .filter((row) => row.team);
+
+      content.standings =
+        calculateStandings(
+          content
+        );
+
+      await saveContent(
+        content
+      );
+
+      return json(res, 200, {
+        ok: true,
+        standingsBase:
+          content.standingsBase,
+        standings:
+          content.standings,
+        content
+      });
+    }
+
+    // ========================================================
     // CALCULAR / ACTUALIZAR TABLA
     // ========================================================
 
@@ -1570,6 +1647,34 @@ function calculateStandings(
   const teams =
     new Map();
 
+  // Tabla base (fechas ya jugadas antes de cargar resultado por
+  // resultado). Se indexa por nombre de equipo en minúsculas.
+  const baseByTeam =
+    new Map();
+
+  for (
+    const base of
+      content.standingsBase || []
+  ) {
+    const cleanName =
+      String(base.team || "")
+        .trim();
+
+    if (!cleanName) continue;
+
+    baseByTeam.set(
+      cleanName.toLowerCase(),
+      {
+        pj: Number(base.pj) || 0,
+        pg: Number(base.pg) || 0,
+        pe: Number(base.pe) || 0,
+        pp: Number(base.pp) || 0,
+        diff: Number(base.diff) || 0,
+        pts: Number(base.pts) || 0
+      }
+    );
+  }
+
   function ensureTeam(name) {
     const clean =
       String(name || "")
@@ -1583,21 +1688,35 @@ function calculateStandings(
       clean.toLowerCase();
 
     if (!teams.has(key)) {
+      const base =
+        baseByTeam.get(key);
+
       teams.set(key, {
         team: clean,
-        pj: 0,
-        pg: 0,
-        pe: 0,
-        pp: 0,
+        pj: base ? base.pj : 0,
+        pg: base ? base.pg : 0,
+        pe: base ? base.pe : 0,
+        pp: base ? base.pp : 0,
         pf: 0,
         pc: 0,
+        baseDiff: base ? base.diff : 0,
+        basePts: base ? base.pts : 0,
         diff: 0,
         bonus: 0,
-        pts: 0
+        pts: base ? base.pts : 0
       });
     }
 
     return teams.get(key);
+  }
+
+  // Equipos que solo existen en la tabla base (por si todavía no
+  // tienen ningún fixture cargado en el sitio).
+  for (
+    const base of
+      content.standingsBase || []
+  ) {
+    ensureTeam(base.team);
   }
 
   // ----------------------------------------------------------
@@ -1759,15 +1878,15 @@ function calculateStandings(
   }
 
   // ----------------------------------------------------------
-  // DIFERENCIA
+  // DIFERENCIA (base + resultados cargados)
   // ----------------------------------------------------------
 
   for (
     const team of teams.values()
   ) {
     team.diff =
-      team.pf -
-      team.pc;
+      team.baseDiff +
+      (team.pf - team.pc);
   }
 
   // ----------------------------------------------------------
