@@ -21,15 +21,145 @@ const resend = new Resend(
   process.env.RESEND_API_KEY
 );
 
+// IMPORTANTE:
+// Este dominio debe estar verificado en Resend.
 const NEWSLETTER_FROM =
   "DropRugby <newsletter@droprugby.com>";
 
-const SITE_URL =
-  "https://droprugby.com";
+const SITE_URL = "https://droprugby.com";
 
 // ============================================================
 // CONTENIDO POR DEFECTO
 // ============================================================
+
+const DEFAULT_STANDINGS_BASE = [
+  {
+    team: "Newman",
+    pj: 17,
+    pg: 16,
+    pe: 0,
+    pp: 1,
+    diff: 255,
+    pts: 71
+  },
+  {
+    team: "CASI",
+    pj: 17,
+    pg: 13,
+    pe: 0,
+    pp: 4,
+    diff: 179,
+    pts: 60
+  },
+  {
+    team: "Hindu",
+    pj: 17,
+    pg: 12,
+    pe: 0,
+    pp: 5,
+    diff: 160,
+    pts: 57
+  },
+  {
+    team: "Alumni",
+    pj: 17,
+    pg: 11,
+    pe: 0,
+    pp: 6,
+    diff: 220,
+    pts: 56
+  },
+  {
+    team: "SIC",
+    pj: 17,
+    pg: 11,
+    pe: 0,
+    pp: 6,
+    diff: 127,
+    pts: 51
+  },
+  {
+    team: "Regatas Bella Vista",
+    pj: 17,
+    pg: 9,
+    pe: 0,
+    pp: 8,
+    diff: 63,
+    pts: 45
+  },
+  {
+    team: "Los Tilos",
+    pj: 17,
+    pg: 9,
+    pe: 1,
+    pp: 7,
+    diff: -48,
+    pts: 42
+  },
+  {
+    team: "Belgrano Athletic",
+    pj: 17,
+    pg: 8,
+    pe: 1,
+    pp: 8,
+    diff: -15,
+    pts: 41
+  },
+  {
+    team: "CUBA",
+    pj: 17,
+    pg: 6,
+    pe: 0,
+    pp: 11,
+    diff: 9,
+    pts: 35
+  },
+  {
+    team: "Atletico del Rosario",
+    pj: 17,
+    pg: 6,
+    pe: 0,
+    pp: 11,
+    diff: -96,
+    pts: 29
+  },
+  {
+    team: "Los Matreros",
+    pj: 17,
+    pg: 6,
+    pe: 0,
+    pp: 11,
+    diff: -246,
+    pts: 27
+  },
+  {
+    team: "La Plata",
+    pj: 17,
+    pg: 4,
+    pe: 0,
+    pp: 13,
+    diff: -92,
+    pts: 25
+  },
+  {
+    team: "Buenos Aires C&RC",
+    pj: 17,
+    pg: 4,
+    pe: 0,
+    pp: 13,
+    diff: -210,
+    pts: 19
+  },
+  {
+    team: "Champagnat",
+    pj: 17,
+    pg: 3,
+    pe: 0,
+    pp: 14,
+    diff: -306,
+    pts: 14
+  }
+];
 
 const DEFAULT_CONTENT = {
   articles: [],
@@ -37,134 +167,7 @@ const DEFAULT_CONTENT = {
   results: [],
   standings: [],
 
-  standingsBase: [
-    {
-      team: "Newman",
-      pj: 17,
-      pg: 16,
-      pe: 0,
-      pp: 1,
-      diff: 255,
-      pts: 71
-    },
-    {
-      team: "CASI",
-      pj: 17,
-      pg: 13,
-      pe: 0,
-      pp: 4,
-      diff: 179,
-      pts: 60
-    },
-    {
-      team: "Hindu",
-      pj: 17,
-      pg: 12,
-      pe: 0,
-      pp: 5,
-      diff: 160,
-      pts: 57
-    },
-    {
-      team: "Alumni",
-      pj: 17,
-      pg: 11,
-      pe: 0,
-      pp: 6,
-      diff: 220,
-      pts: 56
-    },
-    {
-      team: "SIC",
-      pj: 17,
-      pg: 11,
-      pe: 0,
-      pp: 6,
-      diff: 127,
-      pts: 51
-    },
-    {
-      team: "Regatas Bella Vista",
-      pj: 17,
-      pg: 9,
-      pe: 0,
-      pp: 8,
-      diff: 63,
-      pts: 45
-    },
-    {
-      team: "Los Tilos",
-      pj: 17,
-      pg: 9,
-      pe: 1,
-      pp: 7,
-      diff: -48,
-      pts: 42
-    },
-    {
-      team: "Belgrano Athletic",
-      pj: 17,
-      pg: 8,
-      pe: 1,
-      pp: 8,
-      diff: -15,
-      pts: 41
-    },
-    {
-      team: "CUBA",
-      pj: 17,
-      pg: 6,
-      pe: 0,
-      pp: 11,
-      diff: 9,
-      pts: 35
-    },
-    {
-      team: "Atletico del Rosario",
-      pj: 17,
-      pg: 6,
-      pe: 0,
-      pp: 11,
-      diff: -96,
-      pts: 29
-    },
-    {
-      team: "Los Matreros",
-      pj: 17,
-      pg: 6,
-      pe: 0,
-      pp: 11,
-      diff: -246,
-      pts: 27
-    },
-    {
-      team: "La Plata",
-      pj: 17,
-      pg: 4,
-      pe: 0,
-      pp: 13,
-      diff: -92,
-      pts: 25
-    },
-    {
-      team: "Buenos Aires C&RC",
-      pj: 17,
-      pg: 4,
-      pe: 0,
-      pp: 13,
-      diff: -210,
-      pts: 19
-    },
-    {
-      team: "Champagnat",
-      pj: 17,
-      pg: 3,
-      pe: 0,
-      pp: 14,
-      diff: -306,
-      pts: 14
-    }
-  ],
+  standingsBase: DEFAULT_STANDINGS_BASE,
 
   players: [],
   instagram: [],
@@ -222,7 +225,7 @@ function validEmail(email) {
 }
 
 function escapeHtml(value) {
-  return String(value || "")
+  return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -232,17 +235,17 @@ function escapeHtml(value) {
 
 function fixtureKey(fixture) {
   return [
-    fixture.date || "",
-    fixture.time || "",
-    fixture.home ||
-      fixture.team1 ||
-      fixture.local ||
+    fixture?.date || "",
+    fixture?.time || "",
+    fixture?.home ||
+      fixture?.team1 ||
+      fixture?.local ||
       "",
-    fixture.away ||
-      fixture.team2 ||
-      fixture.visitante ||
+    fixture?.away ||
+      fixture?.team2 ||
+      fixture?.visitante ||
       "",
-    fixture.competition || ""
+    fixture?.competition || ""
   ]
     .join("|")
     .toLowerCase();
@@ -257,7 +260,7 @@ function isTop14(fixture) {
 }
 
 // ============================================================
-// NEWSLETTER AUTOMÁTICO
+// NEWSLETTER
 // ============================================================
 
 function getArticleUrl(article) {
@@ -270,7 +273,8 @@ function getArticleUrl(article) {
 
 function buildArticleNewsletterHtml(article) {
   const title = escapeHtml(
-    article?.title || "Nueva noticia en DropRugby"
+    article?.title ||
+      "Nueva noticia en DropRugby"
   );
 
   const excerpt = escapeHtml(
@@ -282,12 +286,11 @@ function buildArticleNewsletterHtml(article) {
     article?.category || "Rugby"
   );
 
-  const imageUrl =
-    String(
-      article?.imageUrl ||
-        article?.image ||
-        ""
-    ).trim();
+  const imageUrl = String(
+    article?.imageUrl ||
+      article?.image ||
+      ""
+  ).trim();
 
   const articleUrl =
     getArticleUrl(article);
@@ -313,15 +316,12 @@ function buildArticleNewsletterHtml(article) {
     : "";
 
   return `
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-  <title>${title}</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
 </head>
 
 <body
@@ -330,7 +330,6 @@ function buildArticleNewsletterHtml(article) {
     padding:0;
     background:#eeeeeb;
     font-family:Arial,Helvetica,sans-serif;
-    color:#111111;
   "
 >
 
@@ -341,191 +340,191 @@ function buildArticleNewsletterHtml(article) {
   border="0"
   style="background:#eeeeeb;"
 >
-  <tr>
-    <td align="center">
+<tr>
+<td align="center" style="padding:30px 15px;">
 
-      <table
-        width="100%"
-        cellpadding="0"
-        cellspacing="0"
-        border="0"
-        style="
-          max-width:620px;
-          background:#ffffff;
-        "
-      >
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="
+    max-width:620px;
+    background:#ffffff;
+  "
+>
 
-        <!-- HEADER -->
+<!-- HEADER -->
 
-        <tr>
-          <td
-            style="
-              background:#111111;
-              padding:30px 40px;
-            "
-          >
+<tr>
+<td
+  style="
+    background:#111111;
+    padding:30px 40px;
+  "
+>
 
-            <div
-              style="
-                font-size:30px;
-                line-height:1;
-                font-weight:700;
-                letter-spacing:-1.5px;
-                color:#ffffff;
-              "
-            >
-              DROP<span style="font-weight:400;">RUGBY</span>
-            </div>
+<div
+  style="
+    font-size:30px;
+    line-height:1;
+    font-weight:700;
+    letter-spacing:-1.5px;
+    color:#ffffff;
+  "
+>
+  DROP<span style="font-weight:400;">RUGBY</span>
+</div>
 
-            <div
-              style="
-                margin-top:10px;
-                font-size:10px;
-                line-height:1.4;
-                letter-spacing:2px;
-                color:#bcbcbc;
-                font-weight:700;
-              "
-            >
-              MEDIO DIGITAL DE RUGBY
-            </div>
+<div
+  style="
+    margin-top:10px;
+    font-size:10px;
+    line-height:1.4;
+    letter-spacing:2px;
+    color:#bcbcbc;
+    font-weight:700;
+  "
+>
+  MEDIO DIGITAL DE RUGBY
+</div>
 
-          </td>
-        </tr>
+</td>
+</tr>
 
-        <!-- LABEL -->
+<!-- LABEL -->
 
-        <tr>
-          <td
-            style="
-              padding:42px 40px 12px;
-            "
-          >
+<tr>
+<td
+  style="
+    padding:42px 40px 12px;
+  "
+>
 
-            <div
-              style="
-                font-size:10px;
-                line-height:1.4;
-                letter-spacing:2px;
-                color:#777777;
-                font-weight:700;
-                margin-bottom:14px;
-              "
-            >
-              ${category.toUpperCase()}
-            </div>
+<div
+  style="
+    font-size:10px;
+    line-height:1.4;
+    letter-spacing:2px;
+    color:#777777;
+    font-weight:700;
+    margin-bottom:14px;
+  "
+>
+  ${category.toUpperCase()}
+</div>
 
-            <h1
-              style="
-                margin:0;
-                font-size:34px;
-                line-height:1.15;
-                letter-spacing:-1px;
-                font-weight:700;
-                color:#111111;
-              "
-            >
-              ${title}
-            </h1>
+<h1
+  style="
+    margin:0;
+    font-size:34px;
+    line-height:1.15;
+    letter-spacing:-1px;
+    font-weight:700;
+    color:#111111;
+  "
+>
+  ${title}
+</h1>
 
-          </td>
-        </tr>
+</td>
+</tr>
 
-        ${imageBlock}
+${imageBlock}
 
-        <!-- EXCERPT -->
+<!-- EXCERPT -->
 
-        <tr>
-          <td
-            style="
-              padding:25px 40px 10px;
-            "
-          >
+<tr>
+<td
+  style="
+    padding:25px 40px 10px;
+  "
+>
 
-            <p
-              style="
-                margin:0;
-                font-size:17px;
-                line-height:1.7;
-                color:#444444;
-              "
-            >
-              ${excerpt}
-            </p>
+<p
+  style="
+    margin:0;
+    font-size:17px;
+    line-height:1.7;
+    color:#444444;
+  "
+>
+  ${excerpt}
+</p>
 
-          </td>
-        </tr>
+</td>
+</tr>
 
-        <!-- BUTTON -->
+<!-- BUTTON -->
 
-        <tr>
-          <td
-            align="left"
-            style="
-              padding:30px 40px 40px;
-            "
-          >
+<tr>
+<td
+  align="left"
+  style="
+    padding:30px 40px 40px;
+  "
+>
 
-            <a
-              href="${articleUrl}"
-              target="_blank"
-              style="
-                display:inline-block;
-                background:#111111;
-                color:#ffffff;
-                text-decoration:none;
-                font-size:11px;
-                font-weight:700;
-                letter-spacing:1.2px;
-                padding:16px 24px;
-              "
-            >
-              LEER LA NOTICIA &nbsp;→
-            </a>
+<a
+  href="${articleUrl}"
+  target="_blank"
+  style="
+    display:inline-block;
+    background:#111111;
+    color:#ffffff;
+    text-decoration:none;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.2px;
+    padding:16px 24px;
+  "
+>
+  LEER LA NOTICIA &nbsp;→
+</a>
 
-          </td>
-        </tr>
+</td>
+</tr>
 
-        <!-- FOOTER -->
+<!-- FOOTER -->
 
-        <tr>
-          <td
-            style="
-              background:#f5f5f2;
-              padding:25px 40px;
-            "
-          >
+<tr>
+<td
+  style="
+    background:#f5f5f2;
+    padding:25px 40px;
+  "
+>
 
-            <p
-              style="
-                margin:0 0 8px;
-                font-size:12px;
-                line-height:1.5;
-                color:#777777;
-              "
-            >
-              Recibís este email porque estás suscripto
-              al newsletter de DropRugby.
-            </p>
+<p
+  style="
+    margin:0 0 8px;
+    font-size:12px;
+    line-height:1.5;
+    color:#777777;
+  "
+>
+  Recibís este email porque estás suscripto
+  al newsletter de DropRugby.
+</p>
 
-            <p
-              style="
-                margin:0;
-                font-size:11px;
-                line-height:1.5;
-                color:#999999;
-              "
-            >
-              Rugby es una pasión.
-            </p>
+<p
+  style="
+    margin:0;
+    font-size:11px;
+    line-height:1.5;
+    color:#999999;
+  "
+>
+  Rugby es una pasión.
+</p>
 
-          </td>
-        </tr>
+</td>
+</tr>
 
-      </table>
+</table>
 
-    </td>
-  </tr>
+</td>
+</tr>
 </table>
 
 </body>
@@ -584,43 +583,44 @@ async function sendArticleNewsletter(
   }
 
   const html =
-    buildArticleNewsletterHtml(
-      article
-    );
+    buildArticleNewsletterHtml(article);
 
   let sent = 0;
   let failed = 0;
 
-  // Se manda un email individual por suscriptor.
-  // Así las direcciones de los suscriptores
-  // nunca quedan expuestas entre sí.
+  const results =
+    await Promise.allSettled(
+      emails.map(async (email) => {
+        const { data, error } =
+          await resend.emails.send({
+            from: NEWSLETTER_FROM,
+            to: [email],
+            subject:
+              `Nuevo en DropRugby: ${
+                article?.title ||
+                "Nueva noticia"
+              }`,
+            html
+          });
 
-  const results = await Promise.allSettled(
-    emails.map(async (email) => {
-      const { data, error } =
-        await resend.emails.send({
-          from: NEWSLETTER_FROM,
-          to: [email],
-          subject:
-            `Nuevo en DropRugby: ${article.title}`,
-          html
-        });
+        if (error) {
+          throw new Error(
+            `${email}: ${
+              error.message ||
+              "Error de Resend"
+            }`
+          );
+        }
 
-      if (error) {
-        throw new Error(
-          `${email}: ${
-            error.message ||
-            "Error de Resend"
-          }`
-        );
-      }
-
-      return data;
-    })
-  );
+        return data;
+      })
+    );
 
   for (const result of results) {
-    if (result.status === "fulfilled") {
+    if (
+      result.status ===
+      "fulfilled"
+    ) {
       sent++;
     } else {
       failed++;
@@ -857,7 +857,6 @@ function normalizeContent(data) {
 
   return {
     ...DEFAULT_CONTENT,
-
     ...content,
 
     articles:
@@ -894,7 +893,7 @@ function normalizeContent(data) {
       ) &&
       content.standingsBase.length
         ? content.standingsBase
-        : DEFAULT_CONTENT.standingsBase,
+        : DEFAULT_STANDINGS_BASE,
 
     players:
       Array.isArray(
@@ -935,7 +934,10 @@ function normalizeContent(data) {
       content.settings &&
       typeof content.settings ===
         "object"
-        ? content.settings
+        ? {
+            ...DEFAULT_CONTENT.settings,
+            ...content.settings
+          }
         : {
             ...DEFAULT_CONTENT.settings
           },
@@ -944,8 +946,13 @@ function normalizeContent(data) {
       content.teams &&
       typeof content.teams ===
         "object"
-        ? content.teams
-        : DEFAULT_CONTENT.teams
+        ? {
+            ...DEFAULT_CONTENT.teams,
+            ...content.teams
+          }
+        : {
+            ...DEFAULT_CONTENT.teams
+          }
   };
 }
 
@@ -1033,14 +1040,17 @@ async function readLocalContent() {
 
     return {
       ...DEFAULT_CONTENT,
+
       articles:
         JSON.parse(
           articlesRaw
         ),
+
       fixtures:
         JSON.parse(
           fixturesRaw
         ),
+
       teams:
         JSON.parse(
           teamsRaw
@@ -1225,8 +1235,8 @@ function addHistory(
       item?.title ||
       (
         item?.home
-          ? `${item?.home || ""} vs ${
-              item?.away || ""
+          ? `${item.home || ""} vs ${
+              item.away || ""
             }`
           : ""
       ),
@@ -1299,7 +1309,6 @@ export default async function handler(
   res
 ) {
   try {
-
     // ========================================================
     // GET
     // ========================================================
@@ -1638,89 +1647,90 @@ export default async function handler(
             String(
               item.id
             ) ===
-            String(articleId)
+            String(
+              articleId
+            )
         );
 
       const isNewArticle =
         existingIndex < 0;
 
-      const normalizedArticle =
-        {
-          id: articleId,
+      const normalizedArticle = {
+        id: articleId,
 
-          title:
-            String(
-              article.title ||
-                ""
-            ).trim(),
+        title:
+          String(
+            article.title ||
+              ""
+          ).trim(),
 
-          slug:
-            article.slug ||
-            slugify(
-              article.title
-            ),
+        slug:
+          article.slug ||
+          slugify(
+            article.title
+          ),
 
-          url:
-            `article.html?id=${encodeURIComponent(
-              articleId
-            )}`,
+        url:
+          `article.html?id=${encodeURIComponent(
+            articleId
+          )}`,
 
-          category:
-            article.category ||
-            "Rugby",
+        category:
+          article.category ||
+          "Rugby",
 
-          subcategory:
-            article.subcategory ||
-            "Actualidad",
+        subcategory:
+          article.subcategory ||
+          "Actualidad",
 
-          author:
-            article.author ||
-            "DropRugby",
+        author:
+          article.author ||
+          "DropRugby",
 
-          excerpt:
-            article.excerpt ||
-            "",
+        excerpt:
+          article.excerpt ||
+          "",
 
-          content:
-            article.content ||
-            "",
+        content:
+          article.content ||
+          "",
 
-          imageUrl:
-            article.imageUrl ||
-            article.image ||
-            "",
+        imageUrl:
+          article.imageUrl ||
+          article.image ||
+          "",
 
-          date:
-            article.date ||
-            now.slice(0, 10),
+        date:
+          article.date ||
+          now.slice(0, 10),
 
-          featured:
-            Boolean(
-              article.featured
-            ),
+        featured:
+          Boolean(
+            article.featured
+          ),
 
-          published:
+        published:
+          article.scheduled
+            ? false
+            : article.published !==
+              false,
+
+        scheduled:
+          Boolean(
             article.scheduled
-              ? false
-              : article.published !==
-                false,
+          ),
 
-          scheduled:
-            Boolean(
-              article.scheduled
-            ),
+        publishAt:
+          article.publishAt ||
+          null,
 
-          publishAt:
-            article.publishAt ||
-            null,
+        createdAt:
+          article.createdAt ||
+          now,
 
-          createdAt:
-            article.createdAt ||
-            now,
-
-          updatedAt:
-            now
-        };
+        updatedAt:
+          now
+      };
 
       if (
         existingIndex >= 0
@@ -1757,19 +1767,9 @@ export default async function handler(
         content
       );
 
-      // ======================================================
+      // ------------------------------------------------------
       // NEWSLETTER AUTOMÁTICO
-      // ======================================================
-      //
-      // Solamente se manda cuando:
-      //
-      // 1. Es una noticia NUEVA.
-      // 2. La noticia queda publicada inmediatamente.
-      //
-      // Si se edita una noticia existente, NO manda otro email.
-      //
-      // Si queda programada, tampoco manda ahora.
-      //
+      // ------------------------------------------------------
 
       let newsletter = {
         attempted: 0,
@@ -1794,12 +1794,9 @@ export default async function handler(
         200,
         {
           ok: true,
-
           article:
             normalizedArticle,
-
           content,
-
           newsletter
         }
       );
@@ -1943,52 +1940,51 @@ export default async function handler(
         fixture.id ||
         makeId("fixture");
 
-      const normalizedFixture =
-        {
-          id: fixtureId,
+      const normalizedFixture = {
+        id: fixtureId,
 
-          fixtureKey:
-            incomingFixtureKey,
+        fixtureKey:
+          incomingFixtureKey,
 
-          home:
-            fixture.home ||
-            fixture.team1 ||
-            fixture.local ||
-            "",
+        home:
+          fixture.home ||
+          fixture.team1 ||
+          fixture.local ||
+          "",
 
-          away:
-            fixture.away ||
-            fixture.team2 ||
-            fixture.visitante ||
-            "",
+        away:
+          fixture.away ||
+          fixture.team2 ||
+          fixture.visitante ||
+          "",
 
-          date:
-            fixture.date ||
-            "",
+        date:
+          fixture.date ||
+          "",
 
-          time:
-            fixture.time ||
-            "",
+        time:
+          fixture.time ||
+          "",
 
-          competition:
-            fixture.competition ||
-            "URBA TOP 14",
+        competition:
+          fixture.competition ||
+          "URBA TOP 14",
 
-          channel:
-            fixture.channel ||
-            "",
+        channel:
+          fixture.channel ||
+          "",
 
-          venue:
-            fixture.venue ||
-            "",
+        venue:
+          fixture.venue ||
+          "",
 
-          createdAt:
-            fixture.createdAt ||
-            now,
+        createdAt:
+          fixture.createdAt ||
+          now,
 
-          updatedAt:
-            now
-        };
+        updatedAt:
+          now
+      };
 
       const existingIndex =
         content.fixtures.findIndex(
@@ -2222,9 +2218,7 @@ export default async function handler(
       }
 
       if (
-        !isTop14(
-          fixture
-        )
+        !isTop14(fixture)
       ) {
         return json(
           res,
@@ -2290,15 +2284,21 @@ export default async function handler(
             bonusTeam
           ).trim();
 
+        const homeKey =
+          String(home)
+            .trim()
+            .toLowerCase();
+
+        const awayKey =
+          String(away)
+            .trim()
+            .toLowerCase();
+
         if (
           bonusString.toLowerCase() !==
-            String(home)
-              .trim()
-              .toLowerCase() &&
+            homeKey &&
           bonusString.toLowerCase() !==
-            String(away)
-              .trim()
-              .toLowerCase()
+            awayKey
         ) {
           return json(
             res,
@@ -2322,49 +2322,46 @@ export default async function handler(
         result.id ||
         makeId("result");
 
-      const normalizedResult =
-        {
-          id: resultId,
+      const normalizedResult = {
+        id: resultId,
 
-          fixtureId:
-            fixture.id ||
-            fixtureKey(
-              fixture
-            ),
+        fixtureId:
+          fixture.id ||
+          fixtureKey(
+            fixture
+          ),
 
-          fixtureKey:
-            fixtureKey(
-              fixture
-            ),
+        fixtureKey:
+          fixtureKey(
+            fixture
+          ),
 
-          date:
-            fixture.date ||
-            "",
+        date:
+          fixture.date ||
+          "",
 
-          time:
-            fixture.time ||
-            "",
+        time:
+          fixture.time ||
+          "",
 
-          competition:
-            "URBA TOP 14",
+        competition:
+          "URBA TOP 14",
 
-          home,
+        home,
+        away,
 
-          away,
+        homeScore,
+        awayScore,
 
-          homeScore,
+        bonusTeam,
 
-          awayScore,
+        createdAt:
+          result.createdAt ||
+          now,
 
-          bonusTeam,
-
-          createdAt:
-            result.createdAt ||
-            now,
-
-          updatedAt:
-            now
-        };
+        updatedAt:
+          now
+      };
 
       const existingIndex =
         content.results.findIndex(
@@ -2734,7 +2731,6 @@ export default async function handler(
           }`
       }
     );
-
   } catch (error) {
     console.error(
       "❌ /api/admin ERROR:",
@@ -2749,8 +2745,9 @@ export default async function handler(
         error:
           "Error interno del servidor.",
         detail:
-          error?.message ||
-          String(error)
+          error instanceof Error
+            ? error.message
+            : String(error)
       }
     );
   }
@@ -2771,9 +2768,7 @@ const TEAM_ALIASES = {
     "atletico del rosario"
 };
 
-function normalizeTeamKey(
-  name
-) {
+function normalizeTeamKey(name) {
   let key =
     String(name || "")
       .trim()
@@ -2808,18 +2803,23 @@ function calculateStandings(
   const baseByTeam =
     new Map();
 
+  // ----------------------------------------------------------
+  // BASE
+  // ----------------------------------------------------------
+
   for (
     const base of
       content.standingsBase ||
-      []
+    []
   ) {
     const cleanName =
       String(
         base.team || ""
       ).trim();
 
-    if (!cleanName)
+    if (!cleanName) {
       continue;
+    }
 
     baseByTeam.set(
       normalizeTeamKey(
@@ -2859,16 +2859,19 @@ function calculateStandings(
     );
   }
 
-  function ensureTeam(
-    name
-  ) {
+  // ----------------------------------------------------------
+  // EQUIPOS
+  // ----------------------------------------------------------
+
+  function ensureTeam(name) {
     const clean =
       String(
         name || ""
       ).trim();
 
-    if (!clean)
+    if (!clean) {
       return null;
+    }
 
     const key =
       normalizeTeamKey(
@@ -2932,25 +2935,31 @@ function calculateStandings(
       );
     }
 
-    return teams.get(
-      key
-    );
+    return teams.get(key);
   }
+
+  // ----------------------------------------------------------
+  // EQUIPOS BASE
+  // ----------------------------------------------------------
 
   for (
     const base of
       content.standingsBase ||
-      []
+    []
   ) {
     ensureTeam(
       base.team
     );
   }
 
+  // ----------------------------------------------------------
+  // EQUIPOS DE FIXTURES
+  // ----------------------------------------------------------
+
   for (
     const fixture of
       content.fixtures ||
-      []
+    []
   ) {
     if (
       !isTop14(fixture)
@@ -2971,10 +2980,14 @@ function calculateStandings(
     );
   }
 
+  // ----------------------------------------------------------
+  // RESULTADOS
+  // ----------------------------------------------------------
+
   for (
     const result of
       content.results ||
-      []
+    []
   ) {
     if (
       String(
@@ -3049,7 +3062,6 @@ function calculateStandings(
       away.pp++;
 
       home.pts += 4;
-
     } else if (
       homeScore <
       awayScore
@@ -3058,7 +3070,6 @@ function calculateStandings(
       home.pp++;
 
       away.pts += 4;
-
     } else {
       home.pe++;
       away.pe++;
@@ -3098,6 +3109,10 @@ function calculateStandings(
     }
   }
 
+  // ----------------------------------------------------------
+  // DIFERENCIA
+  // ----------------------------------------------------------
+
   for (
     const team of
       teams.values()
@@ -3106,6 +3121,10 @@ function calculateStandings(
       team.baseDiff +
       (team.pf - team.pc);
   }
+
+  // ----------------------------------------------------------
+  // ORDEN
+  // ----------------------------------------------------------
 
   return [
     ...teams.values()
