@@ -249,34 +249,27 @@ content="Noticias de rugby de DropRugby"
       ).href;
     }
 
-    function renderBody(value) {
+   function renderBody(value) {
+  const text = String(value ?? "").trim();
 
-      const text = String(value ?? "").trim();
+  if (!text) {
+    return "";
+  }
 
-      if (!text) {
-        return "";
-      }
+  // Si la noticia ya contiene HTML, lo renderizamos directamente.
+  if (/<\/?[a-z][\s\S]*>/i.test(text)) {
+    return text;
+  }
 
-      /*
-       * El Admin guarda el contenido como texto.
-       *
-       * Dos saltos de línea = nuevo párrafo.
-       * Un salto de línea = <br>.
-       */
-
-      return text
-        .split(/\n\s*\n/)
-        .map(function (paragraph) {
-
-          return (
-            "<p>" +
-            esc(paragraph).replace(/\n/g, "<br>") +
-            "</p>"
-          );
-
-        })
-        .join("");
-    }
+  // Si es texto plano, convertimos los saltos de línea
+  // en párrafos y <br>.
+  return text
+    .split(/\n\s*\n/)
+    .map(function (paragraph) {
+      return `<p>${esc(paragraph).replace(/\n/g, "<br>")}</p>`;
+    })
+    .join("");
+}
 
     function articleImage(article, compact) {
 
