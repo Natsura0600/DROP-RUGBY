@@ -54,8 +54,10 @@ const DEFAULT_CONTENT = {
 
   settings: {
     siteName: "DropRugby",
-    description: "Noticias de rugby"
-  }
+    description: "Noticias de rugby",
+    clubLogos: {}
+  },
+  teams: { clubs: {}, nations: {} }
 };
 
 // ============================================================
@@ -348,7 +350,12 @@ function normalizeContent(data) {
         ? content.settings
         : {
             ...DEFAULT_CONTENT.settings
-          }
+          },
+
+    teams:
+      content.teams && typeof content.teams === "object"
+        ? content.teams
+        : DEFAULT_CONTENT.teams
   };
 }
 
@@ -403,15 +410,19 @@ async function readLocalContent() {
       "fixtures.json"
     );
 
-    const [articlesRaw, fixturesRaw] = await Promise.all([
+    const teamsPath = path.join(process.cwd(), "data", "teams.json");
+
+    const [articlesRaw, fixturesRaw, teamsRaw] = await Promise.all([
       fs.readFile(articlesPath, "utf8"),
-      fs.readFile(fixturesPath, "utf8")
+      fs.readFile(fixturesPath, "utf8"),
+      fs.readFile(teamsPath, "utf8")
     ]);
 
     return {
       ...DEFAULT_CONTENT,
       articles: JSON.parse(articlesRaw),
-      fixtures: JSON.parse(fixturesRaw)
+      fixtures: JSON.parse(fixturesRaw),
+      teams: JSON.parse(teamsRaw)
     };
   } catch {
     return { ...DEFAULT_CONTENT };
@@ -866,7 +877,6 @@ export default async function handler(
           slugify(article.title),
 
         url:
-          article.url ||
           `article.html?id=${encodeURIComponent(articleId)}`,
 
         category:
@@ -1650,6 +1660,34 @@ export default async function handler(
           content.standings,
         content
       });
+    }
+
+    // ========================================================
+    // ACTUALIZAR ESCUDO DE CLUB
+    // ========================================================
+
+    if (action === "update-club-logo") {
+      const clubId = String(body.clubId || "").trim();
+      const url = String(body.url || "").trim();
+
+      if (!clubId) {
+        return json(res, 400, { ok: false, error: "Falta el club." });
+      }
+
+      const content = await readContent();
+      content.settings = content.settings && typeof content.settings === "object"
+        ? content.settings
+        : {};
+      content.settings.clubLogos = content.settings.clubLogos && typeof content.settings.clubLogos === "object"
+        ? content.settings.clubLogos
+        : {};
+
+      if (url) content.settings.clubLogos[clubId] = url;
+      else delete content.settings.clubLogos[clubId];
+
+      await saveContent(content);
+
+      return json(res, 200, { ok: true, content });
     }
 
     // ========================================================
