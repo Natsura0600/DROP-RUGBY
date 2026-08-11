@@ -979,6 +979,105 @@ async function renderCategoryPage(categoryName) {
 
 
 /* ==========================================================================
+   CALENDARIO — mini rectángulos por competición
+   ========================================================================== */
+
+const COMPETITION_ORDER = [
+  "LOS PUMAS",
+  "SUPER RUGBY",
+  "URBA TOP 14",
+  "URBA"
+];
+
+function competitionSortKey(name) {
+  const upper = String(name || "").trim().toUpperCase();
+  const index = COMPETITION_ORDER.indexOf(upper);
+
+  return index === -1 ? 99 : index;
+}
+
+function sortCompetitionNames(names) {
+  return names.sort(
+    (a, b) => competitionSortKey(a) - competitionSortKey(b)
+  );
+}
+
+function renderFixtureTile(fixture) {
+  const home = escapeHTML(fixture.home || "");
+  const away = escapeHTML(fixture.away || "");
+  const time = escapeHTML(fixture.time || "--:--");
+  const channel = escapeHTML(fixture.channel || "");
+  const venue = escapeHTML(fixture.venue || "");
+  const meta = channel || venue;
+
+  return `
+    <article
+      class="fixture-tile"
+      aria-label="${home} vs ${away}, ${time}"
+    >
+      <time class="fixture-tile-time">${time}</time>
+
+      <div class="fixture-tile-matchup">
+        <div class="fixture-tile-team">
+          ${teamShield(fixture.home, "team-shield fixture-tile-shield")}
+          <span class="fixture-tile-name">${home}</span>
+        </div>
+
+        <span class="fixture-tile-vs">vs</span>
+
+        <div class="fixture-tile-team fixture-tile-team-away">
+          ${teamShield(fixture.away, "team-shield fixture-tile-shield")}
+          <span class="fixture-tile-name">${away}</span>
+        </div>
+      </div>
+
+      ${
+        meta
+          ? `<p class="fixture-tile-meta">${meta}</p>`
+          : ""
+      }
+    </article>
+  `;
+}
+
+function renderCompetitionSections(competitions) {
+  const competitionNames = sortCompetitionNames(
+    Object.keys(competitions)
+  );
+
+  return competitionNames
+    .map(competitionName => {
+      const rows = competitions[competitionName]
+        .slice()
+        .sort((a, b) =>
+          String(a.time || "").localeCompare(
+            String(b.time || "")
+          )
+        )
+        .map(renderFixtureTile)
+        .join("");
+
+      return `
+        <section class="competition-section">
+
+          <div class="competition-name">
+            ${escapeHTML(
+              String(competitionName).toUpperCase()
+            )}
+          </div>
+
+          <div class="fixture-grid">
+            ${rows}
+          </div>
+
+        </section>
+      `;
+    })
+    .join("");
+}
+
+
+/* ==========================================================================
    CALENDARIO
    ========================================================================== */
 
@@ -1235,91 +1334,7 @@ async function renderCalendar() {
           grouped[date];
 
         const competitionsHTML =
-          Object.keys(competitions)
-            .sort()
-            .map(competitionName => {
-
-              const rows =
-                competitions[competitionName]
-                  .slice()
-                  .sort((a, b) =>
-                    String(a.time || "")
-                      .localeCompare(
-                        String(b.time || "")
-                      )
-                  )
-                  .map(fixture => {
-
-                    const home =
-                      escapeHTML(
-                        fixture.home || ""
-                      );
-
-                    const away =
-                      escapeHTML(
-                        fixture.away || ""
-                      );
-
-                    const time =
-                      escapeHTML(
-                        fixture.time || ""
-                      );
-
-                    const channel =
-                      escapeHTML(
-                        fixture.channel || ""
-                      );
-
-                    return `
-                      <div class="match-row">
-
-                        <div class="match-time">
-                          ${time}
-                        </div>
-
-                        <div class="match-teams team-matchup">
-
-                          <span class="team-side">
-                            ${teamShield(fixture.home)}
-                            <span>${home}</span>
-                          </span>
-
-                          <span class="team-vs">
-                            vs.
-                          </span>
-
-                          <span class="team-side team-side-away">
-                            <span>${away}</span>
-                            ${teamShield(fixture.away)}
-                          </span>
-
-                        </div>
-
-                        <div class="match-channel">
-                          ${channel}
-                        </div>
-
-                      </div>
-                    `;
-                  })
-                  .join("");
-
-              return `
-                <div class="competition-block">
-
-                  <div class="competition-name">
-                    ${escapeHTML(
-                      String(competitionName)
-                        .toUpperCase()
-                    )}
-                  </div>
-
-                  ${rows}
-
-                </div>
-              `;
-            })
-            .join("");
+          renderCompetitionSections(competitions);
 
 
         return `
@@ -1337,7 +1352,9 @@ async function renderCalendar() {
 
             </div>
 
-            ${competitionsHTML}
+            <div class="day-block-body">
+              ${competitionsHTML}
+            </div>
 
           </div>
         `;
@@ -1484,50 +1501,23 @@ async function renderCalendarPreview() {
   }
 
 
+  const grouped = {};
+
+  upcoming.forEach(fixture => {
+    const competition =
+      fixture.competition || "RUGBY";
+
+    if (!grouped[competition]) {
+      grouped[competition] = [];
+    }
+
+    grouped[competition].push(fixture);
+  });
+
+  element.classList.add("calendar-preview");
+
   element.innerHTML =
-    upcoming.map(fixture => {
-
-      return `
-        <div class="match-row">
-
-          <div class="match-time">
-            ${escapeHTML(fixture.time || "")}
-          </div>
-
-          <div class="match-teams team-matchup">
-
-            <span class="team-side">
-              ${teamShield(fixture.home)}
-              <span>
-                ${escapeHTML(fixture.home || "")}
-              </span>
-            </span>
-
-            <span class="team-vs">
-              vs.
-            </span>
-
-            <span class="team-side team-side-away">
-              <span>
-                ${escapeHTML(fixture.away || "")}
-              </span>
-              ${teamShield(fixture.away)}
-            </span>
-
-            <span style="color:var(--muted-light);font-weight:400;">
-              — ${escapeHTML(fixture.competition || "")}
-            </span>
-
-          </div>
-
-          <div class="match-channel">
-            ${escapeHTML(fixture.channel || "")}
-          </div>
-
-        </div>
-      `;
-    })
-    .join("");
+    renderCompetitionSections(grouped);
 }
 
 
