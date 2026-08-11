@@ -178,7 +178,8 @@ const DEFAULT_CONTENT = {
   settings: {
     siteName: "DropRugby",
     description: "Noticias de rugby",
-    clubLogos: {}
+    clubLogos: {},
+    nationLogos: {}
   },
 
   teams: {
@@ -2699,6 +2700,81 @@ export default async function handler(
         delete content.settings
           .clubLogos[
             clubId
+          ];
+      }
+
+      await saveContent(
+        content
+      );
+
+      return json(
+        res,
+        200,
+        {
+          ok: true,
+          content
+        }
+      );
+    }
+
+    // ========================================================
+    // ACTUALIZAR ESCUDO DE SELECCIÓN NACIONAL
+    // ========================================================
+
+    if (
+      action ===
+      "update-nation-logo"
+    ) {
+      const nationId =
+        String(
+          body.nationId || ""
+        ).trim();
+
+      const url =
+        String(
+          body.url || ""
+        ).trim();
+
+      if (!nationId) {
+        return json(
+          res,
+          400,
+          {
+            ok: false,
+            error:
+              "Falta la selección."
+          }
+        );
+      }
+
+      const content =
+        await readContent();
+
+      content.settings =
+        content.settings &&
+        typeof content.settings ===
+          "object"
+          ? content.settings
+          : {};
+
+      content.settings.nationLogos =
+        content.settings
+          .nationLogos &&
+        typeof content.settings
+          .nationLogos ===
+          "object"
+          ? content.settings
+              .nationLogos
+          : {};
+
+      if (url) {
+        content.settings.nationLogos[
+          nationId
+        ] = url;
+      } else {
+        delete content.settings
+          .nationLogos[
+            nationId
           ];
       }
 
