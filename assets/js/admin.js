@@ -1909,177 +1909,67 @@ function dataUrlToPayload(dataUrl) {
   return { contentType: match[1], base64: match[2] };
 }
 
-function canvasToPayload(canvas, quality = 0.78) {
-  const dataUrl = canvas.toDataURL("image/webp", quality);
-  const payload = dataUrlToPayload(dataUrl);
-  const approxBytes = Math.ceil((payload.base64.length * 3) / 4);
-
-  return {
-    ...payload,
-    approxBytes
-  };
-}
-
 function optimizeImage(file) {
   return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) { reject(new Error("El archivo no es una imagen.")); return; }
+    if (file.type === "image/svg+xml") {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("No se pudo leer el SVG."));
+      reader.onload = () => {
+        const text = String(reader.result || "");
+        const base64 = btoa(unescape(encodeURIComponent(text)));
+        if (base64.length > 1500000) { reject(new Error("El SVG es demasiado pesado.")); return; }
+        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0,70) || "imagen";
+        resolve({contentType:"image/svg+xml", base64, filename:`${clean}.svg`});
+      };
+      reader.readAsText(file); return;
+    }
     const reader = new FileReader();
-
-    reader.onerror = () =>
-      reject(new Error("No se pudo leer la imagen."));
-
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
     reader.onload = () => {
       const img = new Image();
-
-      img.onerror = () =>
-        reject(new Error("La imagen no es válida."));
-
+      img.onerror = () => reject(new Error("La imagen no es válida."));
       img.onload = () => {
-        // Keep the final request comfortably below Vercel's function
-        // request-body limit. The API itself allows up to 3 MB binary.
-        const MAX_UPLOAD_BYTES = 2.7 * 1024 * 1024;
-        const MAX_DIMENSION = 1800;
-
-        let scale =
-          Math.min(
-            1,
-            MAX_DIMENSION /
-              Math.max(img.naturalWidth, img.naturalHeight)
-          );
-
-        let width = Math.max(
-          1,
-          Math.round(img.naturalWidth * scale)
-        );
-
-        let height = Math.max(
-          1,
-          Math.round(img.naturalHeight * scale)
-        );
-
+        const maxDimension = 1400;
+        const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
         const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", {
-          alpha: true
-        });
-
-        if (!ctx) {
-          reject(new Error("El navegador no pudo preparar la imagen."));
-          return;
+        canvas.width = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
+        canvas.height = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("No se pudo procesar la imagen.")); return; }
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        let quality=0.82;
+        let dataUrl=canvas.toDataURL("image/webp",quality);
+        let payload=dataUrlToPayload(dataUrl);
+        const maxBytes=1200*1024;
+        while (payload.base64.length*0.75 > maxBytes && quality > 0.45) {
+          quality-=0.07; dataUrl=canvas.toDataURL("image/webp",quality); payload=dataUrlToPayload(dataUrl);
         }
-
-        const draw = () => {
-          canvas.width = width;
-          canvas.height = height;
-
-          ctx.clearRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Always send WEBP. This avoids large PNG payloads and keeps
-          // the upload predictable for Vercel.
-          let quality = 0.82;
-          let result = canvasToPayload(canvas, quality);
-
-          // Reduce quality first.
-          while (
-            result.approxBytes > MAX_UPLOAD_BYTES &&
-            quality > 0.45
-          ) {
-            quality -= 0.07;
-            result = canvasToPayload(canvas, quality);
-          }
-
-          // If quality alone is not enough, reduce dimensions.
-          while (
-            result.approxBytes > MAX_UPLOAD_BYTES &&
-            Math.max(width, height) > 900
-          ) {
-            const factor = 0.8;
-            width = Math.max(1, Math.round(width * factor));
-            height = Math.max(1, Math.round(height * factor));
-
-            canvas.width = width;
-            canvas.height = height;
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-
-            quality = 0.72;
-            result = canvasToPayload(canvas, quality);
-          }
-
-          if (result.approxBytes > MAX_UPLOAD_BYTES) {
-            reject(
-              new Error(
-                "La imagen sigue siendo demasiado pesada. Elegí una imagen más chica."
-              )
-            );
-            return;
-          }
-
-          const clean =
-            file.name
-              .replace(/\.[^.]+$/, "")
-              .replace(/[^a-zA-Z0-9_-]+/g, "-")
-              .slice(0, 70) || "imagen";
-
-          resolve({
-            contentType: "image/webp",
-            base64: result.base64,
-            filename: `${clean}.webp`
-          });
-        };
-
-        draw();
+        if (payload.base64.length*0.75 > maxBytes) { reject(new Error("La imagen sigue siendo demasiado pesada. Elegí una imagen más chica.")); return; }
+        const clean=file.name.replace(/\.[^.]+$/," ").trim().replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,70)||"imagen";
+        resolve({...payload,filename:`${clean}.webp`});
       };
-
-      img.src = reader.result;
+      img.src=reader.result;
     };
-
     reader.readAsDataURL(file);
   });
 }
-
 async function uploadMediaFiles(files) {
   const list = [...files];
-
   if (!list.length) return;
-
   for (const file of list) {
     if (!file.type.startsWith("image/")) {
-      toast(
-        "Archivo omitido",
-        `${file.name} no es una imagen.`,
-        "error"
-      );
+      toast("Archivo omitido", `${file.name} no es una imagen.`, "error");
       continue;
     }
-
     try {
-      toast(
-        "Preparando imagen",
-        `${file.name} se está comprimiendo...`
-      );
-
       const prepared = await optimizeImage(file);
       const data = await mediaApi("upload", prepared);
-
-      if (!data.media) {
-        throw new Error(
-          "El servidor respondió correctamente pero no devolvió la imagen guardada."
-        );
-      }
-
-      state.media.unshift(data.media);
+      if (data.media) state.media.unshift(data.media);
       renderMedia();
-
-      toast(
-        "Imagen guardada",
-        `${file.name} quedó guardada en la biblioteca.`
-      );
+      toast("Imagen subida", file.name);
     } catch (error) {
-      toast(
-        "Error al subir",
-        `${file.name}: ${error.message}`,
-        "error"
-      );
+      toast("Error al subir", `${file.name}: ${error.message}`, "error");
     }
   }
 }
