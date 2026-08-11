@@ -16,7 +16,8 @@ const state = {
   },
   section: "dashboard",
   media: [],
-  clubs: {}
+  clubs: {},
+  nations: {}
 };
 
 const $ = (s) => document.querySelector(s);
@@ -2446,6 +2447,7 @@ async function loadMedia(
 
     renderMedia();
     renderClubLogos();
+    renderNationLogos();
 
     if (showToast) {
       toast(
@@ -2605,7 +2607,8 @@ function renderMedia() {
 
 async function loadClubs() {
   if (
-    Object.keys(state.clubs).length
+    Object.keys(state.clubs).length &&
+    Object.keys(state.nations).length
   ) {
     return state.clubs;
   }
@@ -2624,11 +2627,16 @@ async function loadClubs() {
 
     state.clubs =
       data?.clubs || {};
+
+    state.nations =
+      data?.nations || {};
   } catch {
     state.clubs = {};
+    state.nations = {};
   }
 
   renderClubLogos();
+  renderNationLogos();
 
   return state.clubs;
 }
@@ -2711,6 +2719,87 @@ function renderClubLogos() {
     </div>`;
 }
 
+function renderNationLogos() {
+  const root =
+    $("#nation-logo-grid");
+
+  if (!root) return;
+
+  const logos =
+    state.content.settings
+      ?.nationLogos || {};
+
+  const nations =
+    Object.entries(
+      state.nations
+    );
+
+  root.innerHTML =
+    nations
+      .map(
+        ([id, nation]) => {
+          const current =
+            logos[id] ||
+            nation.logo ||
+            "";
+
+          return `
+            <div class="club-logo-row">
+
+              <div class="club-logo-preview">
+                ${
+                  current
+                    ? `
+                      <img
+                        src="${esc(current)}"
+                        alt="${esc(
+                          nation.name
+                        )}"
+                      >
+                    `
+                    : "<span>—</span>"
+                }
+              </div>
+
+              <div class="club-logo-name">
+                <strong>
+                  ${esc(
+                    nation.name
+                  )}
+                </strong>
+
+                <small>
+                  ${esc(
+                    nation.shortName ||
+                    id
+                  )}
+                </small>
+              </div>
+
+              <button
+                class="action"
+                data-nation-pick="${esc(id)}"
+              >
+                ELEGIR IMAGEN
+              </button>
+
+              <button
+                class="action"
+                data-nation-clear="${esc(id)}"
+              >
+                QUITAR
+              </button>
+
+            </div>
+          `;
+        }
+      )
+      .join("") ||
+    `<div class="empty-state">
+      No hay selecciones configuradas.
+    </div>`;
+}
+
 async function assignClubLogo(
   id,
   url
@@ -2742,6 +2831,44 @@ async function assignClubLogo(
     );
 
   renderClubLogos();
+
+  toast(
+    "Escudo actualizado",
+    "El cambio ya queda guardado para todo el sitio."
+  );
+}
+
+async function assignNationLogo(
+  id,
+  url
+) {
+  const current = {
+    ...(state.content.settings
+      ?.nationLogos || {})
+  };
+
+  if (url) {
+    current[id] = url;
+  } else {
+    delete current[id];
+  }
+
+  const data =
+    await api(
+      "update-nation-logo",
+      {
+        nationId: id,
+        url: url || ""
+      }
+    );
+
+  state.content =
+    normalizeContent(
+      data.content ||
+      state.content
+    );
+
+  renderNationLogos();
 
   toast(
     "Escudo actualizado",
@@ -3228,6 +3355,17 @@ function openMediaUseMenu(
         <button
           type="button"
           class="action media-use-option"
+          data-use-destination="nation"
+        >
+          <strong>SELECCIÓN NACIONAL</strong>
+          <span>
+            Asignar esta imagen como escudo de una selección (Los Pumas y demás).
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="action media-use-option"
           data-use-destination="copy"
         >
           <strong>COPIAR URL</strong>
@@ -3303,6 +3441,21 @@ function openMediaUseMenu(
             await loadClubs();
 
             openClubLogoPicker(
+              url
+            );
+
+            return;
+          }
+
+          if (
+            destination ===
+            "nation"
+          ) {
+            closeModal();
+
+            await loadClubs();
+
+            openNationLogoPicker(
               url
             );
 
@@ -3391,6 +3544,97 @@ function openClubLogoPicker(
 
       await assignClubLogo(
         clubId,
+        url
+      );
+    }
+  );
+}
+
+function openNationLogoPicker(
+  url
+) {
+  const nations =
+    Object.entries(
+      state.nations || {}
+    );
+
+  if (!nations.length) {
+    toast(
+      "Sin selecciones",
+      "No hay selecciones configuradas para asignar la imagen.",
+      "error"
+    );
+
+    return;
+  }
+
+  openModal(
+    "Elegir selección",
+
+    `
+      <div class="form-grid">
+
+        <label class="full">
+          Selección
+
+          <select
+            id="media-use-nation"
+          >
+            <option value="">
+              Seleccioná una selección...
+            </option>
+
+            ${nations
+              .map(
+                ([id, nation]) => `
+                  <option
+                    value="${esc(id)}"
+                  >
+                    ${esc(
+                      nation.name ||
+                      id
+                    )}
+                    ${
+                      nation.shortName
+                        ? ` (${esc(
+                            nation.shortName
+                          )})`
+                        : ""
+                    }
+                  </option>
+                `
+              )
+              .join("")}
+          </select>
+        </label>
+
+        <div
+          class="full article-image-preview"
+        >
+          <img
+            src="${esc(url)}"
+            alt="Imagen seleccionada"
+          >
+        </div>
+
+      </div>
+    `,
+
+    async () => {
+      const select =
+        $("#media-use-nation");
+
+      const nationId =
+        select?.value || "";
+
+      if (!nationId) {
+        throw new Error(
+          "Seleccioná una selección."
+        );
+      }
+
+      await assignNationLogo(
+        nationId,
         url
       );
     }
@@ -3560,6 +3804,74 @@ document.addEventListener(
       assignClubLogo(
         clubClear.dataset
           .clubClear,
+        ""
+      ).catch(
+        (error) =>
+          toast(
+            "Error",
+            error.message,
+            "error"
+          )
+      );
+
+      return;
+    }
+
+    /* =====================================================
+       ELEGIR ESCUDO DE SELECCIÓN
+    ===================================================== */
+
+    const nationPick =
+      event.target.closest(
+        "[data-nation-pick]"
+      );
+
+    if (nationPick) {
+      loadMedia().then(
+        () =>
+          openMediaPicker(
+            async (url) => {
+              try {
+                await assignNationLogo(
+                  nationPick.dataset
+                    .nationPick,
+                  url
+                );
+              } catch (error) {
+                toast(
+                  "Error",
+                  error.message,
+                  "error"
+                );
+              }
+            }
+          )
+      );
+
+      return;
+    }
+
+    /* =====================================================
+       QUITAR ESCUDO DE SELECCIÓN
+    ===================================================== */
+
+    const nationClear =
+      event.target.closest(
+        "[data-nation-clear]"
+      );
+
+    if (nationClear) {
+      if (
+        !confirm(
+          "¿Quitar el escudo personalizado de esta selección?"
+        )
+      ) {
+        return;
+      }
+
+      assignNationLogo(
+        nationClear.dataset
+          .nationClear,
         ""
       ).catch(
         (error) =>
