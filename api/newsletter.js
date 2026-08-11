@@ -43,16 +43,20 @@ function validEmail(email) {
 }
 
 // ============================================================
-// HTML
+// HTML EMAIL DE BIENVENIDA
 // ============================================================
 
 function buildWelcomeEmailHtml() {
   return `
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
   <title>Bienvenido a DropRugby</title>
 </head>
 
@@ -165,6 +169,8 @@ function buildWelcomeEmailHtml() {
 
             </td>
           </tr>
+
+          <!-- TEXT -->
 
           <tr>
             <td
@@ -299,16 +305,12 @@ async function readContent() {
 
   const blob =
     result.blobs.find(
-      (item) =>
-        item.pathname === BLOB_PATH
+      (item) => item.pathname === BLOB_PATH
     ) || result.blobs[0];
 
-  const response = await fetch(
-    blob.url,
-    {
-      cache: "no-store"
-    }
-  );
+  const response = await fetch(blob.url, {
+    cache: "no-store"
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -337,9 +339,7 @@ async function readContent() {
       ? data.standings
       : [],
 
-    standingsBase: Array.isArray(
-      data.standingsBase
-    )
+    standingsBase: Array.isArray(data.standingsBase)
       ? data.standingsBase
       : [],
 
@@ -359,9 +359,7 @@ async function readContent() {
       ? data.history
       : [],
 
-    subscribers: Array.isArray(
-      data.subscribers
-    )
+    subscribers: Array.isArray(data.subscribers)
       ? data.subscribers
       : [],
 
@@ -394,8 +392,7 @@ async function saveContent(content) {
       access: "public",
       addRandomSuffix: false,
       allowOverwrite: true,
-      contentType:
-        "application/json; charset=utf-8",
+      contentType: "application/json; charset=utf-8",
       cacheControlMaxAge: 0
     }
   );
@@ -404,16 +401,51 @@ async function saveContent(content) {
 }
 
 // ============================================================
+// OBTENER BODY
+// ============================================================
+
+async function getBody(req) {
+  if (
+    req.body &&
+    typeof req.body === "object" &&
+    !Buffer.isBuffer(req.body)
+  ) {
+    return req.body;
+  }
+
+  return new Promise((resolve, reject) => {
+    let raw = "";
+
+    req.on("data", (chunk) => {
+      raw += chunk;
+    });
+
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(raw));
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on("error", reject);
+  });
+}
+
+// ============================================================
 // HANDLER
 // ============================================================
 
-export default async function handler(
-  req,
-  res
-) {
-  // ----------------------------------------------------------
+export default async function handler(req, res) {
+
+  // ==========================================================
   // MÉTODO
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (req.method !== "POST") {
     return json(res, 405, {
@@ -423,13 +455,14 @@ export default async function handler(
   }
 
   try {
-    // --------------------------------------------------------
+
+    // ========================================================
     // RESEND API KEY
-    // --------------------------------------------------------
+    // ========================================================
 
     if (!process.env.RESEND_API_KEY) {
       console.error(
-        "NEWSLETTER: falta RESEND_API_KEY"
+        "NEWSLETTER ERROR: falta RESEND_API_KEY"
       );
 
       return json(res, 500, {
@@ -439,48 +472,76 @@ export default async function handler(
       });
     }
 
-    // --------------------------------------------------------
-    // EMAIL
-    // --------------------------------------------------------
+    // ========================================================
+    // BODY
+    // ========================================================
 
-    const email =
-      normalizeEmail(
-        req.body?.email
-      );
-
-    if (!email || !validEmail(email)) {
-      return json(res, 400, {
-        ok: false,
-        error:
-          "Ingresá un email válido."
-      });
-    }
+    const body = await getBody(req);
 
     console.log(
-      "NEWSLETTER: nueva solicitud:",
+      "NEWSLETTER BODY:",
+      body
+    );
+
+    // ========================================================
+    // EMAIL
+    // ========================================================
+
+    const email = normalizeEmail(
+      body?.email
+    );
+
+    console.log(
+      "NEWSLETTER EMAIL:",
       email
     );
 
-    // --------------------------------------------------------
-    // CONTENT
-    // --------------------------------------------------------
+    if (!email || !validEmail(email)) {
+      console.error(
+        "NEWSLETTER ERROR: email inválido:",
+        email
+      );
 
-    const content =
-      await readContent();
+      return json(res, 400, {
+        ok: false,
+        error: "Ingresá un email válido."
+      });
+    }
 
-    if (!Array.isArray(
-      content.subscribers
-    )) {
+    // ========================================================
+    // CONFIGURACIÓN RESEND
+    // ========================================================
+
+    console.log(
+      "NEWSLETTER FROM:",
+      NEWSLETTER_FROM
+    );
+
+    console.log(
+      "NEWSLETTER RESEND API KEY:",
+      process.env.RESEND_API_KEY
+        ? "CONFIGURADA"
+        : "NO CONFIGURADA"
+    );
+
+    // ========================================================
+    // LEER CONTENT
+    // ========================================================
+
+    const content = await readContent();
+
+    if (!Array.isArray(content.subscribers)) {
       content.subscribers = [];
     }
 
-    // --------------------------------------------------------
-    // DUPLICADO
-    // --------------------------------------------------------
+    // ========================================================
+    // COMPROBAR DUPLICADO
+    // ========================================================
 
     const alreadySubscribed =
       content.subscribers.some(
         (subscriber) => {
+
           const subscriberEmail =
             normalizeEmail(
               typeof subscriber === "string"
@@ -488,13 +549,12 @@ export default async function handler(
                 : subscriber?.email
             );
 
-          return (
-            subscriberEmail === email
-          );
+          return subscriberEmail === email;
         }
       );
 
     if (alreadySubscribed) {
+
       console.log(
         "NEWSLETTER: email ya suscripto:",
         email
@@ -503,28 +563,28 @@ export default async function handler(
       return json(res, 200, {
         ok: true,
         alreadySubscribed: true,
+        subscribed: true,
         welcomeEmailSent: false,
         message:
           "Este email ya está suscripto."
       });
     }
 
-    // --------------------------------------------------------
-    // ENVIAR EMAIL DE BIENVENIDA
-    // --------------------------------------------------------
-
-    console.log(
-      "NEWSLETTER: enviando bienvenida a:",
-      email
-    );
-
-    console.log(
-      "NEWSLETTER: remitente:",
-      NEWSLETTER_FROM
-    );
+    // ========================================================
+    // CONSTRUIR EMAIL
+    // ========================================================
 
     const welcomeHtml =
       buildWelcomeEmailHtml();
+
+    // ========================================================
+    // ENVIAR CON RESEND
+    // ========================================================
+
+    console.log(
+      "NEWSLETTER: intentando enviar a:",
+      email
+    );
 
     const resendResult =
       await resend.emails.send({
@@ -535,17 +595,27 @@ export default async function handler(
         html: welcomeHtml
       });
 
+    console.log(
+      "NEWSLETTER RESEND RESULT:",
+      JSON.stringify(
+        resendResult,
+        null,
+        2
+      )
+    );
+
     const resendData =
       resendResult?.data;
 
     const resendError =
       resendResult?.error;
 
-    // --------------------------------------------------------
-    // ERROR RESEND
-    // --------------------------------------------------------
+    // ========================================================
+    // RESEND RECHAZÓ
+    // ========================================================
 
     if (resendError) {
+
       console.error(
         "RESEND NEWSLETTER ERROR:",
         JSON.stringify(
@@ -562,26 +632,28 @@ export default async function handler(
         error:
           "Resend rechazó el envío.",
         detail:
-          resendError.message ||
-          "Error desconocido de Resend."
+          resendError?.message ||
+          "Error desconocido de Resend.",
+        resendError
       });
     }
 
-    // --------------------------------------------------------
-    // RESEND ACEPTÓ EL EMAIL
-    // --------------------------------------------------------
+    // ========================================================
+    // RESEND ACEPTÓ
+    // ========================================================
 
     console.log(
-      "NEWSLETTER: Resend aceptó el envío.",
-      {
-        email,
-        id: resendData?.id || null
-      }
+      "NEWSLETTER: Resend aceptó el envío."
     );
 
-    // --------------------------------------------------------
+    console.log(
+      "NEWSLETTER: RESEND ID:",
+      resendData?.id || null
+    );
+
+    // ========================================================
     // GUARDAR SUSCRIPTOR
-    // --------------------------------------------------------
+    // ========================================================
 
     content.subscribers.push({
       email,
@@ -589,18 +661,16 @@ export default async function handler(
         new Date().toISOString()
     });
 
-    await saveContent(
-      content
-    );
+    await saveContent(content);
 
     console.log(
       "NEWSLETTER: suscriptor guardado:",
       email
     );
 
-    // --------------------------------------------------------
-    // RESPUESTA
-    // --------------------------------------------------------
+    // ========================================================
+    // RESPUESTA FINAL
+    // ========================================================
 
     return json(res, 200, {
       ok: true,
@@ -613,8 +683,13 @@ export default async function handler(
     });
 
   } catch (error) {
+
+    // ========================================================
+    // ERROR GENERAL
+    // ========================================================
+
     console.error(
-      "NEWSLETTER ERROR:",
+      "NEWSLETTER ERROR GENERAL:",
       error
     );
 
