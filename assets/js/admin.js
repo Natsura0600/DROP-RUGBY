@@ -1909,58 +1909,177 @@ function dataUrlToPayload(dataUrl) {
   return { contentType: match[1], base64: match[2] };
 }
 
+function canvasToPayload(canvas, quality = 0.78) {
+  const dataUrl = canvas.toDataURL("image/webp", quality);
+  const payload = dataUrlToPayload(dataUrl);
+  const approxBytes = Math.ceil((payload.base64.length * 3) / 4);
+
+  return {
+    ...payload,
+    approxBytes
+  };
+}
+
 function optimizeImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+
+    reader.onerror = () =>
+      reject(new Error("No se pudo leer la imagen."));
+
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("La imagen no es válida."));
+
+      img.onerror = () =>
+        reject(new Error("La imagen no es válida."));
+
       img.onload = () => {
-        const max = 1600;
-        const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        // Keep the final request comfortably below Vercel's function
+        // request-body limit. The API itself allows up to 3 MB binary.
+        const MAX_UPLOAD_BYTES = 2.7 * 1024 * 1024;
+        const MAX_DIMENSION = 1800;
+
+        let scale =
+          Math.min(
+            1,
+            MAX_DIMENSION /
+              Math.max(img.naturalWidth, img.naturalHeight)
+          );
+
+        let width = Math.max(
+          1,
+          Math.round(img.naturalWidth * scale)
+        );
+
+        let height = Math.max(
+          1,
+          Math.round(img.naturalHeight * scale)
+        );
+
         const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const outputType = file.type === "image/png" ? "image/png" : "image/webp";
-        const quality = outputType === "image/png" ? undefined : 0.78;
-        const dataUrl = canvas.toDataURL(outputType, quality);
-        const payload = dataUrlToPayload(dataUrl);
-        // Vercel Functions tienen límites de payload; mantenemos la imagen
-        // optimizada por debajo de ~4 MB antes de enviarla al servidor.
-        const approxBytes = Math.ceil((payload.base64.length * 3) / 4);
-        if (approxBytes > 4 * 1024 * 1024) {
-          reject(new Error("La imagen sigue siendo demasiado pesada. Usá una imagen más chica."));
+        const ctx = canvas.getContext("2d", {
+          alpha: true
+        });
+
+        if (!ctx) {
+          reject(new Error("El navegador no pudo preparar la imagen."));
           return;
         }
-        const ext = outputType === "image/png" ? "png" : "webp";
-        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 70) || "imagen";
-        resolve({ ...payload, filename: `${clean}.${ext}` });
+
+        const draw = () => {
+          canvas.width = width;
+          canvas.height = height;
+
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Always send WEBP. This avoids large PNG payloads and keeps
+          // the upload predictable for Vercel.
+          let quality = 0.82;
+          let result = canvasToPayload(canvas, quality);
+
+          // Reduce quality first.
+          while (
+            result.approxBytes > MAX_UPLOAD_BYTES &&
+            quality > 0.45
+          ) {
+            quality -= 0.07;
+            result = canvasToPayload(canvas, quality);
+          }
+
+          // If quality alone is not enough, reduce dimensions.
+          while (
+            result.approxBytes > MAX_UPLOAD_BYTES &&
+            Math.max(width, height) > 900
+          ) {
+            const factor = 0.8;
+            width = Math.max(1, Math.round(width * factor));
+            height = Math.max(1, Math.round(height * factor));
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            quality = 0.72;
+            result = canvasToPayload(canvas, quality);
+          }
+
+          if (result.approxBytes > MAX_UPLOAD_BYTES) {
+            reject(
+              new Error(
+                "La imagen sigue siendo demasiado pesada. Elegí una imagen más chica."
+              )
+            );
+            return;
+          }
+
+          const clean =
+            file.name
+              .replace(/\.[^.]+$/, "")
+              .replace(/[^a-zA-Z0-9_-]+/g, "-")
+              .slice(0, 70) || "imagen";
+
+          resolve({
+            contentType: "image/webp",
+            base64: result.base64,
+            filename: `${clean}.webp`
+          });
+        };
+
+        draw();
       };
+
       img.src = reader.result;
     };
+
     reader.readAsDataURL(file);
   });
 }
 
 async function uploadMediaFiles(files) {
   const list = [...files];
+
   if (!list.length) return;
+
   for (const file of list) {
     if (!file.type.startsWith("image/")) {
-      toast("Archivo omitido", `${file.name} no es una imagen.`, "error");
+      toast(
+        "Archivo omitido",
+        `${file.name} no es una imagen.`,
+        "error"
+      );
       continue;
     }
+
     try {
+      toast(
+        "Preparando imagen",
+        `${file.name} se está comprimiendo...`
+      );
+
       const prepared = await optimizeImage(file);
       const data = await mediaApi("upload", prepared);
-      if (data.media) state.media.unshift(data.media);
+
+      if (!data.media) {
+        throw new Error(
+          "El servidor respondió correctamente pero no devolvió la imagen guardada."
+        );
+      }
+
+      state.media.unshift(data.media);
       renderMedia();
-      toast("Imagen subida", file.name);
+
+      toast(
+        "Imagen guardada",
+        `${file.name} quedó guardada en la biblioteca.`
+      );
     } catch (error) {
-      toast("Error al subir", `${file.name}: ${error.message}`, "error");
+      toast(
+        "Error al subir",
+        `${file.name}: ${error.message}`,
+        "error"
+      );
     }
   }
 }
