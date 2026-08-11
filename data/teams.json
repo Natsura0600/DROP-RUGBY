@@ -63,5 +63,610 @@
       "logo": "https://cdn.discordapp.com/attachments/1536231065184903278/1536231304788578314/SIC_.png?ex=6a7aa664&is=6a7954e4&hm=7dec2e5910159475effa86892ca268033077a628aec7163bd7baf07336ad9557"
     }
   },
-  "nations": {}
+"nations": {
+  "argentina": {
+    "name": "Argentina",
+    "shortName": "Los Pumas",
+    "logo": ""
+  },
+  "australia": {
+    "name": "Australia",
+    "shortName": "Wallabies",
+    "logo": ""
+  },
+  "new_zealand": {
+    "name": "Nueva Zelanda",
+    "shortName": "All Blacks",
+    "logo": ""
+  },
+  "south_africa": {
+    "name": "Sudáfrica",
+    "shortName": "Springboks",
+    "logo": ""
+  },
+  "england": {
+    "name": "Inglaterra",
+    "shortName": "England",
+    "logo": ""
+  },
+  "france": {
+    "name": "Francia",
+    "shortName": "Les Bleus",
+    "logo": ""
+  },
+  "ireland": {
+    "name": "Irlanda",
+    "shortName": "Ireland",
+    "logo": ""
+  },
+  "scotland": {
+    "name": "Escocia",
+    "shortName": "Scotland",
+    "logo": ""
+  },
+  "wales": {
+    "name": "Gales",
+    "shortName": "Wales",
+    "logo": ""
+  },
+  "italy": {
+    "name": "Italia",
+    "shortName": "Azzurri",
+    "logo": ""
+  },
+  "fiji": {
+    "name": "Fiyi",
+    "shortName": "Flying Fijians",
+    "logo": ""
+  },
+  "samoa": {
+    "name": "Samoa",
+    "shortName": "Manu Samoa",
+    "logo": ""
+  },
+  "tonga": {
+    "name": "Tonga",
+    "shortName": "Ikale Tahi",
+    "logo": ""
+  },
+  "japan": {
+    "name": "Japón",
+    "shortName": "Brave Blossoms",
+    "logo": ""
+  },
+  "georgia": {
+    "name": "Georgia",
+    "shortName": "Lelos",
+    "logo": ""
+  },
+  "uruguay": {
+    "name": "Uruguay",
+    "shortName": "Los Teros",
+    "logo": ""
+  },
+  "chile": {
+    "name": "Chile",
+    "shortName": "Los Cóndores",
+    "logo": ""
+  },
+  "brazil": {
+    "name": "Brasil",
+    "shortName": "Os Tupis",
+    "logo": ""
+  },
+  "paraguay": {
+    "name": "Paraguay",
+    "shortName": "Los Yacarés",
+    "logo": ""
+  },
+  "colombia": {
+    "name": "Colombia",
+    "shortName": "Los Tucanes",
+    "logo": ""
+  },
+  "peru": {
+    "name": "Perú",
+    "shortName": "Los Tumis",
+    "logo": ""
+  },
+  "venezuela": {
+    "name": "Venezuela",
+    "shortName": "Las Orquídeas",
+    "logo": ""
+  },
+  "ecuador": {
+    "name": "Ecuador",
+    "shortName": "Los Cóndores",
+    "logo": ""
+  },
+  "canada": {
+    "name": "Canadá",
+    "shortName": "Canada",
+    "logo": ""
+  },
+  "usa": {
+    "name": "Estados Unidos",
+    "shortName": "USA Eagles",
+    "logo": ""
+  },
+  "mexico": {
+    "name": "México",
+    "shortName": "Los Serpientes",
+    "logo": ""
+  },
+  "spain": {
+    "name": "España",
+    "shortName": "Los Leones",
+    "logo": ""
+  },
+  "portugal": {
+    "name": "Portugal",
+    "shortName": "Os Lobos",
+    "logo": ""
+  },
+  "romania": {
+    "name": "Rumania",
+    "shortName": "Stejarii",
+    "logo": ""
+  },
+  "belgium": {
+    "name": "Bélgica",
+    "shortName": "Black Devils",
+    "logo": ""
+  },
+  "netherlands": {
+    "name": "Países Bajos",
+    "shortName": "Oranje",
+    "logo": ""
+  },
+  "germany": {
+    "name": "Alemania",
+    "shortName": "Deutschland",
+    "logo": ""
+  },
+  "switzerland": {
+    "name": "Suiza",
+    "shortName": "Swiss",
+    "logo": ""
+  },
+  "poland": {
+    "name": "Polonia",
+    "shortName": "Biało-Czerwoni",
+    "logo": ""
+  },
+  "czechia": {
+    "name": "Chequia",
+    "shortName": "Czechia",
+    "logo": ""
+  },
+  "croatia": {
+    "name": "Croacia",
+    "shortName": "Croatia",
+    "logo": ""
+  },
+  "ukraine": {
+    "name": "Ucrania",
+    "shortName": "Ukraine",
+    "logo": ""
+  },
+  "russia": {
+    "name": "Rusia",
+    "shortName": "Bears",
+    "logo": ""
+  },
+  "georgia": {
+    "name": "Georgia",
+    "shortName": "Lelos",
+    "logo": ""
+  },
+  "sweden": {
+    "name": "Suecia",
+    "shortName": "Sweden",
+    "logo": ""
+  },
+  "finland": {
+    "name": "Finlandia",
+    "shortName": "Finland",
+    "logo": ""
+  },
+  "denmark": {
+    "name": "Dinamarca",
+    "shortName": "Denmark",
+    "logo": ""
+  },
+  "norway": {
+    "name": "Noruega",
+    "shortName": "Norway",
+    "logo": ""
+  },
+  "latvia": {
+    "name": "Letonia",
+    "shortName": "Latvia",
+    "logo": ""
+  },
+  "lithuania": {
+    "name": "Lituania",
+    "shortName": "Lithuania",
+    "logo": ""
+  },
+  "estonia": {
+    "name": "Estonia",
+    "shortName": "Estonia",
+    "logo": ""
+  },
+  "austria": {
+    "name": "Austria",
+    "shortName": "Austria",
+    "logo": ""
+  },
+  "hungary": {
+    "name": "Hungría",
+    "shortName": "Hungary",
+    "logo": ""
+  },
+  "bulgaria": {
+    "name": "Bulgaria",
+    "shortName": "Bulgaria",
+    "logo": ""
+  },
+  "serbia": {
+    "name": "Serbia",
+    "shortName": "Serbia",
+    "logo": ""
+  },
+  "slovenia": {
+    "name": "Eslovenia",
+    "shortName": "Slovenia",
+    "logo": ""
+  },
+  "slovakia": {
+    "name": "Eslovaquia",
+    "shortName": "Slovakia",
+    "logo": ""
+  },
+  "moldova": {
+    "name": "Moldavia",
+    "shortName": "Moldova",
+    "logo": ""
+  },
+  "croatia": {
+    "name": "Croacia",
+    "shortName": "Croatia",
+    "logo": ""
+  },
+  "malta": {
+    "name": "Malta",
+    "shortName": "Malta",
+    "logo": ""
+  },
+  "cyprus": {
+    "name": "Chipre",
+    "shortName": "Cyprus",
+    "logo": ""
+  },
+  "israel": {
+    "name": "Israel",
+    "shortName": "Israel",
+    "logo": ""
+  },
+  "monaco": {
+    "name": "Mónaco",
+    "shortName": "Monaco",
+    "logo": ""
+  },
+  "luxembourg": {
+    "name": "Luxemburgo",
+    "shortName": "Luxembourg",
+    "logo": ""
+  },
+  "andorra": {
+    "name": "Andorra",
+    "shortName": "Andorra",
+    "logo": ""
+  },
+  "bosnia_herzegovina": {
+    "name": "Bosnia y Herzegovina",
+    "shortName": "Bosnia",
+    "logo": ""
+  },
+  "turkey": {
+    "name": "Turquía",
+    "shortName": "Türkiye",
+    "logo": ""
+  },
+  "kazakhstan": {
+    "name": "Kazajistán",
+    "shortName": "Kazakhstan",
+    "logo": ""
+  },
+  "uzbekistan": {
+    "name": "Uzbekistán",
+    "shortName": "Uzbekistan",
+    "logo": ""
+  },
+  "kyrgyzstan": {
+    "name": "Kirguistán",
+    "shortName": "Kyrgyzstan",
+    "logo": ""
+  },
+  "hong_kong": {
+    "name": "Hong Kong",
+    "shortName": "Hong Kong China",
+    "logo": ""
+  },
+  "china": {
+    "name": "China",
+    "shortName": "China",
+    "logo": ""
+  },
+  "chinese_taipei": {
+    "name": "Chinese Taipei",
+    "shortName": "Chinese Taipei",
+    "logo": ""
+  },
+  "korea": {
+    "name": "Corea del Sur",
+    "shortName": "Korea",
+    "logo": ""
+  },
+  "india": {
+    "name": "India",
+    "shortName": "India",
+    "logo": ""
+  },
+  "malaysia": {
+    "name": "Malasia",
+    "shortName": "Malaysia",
+    "logo": ""
+  },
+  "singapore": {
+    "name": "Singapur",
+    "shortName": "Singapore",
+    "logo": ""
+  },
+  "thailand": {
+    "name": "Tailandia",
+    "shortName": "Thailand",
+    "logo": ""
+  },
+  "philippines": {
+    "name": "Filipinas",
+    "shortName": "Philippines",
+    "logo": ""
+  },
+  "sri_lanka": {
+    "name": "Sri Lanka",
+    "shortName": "Sri Lanka",
+    "logo": ""
+  },
+  "pakistan": {
+    "name": "Pakistán",
+    "shortName": "Pakistan",
+    "logo": ""
+  },
+  "iran": {
+    "name": "Irán",
+    "shortName": "Iran",
+    "logo": ""
+  },
+  "united_arab_emirates": {
+    "name": "Emiratos Árabes Unidos",
+    "shortName": "UAE",
+    "logo": ""
+  },
+  "qatar": {
+    "name": "Qatar",
+    "shortName": "Qatar",
+    "logo": ""
+  },
+  "jordan": {
+    "name": "Jordania",
+    "shortName": "Jordan",
+    "logo": ""
+  },
+  "lebanon": {
+    "name": "Líbano",
+    "shortName": "Lebanon",
+    "logo": ""
+  },
+  "indonesia": {
+    "name": "Indonesia",
+    "shortName": "Indonesia",
+    "logo": ""
+  },
+  "mongolia": {
+    "name": "Mongolia",
+    "shortName": "Mongolia",
+    "logo": ""
+  },
+  "nepal": {
+    "name": "Nepal",
+    "shortName": "Nepal",
+    "logo": ""
+  },
+  "brunei": {
+    "name": "Brunéi",
+    "shortName": "Brunei",
+    "logo": ""
+  },
+  "laos": {
+    "name": "Laos",
+    "shortName": "Laos",
+    "logo": ""
+  },
+  "vanuatu": {
+    "name": "Vanuatu",
+    "shortName": "Vanuatu",
+    "logo": ""
+  },
+  "papua_new_guinea": {
+    "name": "Papúa Nueva Guinea",
+    "shortName": "Pukpuks",
+    "logo": ""
+  },
+  "solomon_islands": {
+    "name": "Islas Salomón",
+    "shortName": "Solomon Islands",
+    "logo": ""
+  },
+  "cook_islands": {
+    "name": "Islas Cook",
+    "shortName": "Cook Islands",
+    "logo": ""
+  },
+  "niue": {
+    "name": "Niue",
+    "shortName": "Niue",
+    "logo": ""
+  },
+  "american_samoa": {
+    "name": "Samoa Americana",
+    "shortName": "American Samoa",
+    "logo": ""
+  },
+  "guam": {
+    "name": "Guam",
+    "shortName": "Guam",
+    "logo": ""
+  },
+  "tahiti": {
+    "name": "Tahití",
+    "shortName": "Tahiti",
+    "logo": ""
+  },
+  "botswana": {
+    "name": "Botsuana",
+    "shortName": "Botswana",
+    "logo": ""
+  },
+  "kenya": {
+    "name": "Kenia",
+    "shortName": "Simba",
+    "logo": ""
+  },
+  "namibia": {
+    "name": "Namibia",
+    "shortName": "Welwitschias",
+    "logo": ""
+  },
+  "zimbabwe": {
+    "name": "Zimbabue",
+    "shortName": "Sables",
+    "logo": ""
+  },
+  "zambia": {
+    "name": "Zambia",
+    "shortName": "Chipolopolo",
+    "logo": ""
+  },
+  "uganda": {
+    "name": "Uganda",
+    "shortName": "Rugby Cranes",
+    "logo": ""
+  },
+  "madagascar": {
+    "name": "Madagascar",
+    "shortName": "Makis",
+    "logo": ""
+  },
+  "morocco": {
+    "name": "Marruecos",
+    "shortName": "Morocco",
+    "logo": ""
+  },
+  "tunisia": {
+    "name": "Túnez",
+    "shortName": "Tunisia",
+    "logo": ""
+  },
+  "algeria": {
+    "name": "Argelia",
+    "shortName": "Algeria",
+    "logo": ""
+  },
+  "senegal": {
+    "name": "Senegal",
+    "shortName": "Senegal",
+    "logo": ""
+  },
+  "ivory_coast": {
+    "name": "Costa de Marfil",
+    "shortName": "Côte d'Ivoire",
+    "logo": ""
+  },
+  "ghana": {
+    "name": "Ghana",
+    "shortName": "Ghana",
+    "logo": ""
+  },
+  "nigeria": {
+    "name": "Nigeria",
+    "shortName": "Nigeria",
+    "logo": ""
+  },
+  "cameroon": {
+    "name": "Camerún",
+    "shortName": "Cameroon",
+    "logo": ""
+  },
+  "rwanda": {
+    "name": "Ruanda",
+    "shortName": "Rwanda",
+    "logo": ""
+  },
+  "burundi": {
+    "name": "Burundi",
+    "shortName": "Burundi",
+    "logo": ""
+  },
+  "tanzania": {
+    "name": "Tanzania",
+    "shortName": "Tanzania",
+    "logo": ""
+  },
+  "mauritius": {
+    "name": "Mauricio",
+    "shortName": "Mauritius",
+    "logo": ""
+  },
+  "eswatini": {
+    "name": "Esuatini",
+    "shortName": "Eswatini",
+    "logo": ""
+  },
+  "lesotho": {
+    "name": "Lesoto",
+    "shortName": "Lesotho",
+    "logo": ""
+  },
+  "benin": {
+    "name": "Benín",
+    "shortName": "Benin",
+    "logo": ""
+  },
+  "burkina_faso": {
+    "name": "Burkina Faso",
+    "shortName": "Burkina Faso",
+    "logo": ""
+  },
+  "togo": {
+    "name": "Togo",
+    "shortName": "Togo",
+    "logo": ""
+  },
+  "mali": {
+    "name": "Malí",
+    "shortName": "Mali",
+    "logo": ""
+  },
+  "democratic_republic_congo": {
+    "name": "República Democrática del Congo",
+    "shortName": "DR Congo",
+    "logo": ""
+  },
+  "iraq": {
+    "name": "Irak",
+    "shortName": "Iraq",
+    "logo": ""
+  }
 }
