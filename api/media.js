@@ -2,7 +2,6 @@ import { list, put, del } from '@vercel/blob';
 import crypto from 'node:crypto';
 
 const PREFIX = 'droprugby/media/';
-const INDEX_PATH = 'droprugby/media-index.json';
 const COOKIE_NAME = 'droprugby_session';
 const MAX_AGE = 60 * 60 * 24 * 7;
 const MAX_BYTES = 6 * 1024 * 1024;
@@ -65,44 +64,17 @@ async function getBody(req) {
   });
 }
 
-
-async function readMediaIndex() {
-  try {
-    const result = await list({ prefix: INDEX_PATH, limit: 10 });
-    const blob = result.blobs?.find(item => item.pathname === INDEX_PATH);
-    if (!blob?.url) return [];
-    const response = await fetch(blob.url, { cache: 'no-store' });
-    if (!response.ok) return [];
-    const content = await response.json();
-    return Array.isArray(content.media) ? content.media : [];
-  } catch (error) {
-    console.error('Media catalog read error:', error);
-    return [];
-  }
-}
-
-async function saveMediaIndex(media) {
-  try {
-    const result = await list({ prefix: INDEX_PATH, limit: 10 });
-    const blob = result.blobs?.find(item => item.pathname === INDEX_PATH);
-    let content = {};
-    if (blob?.url) {
-      const response = await fetch(blob.url, { cache: 'no-store' });
-      if (response.ok) content = await response.json();
-    }
-    content = content && typeof content === 'object' ? content : {};
-    content.media = media;
-    await put(INDEX_PATH, JSON.stringify(content, null, 2), {
-      access: 'public',
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: 'application/json; charset=utf-8',
-      cacheControlMaxAge: 0
-    });
-  } catch (error) {
-    console.error('Media catalog save error:', error);
-    throw new Error(`La imagen se subió, pero no se pudo guardar el índice: ${error?.message || 'error desconocido'}`);
-  }
+async function listAllMedia() {
+  const blobs = [];
+  let cursor;
+  do {
+    const page = await list({ prefix: PREFIX, limit: 1000, ...(cursor ? { cursor } : {}) });
+    blobs.push(...(page.blobs || []));
+    cursor = page.cursor || undefined;
+  } while (cursor);
+  return blobs
+    .filter(item => item.contentType?.startsWith('image/'))
+    .sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
 }
 
 function safeFilename(name) {
@@ -119,16 +91,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const result = await list({ prefix: PREFIX, limit: 1000 });
-      const blobs = result.blobs
-        .filter(item => item.contentType?.startsWith('image/'));
-      const catalog = await readMediaIndex();
-      const byUrl = new Map();
-      [...catalog, ...blobs].forEach(item => {
-        if (item?.url) byUrl.set(item.url, item);
-      });
-      const media = [...byUrl.values()]
-        .sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
+      const media = await listAllMedia();
       return json(res, 200, { ok: true, media });
     }
 
@@ -157,22 +120,16 @@ export default async function handler(req, res) {
         allowOverwrite: false
       });
 
-      const catalog = await readMediaIndex();
-      const nextCatalog = [blob, ...catalog.filter(item => item?.url !== blob.url)];
-      await saveMediaIndex(nextCatalog);
-
       return json(res, 200, { ok: true, media: blob });
     }
 
     if (action === 'delete') {
       const url = String(body.url || '');
       if (!url) return json(res, 400, { ok: false, error: 'Falta la imagen a eliminar.' });
-      const result = await list({ prefix: PREFIX, limit: 1000 });
-      const blob = result.blobs.find(item => item.url === url);
+      const media = await listAllMedia();
+      const blob = media.find(item => item.url === url);
       if (!blob) return json(res, 404, { ok: false, error: 'Imagen no encontrada.' });
       await del(blob.url);
-      const catalog = await readMediaIndex();
-      await saveMediaIndex(catalog.filter(item => item?.url !== url));
       return json(res, 200, { ok: true });
     }
 
