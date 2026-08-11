@@ -66,15 +66,20 @@ async function getBody(req) {
 
 async function listAllMedia() {
   const blobs = [];
+
   let cursor;
+
   do {
-    const page = await list({ prefix: PREFIX, limit: 1000, ...(cursor ? { cursor } : {}) });
+    const page = await list({
+      limit: 1000,
+      ...(cursor ? { cursor } : {})
+    });
+
     blobs.push(...(page.blobs || []));
     cursor = page.cursor || undefined;
   } while (cursor);
-  return blobs
-    .filter(item => item.contentType?.startsWith('image/'))
-    .sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
+
+  return blobs;
 }
 
 function safeFilename(name) {
