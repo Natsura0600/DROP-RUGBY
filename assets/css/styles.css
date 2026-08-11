@@ -346,6 +346,95 @@ blockquote { font-family: var(--serif); font-size: 28px; line-height: 1.5; font-
 .competition-block { border: 1px solid var(--line); border-top: 0; }
 .competition-block + .competition-block { border-top: 1px solid var(--line); }
 .competition-name { font-size: 10px; font-weight: 700; letter-spacing: 1.4px; padding: 14px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+
+/* Mini rectángulos de fixture por competición */
+.day-block-body { background: var(--paper); }
+.competition-section { border-top: 1px solid var(--line); }
+.day-block-body .competition-section:first-child { border-top: 0; }
+.calendar-preview { border: 1px solid var(--line); background: var(--paper); }
+
+.fixture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 12px;
+  padding: 16px 18px 18px;
+}
+
+.fixture-tile {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 12px 10px 10px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+
+.fixture-tile:hover {
+  border-color: var(--ink-black);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+  transform: translateY(-2px);
+}
+
+.fixture-tile-time {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-black);
+  line-height: 1;
+}
+
+.fixture-tile-matchup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.fixture-tile-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fixture-tile-shield {
+  width: 22px !important;
+  height: 22px !important;
+  flex: 0 0 22px !important;
+}
+
+.fixture-tile-name {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fixture-tile-vs {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  color: var(--muted-light);
+  text-align: center;
+  line-height: 1;
+}
+
+.fixture-tile-meta {
+  margin: 0;
+  padding-top: 2px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 9px;
+  letter-spacing: .4px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .match-row { display: grid; grid-template-columns: 60px 1fr auto; gap: 14px; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--line-soft); font-size: 13px; transition: background .15s; }
 .match-row:last-child { border-bottom: 0; }
 .match-row:hover { background: #fafafa; }
@@ -393,6 +482,7 @@ blockquote { font-family: var(--serif); font-size: 28px; line-height: 1.5; font-
   .newsletter-form { width: 100%; }
   .related-grid { grid-template-columns: 1fr 1fr; }
   .calendar-controls { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .fixture-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; padding: 14px; }
   .match-row { grid-template-columns: 46px 1fr auto; padding: 12px 14px; font-size: 12px; }
 }
 @media (max-width: 620px) {
@@ -417,6 +507,9 @@ blockquote { font-family: var(--serif); font-size: 28px; line-height: 1.5; font-
   .footer-links { width: 100%; }
   .quote-inner { padding: 55px 18px; }
   blockquote { font-size: 21px; }
+  .fixture-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
+  .fixture-tile { min-height: 112px; padding: 10px 8px 8px; }
+  .fixture-tile-name { font-size: 10px; }
   .match-row { grid-template-columns: 40px 1fr; }
   .match-channel { grid-column: 1/-1; text-align: left; padding-left: 40px; margin-top: -6px; }
   .search-overlay { padding: 70px 18px; }
