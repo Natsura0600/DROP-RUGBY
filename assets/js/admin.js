@@ -1344,7 +1344,8 @@ function bindArticleMediaControls() {
     try {
       const prepared = await optimizeImage(file);
       const data = await mediaApi("upload", prepared);
-      if (data.media) state.media.unshift(data.media);
+      if (!data.media?.url) throw new Error("El servidor no devolvió la URL de la imagen.");
+      await loadMedia(false);
       const input = $("#article-image-url");
       if (input) input.value = data.media.url;
       updateArticleImagePreview(data.media.url);
@@ -1911,67 +1912,78 @@ function dataUrlToPayload(dataUrl) {
 
 function optimizeImage(file) {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith("image/")) { reject(new Error("El archivo no es una imagen.")); return; }
-    if (file.type === "image/svg+xml") {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("No se pudo leer el SVG."));
-      reader.onload = () => {
-        const text = String(reader.result || "");
-        const base64 = btoa(unescape(encodeURIComponent(text)));
-        if (base64.length > 1500000) { reject(new Error("El SVG es demasiado pesado.")); return; }
-        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0,70) || "imagen";
-        resolve({contentType:"image/svg+xml", base64, filename:`${clean}.svg`});
-      };
-      reader.readAsText(file); return;
-    }
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
     reader.onload = () => {
+      if (file.type === "image/svg+xml") {
+        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 70) || "imagen";
+        const payload = dataUrlToPayload(reader.result);
+        const bytes = Math.ceil(payload.base64.length * 3 / 4);
+        if (bytes > 2 * 1024 * 1024) return reject(new Error("El SVG supera 2 MB."));
+        return resolve({ ...payload, filename: `${clean}.svg` });
+      }
       const img = new Image();
-      img.onerror = () => reject(new Error("La imagen no es válida."));
+      img.onerror = () => reject(new Error("La imagen no es válida o no se pudo procesar."));
       img.onload = () => {
-        const maxDimension = 1400;
-        const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
-        canvas.height = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { reject(new Error("No se pudo procesar la imagen.")); return; }
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        let quality=0.82;
-        let dataUrl=canvas.toDataURL("image/webp",quality);
-        let payload=dataUrlToPayload(dataUrl);
-        const maxBytes=1200*1024;
-        while (payload.base64.length*0.75 > maxBytes && quality > 0.45) {
-          quality-=0.07; dataUrl=canvas.toDataURL("image/webp",quality); payload=dataUrlToPayload(dataUrl);
-        }
-        if (payload.base64.length*0.75 > maxBytes) { reject(new Error("La imagen sigue siendo demasiado pesada. Elegí una imagen más chica.")); return; }
-        const clean=file.name.replace(/\.[^.]+$/," ").trim().replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,70)||"imagen";
-        resolve({...payload,filename:`${clean}.webp`});
+        const TARGET = 2 * 1024 * 1024;
+        let scale = Math.min(1, 1600 / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
+        const clean = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 70) || "imagen";
+        try {
+          let result;
+          for (let attempt = 0; attempt < 8; attempt++) {
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
+            canvas.height = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
+            const ctx = canvas.getContext("2d", { alpha: true });
+            if (!ctx) throw new Error("No se pudo preparar la imagen.");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            let quality = 0.82;
+            let dataUrl = canvas.toDataURL("image/webp", quality);
+            let payload = dataUrlToPayload(dataUrl);
+            let bytes = Math.ceil(payload.base64.length * 3 / 4);
+            while (bytes > TARGET && quality > 0.45) {
+              quality -= 0.08;
+              dataUrl = canvas.toDataURL("image/webp", quality);
+              payload = dataUrlToPayload(dataUrl);
+              bytes = Math.ceil(payload.base64.length * 3 / 4);
+            }
+            result = payload;
+            if (bytes <= TARGET) break;
+            scale *= 0.78;
+          }
+          const bytes = Math.ceil(result.base64.length * 3 / 4);
+          if (bytes > TARGET) return reject(new Error("La imagen sigue siendo demasiado pesada."));
+          resolve({ ...result, contentType: "image/webp", filename: `${clean}.webp` });
+        } catch (error) { reject(error); }
       };
-      img.src=reader.result;
+      img.src = reader.result;
     };
     reader.readAsDataURL(file);
   });
 }
+
 async function uploadMediaFiles(files) {
-  const list = [...files];
-  if (!list.length) return;
-  for (const file of list) {
+  const filesToUpload = [...files];
+  if (!filesToUpload.length) return;
+  let uploaded = 0;
+  for (const file of filesToUpload) {
     if (!file.type.startsWith("image/")) {
       toast("Archivo omitido", `${file.name} no es una imagen.`, "error");
       continue;
     }
     try {
+      toast("Preparando imagen", file.name);
       const prepared = await optimizeImage(file);
       const data = await mediaApi("upload", prepared);
-      if (data.media) state.media.unshift(data.media);
-      renderMedia();
-      toast("Imagen subida", file.name);
+      if (!data.media?.url) throw new Error("El servidor no devolvió la URL de la imagen.");
+      uploaded++;
+      toast("Imagen guardada", file.name);
     } catch (error) {
-      toast("Error al subir", `${file.name}: ${error.message}`, "error");
+      toast("Error al guardar", `${file.name}: ${error.message}`, "error");
     }
   }
+  await loadMedia(false);
+  if (uploaded) toast("Media actualizado", `${uploaded} imagen${uploaded === 1 ? "" : "es"} guardada${uploaded === 1 ? "" : "s"} correctamente.`);
 }
 
 function openMediaPicker(callback) {
