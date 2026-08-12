@@ -809,32 +809,34 @@ Ejemplo:
         </p>
       </div>
 
-      <label class="check">
-        <input
-          type="checkbox"
-          name="featured"
-          ${article.featured ? "checked" : ""}
-        >
-        Noticia destacada
-      </label>
+      <div class="full article-flags">
+        <label class="check">
+          <input
+            type="checkbox"
+            name="featured"
+            ${article.featured ? "checked" : ""}
+          >
+          <span>Noticia destacada</span>
+        </label>
 
-      <label class="check">
-        <input
-          type="checkbox"
-          name="published"
-          ${article.published !== false ? "checked" : ""}
-        >
-        Publicada
-      </label>
+        <label class="check">
+          <input
+            type="checkbox"
+            name="published"
+            ${article.published !== false ? "checked" : ""}
+          >
+          <span>Publicada</span>
+        </label>
 
-      <label class="check">
-        <input
-          type="checkbox"
-          name="scheduled"
-          ${article.scheduled ? "checked" : ""}
-        >
-        Programar publicación
-      </label>
+        <label class="check">
+          <input
+            type="checkbox"
+            name="scheduled"
+            ${article.scheduled ? "checked" : ""}
+          >
+          <span>Programar publicación</span>
+        </label>
+      </div>
 
       <p class="form-help full">
         Si marcás "Programar publicación", la noticia no se mostrará
