@@ -231,7 +231,7 @@
           <div>
             <small>RECURSOS</small>
             <h1>Media Manager</h1>
-            <p class="muted">Subí y administrá imágenes para noticias, escudos, jugadores y cualquier contenido del sitio.</p>
+            <p class="muted">Una biblioteca central para imágenes, portadas y escudos del sitio.</p>
           </div>
           <label class="btn primary media-upload-btn">+ SUBIR IMÁGENES<input id="media-upload-input" type="file" accept="image/*" multiple hidden></label>
         </div>
@@ -247,7 +247,7 @@
           <div class="media-drop-icon">↑</div>
           <div>
             <strong>Arrastrá imágenes acá</strong>
-            <span>o usá “Subir imágenes” · JPG, PNG, WEBP, GIF y SVG · hasta 6 MB</span>
+            <span>JPG, PNG, WEBP, GIF y SVG · hasta 6 MB por archivo</span>
           </div>
           <button type="button" class="btn" id="media-dropzone-button">SELECCIONAR ARCHIVOS</button>
         </div>
@@ -274,43 +274,51 @@
         <div class="panel media-panel">
           <div class="panel-head">
             <div><h3>Biblioteca de imágenes</h3><small class="muted" id="media-results-label">0 archivos</small></div>
-            <span class="media-selection-hint">Hacé clic en una imagen para verla · “USAR” para asignarla</span>
+            <span class="media-selection-hint muted">Vista previa · usar · copiar · eliminar</span>
           </div>
           <div id="media-grid" class="media-grid"></div>
         </div>
 
-        <div class="logo-manager-grid">
-          <div class="panel media-panel club-logo-panel">
-            <div class="panel-head logo-panel-head">
-              <div>
-                <span class="section-eyebrow">EQUIPOS</span>
-                <h3>Escudos de clubes</h3>
-                <p class="muted">Administrá todos los escudos desde una sola vista.</p>
-              </div>
-              <span id="club-logo-count" class="logo-count">0</span>
+        <div class="logo-section-gap"></div>
+        <div class="panel media-panel logo-manager">
+          <div class="panel-head">
+            <div>
+              <h3>Escudos de clubes</h3>
+              <small class="muted">Una fila por club, con estado y acciones siempre en el mismo lugar.</small>
             </div>
-            <div class="logo-toolbar">
-              <div class="logo-search"><span>⌕</span><input id="club-logo-search" type="search" placeholder="Buscar club..." autocomplete="off"></div>
-              <select id="club-logo-status"><option value="all">Todos</option><option value="assigned">Con escudo</option><option value="missing">Sin escudo</option></select>
-            </div>
-            <div id="club-logo-grid" class="club-logo-grid"></div>
+            <div class="team-summary"><span class="summary-chip">TOP 14</span><span class="summary-chip"><strong id="club-logo-summary">0/0</strong> con escudo</span></div>
           </div>
+          <div class="logo-toolbar">
+            <input id="club-logo-search" placeholder="Buscar club..." autocomplete="off">
+            <select id="club-logo-filter">
+              <option value="">Todos</option>
+              <option value="assigned">Con escudo</option>
+              <option value="missing">Sin escudo</option>
+            </select>
+            <span class="logo-count" id="club-logo-count">0 clubes</span>
+          </div>
+          <div id="club-logo-grid" class="club-logo-grid"></div>
+        </div>
 
-          <div class="panel media-panel club-logo-panel">
-            <div class="panel-head logo-panel-head">
-              <div>
-                <span class="section-eyebrow">SELECCIONES</span>
-                <h3>Escudos nacionales</h3>
-                <p class="muted">Los Pumas y todas las selecciones disponibles.</p>
-              </div>
-              <span id="nation-logo-count" class="logo-count">0</span>
+        <div class="logo-section-gap"></div>
+        <div class="panel media-panel logo-manager">
+          <div class="panel-head">
+            <div>
+              <h3>Selecciones nacionales</h3>
+              <small class="muted">Misma organización que los clubes, separada para encontrar rápido cada escudo.</small>
             </div>
-            <div class="logo-toolbar">
-              <div class="logo-search"><span>⌕</span><input id="nation-logo-search" type="search" placeholder="Buscar selección..." autocomplete="off"></div>
-              <select id="nation-logo-status"><option value="all">Todas</option><option value="assigned">Con escudo</option><option value="missing">Sin escudo</option></select>
-            </div>
-            <div id="nation-logo-grid" class="club-logo-grid"></div>
+            <div class="team-summary"><span class="summary-chip">SELECCIONES</span><span class="summary-chip"><strong id="nation-logo-summary">0/0</strong> con escudo</span></div>
           </div>
+          <div class="logo-toolbar">
+            <input id="nation-logo-search" placeholder="Buscar selección..." autocomplete="off">
+            <select id="nation-logo-filter">
+              <option value="">Todas</option>
+              <option value="assigned">Con escudo</option>
+              <option value="missing">Sin escudo</option>
+            </select>
+            <span class="logo-count" id="nation-logo-count">0 selecciones</span>
+          </div>
+          <div id="nation-logo-grid" class="club-logo-grid"></div>
         </div>
       </section>
 
