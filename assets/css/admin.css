@@ -247,3 +247,51 @@ button,input,select,textarea{transition:border-color .18s ease,box-shadow .18s e
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
+
+/* =========================================================
+   FINAL UI PASS — dashboard + result pending cards
+========================================================= */
+.content{padding-top:42px}
+.section.active{padding-top:2px}
+.heading{position:relative}
+.heading h1{font-weight:850}
+.dashboard-results-panel{background:#fff}
+.dashboard-results-panel .panel-head{padding:19px 20px;background:linear-gradient(180deg,#fff,#fbfbfc)}
+.dashboard-results-panel #dashboard-pending-results{padding:16px}
+.dashboard-results-panel #dashboard-pending-results:empty{padding:0}
+.dashboard-fixture-card{display:grid;grid-template-columns:92px minmax(0,1fr) auto;align-items:center;gap:16px;padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:#fff;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease;animation:itemIn .28s both}
+.dashboard-fixture-card + .dashboard-fixture-card{margin-top:9px}
+.dashboard-fixture-card:hover{transform:translateY(-2px);border-color:#d2d6da;box-shadow:0 9px 24px rgba(15,23,42,.07);background:#fff}
+.dashboard-fixture-date{display:flex;flex-direction:column;gap:3px;padding-right:14px;border-right:1px solid var(--line)}
+.dashboard-fixture-date span{font-size:11px;font-weight:900;color:var(--ink)}
+.dashboard-fixture-date small{font-size:10px;color:var(--muted)}
+.dashboard-fixture-main{min-width:0}
+.dashboard-fixture-main b{display:block;font-size:13px;line-height:1.35}
+.dashboard-fixture-main small{display:block;margin-top:4px;color:var(--muted);font-size:9px;letter-spacing:.05em;text-transform:uppercase}
+.dashboard-fixture-card .action{min-width:78px}
+.dashboard-results-panel .panel-head .link-btn{white-space:nowrap}
+
+/* Results page: pending list is a compact two-column directory */
+#results-pending .result-pending-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px 18px 18px}
+#results-pending .pending-header{border-bottom:1px solid var(--line)}
+#results-pending .pending-result-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:13px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+#results-pending .pending-result-item:hover{padding-left:12px;padding-right:12px;background:#fff}
+#results-pending .pending-match{font-size:12px;line-height:1.35}
+#results-pending .pending-load{font-size:9px;min-height:32px}
+
+/* Clean result tables */
+#results-standings-table tr{transition:background .16s ease}
+#results-standings-table tr:hover{background:#fafafa}
+#results-standings-table td:first-child{width:42px;color:#8b9197}
+
+@media(max-width:900px){
+  #results-pending .result-pending-list{grid-template-columns:1fr}
+  .dashboard-fixture-card{grid-template-columns:76px minmax(0,1fr);}
+  .dashboard-fixture-card .action{grid-column:2;justify-self:start}
+}
+@media(max-width:620px){
+  .content{padding-top:26px}
+  .dashboard-fixture-card{grid-template-columns:1fr;gap:9px}
+  .dashboard-fixture-date{padding-right:0;border-right:0;flex-direction:row;gap:8px}
+  .dashboard-fixture-card .action{grid-column:auto}
+}
