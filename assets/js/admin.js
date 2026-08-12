@@ -470,31 +470,24 @@ function renderDashboard() {
           new Date(a.createdAt || a.date || 0)
       );
 
-  const latest = articles.slice(0, 6);
-
-  $("#dashboard-articles").innerHTML = latest.length
-    ? `
-      <div class="dashboard-news-list">
-        ${latest.map((article) => `
-          <article class="dashboard-news-item">
-            <div class="dashboard-news-copy">
-              <div class="dashboard-news-title">
-                ${esc(article.title || "Sin título")}
-              </div>
-              <div class="dashboard-news-meta">
-                <span>${esc(article.category || "Rugby")}</span>
-                <span class="dashboard-news-dot">·</span>
-                <span>${esc(fmt(article.date))}</span>
-              </div>
+  $("#dashboard-articles").innerHTML =
+    articles
+      .slice(0, 6)
+      .map(
+        (article) => `
+          <div class="list-item">
+            <div>
+              <b>${esc(article.title || "Sin título")}</b>
+              <small class="muted">
+                ${esc(article.category || "Rugby")} · ${fmt(article.date)}
+              </small>
             </div>
-            <div class="dashboard-news-status">
-              ${articleStatus(article)}
-            </div>
-          </article>
-        `).join("")}
-      </div>
-    `
-    : `<div class="dashboard-empty">No hay noticias.</div>`;
+            <div>${articleStatus(article)}</div>
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="list-item muted">No hay noticias.</div>`;
 
   const scheduled =
     articles
@@ -506,34 +499,32 @@ function renderDashboard() {
       )
       .sort(
         (a, b) =>
-          new Date(a.publishAt) - new Date(b.publishAt)
+          new Date(a.publishAt) -
+          new Date(b.publishAt)
       );
 
-  $("#dashboard-scheduled").innerHTML = scheduled.length
-    ? `
-      <div class="dashboard-news-list">
-        ${scheduled.slice(0, 6).map((article) => `
-          <article class="dashboard-news-item scheduled-item">
-            <div class="dashboard-news-copy">
-              <div class="dashboard-news-title">
-                ${esc(article.title || "Sin título")}
-              </div>
-              <div class="dashboard-news-meta">
-                <span>${esc(article.category || "Rugby")}</span>
-                <span class="dashboard-news-dot">·</span>
-                <span>Publicación programada</span>
-              </div>
+  $("#dashboard-scheduled").innerHTML =
+    scheduled
+      .slice(0, 6)
+      .map(
+        (article) => `
+          <div class="list-item">
+            <div>
+              <b>${esc(article.title || "Sin título")}</b>
+              <small class="muted">
+                ${esc(article.category || "Rugby")}
+              </small>
             </div>
-            <div class="dashboard-news-status">
-              <span class="badge scheduled">
-                ${esc(fmtDT(article.publishAt))}
-              </span>
-            </div>
-          </article>
-        `).join("")}
-      </div>
-    `
-    : `<div class="dashboard-empty">No hay noticias programadas.</div>`;
+            <span class="badge scheduled">
+              ${esc(fmtDT(article.publishAt))}
+            </span>
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="list-item muted">
+      No hay noticias programadas.
+    </div>`;
 
   const pending = getPendingFixtures();
 
@@ -556,7 +547,9 @@ function renderDashboard() {
         `
       )
       .join("") ||
-    `<div class="list-item muted">No hay resultados pendientes.</div>`;
+    `<div class="list-item muted">
+      No hay resultados pendientes.
+    </div>`;
 }
 
 /* =========================================================
