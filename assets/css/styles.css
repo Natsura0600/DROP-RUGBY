@@ -1160,3 +1160,111 @@ body.home-v7 .v7-newsletter{margin:18px 0 0;padding:32px;background:#000;color:#
 body.home-v7 .footer{margin-top:18px}
 @media(max-width:1100px){.v7-hero-grid{grid-template-columns:1fr}.v7-side-news .stories-grid{display:grid;grid-template-columns:repeat(3,1fr)}.v7-side-news .story{display:block}.v7-side-news .story-image{margin-bottom:10px}.v7-scorebar{grid-template-columns:140px 1fr 1fr 110px}.v7-card-grid{grid-template-columns:1fr 1fr!important}.v7-card-grid .story:first-child{grid-column:1/-1}}
 @media(max-width:760px){body.home-v7 .v7-header-inner{min-height:70px;padding:10px 16px}.v7-subnav{display:none}.v7-page{padding:0 12px!important}.v7-breaking{height:auto;min-height:42px;padding:8px 10px;gap:8px}.v7-breaking span{display:none}.v7-breaking a{font-size:8px}.v7-hero-main{grid-template-columns:1fr}.home-v7-hero-media,.home-v7-hero-media .hero-image,.home-v7-hero-placeholder{min-height:330px}.v7-hero-copy{border-left:0;border-top:1px solid #ddd;min-height:230px}.v7-side-news .stories-grid{grid-template-columns:1fr}.v7-side-news .story{display:grid}.v7-scorebar{grid-template-columns:1fr 1fr}.v7-score-title{grid-column:1/-1;border-right:0;border-bottom:1px solid #333}.v7-scorebar>a{grid-column:1/-1;border-top:1px solid #333}.v7-section{padding:16px}.v7-section-head{align-items:flex-start;flex-direction:column}.v7-section-head h2{font-size:26px}.v7-news-columns,.v7-card-grid{grid-template-columns:1fr!important}.v7-news-lead{min-height:220px}.v7-editorial-strip{display:block}.v7-editorial-strip a{display:inline-block;margin-top:18px}.v7-newsletter{display:block!important}.v7-newsletter .newsletter-form{width:100%;margin-top:24px}.v7-newsletter .newsletter-form button{padding:12px 15px}}
+
+
+/* =====================================================================
+   DROP RUGBY HOME V8 — portal deportivo compacto
+   Negro / blanco / grises. Inspiración de estructura deportiva, no copia.
+   ===================================================================== */
+body.home-v8{background:#ededed;color:#111;font-family:var(--sans)}
+body.home-v8:before{display:none!important}
+body.home-v8 .topline{height:4px;background:#000}
+body.home-v8 .site-header{position:sticky;top:0;z-index:100;background:#050505;color:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+body.home-v8 .v7-header-inner{max-width:1320px;min-height:70px;padding:10px 20px;gap:28px}
+body.home-v8 .brand-name{font-size:22px;color:#fff;white-space:nowrap}
+body.home-v8 .main-nav{gap:18px;flex:1;justify-content:center;min-width:0}
+body.home-v8 .main-nav a{font-size:10px;letter-spacing:.9px;white-space:nowrap}
+body.home-v8 .header-actions{flex-shrink:0}
+body.home-v8 .social-links{gap:6px}
+body.home-v8 .social-btn{border-color:#3b3b3b;color:#fff;padding:7px 9px;font-size:8px}
+body.home-v8 .social-btn:hover{background:#fff;color:#000}
+body.home-v8 .v7-subnav{background:#151515;border:0}
+body.home-v8 .v7-subnav-inner{max-width:1320px;height:32px;padding:0 20px;gap:18px;overflow:hidden;white-space:nowrap;font-size:8px}
+body.home-v8 .v7-subnav-inner a{font-size:8px}
+body.home-v8 .v7-subnav-inner strong{font-size:8px}
+body.home-v8 .v7-live-dot{font-size:8px}
+body.home-v8 .v7-page{max-width:1320px!important;padding:0 20px 40px!important;margin:0 auto}
+body.home-v8 .v7-breaking{height:38px;border:0;border-bottom:1px solid #d6d6d6;background:#fff;padding:0 12px;gap:12px;font-size:9px}
+body.home-v8 .v7-breaking strong{padding:6px 9px;font-size:8px}
+body.home-v8 .v7-breaking a{font-size:8px}
+
+/* Hero */
+body.home-v8 .v7-hero-grid{grid-template-columns:minmax(0,2.05fr) minmax(340px,.95fr);gap:14px;margin-top:14px;align-items:stretch}
+body.home-v8 .v7-hero-main{display:block;min-height:0;border:0;background:#000;position:relative;overflow:hidden}
+body.home-v8 .v7-kicker{margin:12px;font-size:8px;padding:6px 8px}
+body.home-v8 .home-v7-hero-media{height:430px;min-height:430px;background:#111}
+body.home-v8 .home-v7-hero-media .hero-image{height:430px;min-height:430px}
+body.home-v8 .home-v7-hero-media .hero-card-caption{left:24px;right:24px;bottom:22px}
+body.home-v8 .home-v7-hero-media .hero-card-caption h2{font-size:clamp(28px,3.2vw,44px);max-width:760px}
+body.home-v8 .v7-hero-copy{display:none}
+body.home-v8 .v7-side-news{border:0;background:#fff;min-height:430px}
+body.home-v8 .v7-side-head{height:48px;padding:0 14px;border-bottom:3px solid #111}
+body.home-v8 .v7-side-head h2{font-size:10px}
+body.home-v8 .v7-side-news .story{grid-template-columns:118px 1fr;gap:12px;padding:12px 13px;min-height:127px}
+body.home-v8 .v7-side-news .story-image,.v7-side-news .story-featured .story-image{height:100px!important}
+body.home-v8 .v7-side-news .story h3,.v7-side-news .story-featured h3{font-size:15px;line-height:1.12}
+body.home-v8 .v7-side-news .story .category{font-size:7px;margin-bottom:5px}
+
+/* Match bar */
+body.home-v8 .v7-scorebar{margin-top:14px;min-height:62px;grid-template-columns:150px 1fr 1fr 120px}
+body.home-v8 .v7-score-title,.v7-score-item,.v7-scorebar>a{padding:11px 14px}
+body.home-v8 .v7-score-item b{font-size:9px}
+body.home-v8 .v7-score-item span{font-size:8px}
+body.home-v8 .v7-scorebar>a{font-size:8px}
+
+/* Sections */
+body.home-v8 .v7-section{margin-top:14px;padding:18px;background:#fff;border:1px solid #d8d8d8}
+body.home-v8 .v7-section-head{padding-bottom:10px;margin-bottom:14px}
+body.home-v8 .v7-section-head h2{font-size:25px}
+body.home-v8 .v7-section-head>a{font-size:8px}
+body.home-v8 .v7-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px}
+body.home-v8 .v7-card-grid .story-image,.v7-card-grid .story:first-child .story-image{height:190px!important}
+body.home-v8 .v7-card-grid .story h3,.v7-card-grid .story:first-child h3{font-size:18px}
+body.home-v8 .v7-card-grid .story p:not(.category){font-size:10px;line-height:1.45}
+body.home-v8 .v7-match-section .calendar-preview{background:#f5f5f5}
+body.home-v8 .v7-match-section .fixture-grid{gap:8px}
+body.home-v8 .v7-match-section .fixture-tile{min-height:110px}
+body.home-v8 .v7-news-section{padding:0;background:#101010}
+body.home-v8 .v7-news-section .v7-section-head{padding:18px 18px 10px;margin:0}
+body.home-v8 .v7-news-columns{grid-template-columns:1.5fr 1fr 1fr}
+body.home-v8 .v7-news-lead,.v7-news-note{min-height:150px;padding:18px}
+body.home-v8 .v7-news-lead h3{font-size:26px;margin:12px 0 8px}
+body.home-v8 .v7-editorial-strip{margin-top:14px;padding:22px 20px}
+body.home-v8 .v7-editorial-strip h2{font-size:24px}
+body.home-v8 .v7-newsletter{margin-top:14px!important}
+
+/* Keep the page dense: no inherited oversized editorial cards */
+body.home-v8 .stories-grid{gap:0}
+body.home-v8 .story:hover{transform:translateY(-2px)}
+body.home-v8 .v7-dark-section{background:#101010}
+body.home-v8 .v7-urba-section{background:#e1e1e1}
+
+@media(max-width:1100px){
+ body.home-v8 .v7-header-inner{gap:16px}
+ body.home-v8 .main-nav{gap:12px}
+ body.home-v8 .social-links{display:none}
+ body.home-v8 .v7-hero-grid{grid-template-columns:1fr}
+ body.home-v8 .v7-side-news{min-height:0}
+ body.home-v8 .v7-side-news .stories-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+ body.home-v8 .v7-side-news .story{display:block;min-height:0}
+ body.home-v8 .v7-side-news .story-image{margin-bottom:8px}
+}
+@media(max-width:760px){
+ body.home-v8 .v7-header-inner{min-height:64px;padding:8px 14px}
+ body.home-v8 .main-nav{display:none}
+ body.home-v8 .v7-subnav{display:none}
+ body.home-v8 .v7-page{padding:0 10px 24px!important}
+ body.home-v8 .v7-breaking{height:auto;min-height:38px}
+ body.home-v8 .v7-hero-grid{margin-top:10px}
+ body.home-v8 .home-v7-hero-media,body.home-v8 .home-v7-hero-media .hero-image{height:300px;min-height:300px}
+ body.home-v8 .v7-side-news .stories-grid{grid-template-columns:1fr}
+ body.home-v8 .v7-side-news .story{display:grid;grid-template-columns:100px 1fr;min-height:0}
+ body.home-v8 .v7-side-news .story-image{margin:0}
+ body.home-v8 .v7-scorebar{grid-template-columns:1fr 1fr}
+ body.home-v8 .v7-score-title{grid-column:1/-1}
+ body.home-v8 .v7-scorebar>a{grid-column:1/-1}
+ body.home-v8 .v7-card-grid{grid-template-columns:1fr!important}
+ body.home-v8 .v7-card-grid .story-image,.v7-card-grid .story:first-child .story-image{height:210px!important}
+ body.home-v8 .v7-news-columns{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){body.home-v8 *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
