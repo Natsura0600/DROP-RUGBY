@@ -784,3 +784,155 @@ body{background:var(--dr-paper)}
   .category-cards.dr-carousel > *{flex-basis:82%!important}
   .category-pumas,.category-international,.category-urba{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
 }
+
+/* =========================================================
+   DROP RUGBY — MONOCHROME EDITORIAL HOME v3
+   Sin rojo: negro, blanco, gris y plata.
+========================================================= */
+:root{
+  --dr-red:#111111;
+  --dr-red-dark:#000000;
+  --dr-paper:#f1f1ef;
+  --dr-ink:#0a0a0a;
+  --dr-muted:#747474;
+  --dr-silver:#c8c8c5;
+}
+
+body{background:#f1f1ef;color:#111;}
+.site-header{background:#090909;color:#fff;box-shadow:0 8px 28px rgba(0,0,0,.08)}
+.site-header .logo-mark img{filter:grayscale(1) brightness(1.25)}
+
+.home-page{max-width:1280px;padding-left:0;padding-right:0}
+
+/* HERO: más cinematográfico y menos vacío */
+.hero.hero-modern{
+  min-height:640px;
+  margin:0 -999px;
+  padding:70px 999px 70px;
+  grid-template-columns:minmax(320px,.72fr) minmax(0,1.28fr);
+  gap:58px;
+  background:#0b0b0b;
+  color:#fff;
+  overflow:hidden;
+  isolation:isolate;
+}
+.hero.hero-modern:before{display:none}
+.hero.hero-modern:after{
+  content:"";position:absolute;z-index:-1;inset:auto -8% -45% auto;width:620px;height:620px;
+  border:1px solid rgba(255,255,255,.08);border-radius:50%;
+  box-shadow:0 0 0 70px rgba(255,255,255,.018),0 0 0 140px rgba(255,255,255,.012);
+}
+.hero-copy{padding:24px 0 20px}
+.hero-copy:before{background:#fff;width:54px;height:3px;top:0}
+.hero-modern .eyebrow{color:#aaa}
+.hero-modern .eyebrow:before{background:#fff}
+.hero h1{font-size:clamp(52px,7vw,88px);letter-spacing:-4px;line-height:.9;color:#fff;margin-bottom:28px}
+.hero h1 em{color:#fff;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px}
+.hero-text{color:#b7b7b7;font-size:16px;max-width:500px}
+.hero-copy .button{background:#fff;color:#0b0b0b;border-color:#fff;border-radius:0;box-shadow:none;font-weight:800}
+.hero-copy .button:hover{background:#d9d9d7;border-color:#d9d9d7;color:#000;transform:translateY(-3px)}
+.hero-card{align-self:stretch}
+.hero-card-inner{border-radius:0;box-shadow:0 30px 80px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);height:100%}
+.hero-modern .hero-image{min-height:500px;height:100%;background:#222}
+.hero-card:after{border-color:#fff;right:-18px;bottom:-18px;width:120px;height:120px}
+.hero-card-caption{left:34px;right:34px;bottom:32px}
+.hero-card-caption span{color:#d0d0d0}
+.hero-card-caption span:before{background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.14)}
+.hero-card-caption h2{color:#fff;font-size:clamp(30px,3.2vw,46px);line-height:1.02}
+
+/* navegación editorial */
+.home-quicknav{margin:0;border:0;background:#111;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.home-quicknav a{padding:22px 20px;color:#fff}
+.home-quicknav a+a{border-left:1px solid #333}
+.home-quicknav a:hover{background:#1c1c1c;transform:none}
+.home-quicknav span{color:#aaa}
+.home-quicknav strong{letter-spacing:.15em}
+.home-quicknav em{color:#888}
+
+/* contenido */
+.home-page .section{padding:76px 0}
+.home-page .section + .section{border-top:0}
+.section-heading,.section-heading-row{position:relative}
+.section-heading:after,.section-heading-row:after{
+  content:"";position:absolute;left:0;right:0;bottom:-14px;height:1px;background:#d4d4d1
+}
+.section-heading h2,.section-heading-row h2{font-size:clamp(34px,4vw,50px);letter-spacing:-1.8px}
+.eyebrow{color:#777}
+.section-more{color:#111!important;border:1px solid #bbb!important;background:transparent!important;padding:10px 13px!important;border-radius:0;transition:all .22s ease}
+.section-more:hover{background:#111!important;color:#fff!important;border-color:#111!important;transform:none!important}
+
+/* últimas noticias: grilla editorial */
+.home-page .stories-grid{grid-template-columns:minmax(0,1.7fr) minmax(250px,1fr);gap:38px 28px;align-items:start}
+.home-page .story-featured{grid-row:span 2}
+.home-page .story-featured .story-image{height:500px}
+.home-page .story-featured h3{font-size:clamp(28px,3vw,38px);line-height:1.08}
+.home-page .story:not(.story-featured) .story-image{height:205px}
+.home-page .story-body{padding-top:14px}
+.home-page .story h3 a{color:#111}
+.home-page .story h3 a:hover{text-decoration:underline;text-underline-offset:4px}
+.story:hover{transform:translateY(-5px)}
+.story-image{border-radius:0;box-shadow:none;background:#ddd}
+.story-image:after{content:"";position:absolute;inset:0;border:1px solid rgba(0,0,0,.08);pointer-events:none}
+
+/* categorías como bloques de revista */
+.category-section{position:relative}
+.category-pumas{background:#fff;margin-left:-999px;margin-right:-999px;padding-left:999px;padding-right:999px}
+.category-international{background:#111;margin-left:-999px;margin-right:-999px;padding-left:999px;padding-right:999px}
+.category-urba{background:#dededb;margin-left:-999px;margin-right:-999px;padding-left:999px;padding-right:999px}
+.category-pumas .section-heading-row:after,.category-urba .section-heading-row:after{background:#cfcfcd}
+.category-international .section-heading-row:after{background:#3a3a3a}
+.category-international .eyebrow,.category-international .section-more{color:#fff!important}
+.category-international .section-more{border-color:#555!important}
+.category-international .section-more:hover{background:#fff!important;color:#111!important;border-color:#fff!important}
+.category-international .story h3 a,.category-international .story h3{color:#fff}
+.category-international .story p:not(.category),.category-international .meta{color:#999}
+.category-international .story-image{box-shadow:none}
+.category-urba .story-image{background:#c9c9c6}
+
+/* carruseles: una sola noticia no deja un vacío gigante */
+.category-cards.dr-carousel > *:only-child{flex-basis:min(620px,100%)!important}
+.category-cards.dr-carousel{padding-top:8px!important}
+.dr-carousel-controls{margin-top:4px}
+.dr-carousel-arrow{border-color:#bcbcb9;background:#fff;color:#111}
+.dr-carousel-arrow:hover{background:#111!important;border-color:#111!important;color:#fff}
+.dr-carousel-dot.active{background:#111}
+.category-international .dr-carousel-arrow{background:#191919;border-color:#444;color:#fff}
+.category-international .dr-carousel-arrow:hover{background:#fff!important;color:#111!important}
+
+/* agenda / match center */
+.calendar-section{background:#f1f1ef}
+.calendar-preview{border-radius:0;box-shadow:none;border:1px solid #d2d2cf}
+.calendar-preview .competition-name{background:#111}
+.calendar-preview .fixture-grid{background:#e8e8e5}
+.calendar-preview .fixture-tile{border-radius:0;box-shadow:none;border:1px solid #d1d1ce;transition:transform .2s ease,background .2s ease}
+.calendar-preview .fixture-tile:hover{transform:translateY(-3px);background:#fff}
+
+/* Instagram y newsletter: coherentes, sin rojo */
+.dr-exclusive-link{border-radius:0;background:#111;box-shadow:0 22px 55px rgba(0,0,0,.12)}
+.newsletter{border-radius:0;background:#0b0b0b}
+.newsletter-form button{background:#fff!important;color:#111!important;border-radius:0}
+.newsletter-form button:hover{background:#ddd!important}
+
+/* anuncios discretos */
+.home-page .ad-slot{border-color:#ddd;background:transparent;color:#aaa}
+
+@media(max-width:900px){
+  .hero.hero-modern{margin:0 -20px;padding:55px 20px;grid-template-columns:1fr}
+  .hero-modern .hero-image{min-height:430px}
+  .home-page .stories-grid{grid-template-columns:1fr 1fr}
+  .home-page .story-featured{grid-column:1/-1;grid-row:auto}
+  .home-page .story-featured .story-image{height:400px}
+  .category-pumas,.category-international,.category-urba{margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
+}
+@media(max-width:620px){
+  .hero.hero-modern{margin:0 -18px;padding:45px 18px}
+  .hero h1{font-size:48px;letter-spacing:-2.4px}
+  .hero-modern .hero-image{min-height:340px}
+  .home-page .stories-grid{grid-template-columns:1fr}
+  .home-page .story-featured .story-image{height:330px}
+  .home-page .story:not(.story-featured) .story-image{height:230px}
+  .home-quicknav{grid-template-columns:1fr 1fr}
+  .home-quicknav a+a{border-left:1px solid #333}
+  .home-quicknav a:nth-child(3),.home-quicknav a:nth-child(4){border-top:1px solid #333}
+  .category-pumas,.category-international,.category-urba{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
+}
