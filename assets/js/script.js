@@ -104,6 +104,20 @@ const DROP_RUGBY_TEAMS = {
   }
 };
 
+/* ==========================================================================
+   ESCUDOS DE SELECCIONES
+   ========================================================================== */
+
+const DROP_RUGBY_NATIONS = {};
+
+// Selecciones/equipos de desarrollo que pueden aparecer en fixtures aunque
+// no estén definidos como una entrada independiente en teams.json.
+const DROP_RUGBY_NATION_ALIASES = {
+  "argentina xv": "argentina",
+  "argentina-xv": "argentina",
+  "pumas xv": "argentina"
+};
+
 
 /* ==========================================================================
    UTILIDADES DE EQUIPOS
@@ -117,68 +131,148 @@ function normalizeTeamName(value) {
     .toLowerCase();
 }
 
-function getTeamByName(value) {
-  const key = normalizeTeamName(value);
+function findConfiguredLogo(logoMap, id, team) {
+  const map = logoMap && typeof logoMap === "object" ? logoMap : {};
+  const candidates = [
+    id,
+    team?.id,
+    team?.name,
+    team?.shortName,
+    ...(Array.isArray(team?.aliases) ? team.aliases : [])
+  ].filter(Boolean);
 
-  return Object.values(DROP_RUGBY_TEAMS).find(team =>
-    normalizeTeamName(team.name) === key ||
-    team.aliases.some(alias => normalizeTeamName(alias) === key)
-  ) || null;
+  const entries = Object.entries(map);
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeTeamName(candidate);
+    const exact = entries.find(([key]) => normalizeTeamName(key) === normalizedCandidate);
+    if (exact && exact[1]) return String(exact[1]);
+  }
+
+  return "";
+}
+
+function registerNation(id, team, nationLogos) {
+  if (!team || typeof team !== "object") return;
+
+  const name = team.name || id;
+  const shortName = team.shortName || "";
+  const aliases = [
+    ...(Array.isArray(team.aliases) ? team.aliases : []),
+    shortName,
+    name
+  ].filter(Boolean);
+
+  DROP_RUGBY_NATIONS[id] = {
+    id,
+    name,
+    shortName,
+    logo: findConfiguredLogo(nationLogos, id, team) || team.logo || "",
+    aliases
+  };
 }
 
 function applyTeamData(content) {
   if (!content) return;
 
   const clubLogos = content?.settings?.clubLogos || {};
+  const nationLogos = content?.settings?.nationLogos || {};
 
   if (content?.teams?.clubs && typeof content.teams.clubs === "object") {
     Object.entries(content.teams.clubs).forEach(([id, team]) => {
       if (!team || typeof team !== "object") return;
 
       DROP_RUGBY_TEAMS[id] = {
+        id,
         name: team.name || id,
-        logo: clubLogos[id] || team.logo || "",
+        logo: findConfiguredLogo(clubLogos, id, team) || team.logo || "",
         aliases: Array.isArray(team.aliases) ? team.aliases : []
       };
     });
   }
 
+  if (content?.teams?.nations && typeof content.teams.nations === "object") {
+    Object.entries(content.teams.nations).forEach(([id, team]) => {
+      registerNation(id, team, nationLogos);
+    });
+  }
+
   Object.entries(clubLogos).forEach(([id, logo]) => {
-    if (DROP_RUGBY_TEAMS[id]) {
+    if (DROP_RUGBY_TEAMS[id] && logo) {
       DROP_RUGBY_TEAMS[id].logo = logo;
     }
   });
+
+  Object.entries(nationLogos).forEach(([key, logo]) => {
+    if (!logo) return;
+    const nation = Object.values(DROP_RUGBY_NATIONS).find(item =>
+      normalizeTeamName(item.id) === normalizeTeamName(key) ||
+      normalizeTeamName(item.name) === normalizeTeamName(key) ||
+      normalizeTeamName(item.shortName) === normalizeTeamName(key) ||
+      item.aliases.some(alias => normalizeTeamName(alias) === normalizeTeamName(key))
+    );
+    if (nation) nation.logo = logo;
+  });
+}
+
+function getNationByName(value) {
+  const key = normalizeTeamName(value);
+  const aliasId = DROP_RUGBY_NATION_ALIASES[key];
+
+  if (aliasId && DROP_RUGBY_NATIONS[aliasId]) {
+    return DROP_RUGBY_NATIONS[aliasId];
+  }
+
+  return Object.values(DROP_RUGBY_NATIONS).find(nation =>
+    normalizeTeamName(nation.id) === key ||
+    normalizeTeamName(nation.name) === key ||
+    normalizeTeamName(nation.shortName) === key ||
+    nation.aliases.some(alias => normalizeTeamName(alias) === key)
+  ) || null;
+}
+
+function getTeamByName(value) {
+  const key = normalizeTeamName(value);
+
+  const club = Object.values(DROP_RUGBY_TEAMS).find(team =>
+    normalizeTeamName(team.name) === key ||
+    team.aliases.some(alias => normalizeTeamName(alias) === key)
+  );
+
+  if (club) return club;
+  return getNationByName(value);
 }
 
 function teamShield(value, className = "team-shield") {
   const team = getTeamByName(value);
+  const initials =
+    String(team?.name || value || "?")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(word => word[0])
+      .join("")
+      .toUpperCase() || "?";
 
   if (!team || !team.logo) {
-    const initials =
-      String(value || "?")
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map(word => word[0])
-        .join("")
-        .toUpperCase() || "?";
-
     return `<span class="${className} team-shield-fallback" aria-hidden="true">${initials}</span>`;
   }
 
   const safeLogo = String(team.logo).replace(/"/g, "&quot;");
   const safeName = String(team.name).replace(/"/g, "&quot;");
+  const fallback = `<span class="${className} team-shield-fallback" aria-hidden="true">${initials}</span>`;
 
   return `
-    <img
-      class="${className}"
-      src="${safeLogo}"
-      alt="Escudo de ${safeName}"
-      loading="lazy"
-      decoding="async"
-      referrerpolicy="no-referrer"
-      onerror="this.onerror=null;this.style.display='none';"
-    >
+    <span class="team-shield-wrap" aria-label="Escudo de ${safeName}">
+      <img
+        class="${className}"
+        src="${safeLogo}"
+        alt="Escudo de ${safeName}"
+        loading="eager"
+        decoding="async"
+        referrerpolicy="no-referrer"
+        onerror="this.onerror=null;this.outerHTML='${fallback.replace(/'/g, "\\'")}';"
+      >
+    </span>
   `;
 }
 
@@ -194,6 +288,22 @@ let ARTICLES_CACHE = null;
 let FIXTURES_CACHE = null;
 let STANDINGS_CACHE = null;
 let TEAMS_LOADED = false;
+let LOCAL_TEAMS_CACHE = null;
+
+async function loadLocalTeams() {
+  if (LOCAL_TEAMS_CACHE) return LOCAL_TEAMS_CACHE;
+
+  try {
+    const response = await fetch(BASE + "data/teams.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("teams.json unavailable");
+    const data = await response.json();
+    LOCAL_TEAMS_CACHE = data && typeof data === "object" ? data : {};
+  } catch (_) {
+    LOCAL_TEAMS_CACHE = {};
+  }
+
+  return LOCAL_TEAMS_CACHE;
+}
 
 
 /* ==========================================================================
@@ -223,8 +333,24 @@ async function loadContent() {
       }
 
       const data = await response.json();
+      const localTeams = await loadLocalTeams();
 
       CONTENT_CACHE = data || {};
+
+      // El contenido remoto puede provenir de una versión anterior del blob
+      // sin teams.nations. Mezclamos siempre el catálogo local para que los
+      // fixtures sigan encontrando las selecciones y sus aliases. Los logos
+      // guardados en settings.nationLogos tienen prioridad.
+      CONTENT_CACHE.teams = {
+        clubs: {
+          ...(localTeams.clubs || {}),
+          ...(CONTENT_CACHE.teams?.clubs || {})
+        },
+        nations: {
+          ...(localTeams.nations || {}),
+          ...(CONTENT_CACHE.teams?.nations || {})
+        }
+      };
 
       applyTeamData(CONTENT_CACHE);
 
