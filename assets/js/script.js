@@ -1526,9 +1526,44 @@ async function renderUrbaStandings() {
 
   if (!element) return;
 
+  const TOP14_NAMES = new Set([
+    "newman", "casi", "hindu", "alumni", "sic",
+    "regatas bella vista", "los tilos", "belgrano athletic",
+    "cuba", "atletico del rosario", "los matreros", "la plata",
+    "buenos aires c&rc", "champagnat"
+  ]);
+
+  const TOP14_ALIASES = {
+    "belgrano": "belgrano athletic",
+    "regatas": "regatas bella vista",
+    "plaza": "atletico del rosario",
+    "biei": "buenos aires c&rc",
+    "bac": "buenos aires c&rc",
+    "champa": "champagnat"
+  };
+
+  const normalizePublicTeam = (name) =>
+    String(name || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const standings =
     (await loadStandings())
-      .slice()
+      .filter((team) => {
+        const key = normalizePublicTeam(team.team);
+        return TOP14_NAMES.has(TOP14_ALIASES[key] || key);
+      })
+      .map((team) => ({
+        ...team,
+        team:
+          TOP14_ALIASES[normalizePublicTeam(team.team)] ||
+          team.team
+      }))
+      .slice(0, 14)
       .sort((a, b) =>
         (Number(b.pts) || 0) -
         (Number(a.pts) || 0) ||
