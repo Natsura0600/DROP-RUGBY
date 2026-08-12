@@ -3,33 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby y URBA Top 14. El rugby contado como tiene que ser.">
+  <meta name="description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, rugby internacional y URBA Top 14.">
   <link rel="canonical" href="https://www.droprugby.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DropRugby">
   <meta property="og:title" content="DropRugby">
-  <meta property="og:description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby y URBA Top 14. El rugby contado como tiene que ser.">
+  <meta property="og:description" content="Actualidad, protagonistas y análisis del rugby argentino y mundial.">
   <meta property="og:url" content="https://www.droprugby.com/">
   <meta name="robots" content="index, follow">
-  <title>DropRugby</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <title>DropRugby — Rugby sin vueltas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700;800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
   <link rel="icon" type="image/png" href="/logo.png">
 </head>
-
-<body>
+<body class="home-v6">
   <div class="topline"></div>
+
   <header class="site-header">
     <div class="header-inner">
       <a class="brand" href="index.html" aria-label="DropRugby inicio">
-  <div class="logo-mark">
-    <img src="/logo.png" alt="DropRugby">
-  </div>
-
-  <div>
-    <div class="brand-name">DROP<span>RUGBY</span></div>
-  </div>
-</a>
+        <div class="logo-mark"><img src="/logo.png" alt="DropRugby"></div>
+        <div class="brand-name">DROP<span>RUGBY</span></div>
+      </a>
 
       <nav class="main-nav">
         <a href="los-pumas.html">LOS PUMAS</a>
@@ -40,16 +37,17 @@
       </nav>
 
       <div class="header-actions">
-        <button class="search-btn" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
+        <button class="search-btn" aria-label="Buscar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
         <div class="social-links">
           <a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
           <a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a>
         </div>
-        <button class="menu-btn" aria-label="Abrir menú" aria-expanded="false">
-          <span></span><span></span>
-        </button>
+        <button class="menu-btn" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
       </div>
     </div>
+
     <div class="mobile-nav">
       <a href="los-pumas.html">LOS PUMAS</a>
       <a href="super-rugby.html">INTERNACIONAL</a>
@@ -67,797 +65,125 @@
     <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
     <div class="search-overlay-inner">
       <input type="text" id="search-input" placeholder="Buscar noticias, equipos, jugadores…" autocomplete="off">
-      <p class="search-hint">Probá con "Los Pumas", "Internacional", "URBA Top 14" o el nombre de un equipo.</p>
+      <p class="search-hint">Probá con “Los Pumas”, “Internacional”, “URBA Top 14” o el nombre de un equipo.</p>
       <div class="search-results" id="search-results"></div>
     </div>
   </div>
 
   <main class="home-page">
-
-    <section class="hero hero-modern" id="hero">
-      <div class="hero-copy reveal">
+    <section class="home-v6-hero">
+      <div class="home-v6-hero-copy reveal">
         <p class="eyebrow">DROP RUGBY · ACTUALIDAD</p>
-        <h1>Rugby.<br><em>Sin ruido.</em></h1>
-        <p class="hero-text">Actualidad, protagonistas y análisis para entender el rugby argentino y lo que pasa dentro y fuera de la cancha.</p>
-        <a class="button" id="home-hero-link" href="los-pumas.html">Leer la historia <span>→</span></a>
-      </div>
-      <div class="hero-card reveal" id="home-hero">
-        <div class="hero-card-inner">
-          <div class="hero-image img-tone-1 photo-not-clickable ph-image">
-            <div class="image-overlay"></div>
-            <div class="hero-card-caption"><span>TOP STORY</span><h2>Cargando la noticia principal…</h2></div>
-          </div>
+        <h1>Todo el rugby.<br><span>En un solo lugar.</span></h1>
+        <p>Noticias, protagonistas, resultados y análisis. Lo importante primero, sin vueltas.</p>
+        <div class="home-v6-actions">
+          <a class="home-v6-primary" id="home-hero-link" href="los-pumas.html">Leer la principal <span>↗</span></a>
+          <a class="home-v6-secondary" href="#ultimas-noticias">Explorar noticias</a>
         </div>
       </div>
+
+      <div class="home-v6-hero-media reveal" id="home-hero">
+        <div class="home-v6-hero-placeholder">
+          <span>DROP RUGBY</span>
+          <strong>La principal del día</strong>
+        </div>
+      </div>
+
+      <div class="home-v6-hero-meta">
+        <span>01</span><b>PRINCIPAL</b><i></i><small>Noticias que importan</small>
+      </div>
     </section>
 
-    <section class="home-quicknav" aria-label="Accesos rápidos">
-      <a href="los-pumas.html"><span>01</span><strong>LOS PUMAS</strong><em>Selección argentina →</em></a>
-      <a href="super-rugby.html"><span>02</span><strong>INTERNACIONAL</strong><em>El rugby del mundo →</em></a>
-      <a href="urba-top-14.html"><span>03</span><strong>URBA TOP 14</strong><em>Resultados y noticias →</em></a>
-      <a href="calendario.html"><span>04</span><strong>AGENDA</strong><em>Próximos partidos →</em></a>
+    <section class="home-v6-radar" aria-label="Secciones principales">
+      <a href="los-pumas.html"><span>01</span><strong>LOS PUMAS</strong><small>Selección argentina</small><b>↗</b></a>
+      <a href="super-rugby.html"><span>02</span><strong>INTERNACIONAL</strong><small>Rugby mundial</small><b>↗</b></a>
+      <a href="urba-top-14.html"><span>03</span><strong>URBA TOP 14</strong><small>Clubes y resultados</small><b>↗</b></a>
+      <a href="calendario.html"><span>04</span><strong>AGENDA</strong><small>Próximos partidos</small><b>↗</b></a>
     </section>
 
-    <!-- ADSENSE SLOT -->
-    <div class="ad-slot">ESPACIO PUBLICITARIO</div>
-    
-    
-    <section class="section section-featured" id="ultimas-noticias">
-      <div class="section-heading">
-        <div><p class="eyebrow">RECIENTE</p><h2>Últimas noticias</h2></div>
-        <span class="section-line"></span>
+    <div class="ad-slot home-v6-ad">ESPACIO PUBLICITARIO</div>
+
+    <section class="home-v6-section home-v6-latest" id="ultimas-noticias">
+      <div class="home-v6-heading">
+        <div><p class="eyebrow">AHORA</p><h2>Últimas noticias</h2></div>
+        <span>Lo más reciente de DropRugby</span>
       </div>
       <div class="stories-grid" id="home-top-stories"></div>
     </section>
-    
-    
-    <section class="section category-section category-pumas" id="pumas">
-      <div class="section-heading-row">
+
+    <section class="home-v6-section home-v6-pumas" id="pumas">
+      <div class="home-v6-section-head">
         <div><p class="eyebrow">SELECCIÓN</p><h2>Los Pumas</h2></div>
-        <a class="section-more" href="los-pumas.html">VER TODAS LAS NOTICIAS DE LOS PUMAS →</a>
+        <a href="los-pumas.html">VER TODAS <span>↗</span></a>
       </div>
-      <div class="category-cards" id="home-los-pumas"></div>
+      <div class="category-cards home-v6-category-grid" id="home-los-pumas"></div>
     </section>
 
-    
-    <!-- ADSENSE SLOT -->
-    <div class="ad-slot">ESPACIO PUBLICITARIO</div>
+    <div class="home-v6-breaker">
+      <div><span>DROP RUGBY</span><strong>El juego cambia. La pasión no.</strong></div>
+      <a href="calendario.html">Ver la agenda ↗</a>
+    </div>
 
-    <section class="section category-section category-international" id="super-rugby">
-      <div class="section-heading-row">
-        <div><p class="eyebrow">GLOBAL</p><h2>Internacional</h2></div>
-        <a class="section-more" href="super-rugby.html">VER TODAS LAS NOTICIAS DE SUPER RUGBY →</a>
+    <section class="home-v6-section home-v6-international" id="super-rugby">
+      <div class="home-v6-section-head">
+        <div><p class="eyebrow">MUNDO</p><h2>Internacional</h2></div>
+        <a href="super-rugby.html">VER TODAS <span>↗</span></a>
       </div>
-      <div class="category-cards" id="home-super-rugby"></div>
-    </section>
-    
-
-
-    
-    <section class="quote-band">
-      <div class="quote-inner reveal">
-        <span class="quote-mark">"</span>
-        <blockquote>"Jueguen con el corazon, que con esta camiseta no se cansa nadie."</blockquote>
-        <p>— Hugo Porta</p>
-      </div>
+      <div class="category-cards home-v6-category-grid" id="home-super-rugby"></div>
     </section>
 
-
-
-    <section class="section category-section category-urba" id="urba-top14">
-      <div class="section-heading-row">
-        <div><p class="eyebrow">PORTEÑO</p><h2>URBA Top 14</h2></div>
-        <a class="section-more" href="urba-top-14.html">VER TODAS LAS NOTICIAS DE URBA TOP 14 →</a>
-      </div>
-      <div class="category-cards" id="home-urba-top14"></div>
+    <section class="home-v6-quote">
+      <div class="home-v6-quote-mark">“</div>
+      <blockquote>El rugby se juega con el cuerpo, pero se recuerda con el corazón.</blockquote>
+      <span>DROP RUGBY · PASIÓN POR EL JUEGO</span>
     </section>
 
+    <section class="home-v6-section home-v6-urba" id="urba-top14">
+      <div class="home-v6-section-head">
+        <div><p class="eyebrow">CLUBES</p><h2>URBA Top 14</h2></div>
+        <a href="urba-top-14.html">VER TODAS <span>↗</span></a>
+      </div>
+      <div class="category-cards home-v6-category-grid" id="home-urba-top14"></div>
+    </section>
 
-    <section class="section calendar-section" id="calendario-preview">
-      <div class="section-heading-row">
-        <div><p class="eyebrow">AGENDA</p><h2>Próximos partidos</h2></div>
-        <a class="section-more" href="calendario.html">VER CALENDARIO COMPLETO →</a>
+    <section class="home-v6-section home-v6-calendar" id="calendario-preview">
+      <div class="home-v6-section-head">
+        <div><p class="eyebrow">MATCH CENTER</p><h2>Próximos partidos</h2></div>
+        <a href="calendario.html">CALENDARIO COMPLETO <span>↗</span></a>
       </div>
       <div class="calendar-preview" id="home-calendar-preview"></div>
     </section>
 
-
-<!-- DROP RUGBY - CONTENIDO EXCLUSIVO -->
-<section class="dr-exclusive-instagram">
-  <a
-    href="https://www.instagram.com/drop_rugby/"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="dr-exclusive-link"
-  >
-
-    <div class="dr-exclusive-content">
-
-      <div class="dr-exclusive-instagram-icon">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="5"></rect>
-          <circle cx="12" cy="12" r="4"></circle>
-          <circle cx="17.5" cy="6.5" r="1"></circle>
-        </svg>
+    <section class="home-v6-instagram">
+      <div class="home-v6-instagram-copy">
+        <p class="eyebrow">@DROP_RUGBY</p>
+        <h2>El rugby también se vive fuera de la cancha.</h2>
+        <p>Fotos, datos, clips y contenido diario para seguir conectado con el juego.</p>
+        <a href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">Seguir en Instagram ↗</a>
       </div>
-
-      <span class="dr-exclusive-label">
-        DROP RUGBY · INSTAGRAM
-      </span>
-
-      <h2>
-        Contenido exclusivo<br>
-        que no vas a encontrar acá.
-      </h2>
-
-      <p>
-        Seguinos en Instagram para acceder a contenido,
-        estadísticas, imágenes y toda la actualidad del rugby argentino.
-      </p>
-
-      <span class="dr-exclusive-button">
-        Seguinos en Instagram
-        <span>→</span>
-      </span>
-
-    </div>
-
-    <div class="dr-exclusive-background">
-      <span>DR</span>
-    </div>
-
-  </a>
-</section>
-
-
-<style>
-
-/* =========================================
-   DROP RUGBY — INSTAGRAM EXCLUSIVE
-========================================= */
-
-.dr-exclusive-instagram {
-  width: 100%;
-  margin: 70px 0;
-}
-
-.dr-exclusive-link {
-  position: relative;
-
-  display: flex;
-  align-items: center;
-
-  min-height: 330px;
-
-  overflow: hidden;
-
-  padding: 55px 7%;
-
-  border-radius: 8px;
-
-  background: #111;
-
-  color: #fff !important;
-
-  text-decoration: none !important;
-
-  box-shadow: 0 15px 40px rgba(0,0,0,.12);
-
-  transition:
-    transform .3s ease,
-    box-shadow .3s ease;
-}
-
-.dr-exclusive-link:hover {
-  transform: translateY(-5px);
-
-  box-shadow:
-    0 22px 50px rgba(0,0,0,.2);
-}
-
-
-/* =========================================
-   CONTENIDO
-========================================= */
-
-.dr-exclusive-content {
-  position: relative;
-
-  z-index: 3;
-
-  max-width: 650px;
-}
-
-.dr-exclusive-label {
-  display: block;
-
-  margin-bottom: 14px;
-
-  font-size: 11px;
-
-  font-weight: 800;
-
-  letter-spacing: .18em;
-
-  color: rgba(255,255,255,.55);
-}
-
-.dr-exclusive-content h2 {
-  margin: 0;
-
-  font-size: clamp(34px, 5vw, 58px);
-
-  line-height: .98;
-
-  letter-spacing: -2px;
-
-  font-weight: 900;
-
-  color: #fff;
-}
-
-.dr-exclusive-content p {
-  max-width: 560px;
-
-  margin: 20px 0 25px;
-
-  color: rgba(255,255,255,.68);
-
-  font-size: 15px;
-
-  line-height: 1.6;
-}
-
-
-/* =========================================
-   INSTAGRAM ICON
-========================================= */
-
-.dr-exclusive-instagram-icon {
-  width: 48px;
-  height: 48px;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 22px;
-
-  border: 1px solid rgba(255,255,255,.25);
-
-  border-radius: 12px;
-
-  background: rgba(255,255,255,.06);
-
-  backdrop-filter: blur(8px);
-}
-
-.dr-exclusive-instagram-icon svg {
-  width: 25px;
-  height: 25px;
-
-  fill: none;
-
-  stroke: #fff;
-
-  stroke-width: 1.6;
-}
-
-
-/* =========================================
-   BOTÓN
-========================================= */
-
-.dr-exclusive-button {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 10px;
-
-  padding: 13px 18px;
-
-  border-radius: 4px;
-
-  background: #fff;
-
-  color: #111;
-
-  font-size: 13px;
-
-  font-weight: 800;
-
-  transition:
-    gap .25s ease;
-}
-
-.dr-exclusive-link:hover .dr-exclusive-button {
-  gap: 16px;
-}
-
-.dr-exclusive-button span {
-  font-size: 17px;
-}
-
-
-/* =========================================
-   FONDO "DR"
-========================================= */
-
-.dr-exclusive-background {
-  position: absolute;
-
-  z-index: 1;
-
-  right: -30px;
-  bottom: -85px;
-
-  pointer-events: none;
-
-  user-select: none;
-}
-
-.dr-exclusive-background span {
-  font-size: 330px;
-
-  line-height: 1;
-
-  font-weight: 1000;
-
-  letter-spacing: -35px;
-
-  color: rgba(255,255,255,.035);
-}
-
-
-/* =========================================
-   DETALLE
-========================================= */
-
-.dr-exclusive-link::after {
-  content: "";
-
-  position: absolute;
-
-  z-index: 2;
-
-  width: 500px;
-  height: 500px;
-
-  right: -180px;
-  top: -250px;
-
-  border-radius: 50%;
-
-  border: 1px solid rgba(255,255,255,.06);
-
-  box-shadow:
-    0 0 0 70px rgba(255,255,255,.018),
-    0 0 0 140px rgba(255,255,255,.012);
-
-  pointer-events: none;
-}
-
-
-/* =========================================
-   MOBILE
-========================================= */
-
-@media (max-width: 650px) {
-
-  .dr-exclusive-instagram {
-    margin: 45px 0;
-  }
-
-  .dr-exclusive-link {
-    min-height: 420px;
-
-    padding: 40px 25px;
-
-    align-items: flex-start;
-  }
-
-  .dr-exclusive-content h2 {
-    font-size: 36px;
-
-    letter-spacing: -1.3px;
-  }
-
-  .dr-exclusive-content p {
-    font-size: 14px;
-  }
-
-  .dr-exclusive-button {
-    width: 100%;
-
-    justify-content: center;
-  }
-
-  .dr-exclusive-background {
-    right: -35px;
-    bottom: -50px;
-  }
-
-  .dr-exclusive-background span {
-    font-size: 230px;
-  }
-
-}
-
-</style>
-    
-
-<section class="newsletter">
-  <div>
-    <p class="eyebrow">NEWSLETTER</p>
-    <h2>Recibí las principales<br>noticias de rugby.</h2>
-  </div>
-
-  <form class="newsletter-form" id="newsletter-form">
-    <input
-      type="email"
-      id="newsletter-email"
-      name="email"
-      placeholder="Tu email"
-      aria-label="Tu email"
-      autocomplete="email"
-      required
-    >
-
-    <button type="submit" id="newsletter-submit">
-      Suscribirme <span>→</span>
-    </button>
-
-    <small id="newsletter-message">
-      Suscribite para tener noticias de Drop
-    </small>
-  </form>
-</section>
-
-
+      <div class="home-v6-instagram-art" aria-hidden="true"><span>DR</span></div>
+    </section>
+
+    <section class="newsletter home-v6-newsletter">
+      <div><p class="eyebrow">NEWSLETTER</p><h2>Una dosis de rugby.<br>Sin spam.</h2></div>
+      <form class="newsletter-form" id="newsletter-form">
+        <input type="email" id="newsletter-email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required>
+        <button type="submit" id="newsletter-submit">Suscribirme <span>→</span></button>
+        <small id="newsletter-message">Recibí las noticias principales de DropRugby.</small>
+      </form>
+    </section>
   </main>
 
   <footer class="footer">
     <div class="footer-brand">
       <div class="brand-name">DROP<span>RUGBY</span></div>
-      <p>Medio digital de rugby: noticias, análisis y opinión de Los Pumas, Super Rugby y el rugby de clubes.</p>
-      <div class="footer-socials" style="margin-top:16px;">
-        <a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
-        <a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a>
-      </div>
+      <p>Medio digital de rugby: noticias, análisis y opinión de Los Pumas, rugby internacional y clubes.</p>
+      <div class="footer-socials"><a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a><a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a></div>
     </div>
-    <div class="footer-links">
-      <a href="los-pumas.html">Los Pumas</a>
-      <a href="super-rugby.html">Internacional</a>
-      <a href="urba-top-14.html">Urba Top 14</a>
-      <a href="calendario.html">Calendario</a>
-      <a href="contacto.html">Contacto</a>
-    </div>
+    <div class="footer-links"><a href="los-pumas.html">Los Pumas</a><a href="super-rugby.html">Internacional</a><a href="urba-top-14.html">URBA Top 14</a><a href="calendario.html">Calendario</a><a href="contacto.html">Contacto</a></div>
     <p class="copyright">© 2026 DropRugby. Todos los derechos reservados.</p>
   </footer>
-  
-<style>
-/* =========================================================
-   DROP RUGBY — CARRUSELES DE CATEGORÍAS
-   Solo transforma las secciones de noticias en carruseles.
-========================================================= */
-
-.category-carousel-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.category-cards.dr-carousel {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  overflow-y: hidden;
-  gap: 22px !important;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  padding: 5px 4px 18px !important;
-}
-
-.category-cards.dr-carousel::-webkit-scrollbar {
-  display: none;
-}
-
-.category-cards.dr-carousel > * {
-  flex: 0 0 calc((100% - 44px) / 3) !important;
-  min-width: 0 !important;
-  scroll-snap-align: start;
-}
-
-.dr-carousel-card {
-  transition: transform .25s ease, box-shadow .25s ease;
-}
-
-.dr-carousel-card:hover {
-  transform: translateY(-4px);
-}
-
-.dr-carousel-controls {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.dr-carousel-arrow {
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--line, #ddd);
-  border-radius: 50%;
-  background: #fff;
-  color: #111;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 20px;
-  line-height: 1;
-  transition: background .2s ease, color .2s ease, transform .2s ease;
-}
-
-.dr-carousel-arrow:hover {
-  background: #111;
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-.dr-carousel-arrow:disabled {
-  opacity: .35;
-  cursor: default;
-  transform: none;
-}
-
-.dr-carousel-progress {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 3px;
-}
-
-.dr-carousel-dot {
-  width: 7px;
-  height: 7px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: #d2d2d2;
-  cursor: pointer;
-  transition: width .25s ease, background .25s ease;
-}
-
-.dr-carousel-dot.active {
-  width: 22px;
-  border-radius: 8px;
-  background: #111;
-}
-
-@media (max-width: 900px) {
-  .category-cards.dr-carousel > * {
-    flex-basis: calc((100% - 22px) / 2) !important;
-  }
-}
-
-@media (max-width: 600px) {
-  .category-cards.dr-carousel {
-    gap: 14px !important;
-    scroll-snap-type: x mandatory;
-  }
-
-  .category-cards.dr-carousel > * {
-    flex-basis: 82% !important;
-  }
-
-  .dr-carousel-controls {
-    margin-bottom: 10px;
-  }
-
-  .dr-carousel-arrow {
-    width: 35px;
-    height: 35px;
-  }
-}
-</style>
-
-<script>
-/* =========================================================
-   CARRUSELES DE:
-   Los Pumas / Internacional / URBA Top 14
-========================================================= */
-
-(function () {
-  const carouselIds = [
-    "home-los-pumas",
-    "home-super-rugby",
-    "home-urba-top14"
-  ];
-
-  const states = new Map();
-
-  function getStep(container) {
-    const first = container.children[0];
-    if (!first) return 300;
-
-    const styles = getComputedStyle(container);
-    const gap = parseFloat(styles.columnGap || styles.gap || 0);
-
-    return first.getBoundingClientRect().width + gap;
-  }
-
-  function updateState(container, state) {
-    const max = Math.max(0, container.scrollWidth - container.clientWidth);
-    const atStart = container.scrollLeft <= 3;
-    const atEnd = container.scrollLeft >= max - 3;
-
-    state.prev.disabled = atStart;
-    state.next.disabled = atEnd;
-
-    if (state.dots.length) {
-      const step = getStep(container);
-      const index = Math.round(container.scrollLeft / Math.max(step, 1));
-
-      state.dots.forEach((dot, i) => {
-        dot.classList.toggle("active", i === Math.min(index, state.dots.length - 1));
-      });
-    }
-  }
-
-  function buildCarousel(container) {
-    if (!container || container.dataset.drCarouselReady === "1") {
-      if (container && states.has(container)) {
-        updateState(container, states.get(container));
-      }
-      return;
-    }
-
-    container.dataset.drCarouselReady = "1";
-    container.classList.add("dr-carousel");
-
-    [...container.children].forEach(card => {
-      card.classList.add("dr-carousel-card");
-    });
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "category-carousel-wrap";
-
-    container.parentNode.insertBefore(wrapper, container);
-    wrapper.appendChild(container);
-
-    const controls = document.createElement("div");
-    controls.className = "dr-carousel-controls";
-
-    const prev = document.createElement("button");
-    prev.type = "button";
-    prev.className = "dr-carousel-arrow";
-    prev.setAttribute("aria-label", "Noticias anteriores");
-    prev.innerHTML = "&#8592;";
-
-    const next = document.createElement("button");
-    next.type = "button";
-    next.className = "dr-carousel-arrow";
-    next.setAttribute("aria-label", "Más noticias");
-    next.innerHTML = "&#8594;";
-
-    controls.append(prev, next);
-    wrapper.insertBefore(controls, container);
-
-    const progress = document.createElement("div");
-    progress.className = "dr-carousel-progress";
-    wrapper.appendChild(progress);
-
-    const state = { prev, next, dots: [], timer: null };
-    states.set(container, state);
-
-    function refreshDots() {
-      progress.innerHTML = "";
-      const cards = [...container.children];
-
-      if (cards.length <= 1) return;
-
-      const step = Math.max(getStep(container), 1);
-      const visible = Math.max(1, Math.floor(container.clientWidth / step));
-      const pages = Math.max(1, Math.ceil((cards.length - visible) / visible) + 1);
-
-      for (let i = 0; i < pages; i++) {
-        const dot = document.createElement("button");
-        dot.type = "button";
-        dot.className = "dr-carousel-dot";
-        dot.setAttribute("aria-label", `Ir al grupo ${i + 1}`);
-
-        dot.addEventListener("click", () => {
-          container.scrollTo({
-            left: Math.min(i * visible * step, container.scrollWidth - container.clientWidth),
-            behavior: "smooth"
-          });
-        });
-
-        progress.appendChild(dot);
-      }
-
-      state.dots = [...progress.children];
-      updateState(container, state);
-    }
-
-    function move(direction) {
-      container.scrollBy({
-        left: direction * getStep(container),
-        behavior: "smooth"
-      });
-    }
-
-    prev.addEventListener("click", () => move(-1));
-    next.addEventListener("click", () => move(1));
-
-    container.addEventListener("scroll", () => updateState(container, state), { passive: true });
-
-    wrapper.addEventListener("mouseenter", () => {
-      if (state.timer) clearInterval(state.timer);
-    });
-
-    wrapper.addEventListener("mouseleave", startAutoplay);
-
-    function startAutoplay() {
-      if (state.timer) clearInterval(state.timer);
-
-      state.timer = setInterval(() => {
-        const max = container.scrollWidth - container.clientWidth;
-
-        if (max <= 5) return;
-
-        if (container.scrollLeft >= max - 5) {
-          container.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          move(1);
-        }
-      }, 5000);
-    }
-
-    container.addEventListener("touchstart", () => {
-      if (state.timer) clearInterval(state.timer);
-    }, { passive: true });
-
-    container.addEventListener("touchend", startAutoplay, { passive: true });
-
-    const observer = new MutationObserver(() => {
-      [...container.children].forEach(card => card.classList.add("dr-carousel-card"));
-      refreshDots();
-      updateState(container, state);
-    });
-
-    observer.observe(container, { childList: true });
-
-    window.addEventListener("resize", refreshDots);
-
-    refreshDots();
-    startAutoplay();
-    updateState(container, state);
-  }
-
-  function init() {
-    carouselIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) buildCarousel(el);
-    });
-  }
-
-  /* Espera a que script.js termine de cargar las noticias */
-  init();
-
-  const pageObserver = new MutationObserver(init);
-  pageObserver.observe(document.body, { childList: true, subtree: true });
-
-  setTimeout(() => pageObserver.disconnect(), 15000);
-})();
-</script>
 
   <script src="assets/js/script.js"></script>
-  
 </body>
 </html>
- 
