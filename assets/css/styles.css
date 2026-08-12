@@ -1439,3 +1439,126 @@ body.home-v8 .v7-urba-section{background:#e1e1e1}
   .uar-newsletter { display:block;padding:30px; }
   .uar-newsletter-form,.newsletter-form { width:100%; }
 }
+
+/* Newsletter UAR-style — versión final DropRugby */
+.home-uar .uar-newsletter {
+  margin: 42px 0 0;
+  padding: 38px 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr);
+  gap: 42px;
+  align-items: center;
+  background: #0b0b0b !important;
+  color: #fff !important;
+  border: 1px solid #262626 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  position: relative;
+  overflow: hidden;
+}
+.home-uar .uar-newsletter::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 50%;
+  right: -100px;
+  top: -110px;
+  pointer-events: none;
+}
+.home-uar .uar-newsletter::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #fff;
+}
+.home-uar .uar-newsletter .eyebrow {
+  margin: 0 0 10px;
+  color: #8e8e8e !important;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.home-uar .uar-newsletter h2 {
+  margin: 0;
+  color: #fff !important;
+  font-family: var(--serif);
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.04;
+  font-weight: 400;
+  position: relative;
+  z-index: 1;
+}
+.home-uar .uar-newsletter .newsletter-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+}
+.home-uar .uar-newsletter .newsletter-form input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  color: #fff !important;
+  background: #151515 !important;
+  border: 1px solid #3a3a3a !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+  outline: none;
+  font: inherit;
+}
+.home-uar .uar-newsletter .newsletter-form input:focus {
+  border-color: #777 !important;
+  box-shadow: inset 0 0 0 1px #777;
+}
+.home-uar .uar-newsletter .newsletter-form input::placeholder {
+  color: #777 !important;
+}
+.home-uar .uar-newsletter .newsletter-form button {
+  min-height: 50px;
+  padding: 0 20px;
+  border: 1px solid #fff !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #0b0b0b !important;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.home-uar .uar-newsletter .newsletter-form button:hover {
+  background: #d9d9d9 !important;
+  color: #000 !important;
+  transform: translateY(-1px);
+}
+.home-uar .uar-newsletter .newsletter-form small {
+  grid-column: 1 / -1;
+  display: block;
+  margin-top: 12px;
+  color: #777 !important;
+  font-size: 10px;
+  line-height: 1.5;
+}
+@media (max-width: 760px) {
+  .home-uar .uar-newsletter {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 30px 24px;
+  }
+  .home-uar .uar-newsletter .newsletter-form {
+    grid-template-columns: 1fr;
+  }
+  .home-uar .uar-newsletter .newsletter-form input {
+    border-right: 1px solid #3a3a3a !important;
+  }
+  .home-uar .uar-newsletter .newsletter-form button {
+    margin-top: 8px;
+  }
+}
