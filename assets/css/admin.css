@@ -566,185 +566,343 @@ body{min-width:0;overflow-x:hidden}
   }
 }
 
+
 /* =========================================================
-   FIX DEFINITIVO — FORMULARIO DE NOTICIAS
-   Evita que la portada, URL y checkbox rompan el modal.
+   FINAL FIX 2 — MISSING COMPONENT STYLES
+   Corrige listas del dashboard y checkboxes del modal.
 ========================================================= */
 
-.modal{
-  display:flex;
-  flex-direction:column;
+/* Dashboard: cada noticia ocupa una fila limpia */
+#dashboard-articles,
+#dashboard-scheduled{
+  padding:0;
+}
+
+#dashboard-articles .list-item,
+#dashboard-scheduled .list-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  min-width:0;
+  padding:13px 19px;
+  border-bottom:1px solid var(--line);
+  background:#fff;
+}
+
+#dashboard-articles .list-item:last-child,
+#dashboard-scheduled .list-item:last-child{
+  border-bottom:0;
+}
+
+#dashboard-articles .list-item>div:first-child,
+#dashboard-scheduled .list-item>div:first-child{
+  min-width:0;
   overflow:hidden;
 }
 
-.modal-head,
-.modal-actions{
-  flex:0 0 auto;
-}
-
-.modal-body{
-  min-height:0;
-  overflow-y:auto;
-  overflow-x:hidden;
-}
-
-/* Campos del formulario nunca se salen del ancho */
-.modal .form-grid,
-.modal .media-field,
-.modal .media-inline{
-  min-width:0;
-  max-width:100%;
-}
-
-/* Portada: preview compacto y controlado */
-.modal .media-field{
-  display:grid;
-  gap:8px;
-}
-
-.modal .media-inline{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
-  align-items:center;
-  gap:8px;
-}
-
-.modal .media-inline input[name="imageUrl"]{
+#dashboard-articles .list-item b,
+#dashboard-scheduled .list-item b{
+  display:block;
   min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  font-size:12px;
+  line-height:1.35;
 }
 
-.modal .media-inline .action,
-.modal .media-inline .upload-inline{
-  width:auto;
-  min-width:max-content;
+#dashboard-articles .list-item small,
+#dashboard-scheduled .list-item small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.3;
   white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-.modal .article-image-preview{
-  width:100%;
-  height:150px;
-  min-height:150px;
-  max-height:150px;
-  display:flex;
+#dashboard-articles .list-item>div:last-child,
+#dashboard-scheduled .list-item>span{
+  flex:0 0 auto;
+  min-width:0;
+}
+
+/* Estados: nunca se mezclan con el título */
+.badge{
+  display:inline-flex;
   align-items:center;
   justify-content:center;
-  overflow:hidden;
+  max-width:230px;
+  min-height:24px;
+  padding:4px 8px;
+  border-radius:999px;
   border:1px solid var(--line);
-  border-radius:10px;
-  background:#f5f6f7;
+  background:#f4f5f6;
+  color:#646a71;
+  font-size:8px;
+  line-height:1.15;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 
-.modal .article-image-preview img{
-  display:block;
-  width:100%;
-  height:100%;
-  max-width:100%;
-  max-height:100%;
-  object-fit:contain;
+.badge.live{
+  border-color:#bfe6d5;
+  background:var(--success-soft);
+  color:var(--success);
 }
 
-.modal .article-image-preview span{
-  color:var(--muted);
-  font-size:11px;
-  font-weight:700;
+.badge.scheduled{
+  border-color:#ead8a5;
+  background:var(--warning-soft);
+  color:var(--warning);
 }
 
-/* El input file nunca hereda el estilo de los inputs normales */
-.modal input[type="file"]{
-  width:auto;
-  padding:0;
-  border:0;
-  box-shadow:none;
-}
-
-/* Checkboxes: tamaño real y layout estable */
+/* Formularios: los checkboxes no deben ocupar todo el ancho */
 .modal label.check{
-  display:flex;
+  display:flex!important;
+  flex-direction:row;
   align-items:center;
   justify-content:flex-start;
-  gap:9px;
-  min-width:0;
-  width:100%;
+  gap:10px;
+  min-height:40px;
   padding:10px 12px;
   border:1px solid var(--line);
   border-radius:9px;
   background:#fafbfc;
   color:var(--ink-2);
-  text-transform:uppercase;
-  letter-spacing:.05em;
+  text-transform:none;
+  letter-spacing:0;
+  font-size:11px;
+  font-weight:800;
 }
 
 .modal label.check input[type="checkbox"]{
-  appearance:auto;
-  -webkit-appearance:checkbox;
-  width:16px;
+  width:16px!important;
   min-width:16px;
   max-width:16px;
   height:16px;
-  min-height:16px;
-  max-height:16px;
   margin:0;
   padding:0;
-  border:0;
-  box-shadow:none;
   accent-color:var(--accent);
-  flex:0 0 16px;
+  box-shadow:none!important;
 }
 
-.modal label.check input[type="checkbox"]:focus{
-  box-shadow:none;
+.modal label.check:hover{
+  border-color:#c8cdd2;
+  background:#f7f8f9;
 }
 
-/* Ayuda del formulario */
-.modal .form-help{
+.form-help{
   margin:0;
+  padding:10px 12px;
+  border-radius:8px;
+  background:#f7f8f9;
   color:var(--muted);
-  font-size:10px;
+  font-size:11px;
   line-height:1.5;
 }
 
-/* HTML: editor cómodo y sin desbordes */
-.modal textarea[name="content"]{
-  min-height:300px;
-  resize:vertical;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
-  font-size:12px;
-  line-height:1.6;
-  text-transform:none;
-  letter-spacing:0;
+/* Footer del modal: siempre visible y sin solaparse */
+.modal-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:8px;
+  min-height:62px;
 }
 
-@media(max-width:620px){
-  .modal .media-inline{
-    grid-template-columns:1fr 1fr;
+.modal-actions .btn{
+  flex:0 0 auto;
+}
+
+/* Textarea y campos no se salen del modal */
+.modal textarea{
+  min-height:180px;
+  resize:vertical;
+  max-width:100%;
+}
+
+@media (max-width:620px){
+  #dashboard-articles .list-item,
+  #dashboard-scheduled .list-item{
+    grid-template-columns:1fr;
+    gap:7px;
+    padding:13px 15px;
   }
 
-  .modal .media-inline input[name="imageUrl"]{
-    grid-column:1/-1;
+  #dashboard-articles .list-item>div:last-child,
+  #dashboard-scheduled .list-item>span{
+    justify-self:start;
   }
 
-  .modal .media-inline .action,
-  .modal .media-inline .upload-inline{
-    width:100%;
-    justify-content:center;
-  }
-
-  .modal .article-image-preview{
-    height:120px;
-    min-height:120px;
-    max-height:120px;
-  }
-
-  .modal textarea[name="content"]{
-    min-height:240px;
+  .badge{
+    max-width:100%;
   }
 
   .modal-actions{
-    position:sticky;
-    bottom:0;
-    z-index:3;
+    justify-content:stretch;
+  }
+
+  .modal-actions .btn{
+    flex:1 1 120px;
+  }
+}
+
+/* =========================================================
+   DROPRUGBY ADMIN — DASHBOARD FINAL OVERRIDE
+   Solo visual del dashboard. No cambia crear/editar noticias.
+========================================================= */
+#dashboard-articles,
+#dashboard-scheduled{
+  padding:0;
+  display:block;
+  width:100%;
+  max-width:100%;
+  overflow:hidden;
+}
+
+#dashboard-articles .list-item,
+#dashboard-scheduled .list-item{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) max-content !important;
+  align-items:center !important;
+  column-gap:18px !important;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  padding:14px 18px !important;
+  margin:0;
+  border:0 !important;
+  border-bottom:1px solid #eceef0 !important;
+  background:#fff !important;
+  transition:background-color .16s ease, padding-left .16s ease;
+}
+
+#dashboard-articles .list-item:last-child,
+#dashboard-scheduled .list-item:last-child{
+  border-bottom:0 !important;
+}
+
+#dashboard-articles .list-item:hover,
+#dashboard-scheduled .list-item:hover{
+  background:#fafbfc !important;
+  padding-left:21px !important;
+}
+
+#dashboard-articles .list-item > div:first-child,
+#dashboard-scheduled .list-item > div:first-child{
+  display:block;
+  min-width:0;
+  width:100%;
+  overflow:hidden;
+}
+
+#dashboard-articles .list-item b,
+#dashboard-scheduled .list-item b{
+  display:block;
+  width:100%;
+  min-width:0;
+  margin:0;
+  color:#17191c;
+  font-size:12px;
+  line-height:1.4;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#dashboard-articles .list-item small,
+#dashboard-scheduled .list-item small{
+  display:block;
+  width:100%;
+  margin-top:4px;
+  color:#858b92;
+  font-size:9px;
+  line-height:1.3;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Soporta tanto <span>PUBLICADA</span> como <span class="badge live">PUBLICADA</span>. */
+#dashboard-articles .list-item > span,
+#dashboard-scheduled .list-item > span{
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+  justify-self:end;
+  width:max-content;
+  min-width:74px;
+  max-width:180px;
+  min-height:23px;
+  box-sizing:border-box;
+  padding:4px 9px;
+  border:1px solid #dfe3e6;
+  border-radius:999px;
+  background:#f7f8f9;
+  color:#656b72;
+  font-size:8px;
+  line-height:1.1;
+  font-weight:900;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#dashboard-articles .list-item > span.badge.live{
+  border-color:#c9e7d9;
+  background:#eef9f3;
+  color:#287d58;
+}
+
+#dashboard-scheduled .list-item > span.badge.scheduled{
+  border-color:#ead9a8;
+  background:#fff8e8;
+  color:#8a691e;
+}
+
+/* Si el estado viene como texto suelto, sigue viéndose como badge. */
+#dashboard-articles .list-item > span:not(.badge),
+#dashboard-scheduled .list-item > span:not(.badge){
+  border-color:#d9e8df;
+  background:#f1f8f4;
+  color:#327654;
+}
+
+@media (max-width:700px){
+  #dashboard-articles .list-item,
+  #dashboard-scheduled .list-item{
+    grid-template-columns:minmax(0,1fr) !important;
+    row-gap:7px !important;
+    padding:13px 15px !important;
+  }
+
+  #dashboard-articles .list-item:hover,
+  #dashboard-scheduled .list-item:hover{
+    padding-left:17px !important;
+  }
+
+  #dashboard-articles .list-item > span,
+  #dashboard-scheduled .list-item > span{
+    justify-self:start;
+  }
+}
+
+/* El movimiento de inputs queda limitado al admin; no afecta la web pública. */
+@media (prefers-reduced-motion:reduce){
+  #dashboard-articles .list-item,
+  #dashboard-scheduled .list-item{
+    transition:none !important;
   }
 }
