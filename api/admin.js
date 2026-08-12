@@ -193,11 +193,17 @@ const DEFAULT_CONTENT = {
 // ============================================================
 
 function getSecret() {
-  return (
+  const secret =
     process.env.ADMIN_SESSION_SECRET ||
-    process.env.ADMIN_PASSWORD ||
-    "droprugby-secret-change-this"
-  );
+    process.env.ADMIN_PASSWORD;
+
+  if (!secret) {
+    throw new Error(
+      "Falta ADMIN_SESSION_SECRET o ADMIN_PASSWORD en las variables de entorno."
+    );
+  }
+
+  return secret;
 }
 
 function makeId(prefix = "item") {
