@@ -4,7 +4,7 @@
 // ============================================================
 
 import { Resend } from "resend";
-import { r2GetJSON, r2PutText } from "../lib/r2.js";
+import { r2GetJSON, r2PutJSONSafe } from "../lib/r2.js";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1156,13 +1156,9 @@ async function saveContent(
       content
     );
 
-  await r2PutText(
+  await r2PutJSONSafe(
     BLOB_PATH,
-    JSON.stringify(
-      normalized,
-      null,
-      2
-    )
+    normalized
   );
 
   return normalized;
