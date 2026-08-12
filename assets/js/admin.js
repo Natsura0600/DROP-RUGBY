@@ -56,13 +56,35 @@ function toast(title, message = "", type = "ok") {
   }, 3200);
 }
 
+function localISODate(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
 function fmt(value) {
   if (!value) return "—";
+
+  // Los campos type="date" son fechas civiles, no instantes UTC.
+  // new Date("YYYY-MM-DD") los interpreta como UTC y en Argentina
+  // podía mostrarlos un día antes.
+  const raw = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [year, month, day] = raw.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }).format(date);
+  }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return String(value);
+    return raw;
   }
 
   return new Intl.DateTimeFormat("es-AR", {
@@ -766,7 +788,7 @@ function articleForm(article = {}) {
           name="date"
           value="${esc(
             String(article.date || "").slice(0, 10) ||
-            new Date().toISOString().slice(0, 10)
+            localISODate()
           )}"
         >
       </label>
@@ -848,9 +870,15 @@ function openArticle(article = {}) {
         publishAt = date.toISOString();
       }
 
-      const scheduled =
-        checked(fd, "scheduled") &&
-        Boolean(publishAt);
+      const wantsSchedule = checked(fd, "scheduled");
+
+      if (wantsSchedule && !publishAt) {
+        throw new Error(
+          "Elegí una fecha y hora para programar la noticia."
+        );
+      }
+
+      const scheduled = wantsSchedule && Boolean(publishAt);
 
       const articleData = {
         id:
@@ -2488,6 +2516,9 @@ function mediaName(item) {
   return String(
     item.pathname ||
     item.url ||
+    item.publicUrl ||
+    item.publicURL ||
+    item.src ||
     ""
   )
     .split("/")
@@ -2504,9 +2535,14 @@ function renderMedia() {
   const sort = String($("#media-sort")?.value || "newest");
 
   const items = state.media
+    .map((item) => ({
+      ...item,
+      resolvedUrl: getMediaItemUrl(item)
+    }))
     .filter((item) => {
       const name = mediaName(item).toLowerCase();
-      return (!q || name.includes(q)) &&
+      return Boolean(item.resolvedUrl) &&
+        (!q || name.includes(q)) &&
         (!type || item.contentType === type);
     })
     .sort((a, b) => {
@@ -2533,18 +2569,18 @@ function renderMedia() {
 
   grid.innerHTML = items.map((item) => `
     <article class="media-card">
-      <button type="button" class="media-thumb" data-media-preview="${esc(item.url)}" title="Ver imagen">
+      <button type="button" class="media-thumb" data-media-preview="${esc(item.resolvedUrl)}" title="Ver imagen">
         <span class="media-format">${formatName(item.contentType)}</span>
-        <img src="${esc(item.url)}" alt="${esc(mediaName(item))}" loading="lazy">
+        <img src="${esc(item.resolvedUrl)}" alt="${esc(mediaName(item))}" loading="lazy">
       </button>
       <div class="media-info">
         <strong title="${esc(mediaName(item))}">${esc(mediaName(item))}</strong>
         <small>${formatBytes(item.size)} · ${esc(item.contentType || "imagen")}</small>
       </div>
       <div class="media-actions">
-        <button class="action" data-media-use="${esc(item.url)}">USAR</button>
-        <button class="action" data-media-copy="${esc(item.url)}">COPIAR</button>
-        <button class="action danger" data-media-delete="${esc(item.url)}">ELIMINAR</button>
+        <button class="action" data-media-use="${esc(item.resolvedUrl)}">USAR</button>
+        <button class="action" data-media-copy="${esc(item.resolvedUrl)}">COPIAR</button>
+        <button class="action danger" data-media-delete="${esc(item.resolvedUrl)}">ELIMINAR</button>
       </div>
     </article>
   `).join("") || `
@@ -3181,7 +3217,12 @@ async function refreshMediaForPicker() {
 }
 
 function openMediaPicker(callback) {
-  const items = Array.isArray(state.media) ? [...state.media] : [];
+  const items = (Array.isArray(state.media) ? [...state.media] : [])
+    .map((item) => ({
+      ...item,
+      resolvedUrl: getMediaItemUrl(item)
+    }))
+    .filter((item) => item.resolvedUrl);
   const overlay = document.createElement("div");
   overlay.className = "modal-back media-picker-back";
   overlay.setAttribute("role", "presentation");
@@ -3202,7 +3243,7 @@ function openMediaPicker(callback) {
             if (!url) return "";
             const name = mediaName(item);
             return `
-              <button type="button" class="media-picker-item" data-picker-url="${esc(url)}" title="Usar ${esc(name)}">
+              <button type="button" class="media-picker-item" data-picker-url="${esc(url)}" title="Usar ${esc(name)}" aria-label="Usar ${esc(name)}">
                 <span class="media-picker-image"><img src="${esc(url)}" alt="${esc(name)}" loading="lazy"></span>
                 <span class="media-picker-name">${esc(name)}</span>
                 <span class="media-picker-use">USAR IMAGEN</span>
@@ -4209,40 +4250,19 @@ $("#article-category-filter")
     renderArticles
   );
 
-$("#media-search")
-  ?.addEventListener(
-    "input",
-    renderMedia
-  );
-
-$("#media-type-filter")
-  ?.addEventListener(
-    "change",
-    renderMedia
-  );
+$("#media-search")?.addEventListener("input", renderMedia);
+$("#media-type-filter")?.addEventListener("change", renderMedia);
+$("#media-sort")?.addEventListener("change", renderMedia);
+$("#media-refresh")?.addEventListener("click", () => loadMedia(true));
 
 $("#media-upload-input")
   ?.addEventListener(
     "change",
     (event) => {
-      uploadMediaFiles(
-        event.target.files
-      );
-
-      event.target.value =
-        "";
+      uploadMediaFiles(event.target.files);
+      event.target.value = "";
     }
   );
-
-$("#club-logo-search")?.addEventListener("input", renderClubLogos);
-$("#club-logo-status")?.addEventListener("change", renderClubLogos);
-$("#nation-logo-search")?.addEventListener("input", renderNationLogos);
-$("#nation-logo-status")?.addEventListener("change", renderNationLogos);
-
-$("#media-search")?.addEventListener("input", renderMedia);
-$("#media-type-filter")?.addEventListener("change", renderMedia);
-$("#media-sort")?.addEventListener("change", renderMedia);
-$("#media-refresh")?.addEventListener("click", () => loadMedia(true));
 
 $("#media-dropzone-button")?.addEventListener("click", () => {
   $("#media-upload-input")?.click();
