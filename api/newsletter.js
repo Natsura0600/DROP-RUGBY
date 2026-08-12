@@ -4,7 +4,7 @@
 // ============================================================
 
 import { Resend } from "resend";
-import { list, put } from "@vercel/blob";
+import { r2GetJSON, r2PutText } from "../lib/r2.js";
 
 // ============================================================
 // CONFIGURACIÓN
@@ -278,12 +278,9 @@ function buildWelcomeEmailHtml() {
 // ============================================================
 
 async function readContent() {
-  const result = await list({
-    prefix: BLOB_PATH,
-    limit: 10
-  });
+  const data = await r2GetJSON(BLOB_PATH);
 
-  if (!result.blobs.length) {
+  if (!data) {
     return {
       articles: [],
       fixtures: [],
@@ -302,23 +299,6 @@ async function readContent() {
       }
     };
   }
-
-  const blob =
-    result.blobs.find(
-      (item) => item.pathname === BLOB_PATH
-    ) || result.blobs[0];
-
-  const response = await fetch(blob.url, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `No se pudo leer content.json (${response.status})`
-    );
-  }
-
-  const data = await response.json();
 
   return {
     ...data,
@@ -385,16 +365,9 @@ async function readContent() {
 // ============================================================
 
 async function saveContent(content) {
-  await put(
+  await r2PutText(
     BLOB_PATH,
-    JSON.stringify(content, null, 2),
-    {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json; charset=utf-8",
-      cacheControlMaxAge: 0
-    }
+    JSON.stringify(content, null, 2)
   );
 
   return content;
