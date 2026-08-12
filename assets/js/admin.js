@@ -470,24 +470,31 @@ function renderDashboard() {
           new Date(a.createdAt || a.date || 0)
       );
 
-  $("#dashboard-articles").innerHTML =
-    articles
-      .slice(0, 6)
-      .map(
-        (article) => `
-          <div class="list-item">
-            <div>
-              <b>${esc(article.title || "Sin título")}</b>
-              <small class="muted">
-                ${esc(article.category || "Rugby")} · ${fmt(article.date)}
-              </small>
+  const latest = articles.slice(0, 6);
+
+  $("#dashboard-articles").innerHTML = latest.length
+    ? `
+      <div class="dashboard-news-list">
+        ${latest.map((article) => `
+          <article class="dashboard-news-item">
+            <div class="dashboard-news-copy">
+              <div class="dashboard-news-title">
+                ${esc(article.title || "Sin título")}
+              </div>
+              <div class="dashboard-news-meta">
+                <span>${esc(article.category || "Rugby")}</span>
+                <span class="dashboard-news-dot">·</span>
+                <span>${esc(fmt(article.date))}</span>
+              </div>
             </div>
-            <div>${articleStatus(article)}</div>
-          </div>
-        `
-      )
-      .join("") ||
-    `<div class="list-item muted">No hay noticias.</div>`;
+            <div class="dashboard-news-status">
+              ${articleStatus(article)}
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    `
+    : `<div class="dashboard-empty">No hay noticias.</div>`;
 
   const scheduled =
     articles
@@ -499,32 +506,34 @@ function renderDashboard() {
       )
       .sort(
         (a, b) =>
-          new Date(a.publishAt) -
-          new Date(b.publishAt)
+          new Date(a.publishAt) - new Date(b.publishAt)
       );
 
-  $("#dashboard-scheduled").innerHTML =
-    scheduled
-      .slice(0, 6)
-      .map(
-        (article) => `
-          <div class="list-item">
-            <div>
-              <b>${esc(article.title || "Sin título")}</b>
-              <small class="muted">
-                ${esc(article.category || "Rugby")}
-              </small>
+  $("#dashboard-scheduled").innerHTML = scheduled.length
+    ? `
+      <div class="dashboard-news-list">
+        ${scheduled.slice(0, 6).map((article) => `
+          <article class="dashboard-news-item scheduled-item">
+            <div class="dashboard-news-copy">
+              <div class="dashboard-news-title">
+                ${esc(article.title || "Sin título")}
+              </div>
+              <div class="dashboard-news-meta">
+                <span>${esc(article.category || "Rugby")}</span>
+                <span class="dashboard-news-dot">·</span>
+                <span>Publicación programada</span>
+              </div>
             </div>
-            <span class="badge scheduled">
-              ${esc(fmtDT(article.publishAt))}
-            </span>
-          </div>
-        `
-      )
-      .join("") ||
-    `<div class="list-item muted">
-      No hay noticias programadas.
-    </div>`;
+            <div class="dashboard-news-status">
+              <span class="badge scheduled">
+                ${esc(fmtDT(article.publishAt))}
+              </span>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    `
+    : `<div class="dashboard-empty">No hay noticias programadas.</div>`;
 
   const pending = getPendingFixtures();
 
@@ -547,9 +556,7 @@ function renderDashboard() {
         `
       )
       .join("") ||
-    `<div class="list-item muted">
-      No hay resultados pendientes.
-    </div>`;
+    `<div class="list-item muted">No hay resultados pendientes.</div>`;
 }
 
 /* =========================================================
@@ -780,63 +787,41 @@ function articleForm(article = {}) {
         >
       </label>
 
-      <div class="full article-html-field">
-        <div class="html-editor-title">
-          <strong>Contenido de la noticia</strong>
-          <span class="article-html-badge">HTML</span>
-        </div>
-
+      <label class="full">
+        Contenido
         <textarea
           name="content"
-          class="html-editor"
-          rows="18"
-          spellcheck="false"
-          placeholder="Pegá o escribí el HTML de la noticia...
-
-Ejemplo:
-<h2>Un título</h2>
-<p>Primer párrafo de la noticia.</p>
-<p><strong>Una frase destacada</strong> dentro del texto.</p>
-<blockquote>Una cita importante.</blockquote>
-<img src="URL-DE-LA-IMAGEN" alt="Descripción">"
+          rows="12"
+          placeholder="Escribí la noticia. Separá los párrafos con una línea en blanco."
         >${esc(article.content || "")}</textarea>
+      </label>
 
-        <p class="html-editor-help">
-          Este campo guarda <strong>HTML real</strong>. Podés usar <code>&lt;p&gt;</code>,
-          <code>&lt;h2&gt;</code>, <code>&lt;h3&gt;</code>, <code>&lt;strong&gt;</code>,
-          <code>&lt;em&gt;</code>, <code>&lt;blockquote&gt;</code>, listas, tablas, enlaces e imágenes.
-          Las imágenes de portada siguen seleccionándose desde Media Manager.
-        </p>
-      </div>
+      <label class="check">
+        <input
+          type="checkbox"
+          name="featured"
+          ${article.featured ? "checked" : ""}
+        >
+        Noticia destacada
+      </label>
 
-      <div class="full article-flags">
-        <label class="check">
-          <input
-            type="checkbox"
-            name="featured"
-            ${article.featured ? "checked" : ""}
-          >
-          <span>Noticia destacada</span>
-        </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          name="published"
+          ${article.published !== false ? "checked" : ""}
+        >
+        Publicada
+      </label>
 
-        <label class="check">
-          <input
-            type="checkbox"
-            name="published"
-            ${article.published !== false ? "checked" : ""}
-          >
-          <span>Publicada</span>
-        </label>
-
-        <label class="check">
-          <input
-            type="checkbox"
-            name="scheduled"
-            ${article.scheduled ? "checked" : ""}
-          >
-          <span>Programar publicación</span>
-        </label>
-      </div>
+      <label class="check">
+        <input
+          type="checkbox"
+          name="scheduled"
+          ${article.scheduled ? "checked" : ""}
+        >
+        Programar publicación
+      </label>
 
       <p class="form-help full">
         Si marcás "Programar publicación", la noticia no se mostrará
@@ -4295,7 +4280,7 @@ $("#fixture-competition-filter")
 ========================================================= */
 
 document.addEventListener(
-  "keydown", 
+  "keydown",
   (event) => {
     if (
       event.key === "Escape"
