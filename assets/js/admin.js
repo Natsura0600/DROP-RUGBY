@@ -2331,20 +2331,36 @@ function openResult(
 }
 
 /* =========================================================
-   BORRADO
+   BORRADO / CONFIRMACIÓN INTERNA
 ========================================================= */
 
-async function deleteItem(
-  action,
-  itemId
-) {
-  if (
-    !confirm(
-      "¿Seguro que querés borrar este elemento?"
-    )
-  ) {
-    return;
-  }
+function askConfirm(title, message, confirmLabel = "ELIMINAR") {
+  return new Promise(resolve => {
+    const root = $("#modal-root");
+    root.innerHTML = `
+      <div class="modal-back confirm-back">
+        <div class="confirm-modal" role="dialog" aria-modal="true">
+          <div class="confirm-icon">!</div>
+          <div class="confirm-copy">
+            <span class="section-eyebrow">CONFIRMACIÓN</span>
+            <h2>${esc(title)}</h2>
+            <p>${esc(message)}</p>
+          </div>
+          <div class="confirm-actions">
+            <button type="button" class="action confirm-cancel">CANCELAR</button>
+            <button type="button" class="action danger confirm-ok">${esc(confirmLabel)}</button>
+          </div>
+        </div>
+      </div>`;
+    const finish = value => { root.innerHTML = ""; resolve(value); };
+    root.querySelector(".confirm-cancel")?.addEventListener("click", () => finish(false));
+    root.querySelector(".confirm-ok")?.addEventListener("click", () => finish(true));
+    root.querySelector(".confirm-back")?.addEventListener("click", e => { if (e.target === e.currentTarget) finish(false); });
+  });
+}
+
+async function deleteItem(action, itemId) {
+  if (!(await askConfirm("¿Borrar este elemento?", "Esta acción no se puede deshacer.", "BORRAR"))) return;
 
   try {
     await api(
@@ -2601,163 +2617,61 @@ async function loadClubs() {
   return state.clubs;
 }
 
+function logoFilterValue(inputId, statusId) {
+  const q = String($(inputId)?.value || "").trim().toLowerCase();
+  const status = String($(statusId)?.value || "all");
+  return { q, status };
+}
+
+function renderLogoCard({ id, name, meta, current, kind }) {
+  const hasLogo = Boolean(current);
+  const actionAttr = kind === "club" ? `data-club-pick="${esc(id)}"` : `data-nation-pick="${esc(id)}"`;
+  const clearAttr = kind === "club" ? `data-club-clear="${esc(id)}"` : `data-nation-clear="${esc(id)}"`;
+  return `
+    <article class="logo-card ${hasLogo ? "has-logo" : "missing-logo"}">
+      <div class="logo-card-visual">
+        ${hasLogo ? `<img src="${esc(current)}" alt="${esc(name)}" loading="lazy">` : `<span class="logo-placeholder">${esc(name.slice(0,1).toUpperCase())}</span>`}
+        <span class="logo-status ${hasLogo ? "ok" : "missing"}">${hasLogo ? "ASIGNADO" : "SIN ESCUDO"}</span>
+      </div>
+      <div class="logo-card-body">
+        <div class="logo-card-title">
+          <strong>${esc(name)}</strong>
+          <small>${esc(meta || id)}</small>
+        </div>
+        <div class="logo-card-actions">
+          <button class="action logo-main-action" ${actionAttr}>${hasLogo ? "CAMBIAR" : "ELEGIR"}</button>
+          ${hasLogo ? `<button class="action logo-clear-action" ${clearAttr}>QUITAR</button>` : ""}
+        </div>
+      </div>
+    </article>`;
+}
+
 function renderClubLogos() {
-  const root =
-    $("#club-logo-grid");
-
+  const root = $("#club-logo-grid");
   if (!root) return;
-
-  const logos =
-    state.content.settings
-      ?.clubLogos || {};
-
-  const clubs =
-    Object.entries(
-      state.clubs
-    );
-
-  root.innerHTML =
-    clubs
-      .map(
-        ([id, club]) => {
-          const current =
-            logos[id] ||
-            club.logo ||
-            "";
-
-          return `
-            <div class="club-logo-row">
-
-              <div class="club-logo-preview">
-                ${
-                  current
-                    ? `
-                      <img
-                        src="${esc(current)}"
-                        alt="${esc(
-                          club.name
-                        )}"
-                      >
-                    `
-                    : "<span>—</span>"
-                }
-              </div>
-
-              <div class="club-logo-name">
-                <strong>
-                  ${esc(
-                    club.name
-                  )}
-                </strong>
-
-                <small>
-                  ${esc(id)}
-                </small>
-              </div>
-
-              <button
-                class="action"
-                data-club-pick="${esc(id)}"
-              >
-                ELEGIR IMAGEN
-              </button>
-
-              <button
-                class="action"
-                data-club-clear="${esc(id)}"
-              >
-                QUITAR
-              </button>
-
-            </div>
-          `;
-        }
-      )
-      .join("") ||
-    `<div class="empty-state">
-      No hay clubes configurados.
-    </div>`;
+  const logos = state.content.settings?.clubLogos || {};
+  const { q, status } = logoFilterValue("#club-logo-search", "#club-logo-status");
+  const clubs = Object.entries(state.clubs)
+    .map(([id, club]) => ({ id, name: club.name || id, meta: club.aliases?.[0] || id, current: logos[id] || club.logo || "" }))
+    .filter(item => !q || `${item.name} ${item.meta} ${item.id}`.toLowerCase().includes(q))
+    .filter(item => status === "all" || (status === "assigned" ? item.current : !item.current))
+    .sort((a,b) => a.name.localeCompare(b.name, "es"));
+  if ($("#club-logo-count")) { $("#club-logo-count").textContent = `${clubs.length}/${Object.keys(state.clubs).length}`; }
+  root.innerHTML = clubs.map(item => renderLogoCard({ ...item, kind: "club" })).join("") || `<div class="logo-empty"><strong>No hay clubes para mostrar</strong><span>Probá con otro filtro o búsqueda.</span></div>`;
 }
 
 function renderNationLogos() {
-  const root =
-    $("#nation-logo-grid");
-
+  const root = $("#nation-logo-grid");
   if (!root) return;
-
-  const logos =
-    state.content.settings
-      ?.nationLogos || {};
-
-  const nations =
-    Object.entries(
-      state.nations
-    );
-
-  root.innerHTML =
-    nations
-      .map(
-        ([id, nation]) => {
-          const current =
-            logos[id] ||
-            nation.logo ||
-            "";
-
-          return `
-            <div class="club-logo-row">
-
-              <div class="club-logo-preview">
-                ${
-                  current
-                    ? `
-                      <img
-                        src="${esc(current)}"
-                        alt="${esc(
-                          nation.name
-                        )}"
-                      >
-                    `
-                    : "<span>—</span>"
-                }
-              </div>
-
-              <div class="club-logo-name">
-                <strong>
-                  ${esc(
-                    nation.name
-                  )}
-                </strong>
-
-                <small>
-                  ${esc(
-                    nation.shortName ||
-                    id
-                  )}
-                </small>
-              </div>
-
-              <button
-                class="action"
-                data-nation-pick="${esc(id)}"
-              >
-                ELEGIR IMAGEN
-              </button>
-
-              <button
-                class="action"
-                data-nation-clear="${esc(id)}"
-              >
-                QUITAR
-              </button>
-
-            </div>
-          `;
-        }
-      )
-      .join("") ||
-    `<div class="empty-state">
-      No hay selecciones configuradas.
-    </div>`;
+  const logos = state.content.settings?.nationLogos || {};
+  const { q, status } = logoFilterValue("#nation-logo-search", "#nation-logo-status");
+  const nations = Object.entries(state.nations)
+    .map(([id, nation]) => ({ id, name: nation.name || id, meta: nation.shortName || id, current: logos[id] || nation.logo || "" }))
+    .filter(item => !q || `${item.name} ${item.meta} ${item.id}`.toLowerCase().includes(q))
+    .filter(item => status === "all" || (status === "assigned" ? item.current : !item.current))
+    .sort((a,b) => a.name.localeCompare(b.name, "es"));
+  if ($("#nation-logo-count")) { $("#nation-logo-count").textContent = `${nations.length}/${Object.keys(state.nations).length}`; }
+  root.innerHTML = nations.map(item => renderLogoCard({ ...item, kind: "nation" })).join("") || `<div class="logo-empty"><strong>No hay selecciones para mostrar</strong><span>Probá con otro filtro o búsqueda.</span></div>`;
 }
 
 async function assignClubLogo(
@@ -3630,10 +3544,10 @@ function updateArticleImagePreview(
 
 document.addEventListener(
   "click",
-  (event) => {
+  async (event) => {
     const siteNav = event.target.closest("[data-site-nav]");
     if (siteNav) {
-      window.location.href = siteNav.dataset.siteNav || "/";
+      window.location.assign(siteNav.dataset.siteNav || "/");
       return;
     }
 
@@ -3771,14 +3685,7 @@ document.addEventListener(
       );
 
     if (clubClear) {
-      if (
-        !confirm(
-          "¿Quitar el escudo personalizado de este club?"
-        )
-      ) {
-        return;
-      }
-
+      if (!(await askConfirm("¿Quitar este escudo?", "El club volverá a usar su escudo predeterminado si existe.", "QUITAR"))) return;
       assignClubLogo(
         clubClear.dataset
           .clubClear,
@@ -3839,14 +3746,7 @@ document.addEventListener(
       );
 
     if (nationClear) {
-      if (
-        !confirm(
-          "¿Quitar el escudo personalizado de esta selección?"
-        )
-      ) {
-        return;
-      }
-
+      if (!(await askConfirm("¿Quitar este escudo?", "La selección volverá a usar su escudo predeterminado si existe.", "QUITAR"))) return;
       assignNationLogo(
         nationClear.dataset
           .nationClear,
@@ -3873,14 +3773,7 @@ document.addEventListener(
       );
 
     if (mediaDelete) {
-      if (
-        !confirm(
-          "¿Eliminar esta imagen del Media Manager? Si está usada en el sitio, dejará de mostrarse."
-        )
-      ) {
-        return;
-      }
-
+      if (!(await askConfirm("¿Eliminar esta imagen?", "Si está usada en el sitio, dejará de mostrarse. Esta acción no se puede deshacer.", "ELIMINAR"))) return;
       mediaApi(
         "delete",
         {
@@ -4280,6 +4173,11 @@ $("#media-upload-input")
         "";
     }
   );
+
+$("#club-logo-search")?.addEventListener("input", renderClubLogos);
+$("#club-logo-status")?.addEventListener("change", renderClubLogos);
+$("#nation-logo-search")?.addEventListener("input", renderNationLogos);
+$("#nation-logo-status")?.addEventListener("change", renderNationLogos);
 
 $("#media-search")?.addEventListener("input", renderMedia);
 $("#media-type-filter")?.addEventListener("change", renderMedia);
