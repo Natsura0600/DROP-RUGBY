@@ -1847,3 +1847,242 @@ body:has(.dynamic-article) .dynamic-body img:hover{transform:scale(1.015)}
     animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important;
   }
 }
+
+/* =========================================================
+   DROPRUGBY — MOTION DESIGN / PUBLIC SITE ONLY
+   Capa de animaciones premium. No afecta el panel Admin.
+   ========================================================= */
+
+@keyframes drPageIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:none}
+}
+@keyframes drHeaderIn{
+  from{opacity:0;transform:translateY(-14px)}
+  to{opacity:1;transform:none}
+}
+@keyframes drHeroIn{
+  from{opacity:0;transform:translateY(18px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+@keyframes drImageIn{
+  from{opacity:0;transform:scale(1.045)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes drLineIn{
+  from{transform:scaleX(0);opacity:0}
+  to{transform:scaleX(1);opacity:1}
+}
+@keyframes drFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-2px)}
+}
+@keyframes drRevealUp{
+  from{opacity:0;transform:translateY(22px)}
+  to{opacity:1;transform:none}
+}
+
+/* La página entra una sola vez, sin parpadeos */
+body:has(.site-header),
+body:has(.uar-header){
+  animation:drPageIn .45s cubic-bezier(.22,.7,.2,1) both;
+}
+
+/* HEADER */
+body:has(.site-header) .site-header,
+body:has(.uar-header) .uar-header{
+  animation:drHeaderIn .55s cubic-bezier(.22,.7,.2,1) both;
+}
+
+body:has(.site-header) .brand,
+body:has(.uar-header) .uar-brand{
+  transition:transform .28s cubic-bezier(.22,.7,.2,1),opacity .2s ease;
+}
+body:has(.site-header) .brand:hover,
+body:has(.uar-header) .uar-brand:hover{
+  transform:translateY(-1px);
+}
+
+/* NAV: línea que aparece desde el centro */
+body:has(.site-header) .main-nav a,
+body:has(.uar-header) .uar-header-tools a{
+  position:relative;
+  transition:color .22s ease,opacity .22s ease,transform .22s ease;
+}
+body:has(.site-header) .main-nav a::after{
+  content:"";
+  position:absolute;
+  left:50%;right:50%;bottom:-8px;
+  height:2px;
+  background:currentColor;
+  transition:left .28s cubic-bezier(.22,.7,.2,1),right .28s cubic-bezier(.22,.7,.2,1);
+}
+body:has(.site-header) .main-nav a:hover::after,
+body:has(.site-header) .main-nav a.active::after{
+  left:0;right:0;
+}
+body:has(.site-header) .main-nav a:hover{
+  transform:translateY(-1px);
+}
+
+/* HERO / DESTACADA */
+body:has(.site-header) .hero,
+body:has(.site-header) .home-hero,
+body:has(.site-header) .home-v7-hero,
+body:has(.site-header) .hero-card{
+  animation:drHeroIn .7s .08s cubic-bezier(.22,.7,.2,1) both;
+}
+body:has(.site-header) .hero-image,
+body:has(.site-header) .home-v7-hero-media{
+  overflow:hidden;
+}
+body:has(.site-header) .hero-image img,
+body:has(.site-header) .home-v7-hero-media img{
+  animation:drImageIn 1s .08s cubic-bezier(.22,.7,.2,1) both;
+  transition:transform .8s cubic-bezier(.22,.7,.2,1),filter .45s ease;
+}
+body:has(.site-header) .hero-image:hover img,
+body:has(.site-header) .home-v7-hero-media:hover img{
+  transform:scale(1.035);
+}
+
+/* Barras y separadores: se dibujan */
+body:has(.site-header) .section-title::after,
+body:has(.site-header) .section-heading::after,
+body:has(.site-header) .v7-section-title::after{
+  transform-origin:left center;
+  animation:drLineIn .55s .25s cubic-bezier(.22,.7,.2,1) both;
+}
+
+/* CARDS DE NOTICIAS */
+body:has(.site-header) .story,
+body:has(.site-header) .news-card,
+body:has(.site-header) .article-card,
+body:has(.site-header) .fixture-tile,
+body:has(.site-header) .score-card,
+body:has(.uar-header) .story,
+body:has(.uar-header) .news-card,
+body:has(.uar-header) .article-card,
+body:has(.uar-header) .fixture-tile,
+body:has(.uar-header) .score-card{
+  transition:transform .32s cubic-bezier(.22,.7,.2,1),box-shadow .32s ease,border-color .32s ease;
+  will-change:transform;
+}
+
+body:has(.site-header) .story:hover,
+body:has(.site-header) .news-card:hover,
+body:has(.site-header) .article-card:hover,
+body:has(.site-header) .fixture-tile:hover,
+body:has(.site-header) .score-card:hover,
+body:has(.uar-header) .story:hover,
+body:has(.uar-header) .news-card:hover,
+body:has(.uar-header) .article-card:hover,
+body:has(.uar-header) .fixture-tile:hover,
+body:has(.uar-header) .score-card:hover{
+  transform:translateY(-6px);
+}
+
+body:has(.site-header) .story-image,
+body:has(.site-header) .news-card .image,
+body:has(.site-header) .article-card .image,
+body:has(.site-header) .related-card-image,
+body:has(.uar-header) .story-image,
+body:has(.uar-header) .news-card .image,
+body:has(.uar-header) .article-card .image,
+body:has(.uar-header) .related-card-image{
+  overflow:hidden;
+}
+body:has(.site-header) .story-image img,
+body:has(.site-header) .news-card img,
+body:has(.site-header) .article-card img,
+body:has(.site-header) .related-card-image img,
+body:has(.uar-header) .story-image img,
+body:has(.uar-header) .news-card img,
+body:has(.uar-header) .article-card img,
+body:has(.uar-header) .related-card-image img{
+  transition:transform .7s cubic-bezier(.22,.7,.2,1),filter .35s ease;
+}
+body:has(.site-header) .story:hover .story-image img,
+body:has(.site-header) .news-card:hover img,
+body:has(.site-header) .article-card:hover img,
+body:has(.site-header) .related-card:hover .related-card-image img,
+body:has(.uar-header) .story:hover .story-image img,
+body:has(.uar-header) .news-card:hover img,
+body:has(.uar-header) .article-card:hover img,
+body:has(.uar-header) .related-card:hover .related-card-image img{
+  transform:scale(1.045);
+}
+
+/* Entrada escalonada de las primeras noticias */
+body:has(.site-header) .story:nth-child(1),
+body:has(.site-header) .news-card:nth-child(1),
+body:has(.site-header) .article-card:nth-child(1){animation:drRevealUp .5s .10s both}
+body:has(.site-header) .story:nth-child(2),
+body:has(.site-header) .news-card:nth-child(2),
+body:has(.site-header) .article-card:nth-child(2){animation:drRevealUp .5s .16s both}
+body:has(.site-header) .story:nth-child(3),
+body:has(.site-header) .news-card:nth-child(3),
+body:has(.site-header) .article-card:nth-child(3){animation:drRevealUp .5s .22s both}
+body:has(.site-header) .story:nth-child(4),
+body:has(.site-header) .news-card:nth-child(4),
+body:has(.site-header) .article-card:nth-child(4){animation:drRevealUp .5s .28s both}
+body:has(.site-header) .story:nth-child(5),
+body:has(.site-header) .news-card:nth-child(5),
+body:has(.site-header) .article-card:nth-child(5){animation:drRevealUp .5s .34s both}
+body:has(.site-header) .story:nth-child(6),
+body:has(.site-header) .news-card:nth-child(6),
+body:has(.site-header) .article-card:nth-child(6){animation:drRevealUp .5s .40s both}
+
+/* BOTONES */
+body:has(.site-header) .cta,
+body:has(.site-header) .share-button,
+body:has(.site-header) .social-btn,
+body:has(.uar-header) .cta,
+body:has(.uar-header) .share-button,
+body:has(.uar-header) .social-btn{
+  transition:transform .25s cubic-bezier(.22,.7,.2,1),box-shadow .25s ease,filter .25s ease;
+}
+body:has(.site-header) .cta:hover,
+body:has(.site-header) .share-button:hover,
+body:has(.site-header) .social-btn:hover,
+body:has(.uar-header) .cta:hover,
+body:has(.uar-header) .share-button:hover,
+body:has(.uar-header) .social-btn:hover{
+  transform:translateY(-3px);
+  filter:brightness(1.04);
+}
+body:has(.site-header) .cta:active,
+body:has(.site-header) .share-button:active,
+body:has(.site-header) .social-btn:active{
+  transform:translateY(-1px) scale(.98);
+}
+
+/* FOOTER */
+body:has(.site-header) .footer,
+body:has(.uar-header) .footer{
+  animation:drRevealUp .6s .25s both;
+}
+
+/* ARTÍCULO */
+body:has(.dynamic-article) .article-kicker{animation:drRevealUp .45s .05s both}
+body:has(.dynamic-article) .dynamic-article h1{animation:drRevealUp .55s .10s both}
+body:has(.dynamic-article) .dynamic-article .lead{animation:drRevealUp .55s .16s both}
+body:has(.dynamic-article) .dynamic-meta{animation:drRevealUp .45s .22s both}
+body:has(.dynamic-article) .dynamic-image{animation:drHeroIn .65s .25s both}
+body:has(.dynamic-article) .dynamic-body{animation:drRevealUp .6s .32s both}
+body:has(.dynamic-article) .dynamic-related{animation:drRevealUp .6s .38s both}
+
+/* Elementos que aparecen al usar el menú móvil */
+body:has(.site-header) .mobile-nav{
+  transition:opacity .28s ease,transform .32s cubic-bezier(.22,.7,.2,1),visibility .28s ease;
+}
+
+/* Accesibilidad */
+@media(prefers-reduced-motion:reduce){
+  body:has(.site-header),body:has(.uar-header),
+  body:has(.site-header) *,body:has(.uar-header) *{
+    animation:none!important;
+    transition:none!important;
+    scroll-behavior:auto!important;
+  }
+}
