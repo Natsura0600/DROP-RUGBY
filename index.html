@@ -11,23 +11,22 @@
   <meta property="og:description" content="Actualidad, protagonistas y análisis del rugby argentino y mundial.">
   <meta property="og:url" content="https://www.droprugby.com/">
   <meta name="robots" content="index, follow">
-  <title>DropRugby — Rugby sin vueltas</title>
+  <title>DropRugby</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700;800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
   <link rel="icon" type="image/png" href="/logo.png">
 </head>
-<body class="home-v6">
+<body class="home-v7">
   <div class="topline"></div>
 
-  <header class="site-header">
-    <div class="header-inner">
+  <header class="site-header v7-header">
+    <div class="header-inner v7-header-inner">
       <a class="brand" href="index.html" aria-label="DropRugby inicio">
         <div class="logo-mark"><img src="/logo.png" alt="DropRugby"></div>
         <div class="brand-name">DROP<span>RUGBY</span></div>
       </a>
-
       <nav class="main-nav">
         <a href="los-pumas.html">LOS PUMAS</a>
         <a href="super-rugby.html">INTERNACIONAL</a>
@@ -35,11 +34,8 @@
         <a href="calendario.html">CALENDARIO</a>
         <a href="contacto.html">CONTACTO</a>
       </nav>
-
       <div class="header-actions">
-        <button class="search-btn" aria-label="Buscar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </button>
+        <button class="search-btn" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
         <div class="social-links">
           <a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
           <a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a>
@@ -47,143 +43,87 @@
         <button class="menu-btn" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
       </div>
     </div>
-
-    <div class="mobile-nav">
-      <a href="los-pumas.html">LOS PUMAS</a>
-      <a href="super-rugby.html">INTERNACIONAL</a>
-      <a href="urba-top-14.html">URBA TOP 14</a>
-      <a href="calendario.html">CALENDARIO</a>
-      <a href="contacto.html">CONTACTO</a>
-      <div class="mobile-social">
-        <a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a>
-        <a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a>
+    <div class="v7-subnav">
+      <div class="v7-subnav-inner">
+        <span class="v7-live-dot">●</span><strong>DROP RUGBY</strong>
+        <a href="#ultimas-noticias">ÚLTIMAS</a><a href="#pumas">LOS PUMAS</a><a href="#super-rugby">INTERNACIONAL</a><a href="#urba-top14">URBA TOP 14</a><a href="#calendario-preview">PARTIDOS</a>
+        <span class="v7-subnav-spacer"></span><span>RUGBY ARGENTINO</span>
       </div>
+    </div>
+    <div class="mobile-nav">
+      <a href="los-pumas.html">LOS PUMAS</a><a href="super-rugby.html">INTERNACIONAL</a><a href="urba-top-14.html">URBA TOP 14</a><a href="calendario.html">CALENDARIO</a><a href="contacto.html">CONTACTO</a>
+      <div class="mobile-social"><a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a><a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a></div>
     </div>
   </header>
 
   <div class="search-overlay" id="search-overlay">
     <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
-    <div class="search-overlay-inner">
-      <input type="text" id="search-input" placeholder="Buscar noticias, equipos, jugadores…" autocomplete="off">
-      <p class="search-hint">Probá con “Los Pumas”, “Internacional”, “URBA Top 14” o el nombre de un equipo.</p>
-      <div class="search-results" id="search-results"></div>
-    </div>
+    <div class="search-overlay-inner"><input type="text" id="search-input" placeholder="Buscar noticias, equipos, jugadores…" autocomplete="off"><p class="search-hint">Probá con “Los Pumas”, “Internacional”, “URBA Top 14” o el nombre de un equipo.</p><div class="search-results" id="search-results"></div></div>
   </div>
 
-  <main class="home-page">
-    <section class="home-v6-hero">
-      <div class="home-v6-hero-copy reveal">
-        <p class="eyebrow">DROP RUGBY · ACTUALIDAD</p>
-        <h1>Todo el rugby.<br><span>En un solo lugar.</span></h1>
-        <p>Noticias, protagonistas, resultados y análisis. Lo importante primero, sin vueltas.</p>
-        <div class="home-v6-actions">
-          <a class="home-v6-primary" id="home-hero-link" href="los-pumas.html">Leer la principal <span>↗</span></a>
-          <a class="home-v6-secondary" href="#ultimas-noticias">Explorar noticias</a>
+  <main class="home-page v7-page">
+    <div class="v7-breaking"><strong>ÚLTIMA HORA</strong><span>Noticias, resultados y actualidad del rugby argentino y mundial</span><a href="#ultimas-noticias">VER ÚLTIMAS →</a></div>
+
+    <section class="v7-hero-grid">
+      <div class="v7-hero-main">
+        <div class="v7-kicker">PRINCIPAL · DROP RUGBY</div>
+        <div class="home-v7-hero-media" id="home-hero"><div class="home-v7-hero-placeholder"><span>DROP RUGBY</span><strong>La principal del día</strong></div></div>
+        <div class="v7-hero-copy">
+          <div><span class="v7-section-label">RUGBY · ACTUALIDAD</span><h1>Todo el rugby, en un solo lugar.</h1><p>Noticias, protagonistas, resultados y análisis. Lo importante primero.</p></div>
+          <a id="home-hero-link" href="los-pumas.html" class="v7-read-more">LEER LA NOTA <b>→</b></a>
         </div>
       </div>
-
-      <div class="home-v6-hero-media reveal" id="home-hero">
-        <div class="home-v6-hero-placeholder">
-          <span>DROP RUGBY</span>
-          <strong>La principal del día</strong>
-        </div>
-      </div>
-
-      <div class="home-v6-hero-meta">
-        <span>01</span><b>PRINCIPAL</b><i></i><small>Noticias que importan</small>
-      </div>
+      <aside class="v7-side-news">
+        <div class="v7-side-head"><h2>ÚLTIMAS NOTICIAS</h2><span>AHORA</span></div>
+        <div class="stories-grid" id="home-top-stories"></div>
+      </aside>
     </section>
 
-    <section class="home-v6-radar" aria-label="Secciones principales">
-      <a href="los-pumas.html"><span>01</span><strong>LOS PUMAS</strong><small>Selección argentina</small><b>↗</b></a>
-      <a href="super-rugby.html"><span>02</span><strong>INTERNACIONAL</strong><small>Rugby mundial</small><b>↗</b></a>
-      <a href="urba-top-14.html"><span>03</span><strong>URBA TOP 14</strong><small>Clubes y resultados</small><b>↗</b></a>
-      <a href="calendario.html"><span>04</span><strong>AGENDA</strong><small>Próximos partidos</small><b>↗</b></a>
-    </section>
-
-    <div class="ad-slot home-v6-ad">ESPACIO PUBLICITARIO</div>
-
-    <section class="home-v6-section home-v6-latest" id="ultimas-noticias">
-      <div class="home-v6-heading">
-        <div><p class="eyebrow">AHORA</p><h2>Últimas noticias</h2></div>
-        <span>Lo más reciente de DropRugby</span>
-      </div>
-      <div class="stories-grid" id="home-top-stories"></div>
-    </section>
-
-    <section class="home-v6-section home-v6-pumas" id="pumas">
-      <div class="home-v6-section-head">
-        <div><p class="eyebrow">SELECCIÓN</p><h2>Los Pumas</h2></div>
-        <a href="los-pumas.html">VER TODAS <span>↗</span></a>
-      </div>
-      <div class="category-cards home-v6-category-grid" id="home-los-pumas"></div>
-    </section>
-
-    <div class="home-v6-breaker">
-      <div><span>DROP RUGBY</span><strong>El juego cambia. La pasión no.</strong></div>
-      <a href="calendario.html">Ver la agenda ↗</a>
+    <div class="v7-scorebar">
+      <div class="v7-score-title"><span>RUGBY</span><strong>PARTIDOS</strong></div>
+      <div class="v7-score-item"><b>URBA TOP 14</b><span>Próximos encuentros</span></div>
+      <div class="v7-score-item"><b>LOS PUMAS</b><span>Calendario internacional</span></div>
+      <a href="calendario.html">VER TODO →</a>
     </div>
 
-    <section class="home-v6-section home-v6-international" id="super-rugby">
-      <div class="home-v6-section-head">
-        <div><p class="eyebrow">MUNDO</p><h2>Internacional</h2></div>
-        <a href="super-rugby.html">VER TODAS <span>↗</span></a>
-      </div>
-      <div class="category-cards home-v6-category-grid" id="home-super-rugby"></div>
-    </section>
-
-    <section class="home-v6-quote">
-      <div class="home-v6-quote-mark">“</div>
-      <blockquote>El rugby se juega con el cuerpo, pero se recuerda con el corazón.</blockquote>
-      <span>DROP RUGBY · PASIÓN POR EL JUEGO</span>
-    </section>
-
-    <section class="home-v6-section home-v6-urba" id="urba-top14">
-      <div class="home-v6-section-head">
-        <div><p class="eyebrow">CLUBES</p><h2>URBA Top 14</h2></div>
-        <a href="urba-top-14.html">VER TODAS <span>↗</span></a>
-      </div>
-      <div class="category-cards home-v6-category-grid" id="home-urba-top14"></div>
-    </section>
-
-    <section class="home-v6-section home-v6-calendar" id="calendario-preview">
-      <div class="home-v6-section-head">
-        <div><p class="eyebrow">MATCH CENTER</p><h2>Próximos partidos</h2></div>
-        <a href="calendario.html">CALENDARIO COMPLETO <span>↗</span></a>
-      </div>
+    <section class="v7-section v7-match-section" id="calendario-preview">
+      <div class="v7-section-head"><div><span class="v7-section-label">MATCH CENTER</span><h2>Próximos partidos</h2></div><a href="calendario.html">CALENDARIO COMPLETO →</a></div>
       <div class="calendar-preview" id="home-calendar-preview"></div>
     </section>
 
-    <section class="home-v6-instagram">
-      <div class="home-v6-instagram-copy">
-        <p class="eyebrow">@DROP_RUGBY</p>
-        <h2>El rugby también se vive fuera de la cancha.</h2>
-        <p>Fotos, datos, clips y contenido diario para seguir conectado con el juego.</p>
-        <a href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">Seguir en Instagram ↗</a>
+    <section class="v7-section v7-news-section" id="ultimas-noticias">
+      <div class="v7-section-head"><div><span class="v7-section-label">ACTUALIDAD</span><h2>Noticias destacadas</h2></div><span class="v7-rule"></span></div>
+      <div class="v7-news-columns">
+        <article class="v7-news-lead"><div class="v7-news-lead-inner"><span>DROP RUGBY</span><h3>La información que necesitás para seguir el juego.</h3><p>Las principales historias del día, protagonistas y todo lo que pasa dentro y fuera de la cancha.</p></div></article>
+        <div class="v7-news-note"><span>01</span><div><strong>LOS PUMAS</strong><p>Actualidad de la selección argentina.</p></div></div>
+        <div class="v7-news-note"><span>02</span><div><strong>INTERNACIONAL</strong><p>Lo mejor del rugby mundial.</p></div></div>
       </div>
-      <div class="home-v6-instagram-art" aria-hidden="true"><span>DR</span></div>
     </section>
 
-    <section class="newsletter home-v6-newsletter">
+    <section class="v7-section v7-category" id="pumas">
+      <div class="v7-section-head"><div><span class="v7-section-label">SELECCIÓN</span><h2>Los Pumas</h2></div><a href="los-pumas.html">VER TODAS →</a></div>
+      <div class="category-cards v7-card-grid" id="home-los-pumas"></div>
+    </section>
+
+    <section class="v7-section v7-category v7-dark-section" id="super-rugby">
+      <div class="v7-section-head"><div><span class="v7-section-label">MUNDO</span><h2>Internacional</h2></div><a href="super-rugby.html">VER TODAS →</a></div>
+      <div class="category-cards v7-card-grid" id="home-super-rugby"></div>
+    </section>
+
+    <section class="v7-section v7-category v7-urba-section" id="urba-top14">
+      <div class="v7-section-head"><div><span class="v7-section-label">CLUBES</span><h2>URBA Top 14</h2></div><a href="urba-top-14.html">VER TODAS →</a></div>
+      <div class="category-cards v7-card-grid" id="home-urba-top14"></div>
+    </section>
+
+    <section class="v7-editorial-strip"><div><span>DROP RUGBY</span><h2>El rugby se cuenta todos los días.</h2></div><a href="contacto.html">CONOCÉ MÁS →</a></section>
+
+    <section class="newsletter v7-newsletter">
       <div><p class="eyebrow">NEWSLETTER</p><h2>Una dosis de rugby.<br>Sin spam.</h2></div>
-      <form class="newsletter-form" id="newsletter-form">
-        <input type="email" id="newsletter-email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required>
-        <button type="submit" id="newsletter-submit">Suscribirme <span>→</span></button>
-        <small id="newsletter-message">Recibí las noticias principales de DropRugby.</small>
-      </form>
+      <form class="newsletter-form" id="newsletter-form"><input type="email" id="newsletter-email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required><button type="submit" id="newsletter-submit">Suscribirme <span>→</span></button><small id="newsletter-message">Recibí las noticias principales de DropRugby.</small></form>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="footer-brand">
-      <div class="brand-name">DROP<span>RUGBY</span></div>
-      <p>Medio digital de rugby: noticias, análisis y opinión de Los Pumas, rugby internacional y clubes.</p>
-      <div class="footer-socials"><a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a><a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a></div>
-    </div>
-    <div class="footer-links"><a href="los-pumas.html">Los Pumas</a><a href="super-rugby.html">Internacional</a><a href="urba-top-14.html">URBA Top 14</a><a href="calendario.html">Calendario</a><a href="contacto.html">Contacto</a></div>
-    <p class="copyright">© 2026 DropRugby. Todos los derechos reservados.</p>
-  </footer>
-
+  <footer class="footer"><div class="footer-brand"><div class="brand-name">DROP<span>RUGBY</span></div><p>Medio digital de rugby: noticias, análisis y opinión de Los Pumas, rugby internacional y clubes.</p><div class="footer-socials"><a class="social-btn" href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">INSTAGRAM ↗</a><a class="social-btn" href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TIKTOK ↗</a></div></div><div class="footer-links"><a href="los-pumas.html">Los Pumas</a><a href="super-rugby.html">Internacional</a><a href="urba-top-14.html">URBA Top 14</a><a href="calendario.html">Calendario</a><a href="contacto.html">Contacto</a></div><p class="copyright">© 2026 DropRugby. Todos los derechos reservados.</p></footer>
   <script src="assets/js/script.js"></script>
 </body>
 </html>
