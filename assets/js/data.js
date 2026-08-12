@@ -108,40 +108,9 @@ window.DROP_RUGBY_DATA = {
       demo: true
     },
 
-    {
-      id: "urba-guia-fin-de-semana",
-      title: "Guía del fin de semana: todos los partidos de URBA",
-      category: "URBA",
-      subcategory: "Fixture",
-      date: "2026-08-02",
-      author: "Julieta Farías",
-      imageClass: "img-urba-1",
-      excerpt: "Un repaso completo por los cruces del fin de semana en las distintas divisiones del rugby de clubes.",
-      url: "noticias/urba-guia-fin-de-semana.html",
-      featured: false,
-      breaking: false,
-      scheduled: false,
-      readTime: "4 MIN DE LECTURA",
-      demo: true
-    },
+    
 
-    {
-      id: "urba-figuras-jornada",
-      title: "Las figuras de la jornada en el rugby de clubes",
-      category: "URBA",
-      subcategory: "Opinión",
-      date: "2026-08-01",
-      author: "Redacción DropRugby",
-      imageClass: "img-urba-2",
-      excerpt: "Una mirada editorial sobre los jugadores que más aportaron en la última fecha del rugby amateur.",
-      url: "noticias/urba-figuras-jornada.html",
-      featured: false,
-      breaking: false,
-      scheduled: false,
-      readTime: "3 MIN DE LECTURA",
-      demo: true
-    }
-  ],
+    ],
 
 
   fixtures: [
@@ -199,23 +168,9 @@ window.DROP_RUGBY_DATA = {
       channel: "URBA Play"
     },
 
-    {
-      date: "2026-08-06",
-      competition: "URBA",
-      time: "14:00",
-      home: "Club A",
-      away: "Club B",
-      channel: "URBA Play"
-    },
+    
 
-    {
-      date: "2026-08-06",
-      competition: "URBA",
-      time: "16:00",
-      home: "Club C",
-      away: "Club D",
-      channel: "URBA Play"
-    },
+    
 
     {
       date: "2026-08-08",
@@ -244,23 +199,9 @@ window.DROP_RUGBY_DATA = {
       channel: "URBA Play"
     },
 
-    {
-      date: "2026-08-09",
-      competition: "URBA",
-      time: "13:30",
-      home: "Club E",
-      away: "Club F",
-      channel: "URBA Play"
-    },
+    
 
-    {
-      date: "2026-08-09",
-      competition: "URBA",
-      time: "15:30",
-      home: "Club G",
-      away: "Club H",
-      channel: "URBA Play"
-    },
+    
 
     {
       date: "2026-08-12",
