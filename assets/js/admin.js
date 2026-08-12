@@ -1242,123 +1242,64 @@ function getPendingFixtures() {
 }
 
 function renderResults() {
-  const results =
-    [...state.content.results]
-      .filter(
-        (result) =>
-          String(
-            result.competition || ""
-          ).toUpperCase() ===
-          "URBA TOP 14"
-      )
-      .sort(
-        (a, b) =>
-          String(b.date || "").localeCompare(
-            String(a.date || "")
-          )
-      );
+  const results = [...state.content.results]
+    .filter((result) => String(result.competition || '').toUpperCase() === 'URBA TOP 14')
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 
-  $("#results-list").innerHTML =
-    results
-      .map(
-        (result) => `
-          <div class="list-item result-row">
+  const list = $('#results-list');
+  if (list) {
+    list.innerHTML = results.length ? `
+      <div class="results-loaded">
+        ${results.map((result, index) => `
+          <article class="result-item" style="animation-delay:${Math.min(index * 35, 280)}ms">
             <div>
-              <b>
-                ${esc(result.home || "Local")}
-                <strong>${esc(result.homeScore)}</strong>
-                —
-                <strong>${esc(result.awayScore)}</strong>
-                ${esc(result.away || "Visitante")}
-              </b>
-
-              <small class="muted">
-                ${esc(result.date || "—")}
-                · Bonus:
-                ${
-                  result.bonusTeam
-                    ? esc(result.bonusTeam)
-                    : "ninguno"
-                }
-              </small>
+              <div class="result-match">
+                <strong>${esc(result.home || 'Local')}</strong>
+                <span class="score-pill">${esc(result.homeScore ?? '0')} — ${esc(result.awayScore ?? '0')}</span>
+                <strong>${esc(result.away || 'Visitante')}</strong>
+              </div>
+              <div class="result-meta">
+                <span>${esc(result.date || '—')}${result.time ? ` · ${esc(result.time)}` : ''}</span>
+                <span>•</span>
+                <span>Bonus: ${result.bonusTeam ? esc(result.bonusTeam) : 'ninguno'}</span>
+              </div>
             </div>
-
-            <div class="actions">
-              <button
-                class="action"
-                data-edit-result="${esc(result.id)}"
-              >
-                EDITAR
-              </button>
-
-              <button
-                class="action"
-                data-delete-result="${esc(result.id)}"
-              >
-                BORRAR
-              </button>
+            <div class="result-actions">
+              <button class="action" data-edit-result="${esc(result.id)}">EDITAR</button>
+              <button class="action danger" data-delete-result="${esc(result.id)}">BORRAR</button>
             </div>
-          </div>
-        `
-      )
-      .join("") ||
-    `<div class="list-item muted">
-      Todavía no hay resultados cargados.
-    </div>`;
+          </article>
+        `).join('')}
+      </div>` : `
+        <div class="results-empty">
+          <strong>No hay resultados cargados</strong>
+          <span>Los resultados que agregues aparecerán organizados acá.</span>
+        </div>`;
+  }
 
   renderStandingsTable();
   renderStandingsBaseEditor();
 
-  const pending =
-    getPendingFixtures();
-
-  $("#results-pending").innerHTML =
-    pending.length
-      ? `
-        <div class="result-pending-list">
-          <div class="result-pending-title">
-            PARTIDOS SIN RESULTADO
-          </div>
-
-          ${pending
-            .map(
-              (fixture) => `
-                <div class="list-item">
-                  <div>
-                    <b>${esc(
-                      getFixtureName(fixture)
-                    )}</b>
-
-                    <small class="muted">
-                      ${esc(
-                        fixture.date || "—"
-                      )}
-                      ${
-                        fixture.time
-                          ? ` · ${esc(
-                              fixture.time
-                            )}`
-                          : ""
-                      }
-                    </small>
-                  </div>
-
-                  <button
-                    class="action"
-                    data-add-result="${esc(
-                      fixture.id ||
-                      fixtureKey(fixture)
-                    )}"
-                  >
-                    CARGAR
-                  </button>
-                </div>
-              `
-            )
-            .join("")}
-        </div>
-      `
-      : "";
+  const pending = getPendingFixtures();
+  const pendingRoot = $('#results-pending');
+  if (pendingRoot) {
+    pendingRoot.innerHTML = pending.length ? `
+      <div class="pending-header">
+        <span>PARTIDOS SIN RESULTADO</span>
+        <span>${pending.length} pendientes</span>
+      </div>
+      <div class="result-pending-list">
+        ${pending.map((fixture, index) => `
+          <article class="pending-result-item" style="animation-delay:${Math.min(index * 30, 240)}ms">
+            <div>
+              <div class="pending-match">${esc(getFixtureName(fixture))}</div>
+              <span class="pending-date">${esc(fixture.date || '—')}${fixture.time ? ` · ${esc(fixture.time)}` : ''}</span>
+            </div>
+            <button class="action pending-load" data-add-result="${esc(fixture.id || fixtureKey(fixture))}">CARGAR RESULTADO</button>
+          </article>
+        `).join('')}
+      </div>` : '';
+  }
 }
 
 function calculateStandings() {
