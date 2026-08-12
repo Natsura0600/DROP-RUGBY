@@ -523,6 +523,22 @@ content="Noticias de rugby en DropRugby."
        * directamente en el contenido.
        */
 
+      function renderBlocks(blocks) {
+        if (!Array.isArray(blocks) || !blocks.length) return '';
+        return blocks.map((b, i) => {
+          const type = b?.type || 'text';
+          if (type === 'text') return `<div class="content-block text-block">${renderBody(b.text || '')}</div>`;
+          if (type === 'image') return `<figure class="content-block block-image"><img src="${esc(b.url || '')}" alt="${esc(b.alt || '')}" loading="lazy"><figcaption>${esc(b.caption || '')}</figcaption></figure>`;
+          if (type === 'gallery') return `<div class="content-block block-gallery">${(b.urls || []).map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`;
+          if (type === 'video') { const url=String(b.url||''); const yt=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/); return yt ? `<div class="content-block block-video"><iframe src="https://www.youtube.com/embed/${yt[1]}" title="Video" loading="lazy" allowfullscreen></iframe></div>` : `<p class="content-block"><a href="${esc(url)}" target="_blank" rel="noopener">Ver video</a></p>`; }
+          if (type === 'quote') return `<blockquote class="content-block block-quote">“${esc(b.text || '')}”${b.author ? `<cite>— ${esc(b.author)}</cite>` : ''}</blockquote>`;
+          if (type === 'table') return `<div class="content-block table-wrap"><table><tbody>${(b.rows || []).map((r,ri)=>`<tr>${r.map(c=>`<${ri===0?'th':'td'}>${esc(c)}</${ri===0?'th':'td'}>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+          if (type === 'separator') return `<hr class="content-block">`;
+          if (type === 'poll') return `<div class="content-block drop-poll" data-poll-index="${i}"><h3>${esc(b.question || 'Encuesta')}</h3><div class="poll-options">${(b.options || []).map((o,j)=>`<button type="button" data-poll-option="${j}">${esc(o)}</button>`).join('')}</div><div class="poll-results" hidden></div></div>`;
+          return '';
+        }).join('');
+      }
+
       function renderBody(value) {
 
         const text =
@@ -816,10 +832,18 @@ content="Noticias de rugby en DropRugby."
 
           <div class="dynamic-body">
             ${
+              renderBlocks(a.contentBlocks) ||
               renderBody(a.content) ||
               `<p>${esc(excerpt)}</p>`
             }
           </div>
+
+          <section class="article-reactions" aria-label="Reacciones">
+            <strong>¿Qué te pareció?</strong>
+            <div class="reaction-row">
+              ${['🔥','👍','😮','😢','👎'].map(x=>`<button type="button" data-reaction="${x}">${x}<span>0</span></button>`).join('')}
+            </div>
+          </section>
 
           <section
             class="dynamic-share"
@@ -909,6 +933,38 @@ content="Noticias de rugby en DropRugby."
 
             }
           );
+
+
+        async function postAnalytics(payload) {
+          try { await fetch('/api/analytics', {method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify(payload)}); } catch (_) {}
+        }
+        const articleId = String(a.id);
+        postAnalytics({action:'view',articleId});
+        let started = Date.now();
+        const sessionKey='drop_article_session';
+        const sessionId=localStorage.getItem(sessionKey)||crypto.randomUUID?.()||String(Date.now());
+        localStorage.setItem(sessionKey,sessionId);
+        let readingSent=false;
+        const sendReading=()=>{ if(readingSent) return; readingSent=true; postAnalytics({action:'reading',articleId,seconds:Math.round((Date.now()-started)/1000),sessionId}); };
+        setTimeout(sendReading,30000);
+        window.addEventListener('pagehide',sendReading,{once:true});
+        root.querySelectorAll('[data-reaction]').forEach(btn=>btn.addEventListener('click',async()=>{
+          const type=btn.dataset.reaction; await postAnalytics({action:'reaction',articleId,type}); btn.classList.add('selected'); const n=btn.querySelector('span'); if(n)n.textContent=String(Number(n.textContent||0)+1);
+        }));
+        root.querySelectorAll('.drop-poll').forEach(poll=>poll.querySelectorAll('[data-poll-option]').forEach(btn=>btn.addEventListener('click',async()=>{
+          const index=Number(poll.dataset.pollIndex); const option=Number(btn.dataset.pollOption);
+          await postAnalytics({action:'poll',articleId,pollIndex:index,option});
+          poll.querySelectorAll('button').forEach(b=>b.disabled=true);
+          const result=poll.querySelector('.poll-results');
+          if(result){
+            const data=await fetch('/api/analytics?action=poll&articleId='+encodeURIComponent(articleId)+'&pollIndex='+index,{cache:'no-store'}).then(r=>r.json()).catch(()=>null);
+            const values=data?.stats?.pollResults||{};
+            const total=Object.values(values).reduce((sum,v)=>sum+Number(v||0),0);
+            result.hidden=false;
+            result.textContent=total ? `Resultados: ${total} voto${total===1?'':'s'}` : '¡Voto registrado!';
+          }
+        })));
+        const shareLinks=root.querySelectorAll('.share-button'); shareLinks.forEach(link=>link.addEventListener('click',()=>postAnalytics({action:'share',articleId,network:link.classList.contains('share-x')?'x':link.classList.contains('share-facebook')?'facebook':'other'})));
 
       } catch (e) {
 
