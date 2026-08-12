@@ -676,3 +676,111 @@ blockquote { font-family: var(--serif); font-size: 28px; line-height: 1.5; font-
   .home-page .section { padding:44px 0; }
   .home-page .section-more { font-size:9px; }
 }
+
+/* =========================================================
+   DROP RUGBY HOME — EDITORIAL SPORTS REDESIGN
+========================================================= */
+:root{
+  --dr-red:#d71920;
+  --dr-red-dark:#b51218;
+  --dr-paper:#f7f7f5;
+  --dr-ink:#0c0d0e;
+  --dr-muted:#6d7075;
+}
+body{background:var(--dr-paper)}
+.site-header{box-shadow:0 1px 0 rgba(0,0,0,.05)}
+.home-page{max-width:1180px}
+.hero.hero-modern{position:relative;grid-template-columns:minmax(320px,.78fr) minmax(0,1.42fr);gap:42px;padding:74px 0 42px;min-height:590px}
+.hero.hero-modern:before{content:"";position:absolute;left:-120px;right:-120px;top:0;height:1px;background:#e1e1df}
+.hero-copy{position:relative;padding:12px 0 22px}
+.hero-copy:before{content:"";position:absolute;left:0;top:-16px;width:44px;height:4px;background:var(--dr-red)}
+.hero h1{font-size:clamp(50px,6vw,78px);letter-spacing:-3.2px;line-height:.96;margin-bottom:24px}
+.hero h1 em{color:var(--dr-red);font-style:normal}
+.hero-text{font-size:15px;line-height:1.75;max-width:470px;color:#62666b}
+.hero-copy .button{border-radius:6px;background:var(--dr-ink);box-shadow:0 12px 26px rgba(0,0,0,.13)}
+.hero-copy .button:hover{background:var(--dr-red);border-color:var(--dr-red);transform:translateY(-3px)}
+.hero-card{position:relative}
+.hero-card:after{content:"";position:absolute;right:-13px;bottom:-13px;width:110px;height:110px;border-right:2px solid var(--dr-red);border-bottom:2px solid var(--dr-red);pointer-events:none}
+.hero-card-inner{display:block;border-radius:18px;overflow:hidden;box-shadow:0 24px 55px rgba(0,0,0,.14);transform:translateZ(0)}
+.hero-image{min-height:505px}
+.hero-card-caption{left:34px;right:34px;bottom:32px}
+.hero-card-caption span{color:#fff;display:inline-flex;align-items:center;gap:8px}
+.hero-card-caption span:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dr-red);box-shadow:0 0 0 4px rgba(215,25,32,.15)}
+.hero-card-caption h2{font-size:clamp(28px,3vw,42px);max-width:760px}
+
+.home-quicknav{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #dedfdd;border-bottom:1px solid #dedfdd;background:#fff;margin:0 0 22px}
+.home-quicknav a{position:relative;display:grid;grid-template-columns:auto 1fr;column-gap:10px;padding:18px 16px;text-decoration:none;transition:background .2s ease,transform .2s ease}
+.home-quicknav a + a{border-left:1px solid #e3e3e1}
+.home-quicknav a:hover{background:#fafafa;transform:translateY(-2px)}
+.home-quicknav span{grid-row:span 2;font-size:9px;font-weight:900;color:var(--dr-red);letter-spacing:.08em}
+.home-quicknav strong{font-size:10px;letter-spacing:.12em}
+.home-quicknav em{font-style:normal;color:#8b8e92;font-size:10px;margin-top:3px}
+
+.section{padding:76px 0}
+.section-featured{padding-top:54px}
+.section-heading h2,.section-heading-row h2{font-size:38px;letter-spacing:-1.2px}
+.section-heading-row{align-items:center;margin-bottom:26px}
+.section-more{color:var(--dr-red);border-bottom-color:var(--dr-red);font-size:10px}
+.stories-grid{gap:26px}
+.story{transition:transform .22s ease}
+.story:hover{transform:translateY(-4px)}
+.story-image{border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.story-featured .story-image{height:405px}
+.story-image img{transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.story:hover .story-image img{transform:scale(1.035)}
+.story-body{padding:17px 3px 0}
+.story h3{letter-spacing:-.25px}
+.category-cards.dr-carousel{padding-bottom:22px!important}
+.category-cards.dr-carousel > *{flex-basis:calc((100% - 48px)/3)!important}
+.dr-carousel-card .story-image{height:210px;border-radius:12px}
+.dr-carousel-controls{margin-bottom:8px}
+.dr-carousel-arrow{border-color:#cfd1d0;background:#fff}
+.dr-carousel-arrow:hover{background:var(--dr-red);border-color:var(--dr-red)}
+.dr-carousel-dot.active{background:var(--dr-red)}
+.category-pumas{background:#fff;margin-left:-30px;margin-right:-30px;padding-left:30px;padding-right:30px}
+.category-international{background:#0d0f10;color:#fff;margin-left:-30px;margin-right:-30px;padding-left:30px;padding-right:30px}
+.category-international .eyebrow,.category-international .section-more{color:#fff}
+.category-international .section-more{border-bottom-color:#fff}
+.category-international .story h3 a,.category-international .story h3{color:#fff}
+.category-international .story p:not(.category),.category-international .meta{color:#a9adb1}
+.category-international .dr-carousel-arrow{background:#171a1c;border-color:#34383c;color:#fff}
+.category-international .dr-carousel-arrow:hover{background:var(--dr-red);border-color:var(--dr-red)}
+.category-urba{background:#eceeeb;margin-left:-30px;margin-right:-30px;padding-left:30px;padding-right:30px}
+.quote-band{margin-top:0;overflow:hidden;position:relative}
+.quote-band:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(215,25,32,.12),transparent 45%);pointer-events:none}
+.calendar-section{padding-top:58px}
+.calendar-preview{border:0;border-radius:14px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.07)}
+.calendar-preview .competition-name{background:#111;color:#fff;border-bottom-color:#2a2a2a}
+.calendar-preview .fixture-grid{background:#f5f5f3}
+.calendar-preview .fixture-tile{border-radius:10px;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.04)}
+.ad-slot{max-width:940px;margin:22px auto;padding:10px;border-color:#e0e0de}
+.newsletter{border-radius:16px;background:#111;color:#fff;box-shadow:0 18px 42px rgba(0,0,0,.12);margin-top:48px}
+.newsletter .eyebrow{color:#aeb2b6}
+.newsletter h2{color:#fff}
+.newsletter-form input{color:#fff;border-bottom-color:#fff}
+.newsletter-form input::placeholder{color:#8f9397}
+.newsletter-form button{background:var(--dr-red);border-radius:5px}
+.dr-exclusive-instagram{margin-top:35px}
+.dr-exclusive-link{border-radius:16px}
+
+@media(max-width:900px){
+  .hero.hero-modern{grid-template-columns:1fr;min-height:0;padding-top:55px}
+  .hero-image{min-height:430px}
+  .home-quicknav{grid-template-columns:repeat(2,1fr)}
+  .home-quicknav a:nth-child(3){border-left:0;border-top:1px solid #e3e3e1}
+  .home-quicknav a:nth-child(4){border-top:1px solid #e3e3e1}
+  .category-pumas,.category-international,.category-urba{margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
+}
+@media(max-width:600px){
+  .home-page{padding:0 18px}
+  .hero.hero-modern{padding:44px 0 28px}
+  .hero h1{font-size:48px;letter-spacing:-2.2px}
+  .hero-image{min-height:360px}
+  .home-quicknav{grid-template-columns:1fr}
+  .home-quicknav a + a{border-left:0;border-top:1px solid #e3e3e1}
+  .section-heading h2,.section-heading-row h2{font-size:30px}
+  .stories-grid{grid-template-columns:1fr}
+  .story-featured .story-image{height:300px}
+  .category-cards.dr-carousel > *{flex-basis:82%!important}
+  .category-pumas,.category-international,.category-urba{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
+}
