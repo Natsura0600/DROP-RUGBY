@@ -50,6 +50,12 @@
     .dynamic-body [style*="overflow"]{max-width:100%}
     .dynamic-body svg{display:block;max-width:100%;height:auto}
     .dynamic-body audio{display:block;width:100%;max-width:100%;margin:24px 0}
+    .dynamic-body, .dynamic-body *{box-sizing:border-box}
+    .dynamic-body{min-width:0;max-width:100%;overflow:visible}
+    .dynamic-body > *{max-width:100%;min-width:0}
+    .dynamic-body [class*="score"], .dynamic-body [class*="marcador"], .dynamic-body [class*="resultado"], .dynamic-body [data-score], .dynamic-body .dr-atomic-number{white-space:nowrap !important;word-break:keep-all !important;overflow-wrap:normal !important;display:inline-block}
+    .dynamic-body [style*="display:flex"], .dynamic-body [style*="display: flex"], .dynamic-body [style*="display:grid"], .dynamic-body [style*="display: grid"]{min-width:0;max-width:100%}
+    .dynamic-body [style*="overflow:auto"], .dynamic-body [style*="overflow: auto"], .dynamic-body [style*="overflow-x:auto"], .dynamic-body [style*="overflow-x: auto"]{max-width:100%}
 
     .dynamic-share{margin-top:55px;padding-top:30px;border-top:1px solid #e5e5e5}
     .dynamic-share h3{font:700 11px var(--sans);letter-spacing:1.5px;text-transform:uppercase;margin:0 0 18px;color:#555}
@@ -88,8 +94,30 @@
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const canonicalUrl=articleId=>new URL(`article.html?id=${encodeURIComponent(articleId)}`,location.href).href;
     function decodeEntities(value){const box=document.createElement('textarea');box.innerHTML=String(value??'');return box.value;}
-    function normalizeHtml(value){let text=String(value??'').trim();if(!text)return '';text=decodeEntities(text);text=text.replace(/^\s*```(?:html|htm)?\s*/i,'').replace(/\s*```\s*$/,'').trim();return text;}
-    function renderBody(value){const text=normalizeHtml(value);if(!text)return '';if(/<\/?[a-z][^>]*>/i.test(text))return text;return text.split(/\n\s*\n/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join('');}
+    function normalizeHtml(value){
+      let text=String(value??'').trim();
+      if(!text) return '';
+      for(let i=0;i<3;i++){const decoded=decodeEntities(text);if(decoded===text) break;text=decoded;}
+      text=text.replace(/^\s*```(?:html|htm)?\s*/i,'').replace(/\s*```\s*$/,'').trim();
+      return text;
+    }
+    function renderBody(value){
+      const text=normalizeHtml(value);
+      if(!text) return '';
+      if(/<\/?[a-z][^>]*>/i.test(text)) return text;
+      return text.split(/\n\s*\n/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join('');
+    }
+    function protectAtomicNumbers(scope){
+      if(!scope) return;
+      const walker=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT);
+      const nodes=[];
+      let node;
+      while(node=walker.nextNode()){
+        if(!node.parentElement || node.parentElement.closest('script,style,pre,code')) continue;
+        if(/^\s*\d{1,3}\s*$/.test(node.nodeValue||'')) nodes.push(node);
+      }
+      nodes.forEach(node=>{const span=document.createElement('span');span.className='dr-atomic-number';span.textContent=node.nodeValue;node.parentNode.replaceChild(span,node);});
+    }
     function articleImage(a,compact=false){if(a.imageUrl){return `<div class="${compact?'related-card-image':'dynamic-image'}"><img src="${esc(a.imageUrl)}" alt="${esc(a.title||'')}" loading="${compact?'lazy':'eager'}"></div>`;}return `<div class="${compact?'related-card-image':'dynamic-image'} ${esc(a.imageClass||'img-tone-1')}"></div>`;}
     function getRelated(all,current){const others=all.filter(a=>String(a.id)!==String(current.id)&&a.published!==false&&!a.scheduled);const same=others.filter(a=>String(a.category||'')===String(current.category||'')).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));const sub=others.filter(a=>String(a.subcategory||'')===String(current.subcategory||'')&&!same.includes(a)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));const rest=others.filter(a=>!same.includes(a)&&!sub.includes(a)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));return [...same,...sub,...rest].slice(0,3);}
     function renderRelated(items){if(!items.length)return '';return `<section class="dynamic-related"><h2>Artículos relacionados</h2><div class="related-grid">${items.map(a=>`<a class="related-card" href="article.html?id=${encodeURIComponent(a.id||'')}">${articleImage(a,true)}<p class="related-card-kicker">${esc(String(a.category||'RUGBY').toUpperCase())}</p><h3>${esc(a.title||'Sin título')}</h3><div class="related-card-date">${esc(a.date||'')}</div></a>`).join('')}</div></section>`;}
@@ -101,7 +129,8 @@
       document.title=`${title} | DropRugby`;const description=document.getElementById('meta-description');if(description)description.content=excerpt;
       const shareText=encodeURIComponent(title),shareUrl=encodeURIComponent(url);
       root.innerHTML=`<p class="article-kicker">${esc(String(a.category||'RUGBY').toUpperCase())} · ${esc(String(a.subcategory||'ACTUALIDAD').toUpperCase())}</p><h1>${esc(title)}</h1><p class="lead">${esc(excerpt)}</p><div class="dynamic-meta">POR ${esc(String(a.author||'DROPRUGBY').toUpperCase())} · ${esc(a.date||'')}</div>${articleImage(a)}<div class="dynamic-body">${renderBody(a.content)||`<p>${esc(excerpt)}</p>`}</div><section class="dynamic-share" aria-label="Compartir este artículo"><h3>Compartir este artículo</h3><div class="share-buttons"><a class="share-button share-x" href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}" target="_blank" rel="noopener">𝕏&nbsp;&nbsp; Compartir en X</a><a class="share-button share-facebook" href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" target="_blank" rel="noopener">f&nbsp;&nbsp; Compartir en Facebook</a><button class="share-button share-instagram" type="button" id="share-instagram">◎&nbsp;&nbsp; Compartir en Instagram</button></div></section>${renderRelated(getRelated(all,a))}<a class="dynamic-back" href="index.html">← VOLVER A DROP RUGBY</a>`;
-      document.getElementById('share-instagram')?.addEventListener('click',async()=>{try{if(navigator.share){await navigator.share({title,url});return;}await navigator.clipboard?.writeText(url);window.open('https://www.instagram.com/','_blank','noopener');alert('Copiamos el enlace del artículo. Pegalo en Instagram para compartirlo.');}catch(_){}});
+      protectAtomicNumbers(root.querySelector('.dynamic-body'));
+            document.getElementById('share-instagram')?.addEventListener('click',async()=>{try{if(navigator.share){await navigator.share({title,url});return;}await navigator.clipboard?.writeText(url);window.open('https://www.instagram.com/','_blank','noopener');alert('Copiamos el enlace del artículo. Pegalo en Instagram para compartirlo.');}catch(_){}});
       const articleId=String(a.id);postAnalytics({action:'view',articleId});
       let started=Date.now(),readingSent=false;const sendReading=()=>{if(readingSent)return;readingSent=true;postAnalytics({action:'reading',articleId,seconds:Math.round((Date.now()-started)/1000)});};setTimeout(sendReading,30000);window.addEventListener('pagehide',sendReading,{once:true});
       root.querySelectorAll('.share-button').forEach(link=>link.addEventListener('click',()=>postAnalytics({action:'share',articleId,network:link.classList.contains('share-x')?'x':link.classList.contains('share-facebook')?'facebook':'other'})));
