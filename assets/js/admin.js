@@ -2476,129 +2476,91 @@ function mediaName(item) {
 }
 
 function renderMedia() {
-  const grid =
-    $("#media-grid");
-
+  const grid = $("#media-grid");
   if (!grid) return;
 
-  const q =
-    String(
-      $("#media-search")?.value ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
+  const q = String($("#media-search")?.value || "").trim().toLowerCase();
+  const type = String($("#media-type-filter")?.value || "");
+  const sort = String($("#media-sort")?.value || "newest");
 
-  const type =
-    String(
-      $("#media-type-filter")
-        ?.value || ""
-    );
+  const items = state.media
+    .filter((item) => {
+      const name = mediaName(item).toLowerCase();
+      return (!q || name.includes(q)) &&
+        (!type || item.contentType === type);
+    })
+    .sort((a, b) => {
+      if (sort === "name") return mediaName(a).localeCompare(mediaName(b), "es");
+      if (sort === "oldest") return String(a.uploadedAt || "").localeCompare(String(b.uploadedAt || ""));
+      if (sort === "size") return (Number(b.size) || 0) - (Number(a.size) || 0);
+      return String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || ""));
+    });
 
-  const items =
-    state.media.filter(
-      (item) => {
-        const name =
-          mediaName(item)
-            .toLowerCase();
+  const formatName = (type) => ({
+    "image/jpeg": "JPG",
+    "image/png": "PNG",
+    "image/webp": "WEBP",
+    "image/gif": "GIF",
+    "image/svg+xml": "SVG"
+  }[type] || "IMG");
 
-        return (
-          (!q ||
-            name.includes(q)) &&
-          (!type ||
-            item.contentType ===
-              type)
-        );
-      }
-    );
+  const formatBytes = (bytes) => {
+    const n = Number(bytes) || 0;
+    if (!n) return "—";
+    if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+    return `${Math.round(n / 1024)} KB`;
+  };
 
-  grid.innerHTML =
-    items
-      .map(
-        (item) => `
-          <article class="media-card">
+  grid.innerHTML = items.map((item) => `
+    <article class="media-card">
+      <button type="button" class="media-thumb" data-media-preview="${esc(item.url)}" title="Ver imagen">
+        <span class="media-format">${formatName(item.contentType)}</span>
+        <img src="${esc(item.url)}" alt="${esc(mediaName(item))}" loading="lazy">
+      </button>
+      <div class="media-info">
+        <strong title="${esc(mediaName(item))}">${esc(mediaName(item))}</strong>
+        <small>${formatBytes(item.size)} · ${esc(item.contentType || "imagen")}</small>
+      </div>
+      <div class="media-actions">
+        <button class="action" data-media-use="${esc(item.url)}">USAR</button>
+        <button class="action" data-media-copy="${esc(item.url)}">COPIAR</button>
+        <button class="action danger" data-media-delete="${esc(item.url)}">ELIMINAR</button>
+      </div>
+    </article>
+  `).join("") || `
+    <div class="media-empty">
+      <strong>${q || type ? "No encontramos imágenes" : "Tu biblioteca está vacía"}</strong>
+      <span>${q || type ? "Probá con otro filtro o término de búsqueda." : "Arrastrá imágenes al área superior para empezar."}</span>
+    </div>
+  `;
 
-            <div class="media-thumb">
-              <img
-                src="${esc(item.url)}"
-                alt="${esc(
-                  mediaName(item)
-                )}"
-                loading="lazy"
-              >
-            </div>
+  const total = state.media.length;
+  const webp = state.media.filter((item) => item.contentType === "image/webp").length;
+  const bytes = state.media.reduce((sum, item) => sum + (Number(item.size) || 0), 0);
 
-            <div class="media-info">
-              <strong
-                title="${esc(
-                  mediaName(item)
-                )}"
-              >
-                ${esc(
-                  mediaName(item)
-                )}
-              </strong>
-
-              <small>
-                ${esc(
-                  item.contentType ||
-                  "imagen"
-                )}
-                ·
-                ${
-                  item.size
-                    ? `${Math.round(
-                        item.size / 1024
-                      )} KB`
-                    : ""
-                }
-              </small>
-            </div>
-
-            <div class="media-actions">
-
-              <button
-                class="action"
-                data-media-copy="${esc(
-                  item.url
-                )}"
-              >
-                COPIAR URL
-              </button>
-
-              <button
-                class="action"
-                data-media-use="${esc(
-                  item.url
-                )}"
-              >
-                USAR
-              </button>
-
-              <button
-                class="action danger"
-                data-media-delete="${esc(
-                  item.url
-                )}"
-              >
-                ELIMINAR
-              </button>
-
-            </div>
-
-          </article>
-        `
-      )
-      .join("") ||
-    `<div class="empty-state">
-      No hay imágenes todavía.
-      Subí la primera desde el botón superior.
-    </div>`;
-
-  if ($("#nav-media-count")) {
-    $("#nav-media-count").textContent =
-      state.media.length;
+  if ($("#nav-media-count")) $("#nav-media-count").textContent = total;
+  if ($("#media-stat-total")) $("#media-stat-total").textContent = total;
+  if ($("#media-stat-webp")) $("#media-stat-webp").textContent = webp;
+  if ($("#media-stat-size")) $("#media-stat-size").textContent = formatBytes(bytes);
+  if ($("#media-results-label")) {
+    $("#media-results-label").textContent = `${items.length} ${items.length === 1 ? "archivo" : "archivos"}`;
   }
+}
+
+function openMediaPreview(url) {
+  openModal(
+    "Vista previa",
+    `<div class="media-preview-modal"><img src="${esc(url)}" alt="Vista previa"><button type="button" class="action" data-media-preview-copy="${esc(url)}">COPIAR URL</button></div>`,
+    async () => {}
+  );
+  $("#modal-root")?.querySelector("[data-media-preview-copy]")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("URL copiada", "La dirección quedó en el portapapeles.");
+    } catch {
+      toast("Error", "No se pudo copiar la URL.", "error");
+    }
+  });
 }
 
 /* =========================================================
@@ -3671,6 +3633,12 @@ function updateArticleImagePreview(
 document.addEventListener(
   "click",
   (event) => {
+    const siteNav = event.target.closest("[data-site-nav]");
+    if (siteNav) {
+      window.location.href = siteNav.dataset.siteNav || "/";
+      return;
+    }
+
     const nav =
       event.target.closest(
         ".nav-item"
@@ -3694,6 +3662,18 @@ document.addEventListener(
         go.dataset.go
       );
 
+      return;
+    }
+
+    /* =====================================================
+       PREVIEW DE IMAGEN
+    ===================================================== */
+
+    const mediaPreview =
+      event.target.closest("[data-media-preview]");
+
+    if (mediaPreview) {
+      openMediaPreview(mediaPreview.dataset.mediaPreview);
       return;
     }
 
@@ -4302,6 +4282,44 @@ $("#media-upload-input")
         "";
     }
   );
+
+$("#media-search")?.addEventListener("input", renderMedia);
+$("#media-type-filter")?.addEventListener("change", renderMedia);
+$("#media-sort")?.addEventListener("change", renderMedia);
+$("#media-refresh")?.addEventListener("click", () => loadMedia(true));
+
+$("#media-dropzone-button")?.addEventListener("click", () => {
+  $("#media-upload-input")?.click();
+});
+
+const mediaDropzone = $("#media-dropzone");
+mediaDropzone?.addEventListener("click", (event) => {
+  if (event.target.closest("button")) return;
+  $("#media-upload-input")?.click();
+});
+["dragenter", "dragover"].forEach((eventName) => {
+  mediaDropzone?.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    mediaDropzone.classList.add("dragover");
+  });
+});
+["dragleave", "drop"].forEach((eventName) => {
+  mediaDropzone?.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    mediaDropzone.classList.remove("dragover");
+  });
+});
+mediaDropzone?.addEventListener("drop", (event) => {
+  const files = event.dataTransfer?.files;
+  if (files?.length) uploadMediaFiles(files);
+});
+
+document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "u" && !event.target.matches("input,textarea,select")) {
+    event.preventDefault();
+    $("#media-upload-input")?.click();
+  }
+});
 
 $("#fixture-search")
   ?.addEventListener(
