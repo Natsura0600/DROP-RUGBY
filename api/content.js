@@ -1,6 +1,6 @@
-import { list, put } from '@vercel/blob';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { r2GetJSON, r2PutText } from '../lib/r2.js';
 
 const BLOB_PATH = 'droprugby/content.json';
 
@@ -51,17 +51,7 @@ async function seed() {
     }))
   };
 
-  await put(
-    BLOB_PATH,
-    JSON.stringify(data),
-    {
-      access: 'public',
-      addRandomSuffix: false,
-      contentType: 'application/json',
-      allowOverwrite: true,
-      cacheControlMaxAge: 60
-    }
-  );
+  await r2PutText(BLOB_PATH, JSON.stringify(data));
 
   return data;
 }
@@ -122,40 +112,16 @@ async function repairBlobData(data) {
 }
 
 async function readData() {
-  const result = await list({
-    prefix: BLOB_PATH,
-    limit: 10
-  });
+  const data = await r2GetJSON(BLOB_PATH);
 
-  if (!result.blobs.length) {
+  if (!data) {
     return await seed();
   }
 
-  const blob =
-    result.blobs.find((item) => item.pathname === BLOB_PATH) ||
-    result.blobs[0];
-
-  const response = await fetch(blob.url, { cache: 'no-store' });
-
-  if (!response.ok) {
-    throw new Error(`No se pudo leer el Blob. Status: ${response.status}`);
-  }
-
-  const data = await response.json();
   const { repaired, changed } = await repairBlobData(data);
 
   if (changed) {
-    await put(
-      BLOB_PATH,
-      JSON.stringify(repaired),
-      {
-        access: 'public',
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: 'application/json; charset=utf-8',
-        cacheControlMaxAge: 0
-      }
-    );
+    await r2PutText(BLOB_PATH, JSON.stringify(repaired));
   }
 
   return repaired;
