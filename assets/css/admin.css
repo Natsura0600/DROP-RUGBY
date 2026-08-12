@@ -1511,4 +1511,4 @@ body{background:var(--bg);font-size:14px;}
 .media-thumb{border:0;width:100%;padding:0;cursor:zoom-in;display:block;position:relative;}
 .media-preview-modal{display:grid;gap:14px;}
 .media-preview-modal img{display:block;width:100%;max-height:68vh;object-fit:contain;background:#f2f3f4;border-radius:8px;}
-.media-preview-modal .action{justify-self:end;}
+.media-preview-modal .action{justify-self:end;} 
