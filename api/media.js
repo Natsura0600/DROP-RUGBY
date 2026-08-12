@@ -1,4 +1,9 @@
-import { list, put, del } from "@vercel/blob";
+import {
+  r2List,
+  r2PutBuffer,
+  r2Delete,
+  r2KeyFromUrl
+} from "../lib/r2.js";
 import crypto from "node:crypto";
 
 /* =========================================================
@@ -273,59 +278,18 @@ async function getBody(req) {
 ========================================================= */
 
 async function listAllMedia() {
-  const blobs = [];
+  const items = await r2List(PREFIX);
 
-  let cursor;
-
-  do {
-    const options = {
-      prefix: PREFIX,
-      limit: 1000
-    };
-
-    if (cursor) {
-      options.cursor =
-        cursor;
-    }
-
-    const page =
-      await list(options);
-
-    if (
-      Array.isArray(
-        page.blobs
-      )
-    ) {
-      blobs.push(
-        ...page.blobs
-      );
-    }
-
-    cursor =
-      page.cursor ||
-      undefined;
-  } while (cursor);
-
-  return blobs
-    .filter(
-      (blob) =>
-        blob &&
-        blob.url &&
-        blob.pathname &&
-        blob.pathname.startsWith(
-          PREFIX
-        )
-    )
-    .sort(
-      (a, b) =>
+  return items.sort(
+    (a, b) =>
+      String(
+        b.uploadedAt || ""
+      ).localeCompare(
         String(
-          b.uploadedAt || ""
-        ).localeCompare(
-          String(
-            a.uploadedAt || ""
-          )
+          a.uploadedAt || ""
         )
-    );
+      )
+  );
 }
 
 /* =========================================================
@@ -518,34 +482,20 @@ async function uploadImage(
 
   try {
     blob =
-      await put(
+      await r2PutBuffer(
         pathname,
         buffer,
-        {
-          access:
-            "public",
-
-          addRandomSuffix:
-            false,
-
-          contentType,
-
-          cacheControlMaxAge:
-            31536000,
-
-          allowOverwrite:
-            false
-        }
+        contentType
       );
   } catch (error) {
     console.error(
-      "❌ Vercel Blob upload error:",
+      "❌ Cloudflare R2 upload error:",
       error
     );
 
     throw new Error(
       error?.message ||
-      "No se pudo guardar la imagen en Vercel Blob."
+      "No se pudo guardar la imagen en Cloudflare R2."
     );
   }
 
@@ -554,7 +504,7 @@ async function uploadImage(
     !blob.url
   ) {
     throw new Error(
-      "Vercel Blob no devolvió una URL válida."
+      "Cloudflare R2 no devolvió una URL válida."
     );
   }
 
@@ -578,29 +528,27 @@ async function deleteImage(
     );
   }
 
-  const media =
-    await listAllMedia();
+  const key =
+    r2KeyFromUrl(target);
 
-  const blob =
-    media.find(
-      (item) =>
-        item.url ===
-        target
-    );
-
-  if (!blob) {
+  if (
+    !key ||
+    !key.startsWith(
+      PREFIX
+    )
+  ) {
     throw new Error(
       "Imagen no encontrada en Media Manager."
     );
   }
 
   try {
-    await del(
-      blob.url
+    await r2Delete(
+      key
     );
   } catch (error) {
     console.error(
-      "❌ Vercel Blob delete error:",
+      "❌ Cloudflare R2 delete error:",
       error
     );
 
