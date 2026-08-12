@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { r2GetJSON, r2PutText } from '../lib/r2.js';
+import { r2GetJSON, r2PutJSONSafe } from '../lib/r2.js';
 
 const BLOB_PATH = 'droprugby/content.json';
 
@@ -51,7 +51,7 @@ async function seed() {
     }))
   };
 
-  await r2PutText(BLOB_PATH, JSON.stringify(data));
+  await r2PutJSONSafe(BLOB_PATH, data);
 
   return data;
 }
@@ -121,7 +121,7 @@ async function readData() {
   const { repaired, changed } = await repairBlobData(data);
 
   if (changed) {
-    await r2PutText(BLOB_PATH, JSON.stringify(repaired));
+    await r2PutJSONSafe(BLOB_PATH, repaired);
   }
 
   return repaired;
