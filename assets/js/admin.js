@@ -610,7 +610,6 @@ function renderArticles() {
 
             <td>
               <div class="actions">
-                <button class="action" data-stats-article="${esc(article.id)}">📈 STATS</button>
                 <button
                   class="action"
                   data-edit-article="${esc(article.id)}"
@@ -638,144 +637,192 @@ function renderArticles() {
 }
 
 function articleForm(article = {}) {
-  const publishDate = article.publishAt ? new Date(article.publishAt) : null;
-  const localPublish = publishDate && !Number.isNaN(publishDate.getTime())
-    ? new Date(publishDate.getTime() - publishDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-    : "";
-  const imageUrl = article.imageUrl || article.image || "";
-  const isPublished = article.published !== false;
-  const statusText = article.scheduled ? "Programada" : (isPublished ? "Publicada" : "Borrador");
+  const publishDate =
+    article.publishAt
+      ? new Date(article.publishAt)
+      : null;
+
+  const localPublish =
+    publishDate &&
+    !Number.isNaN(publishDate.getTime())
+      ? new Date(
+          publishDate.getTime() -
+          publishDate.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16)
+      : "";
+
+  const imageUrl =
+    article.imageUrl ||
+    article.image ||
+    "";
 
   return `
-    <div class="article-composer">
-      <div class="article-composer-intro">
-        <div>
-          <span class="article-composer-eyebrow">REDACCIÓN DROPRUGBY</span>
-          <h3>${article.id ? "Editar noticia" : "Nueva noticia"}</h3>
-          <p>Prepará la nota, ordená el contenido y dejala lista para publicar.</p>
+    <div class="form-grid">
+
+      <label class="full">
+        Título
+        <input
+          name="title"
+          required
+          value="${esc(article.title || "")}"
+        >
+      </label>
+
+      <label>
+        Categoría
+        <select name="category">
+          ${[
+            "Los Pumas",
+            "Super Rugby",
+            "URBA TOP 14",
+            "Internacional",
+            "Rugby"
+          ]
+            .map(
+              (category) =>
+                `<option ${
+                  article.category === category
+                    ? "selected"
+                    : ""
+                }>${category}</option>`
+            )
+            .join("")}
+        </select>
+      </label>
+
+      <label>
+        Autor
+        <input
+          name="author"
+          value="${esc(article.author || "DropRugby")}"
+        >
+      </label>
+
+      <label class="full">
+        Bajada / copete
+        <textarea name="excerpt" rows="3">${esc(
+          article.excerpt || ""
+        )}</textarea>
+      </label>
+
+      <div class="full media-field">
+        <label>Imagen de portada</label>
+
+        <div class="media-inline">
+          <input
+            name="imageUrl"
+            id="article-image-url"
+            placeholder="Seleccioná una imagen del Media Manager"
+            value="${esc(imageUrl)}"
+            readonly
+          >
+
+          <button
+            type="button"
+            class="action"
+            id="article-pick-image"
+          >
+            ELEGIR
+          </button>
+
+          <button
+            type="button"
+            class="action upload-inline"
+            id="article-upload-image"
+          >
+            SUBIR IMAGEN
+          </button>
+          <input
+            id="article-inline-upload"
+            type="file"
+            accept="image/*"
+            hidden
+          >
         </div>
-        <div class="article-status-pill ${article.scheduled ? "scheduled" : (isPublished ? "published" : "draft")}">
-          <span></span>${statusText}
+
+        <div
+          id="article-image-preview"
+          class="article-image-preview"
+        >
+          ${
+            imageUrl
+              ? `<img src="${esc(imageUrl)}" alt="Vista previa">`
+              : `<span>Sin imagen seleccionada</span>`
+          }
         </div>
+
+        <p class="form-help">
+          Las imágenes se guardan en el Media Manager.
+          No necesitás pegar enlaces externos.
+        </p>
       </div>
 
-      <section class="composer-section composer-main-section">
-        <div class="composer-section-head">
-          <div><span>01</span><div><strong>Información principal</strong><small>Título, copete y datos editoriales.</small></div></div>
-        </div>
+      <label>
+        Fecha de la noticia
+        <input
+          type="date"
+          name="date"
+          value="${esc(
+            String(article.date || "").slice(0, 10) ||
+            new Date().toISOString().slice(0, 10)
+          )}"
+        >
+      </label>
 
-        <label class="composer-title-field">
-          <span>Título de la noticia</span>
-          <input name="title" required value="${esc(article.title || "")}" placeholder="Escribí un título claro y atractivo...">
-        </label>
+      <label>
+        Programar para
+        <input
+          type="datetime-local"
+          name="publishAt"
+          value="${esc(localPublish)}"
+        >
+      </label>
 
-        <div class="composer-meta-grid">
-          <label>
-            <span>Categoría</span>
-            <select name="category">
-              ${["Los Pumas","Super Rugby","URBA TOP 14","Internacional","Rugby"].map(category => `<option ${article.category === category ? "selected" : ""}>${category}</option>`).join("")}
-            </select>
-          </label>
-          <label>
-            <span>Autor</span>
-            <input name="author" value="${esc(article.author || "DropRugby")}" placeholder="Autor de la nota">
-          </label>
-          <label>
-            <span>Fecha</span>
-            <input type="date" name="date" value="${esc(String(article.date || "").slice(0, 10) || new Date().toISOString().slice(0, 10))}">
-          </label>
-        </div>
+      <label class="full">
+        Contenido
+        <textarea
+          name="content"
+          rows="12"
+          placeholder="Escribí la noticia. Separá los párrafos con una línea en blanco."
+        >${esc(article.content || "")}</textarea>
+      </label>
 
-        <label class="composer-excerpt-field">
-          <span>Bajada / copete</span>
-          <textarea name="excerpt" rows="3" placeholder="Contale al lector en pocas líneas qué va a encontrar en la noticia...">${esc(article.excerpt || "")}</textarea>
-        </label>
-      </section>
+      <label class="check">
+        <input
+          type="checkbox"
+          name="featured"
+          ${article.featured ? "checked" : ""}
+        >
+        Noticia destacada
+      </label>
 
-      <section class="composer-section composer-media-section">
-        <div class="composer-section-head">
-          <div><span>02</span><div><strong>Imagen de portada</strong><small>Elegí una imagen existente o subí una nueva.</small></div></div>
-          <span class="composer-section-tag">MEDIA MANAGER</span>
-        </div>
-        <div class="composer-cover-grid">
-          <div class="composer-cover-preview ${imageUrl ? "has-image" : ""}" id="article-image-preview">
-            ${imageUrl ? `<img src="${esc(imageUrl)}" alt="Vista previa">` : `<div class="composer-cover-empty"><b>＋</b><span>Sin imagen de portada</span><small>Elegí una imagen para darle identidad a la noticia.</small></div>`}
-          </div>
-          <div class="composer-cover-controls">
-            <input name="imageUrl" id="article-image-url" value="${esc(imageUrl)}" readonly aria-label="Imagen seleccionada">
-            <div class="composer-cover-actions">
-              <button type="button" class="btn primary" id="article-pick-image">ELEGIR DE MEDIA MANAGER</button>
-              <button type="button" class="action upload-inline" id="article-upload-image">SUBIR IMAGEN</button>
-              <input id="article-inline-upload" type="file" accept="image/*" hidden>
-            </div>
-            <label><span>Texto ALT</span><input name="imageAlt" value="${esc(article.imageAlt || article.seo?.imageAlt || "")}" placeholder="Describí la imagen para accesibilidad"></label>
-            <p class="form-help">No necesitás pegar URLs. La imagen queda vinculada directamente a la noticia.</p>
-          </div>
-        </div>
-      </section>
+      <label class="check">
+        <input
+          type="checkbox"
+          name="published"
+          ${article.published !== false ? "checked" : ""}
+        >
+        Publicada
+      </label>
 
-      <section class="composer-section composer-content-section">
-        <div class="composer-section-head">
-          <div><span>03</span><div><strong>Contenido</strong><small>Construí la noticia por bloques y mirá el resultado mientras escribís.</small></div></div>
-          <button type="button" class="action" id="article-review">✓ REVISAR NOTICIA</button>
-        </div>
-        <div class="builder-toolbar article-builder-toolbar" id="article-builder-toolbar">
-          <div class="builder-toolbar-group"><span>Texto</span><button type="button" data-add-block="text">Párrafo</button><button type="button" data-add-block="quote">Cita</button><button type="button" data-add-block="separator">Separador</button></div>
-          <div class="builder-toolbar-group"><span>Multimedia</span><button type="button" data-add-block="image">Imagen</button><button type="button" data-add-block="gallery">Galería</button><button type="button" data-add-block="video">Video</button></div>
-          <div class="builder-toolbar-group"><span>Datos</span><button type="button" data-add-block="table">Tabla</button><button type="button" data-add-block="poll">Encuesta</button></div>
-        </div>
-        <div class="article-workspace">
-          <div class="article-editor-pane">
-            <div class="pane-label"><span>EDITOR</span><small>Arrastrá para ordenar · cada bloque se guarda al editar</small></div>
-            <div id="article-blocks" class="article-blocks"></div>
-            <input type="hidden" name="contentBlocks" id="article-content-blocks">
-            <label class="builder-legacy-label"><span>Contenido de respaldo</span><textarea name="content" rows="3" placeholder="Solo se usa como respaldo para noticias antiguas.">${esc(article.content || "")}</textarea></label>
-          </div>
-          <aside class="article-live-pane">
-            <div class="pane-label"><span>VISTA PREVIA</span><small>Así se verá en el sitio</small></div>
-            <div id="article-live-preview" class="article-live-preview"></div>
-          </aside>
-        </div>
-      </section>
+      <label class="check">
+        <input
+          type="checkbox"
+          name="scheduled"
+          ${article.scheduled ? "checked" : ""}
+        >
+        Programar publicación
+      </label>
 
-      <section class="composer-section composer-publish-section">
-        <div class="composer-section-head">
-          <div><span>04</span><div><strong>Publicación</strong><small>Definí cuándo y cómo aparece la noticia.</small></div></div>
-        </div>
-        <div class="composer-publish-grid">
-          <label class="composer-check-card ${article.featured ? "active" : ""}"><input type="checkbox" name="featured" ${article.featured ? "checked" : ""}><span><b>Destacada</b><small>Mostrar como contenido destacado.</small></span></label>
-          <label class="composer-check-card ${isPublished ? "active" : ""}"><input type="checkbox" name="published" ${isPublished ? "checked" : ""}><span><b>Publicada</b><small>Disponible públicamente.</small></span></label>
-          <label class="composer-check-card ${article.scheduled ? "active" : ""}"><input type="checkbox" name="scheduled" ${article.scheduled ? "checked" : ""}><span><b>Programar</b><small>Publicar automáticamente más tarde.</small></span></label>
-        </div>
-        <div class="composer-schedule-row">
-          <label><span>Fecha y hora de publicación</span><input type="datetime-local" name="publishAt" value="${esc(localPublish)}"></label>
-          <div class="composer-publish-note">Si programás la noticia, quedará como borrador hasta la fecha indicada.</div>
-        </div>
-      </section>
+      <p class="form-help full">
+        Si marcás "Programar publicación", la noticia no se mostrará
+        públicamente hasta la fecha y hora elegidas.
+      </p>
 
-      <section class="composer-section composer-seo-section">
-        <div class="composer-section-head">
-          <div><span>05</span><div><strong>SEO</strong><small>Dejá la noticia lista para buscadores.</small></div></div>
-          <span id="seo-score" class="seo-score">Sin revisar</span>
-        </div>
-        <div class="composer-seo-grid">
-          <label><span>Título SEO</span><input name="seoTitle" value="${esc(article.seo?.title || article.seoTitle || "")}" maxlength="60" placeholder="Título para Google"></label>
-          <label><span>Descripción SEO</span><textarea name="seoDescription" rows="3" maxlength="160" placeholder="Descripción para buscadores...">${esc(article.seo?.description || article.seoDescription || article.excerpt || "")}</textarea></label>
-        </div>
-      </section>
     </div>
   `;
-}
-
-async function openArticleStats(articleId) {
-  try {
-    const r=await fetch(`/api/analytics?articleId=${encodeURIComponent(articleId)}`,{cache:'no-store'});
-    const data=await r.json(); if(!r.ok||!data.ok) throw new Error(data.error||'No se pudieron cargar las estadísticas.');
-    const a=data.stats||{}; const days=Object.entries(a.daily||{}).sort((x,y)=>x[0].localeCompare(y[0])).slice(-7); const max=Math.max(1,...days.map(([,v])=>v.views||0));
-    const bars=days.map(([d,v])=>`<div class="stats-bar-col"><div class="stats-bar" style="height:${Math.max(8,((v.views||0)/max)*120)}px" title="${v.views||0} visitas"></div><small>${esc(d.slice(5))}</small></div>`).join('');
-    const avg=a.avgReading||0; const mins=Math.floor(avg/60), secs=avg%60;
-    openModal('Estadísticas de la noticia',`<div class="article-stats"><div class="stats-kpis"><div><strong>${Number(a.uniqueViews ?? a.views ?? 0).toLocaleString('es-AR')}</strong><span>Vistas únicas</span></div><div><strong>${mins}:${String(secs).padStart(2,'0')}</strong><span>Lectura promedio</span></div><div><strong>${Number(a.shares||0).toLocaleString('es-AR')}</strong><span>Compartidos</span></div><div><strong>${Object.values(a.reactions||{}).reduce((n,v)=>n+Number(v||0),0).toLocaleString('es-AR')}</strong><span>Reacciones</span></div></div><h3>Visitas · últimos 7 días</h3><div class="stats-chart">${bars||'<span class="muted">Todavía no hay datos.</span>'}</div><div class="stats-reactions">${Object.entries(a.reactions||{}).map(([k,v])=>`<span>${k} ${v}</span>`).join('')||'<span class="muted">Sin reacciones.</span>'}</div></div>`,async()=>{});
-  } catch(e){toast('Estadísticas',e.message,'error');}
 }
 
 function openArticle(article = {}) {
@@ -840,18 +887,6 @@ function openArticle(article = {}) {
         content:
           value(fd, "content"),
 
-        contentBlocks:
-          parseContentBlocks(value(fd, "contentBlocks")),
-
-        seo: {
-          title: value(fd, "seoTitle"),
-          description: value(fd, "seoDescription"),
-          imageAlt: value(fd, "imageAlt")
-        },
-
-        imageAlt:
-          value(fd, "imageAlt"),
-
         imageUrl:
           value(fd, "imageUrl"),
 
@@ -885,260 +920,9 @@ function openArticle(article = {}) {
     }
   );
 
-  requestAnimationFrame(() => {
-    bindArticleMediaControls();
-    bindArticleBuilder(article);
-    bindArticleReview();
-  });
-}
-
-
-function parseContentBlocks(value) {
-  try {
-    const parsed = JSON.parse(value || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch { return []; }
-}
-
-function blockLabel(type) {
-  return ({text:"Texto",image:"Imagen",gallery:"Galería",video:"Video",quote:"Cita",table:"Tabla",poll:"Encuesta",separator:"Separador"})[type] || "Bloque";
-}
-
-function bindArticleBuilder(article = {}) {
-  const root = $("#article-blocks");
-  const hidden = $("#article-content-blocks");
-  const preview = $("#article-live-preview");
-  const form = $("#modal-form");
-  if (!root || !hidden || !form) return;
-
-  let blocks = Array.isArray(article.contentBlocks) ? structuredClone(article.contentBlocks) : [];
-  if (!blocks.length && String(article.content || "").trim()) {
-    blocks = [{ type: "text", text: String(article.content || "") }];
-  }
-
-  const renderPreviewBlock = (b) => {
-    const type = b.type || "text";
-    if (type === "text") {
-      const text = String(b.text || "").trim();
-      return text ? `<p>${esc(text).replace(/\n/g, "<br>")}</p>` : "";
-    }
-    if (type === "image") {
-      return b.url ? `<figure><img src="${esc(b.url)}" alt="${esc(b.alt || "")}">${b.alt ? `<figcaption>${esc(b.alt)}</figcaption>` : ""}</figure>` : "";
-    }
-    if (type === "gallery") {
-      const urls = Array.isArray(b.urls) ? b.urls.filter(Boolean).slice(0, 6) : [];
-      return urls.length ? `<div class="live-gallery">${urls.map(u => `<img src="${esc(u)}" alt="">`).join("")}</div>` : "";
-    }
-    if (type === "video") {
-      return b.url ? `<div class="live-video"><span>▶</span><small>VIDEO</small><strong>${esc(b.url)}</strong></div>` : "";
-    }
-    if (type === "quote") {
-      return b.text ? `<blockquote>“${esc(b.text)}”${b.author ? `<cite>— ${esc(b.author)}</cite>` : ""}</blockquote>` : "";
-    }
-    if (type === "table") {
-      const rows = Array.isArray(b.rows) ? b.rows : [];
-      return rows.length ? `<table>${rows.map((r, ri) => `<tr>${r.map(c => `<${ri === 0 ? "th" : "td"}>${esc(c)}</${ri === 0 ? "th" : "td"}>`).join("")}</tr>`).join("")}</table>` : "";
-    }
-    if (type === "poll") {
-      const options = Array.isArray(b.options) ? b.options.filter(Boolean) : [];
-      return b.question ? `<div class="live-poll"><strong>${esc(b.question)}</strong>${options.map(o => `<button type="button" disabled>${esc(o)}</button>`).join("")}<small>ENCUESTA</small></div>` : "";
-    }
-    if (type === "separator") return `<hr>`;
-    return "";
-  };
-
-  const updatePreview = () => {
-    if (!preview) return;
-    const title = form.elements.title?.value || "Título de la noticia";
-    const excerpt = form.elements.excerpt?.value || "";
-    const image = form.elements.imageUrl?.value || "";
-    const fallback = form.elements.content?.value || "";
-    let body = blocks.map(renderPreviewBlock).join("");
-    if (!body && fallback.trim()) body = `<p>${esc(fallback).replace(/\n/g, "<br>")}</p>`;
-
-    preview.innerHTML = `
-      ${image ? `<img class="live-cover" src="${esc(image)}" alt="">` : `<div class="live-cover live-cover-empty">Sin imagen de portada</div>`}
-      <div class="live-article-content">
-        <div class="live-kicker">${esc(form.elements.category?.value || "Rugby").toUpperCase()}</div>
-        <h1>${esc(title)}</h1>
-        ${excerpt ? `<p class="live-excerpt">${esc(excerpt)}</p>` : ""}
-        <div class="live-divider"></div>
-        <div class="live-body">${body || `<p class="live-placeholder">Agregá bloques para ver la noticia.</p>`}</div>
-      </div>`;
-  };
-
-  const sync = () => {
-    hidden.value = JSON.stringify(blocks);
-    updatePreview();
-  };
-
-  const render = () => {
-    root.innerHTML = blocks.map((b, i) => {
-      const type = b.type || "text";
-      const body = type === "text"
-        ? `<div class="inline-editor" data-inline-editor data-block-field="text" contenteditable="true" spellcheck="true">${esc(b.text || "").replace(/\n/g, "<br>")}</div>`
-        : type === "image"
-          ? `<div class="block-media-selector">
-              <div class="block-media-selected">${b.url ? `<img src="${esc(b.url)}" alt=""><span>${esc(mediaName({url:b.url}))}</span>` : `<span class="block-media-empty">Ninguna imagen seleccionada</span>`}</div>
-              <button type="button" class="action" data-media-block-pick="image">🖼️ ELEGIR DE MEDIA MANAGER</button>
-              <input data-block-field="alt" placeholder="Texto ALT" value="${esc(b.alt || "")}">
-            </div>`
-          : type === "gallery"
-            ? `<div class="block-media-selector">
-                <div class="block-gallery-selected">
-                  ${(Array.isArray(b.urls) ? b.urls : []).map((u,ui) => `<div class="block-gallery-thumb"><img src="${esc(u)}" alt=""><button type="button" data-gallery-remove="${ui}" title="Quitar">×</button></div>`).join("") || `<span class="block-media-empty">No hay imágenes seleccionadas</span>`}
-                </div>
-                <button type="button" class="action" data-media-block-pick="gallery">🖼️ ELEGIR DE MEDIA MANAGER</button>
-              </div>`
-            : type === "video"
-              ? `<input data-block-field="url" placeholder="URL de YouTube o video" value="${esc(b.url || "")}">`
-              : type === "quote"
-                ? `<div class="inline-editor quote-inline" data-inline-editor data-block-field="text" contenteditable="true">${esc(b.text || "").replace(/\n/g, "<br>")}</div><input data-block-field="author" placeholder="Autor" value="${esc(b.author || "")}">`
-                : type === "table"
-                  ? `<textarea data-block-field="rows" rows="5" placeholder="Fila por línea, columnas separadas por |">${esc((b.rows || []).map(r => r.join(" | ")).join("\n"))}</textarea>`
-                  : type === "poll"
-                    ? `<input data-block-field="question" placeholder="Pregunta" value="${esc(b.question || "")}"><textarea data-block-field="options" rows="4" placeholder="Una opción por línea">${esc((b.options || []).join("\n"))}</textarea>`
-                    : `<div class="separator-preview"></div>`;
-
-      return `<div class="article-block" draggable="true" data-index="${i}" data-type="${esc(type)}">
-        <div class="article-block-head">
-          <span class="block-drag" title="Arrastrar para mover">⠿</span>
-          <strong>${blockLabel(type)}</strong>
-          <div class="block-actions">
-            <button type="button" class="action block-up" title="Subir">↑</button>
-            <button type="button" class="action block-down" title="Bajar">↓</button>
-            <button type="button" class="action danger block-remove" title="Eliminar">×</button>
-          </div>
-        </div>
-        <div class="article-block-body">${body}</div>
-      </div>`;
-    }).join("");
-
-    root.querySelectorAll(".article-block").forEach(card => {
-      const i = Number(card.dataset.index);
-      const b = blocks[i];
-
-      card.querySelector("[data-media-block-pick=\"image\"]")?.addEventListener("click", async (event) => {
-        event.preventDefault();
-        try {
-          await refreshMediaForPicker();
-          openArticleBlockMediaPicker("single", (urls) => {
-            b.url = urls[0] || "";
-            render();
-            sync();
-          });
-        } catch (error) {
-          toast("Media Manager", error.message, "error");
-        }
-      });
-
-      card.querySelector("[data-media-block-pick=\"gallery\"]")?.addEventListener("click", async (event) => {
-        event.preventDefault();
-        try {
-          await refreshMediaForPicker();
-          openArticleBlockMediaPicker("multiple", (urls) => {
-            b.urls = urls;
-            render();
-            sync();
-          }, Array.isArray(b.urls) ? b.urls : []);
-        } catch (error) {
-          toast("Media Manager", error.message, "error");
-        }
-      });
-
-      card.querySelectorAll("[data-gallery-remove]").forEach(btn => {
-        btn.addEventListener("click", (event) => {
-          event.preventDefault();
-          const index = Number(btn.dataset.galleryRemove);
-          if (!Number.isInteger(index)) return;
-          b.urls = (Array.isArray(b.urls) ? b.urls : []).filter((_, ui) => ui !== index);
-          render();
-          sync();
-        });
-      });
-
-      card.querySelectorAll("[data-block-field]").forEach(el => {
-        el.addEventListener("input", () => {
-          const f = el.dataset.blockField;
-          if (el.matches("[data-inline-editor]")) b[f] = el.innerText.replace(/\u00a0/g, " ");
-          else if (f === "urls" || f === "options") b[f] = el.value.split(/\n+/).map(x => x.trim()).filter(Boolean);
-          else if (f === "rows") b.rows = el.value.split(/\n+/).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).filter(r => r.length);
-          else b[f] = el.value;
-          sync();
-        });
-      });
-
-      card.querySelector(".block-remove")?.addEventListener("click", () => { blocks.splice(i, 1); render(); sync(); });
-      card.querySelector(".block-up")?.addEventListener("click", () => { if (i > 0) { [blocks[i - 1], blocks[i]] = [blocks[i], blocks[i - 1]]; render(); sync(); }});
-      card.querySelector(".block-down")?.addEventListener("click", () => { if (i < blocks.length - 1) { [blocks[i + 1], blocks[i]] = [blocks[i], blocks[i + 1]]; render(); sync(); }});
-
-      card.addEventListener("dragstart", event => {
-        card.classList.add("is-dragging");
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", String(i));
-      });
-      card.addEventListener("dragend", () => card.classList.remove("is-dragging"));
-      card.addEventListener("dragover", event => { event.preventDefault(); card.classList.add("drag-over"); event.dataTransfer.dropEffect = "move"; });
-      card.addEventListener("dragleave", () => card.classList.remove("drag-over"));
-      card.addEventListener("drop", event => {
-        event.preventDefault();
-        card.classList.remove("drag-over");
-        const from = Number(event.dataTransfer.getData("text/plain"));
-        const to = Number(card.dataset.index);
-        if (!Number.isInteger(from) || from === to) return;
-        const [moved] = blocks.splice(from, 1);
-        blocks.splice(to, 0, moved);
-        render();
-        sync();
-      });
-    });
-
-    sync();
-  };
-
-  $("#article-builder-toolbar")?.querySelectorAll("[data-add-block]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const type = btn.dataset.addBlock;
-      blocks.push(type === "poll" ? { type, question: "", options: ["Opción A", "Opción B"] } : { type, ...(type === "gallery" ? { urls: [] } : {}) });
-      render();
-      sync();
-      const cards = root.querySelectorAll(".article-block");
-      cards[cards.length - 1]?.querySelector("[data-inline-editor]")?.focus();
-    });
-  });
-
-  ["title", "excerpt", "imageUrl", "category", "content"].forEach(name => {
-    form.elements[name]?.addEventListener("input", updatePreview);
-    form.elements[name]?.addEventListener("change", updatePreview);
-  });
-
-  render();
-}
-
-function bindArticleReview() {
-  $("#article-review")?.addEventListener("click", async () => {
-    const form=$("#modal-form"); if(!form) return;
-    const fd=new FormData(form); const result=await reviewArticle(fd);
-    const issues=result.issues.map(x=>`<li class="check-bad">⚠️ ${esc(x)}</li>`).join("");
-    const ok=result.ok.map(x=>`<li class="check-good">✅ ${esc(x)}</li>`).join("");
-    openModal("Revisión antes de publicar", `<div class="prepublish-review"><strong>${result.score}/100</strong><ul>${issues}${ok}</ul><p class="form-help">La revisión es preventiva: no bloquea la publicación si decidís continuar.</p></div>`, async()=>{});
-  });
-}
-
-async function reviewArticle(fd) {
-  const issues=[], ok=[]; const title=value(fd,"title"), excerpt=value(fd,"excerpt"), seo=value(fd,"seoDescription"), alt=value(fd,"imageAlt"), image=value(fd,"imageUrl"), content=value(fd,"content"), blocks=parseContentBlocks(value(fd,"contentBlocks"));
-  if(title.length<10) issues.push("El título es demasiado corto."); else ok.push("Título correcto.");
-  if(!value(fd,"category")) issues.push("Falta categoría."); else ok.push("Categoría correcta.");
-  if(!image) issues.push("La noticia no tiene imagen de portada."); else ok.push("Imagen de portada seleccionada.");
-  if(image) { try { const r=await fetch(image,{method:"HEAD",cache:"no-store"}); if(!r.ok) issues.push("La imagen de portada no responde correctamente."); else ok.push("Imagen accesible."); } catch { issues.push("No se pudo comprobar la imagen."); } }
-  if(image && !alt) issues.push("Falta el texto ALT de la imagen."); else if(image) ok.push("Texto ALT presente.");
-  if(seo.length<80) issues.push("La descripción SEO es demasiado corta o está vacía."); else ok.push("Descripción SEO correcta.");
-  if(!excerpt) issues.push("Falta bajada/copete."); else ok.push("Bajada/copete presente.");
-  if(!content && !blocks.length) issues.push("No hay contenido en la noticia."); else ok.push("Contenido presente.");
-  const text=[content,...blocks.map(b=>JSON.stringify(b))].join(" ");
-  const urls=[...text.matchAll(/https?:\/\/[^\s"'<>]+/g)].map(m=>m[0].replace(/[),.;]+$/,""));
-  for(const u of urls.slice(0,8)){try{const r=await fetch(u,{method:"HEAD",mode:"no-cors"}); if(r.type!=="opaque"&&!r.ok) issues.push(`Hay un enlace que no responde: ${u}`);}catch{issues.push(`No se pudo comprobar un enlace: ${u}`);}}
-  const score=Math.max(0,Math.round(100-(issues.length*12)+(ok.length*2))); return {issues,ok,score};
+  requestAnimationFrame(
+    bindArticleMediaControls
+  );
 }
 
 function bindArticleMediaControls() {
@@ -1148,32 +932,19 @@ function bindArticleMediaControls() {
 
   $("#article-pick-image")?.addEventListener(
     "click",
-    async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const button = event.currentTarget;
-      if (button.dataset.busy === "1") return;
-      button.dataset.busy = "1";
-
-      try {
-        // No dependemos del estado viejo: consultamos la biblioteca real
-        // cada vez que se abre el selector.
-        await refreshMediaForPicker();
-
+    () => {
+      loadMedia().then(() => {
         openMediaPicker((url) => {
-          const input = $("#article-image-url");
+          const input =
+            $("#article-image-url");
+
           if (input) {
             input.value = url;
-            input.dispatchEvent(new Event("input", { bubbles: true }));
           }
+
           updateArticleImagePreview(url);
         });
-      } catch (error) {
-        toast("Media Manager", error.message, "error");
-      } finally {
-        button.dataset.busy = "0";
-      }
+      });
     }
   );
 
@@ -1209,7 +980,6 @@ function bindArticleMediaControls() {
         if (input) {
           input.value =
             data.media.url;
-          input.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
         updateArticleImagePreview(
@@ -2062,8 +1832,8 @@ function openModal(
     $("#modal-root");
 
   root.innerHTML = `
-    <div class="modal-back ${/noticia/i.test(title) ? "article-modal-back" : ""}">
-      <div class="modal ${/noticia/i.test(title) ? "article-modal" : ""}">
+    <div class="modal-back">
+      <div class="modal">
 
         <div class="modal-head">
           <h2>${esc(title)}</h2>
@@ -3383,179 +3153,67 @@ async function uploadMediaFiles(
    SELECTOR DE IMÁGENES
 ========================================================= */
 
-function getMediaItemUrl(item) {
-  return String(
-    item?.url ||
-    item?.publicUrl ||
-    item?.publicURL ||
-    item?.src ||
-    item?.pathname ||
-    ""
-  ).trim();
-}
-
-async function refreshMediaForPicker() {
-  const data = await mediaApi("list");
-  state.media = Array.isArray(data.media) ? data.media : [];
-  return state.media;
-}
-
-
-function openArticleBlockMediaPicker(mode = "single", callback, selected = []) {
-  const items = Array.isArray(state.media) ? [...state.media] : [];
-  const initial = new Set((selected || []).map(String));
-  const overlay = document.createElement("div");
-  overlay.className = "modal-back media-picker-back";
-  overlay.innerHTML = `
-    <div class="modal media-picker-modal article-block-media-picker" role="dialog" aria-modal="true" aria-label="Elegir imágenes del Media Manager">
-      <div class="modal-head">
-        <div>
-          <span class="section-eyebrow">MEDIA MANAGER</span>
-          <h2>${mode === "multiple" ? "Elegir imágenes para la galería" : "Elegir imagen"}</h2>
-        </div>
-        <button type="button" class="modal-close picker-close" aria-label="Cerrar">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="block-picker-tools">
-          <input type="search" class="block-picker-search" placeholder="Buscar imagen..." autocomplete="off">
-          <span class="block-picker-count"></span>
-        </div>
-        <p class="media-picker-help">${mode === "multiple" ? "Seleccioná varias imágenes. Después hacé clic en AGREGAR A GALERÍA." : "Elegí una imagen ya cargada para insertarla en este bloque."}</p>
-        <div class="media-picker-grid block-picker-grid"></div>
-      </div>
-      ${mode === "multiple" ? `<div class="modal-foot block-picker-foot"><span class="block-picker-selected-count">0 seleccionadas</span><button type="button" class="action primary block-picker-confirm">AGREGAR A GALERÍA</button></div>` : ""}
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  const grid = overlay.querySelector(".block-picker-grid");
-  const search = overlay.querySelector(".block-picker-search");
-  const count = overlay.querySelector(".block-picker-count");
-  const selectedCount = overlay.querySelector(".block-picker-selected-count");
-  const selectedUrls = new Set(initial);
-
-  const renderItems = () => {
-    const q = String(search?.value || "").trim().toLowerCase();
-    const filtered = items.filter(item => {
-      const name = mediaName(item).toLowerCase();
-      return !q || name.includes(q);
-    });
-    if (count) count.textContent = `${filtered.length} ${filtered.length === 1 ? "imagen" : "imágenes"}`;
-    grid.innerHTML = filtered.map(item => {
-      const url = getMediaItemUrl(item);
-      if (!url) return "";
-      const active = selectedUrls.has(url);
-      return `<button type="button" class="media-picker-item ${active ? "is-selected" : ""}" data-block-picker-url="${esc(url)}" title="${esc(mediaName(item))}">
-        <span class="media-picker-image"><img src="${esc(url)}" alt="${esc(mediaName(item))}" loading="lazy"></span>
-        <span class="media-picker-name">${esc(mediaName(item))}</span>
-        <span class="media-picker-use">${mode === "multiple" ? (active ? "✓ SELECCIONADA" : "SELECCIONAR") : "USAR IMAGEN"}</span>
-      </button>`;
-    }).join("") || `<div class="empty-state media-picker-empty"><strong>No encontramos imágenes.</strong><span>Probá con otro término.</span></div>`;
-
-    grid.querySelectorAll("[data-block-picker-url]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const url = String(btn.dataset.blockPickerUrl || "");
-        if (mode === "single") {
-          callback([url]);
-          overlay.remove();
-          return;
-        }
-        if (selectedUrls.has(url)) selectedUrls.delete(url);
-        else selectedUrls.add(url);
-        renderItems();
-        updateCount();
-      });
-    });
-  };
-
-  const updateCount = () => {
-    if (selectedCount) selectedCount.textContent = `${selectedUrls.size} ${selectedUrls.size === 1 ? "seleccionada" : "seleccionadas"}`;
-  };
-
-  const close = () => overlay.remove();
-  overlay.querySelector(".picker-close")?.addEventListener("click", close);
-  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-  search?.addEventListener("input", renderItems);
-  overlay.querySelector(".block-picker-confirm")?.addEventListener("click", () => {
-    callback([...selectedUrls]);
-    close();
-  });
-
-  renderItems();
-  updateCount();
-  search?.focus();
-}
-
 function openMediaPicker(callback) {
-  const items = Array.isArray(state.media) ? [...state.media] : [];
+  const items = Array.isArray(state.media) ? state.media : [];
+  const root = $("#modal-root");
+  const pickerId = `media-picker-${Date.now()}`;
+
+  // No reemplazamos el modal actual: el formulario de la noticia
+  // debe seguir vivo para no perder los campos ya completados.
   const overlay = document.createElement("div");
   overlay.className = "modal-back media-picker-back";
-  overlay.setAttribute("role", "presentation");
+  overlay.id = pickerId;
   overlay.innerHTML = `
     <div class="modal media-picker-modal" role="dialog" aria-modal="true" aria-label="Elegir imagen">
       <div class="modal-head">
-        <div>
-          <span class="section-eyebrow">MEDIA MANAGER</span>
-          <h2>Elegir imagen</h2>
-        </div>
+        <h2>Elegir imagen</h2>
         <button type="button" class="modal-close media-picker-close" aria-label="Cerrar">×</button>
       </div>
       <div class="modal-body">
-        <p class="media-picker-help">Elegí una imagen ya cargada. Al hacer clic se usará como portada de esta noticia.</p>
         <div class="media-picker-grid">
-          ${items.map((item) => {
-            const url = getMediaItemUrl(item);
-            if (!url) return "";
-            const name = mediaName(item);
-            return `
-              <button type="button" class="media-picker-item" data-picker-url="${esc(url)}" title="Usar ${esc(name)}">
-                <span class="media-picker-image"><img src="${esc(url)}" alt="${esc(name)}" loading="lazy"></span>
-                <span class="media-picker-name">${esc(name)}</span>
-                <span class="media-picker-use">USAR IMAGEN</span>
-              </button>
-            `;
-          }).join("") || `
-            <div class="empty-state media-picker-empty">
-              <strong>No hay imágenes disponibles.</strong>
-              <span>Volvé al Media Manager y cargá una imagen.</span>
-            </div>
-          `}
+          ${
+            items.map((item) => {
+              const url = String(item.url || "");
+              if (!url) return "";
+              return `
+                <button
+                  type="button"
+                  class="media-picker-item"
+                  data-picker-url="${esc(url)}"
+                >
+                  <img src="${esc(url)}" alt="${esc(mediaName(item))}" loading="lazy">
+                  <span>${esc(mediaName(item))}</span>
+                </button>
+              `;
+            }).join("") || `
+              <div class="empty-state">
+                No hay imágenes cargadas todavía.
+              </div>
+            `
+          }
         </div>
       </div>
     </div>
   `;
 
-  // Se monta directamente sobre BODY para que ningún contenedor del modal
-  // de la noticia pueda tapar o interceptar los clics del selector.
-  document.body.appendChild(overlay);
+  root.appendChild(overlay);
 
-  let closed = false;
   const finish = (url = "") => {
-    if (closed) return;
-    closed = true;
     if (url) callback(url);
     overlay.remove();
   };
 
-  overlay.querySelector(".media-picker-close")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    finish();
-  });
-
+  overlay.querySelector(".media-picker-close")?.addEventListener("click", () => finish());
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) finish();
   });
 
   overlay.querySelectorAll("[data-picker-url]").forEach((btn) => {
-    btn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      finish(String(btn.dataset.pickerUrl || "").trim());
+    btn.addEventListener("click", () => {
+      finish(btn.dataset.pickerUrl || "");
     });
   });
 }
-
 
 /* =========================================================
    NUEVO: ELEGIR DÓNDE USAR LA IMAGEN
@@ -4237,9 +3895,6 @@ document.addEventListener(
 
       return;
     }
-
-    const statsArticle = event.target.closest("[data-stats-article]");
-    if (statsArticle) { openArticleStats(statsArticle.dataset.statsArticle); return; }
 
     /* =====================================================
        EDITAR NOTICIA
