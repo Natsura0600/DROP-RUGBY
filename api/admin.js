@@ -2789,6 +2789,30 @@ export default async function handler(
 // TABLA URBA TOP 14
 // ============================================================
 
+const TOP14_OFFICIAL_TEAMS = new Set([
+  "newman", "casi", "hindu", "alumni", "sic",
+  "regatas bella vista", "los tilos", "belgrano athletic",
+  "cuba", "atletico del rosario", "los matreros", "la plata",
+  "buenos aires crc", "champagnat"
+]);
+
+const TEAM_CANONICAL_NAMES = {
+  "newman": "Newman",
+  "casi": "CASI",
+  "hindu": "Hindu",
+  "alumni": "Alumni",
+  "sic": "SIC",
+  "regatas bella vista": "Regatas Bella Vista",
+  "los tilos": "Los Tilos",
+  "belgrano athletic": "Belgrano Athletic",
+  "cuba": "CUBA",
+  "atletico del rosario": "Atletico del Rosario",
+  "los matreros": "Los Matreros",
+  "la plata": "La Plata",
+  "buenos aires crc": "Buenos Aires C&RC",
+  "champagnat": "Champagnat"
+};
+
 const TEAM_ALIASES = {
   "regatas de bella vista":
     "regatas bella vista",
@@ -2797,7 +2821,25 @@ const TEAM_ALIASES = {
     "atletico del rosario",
 
   "ca atletico del rosario":
-    "atletico del rosario"
+    "atletico del rosario",
+
+  "belgrano":
+    "belgrano athletic",
+
+  "biei":
+    "buenos aires crc",
+
+  "bac":
+    "buenos aires crc",
+
+  "champa":
+    "champagnat",
+
+  "plaza":
+    "atletico del rosario",
+
+  "regatas":
+    "regatas bella vista"
 };
 
 function normalizeTeamKey(name) {
@@ -2820,10 +2862,8 @@ function normalizeTeamKey(name) {
       )
       .trim();
 
-  return (
-    TEAM_ALIASES[key] ||
-    key
-  );
+  const normalized = TEAM_ALIASES[key] || key;
+  return normalized;
 }
 
 function calculateStandings(
@@ -2905,14 +2945,15 @@ function calculateStandings(
       return null;
     }
 
-    const key =
-      normalizeTeamKey(
-        clean
-      );
+    const key = normalizeTeamKey(clean);
 
-    if (
-      !teams.has(key)
-    ) {
+    if (!TOP14_OFFICIAL_TEAMS.has(key)) {
+      return null;
+    }
+
+    const canonicalName = TEAM_CANONICAL_NAMES[key] || clean;
+
+    if (!teams.has(key)) {
       const base =
         baseByTeam.get(
           key
@@ -2921,7 +2962,7 @@ function calculateStandings(
       teams.set(
         key,
         {
-          team: clean,
+          team: canonicalName,
 
           pj:
             base
@@ -3110,20 +3151,11 @@ function calculateStandings(
       away.pts += 2;
     }
 
-    const bonus =
-      String(
-        result.bonusTeam ||
-          ""
-      )
-        .trim()
-        .toLowerCase();
+    const bonus = normalizeTeamKey(result.bonusTeam || "");
 
     if (
       bonus &&
-      bonus ===
-        home.team
-          .trim()
-          .toLowerCase()
+      bonus === normalizeTeamKey(home.team)
     ) {
       home.bonus++;
       home.pts++;
@@ -3131,10 +3163,7 @@ function calculateStandings(
 
     if (
       bonus &&
-      bonus ===
-        away.team
-          .trim()
-          .toLowerCase()
+      bonus === normalizeTeamKey(away.team)
     ) {
       away.bonus++;
       away.pts++;
