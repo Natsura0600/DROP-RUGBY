@@ -939,3 +939,21 @@ body{min-width:0;overflow-x:hidden}
     max-height:calc(100dvh - 20px);
   }
 }
+
+
+/* FIX: el encabezado y las acciones del modal permanecen accesibles
+   mientras se desplaza el formulario largo de una noticia. */
+.modal-head{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#fff;
+}
+.modal-actions{
+  position:sticky;
+  bottom:0;
+  z-index:3;
+}
+.media-picker-modal .modal-body{
+  overflow-x:hidden;
+}
