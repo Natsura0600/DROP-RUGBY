@@ -18,8 +18,8 @@
     .dynamic-meta{margin:24px 0 34px;font:600 10px var(--sans);letter-spacing:.8px;color:#777}
     .dynamic-image{height:430px;margin:0 0 42px;border-radius:3px;overflow:hidden;background:#ddd}
     .dynamic-image img{width:100%;height:100%;object-fit:cover}
-    .dynamic-body{font:400 18px/1.85 var(--sans);color:#272727;overflow-wrap:anywhere}
-    .dynamic-body p{margin:0 0 24px}
+    .dynamic-body{font:400 18px/1.85 var(--sans);color:#272727;overflow-wrap:break-word;word-break:normal;min-width:0}
+    .dynamic-body p{margin:0 0 24px;overflow-wrap:break-word;word-break:normal}
     .dynamic-body h2{font:400 34px/1.2 var(--serif);margin:48px 0 16px;color:#111}
     .dynamic-body h3{font:400 27px/1.25 var(--serif);margin:38px 0 14px;color:#111}
     .dynamic-body h4{font:700 19px/1.35 var(--sans);margin:30px 0 12px;color:#111}
@@ -31,7 +31,7 @@
     .dynamic-body li{margin:0 0 9px;padding-left:4px}
     .dynamic-body blockquote{font:italic 25px/1.5 var(--serif);border-left:3px solid #111;padding:10px 0 10px 24px;margin:38px 0;color:#222}
     .dynamic-body blockquote p:last-child{margin-bottom:0}
-    .dynamic-body img{display:block;max-width:100%;width:auto;height:auto;margin:28px auto}
+    .dynamic-body img{display:block;max-width:100%;width:auto;height:auto;margin:28px auto;object-fit:contain}
     .dynamic-body figure{margin:38px 0}
     .dynamic-body figure img{width:100%;max-height:720px;object-fit:cover;margin:0}
     .dynamic-body figcaption{font:500 11px/1.5 var(--sans);color:#777;margin-top:9px}
@@ -44,6 +44,13 @@
     .dynamic-body iframe,.dynamic-body video{display:block;width:100%;max-width:100%;border:0;margin:30px 0;border-radius:6px}
     .dynamic-body iframe{min-height:430px}
     .dynamic-body .content-block{margin:0 0 28px}
+    .dynamic-body > div,.dynamic-body > section,.dynamic-body > figure{max-width:100%;min-width:0}
+    .dynamic-body [style*="display:flex"],[style*="display: flex"]{min-width:0}
+    .dynamic-body [style*="grid-template-columns"]{min-width:0}
+    .dynamic-body [style*="overflow"]{max-width:100%}
+    .dynamic-body svg{display:block;max-width:100%;height:auto}
+    .dynamic-body audio{display:block;width:100%;max-width:100%;margin:24px 0}
+
     .dynamic-share{margin-top:55px;padding-top:30px;border-top:1px solid #e5e5e5}
     .dynamic-share h3{font:700 11px var(--sans);letter-spacing:1.5px;text-transform:uppercase;margin:0 0 18px;color:#555}
     .share-buttons{display:flex;flex-wrap:wrap;gap:12px}
