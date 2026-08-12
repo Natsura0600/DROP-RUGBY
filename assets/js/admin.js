@@ -2646,32 +2646,66 @@ function renderLogoCard({ id, name, meta, current, kind }) {
     </article>`;
 }
 
-function renderClubLogos() {
-  const root = $("#club-logo-grid");
+function getLogoFilterData(kind) {
+  const isNation = kind === "nation";
+  const collection = isNation ? state.nations : state.clubs;
+  const settings = isNation
+    ? (state.content.settings?.nationLogos || {})
+    : (state.content.settings?.clubLogos || {});
+  const search = String($(isNation ? "#nation-logo-search" : "#club-logo-search")?.value || "").trim().toLowerCase();
+  const filter = String($(isNation ? "#nation-logo-filter" : "#club-logo-filter")?.value || "");
+
+  return Object.entries(collection || {})
+    .map(([id, item]) => {
+      const current = settings[id] || item.logo || "";
+      const label = `${item.name || ""} ${item.shortName || ""} ${id}`.toLowerCase();
+      return { id, item, current, assigned: Boolean(current), label };
+    })
+    .filter(row => !search || row.label.includes(search))
+    .filter(row => !filter || (filter === "assigned" ? row.assigned : !row.assigned))
+    .sort((a, b) => String(a.item.name || "").localeCompare(String(b.item.name || ""), "es"));
+}
+
+function renderLogoRows(kind) {
+  const isNation = kind === "nation";
+  const root = $(isNation ? "#nation-logo-grid" : "#club-logo-grid");
   if (!root) return;
-  const logos = state.content.settings?.clubLogos || {};
-  const { q, status } = logoFilterValue("#club-logo-search", "#club-logo-status");
-  const clubs = Object.entries(state.clubs)
-    .map(([id, club]) => ({ id, name: club.name || id, meta: club.aliases?.[0] || id, current: logos[id] || club.logo || "" }))
-    .filter(item => !q || `${item.name} ${item.meta} ${item.id}`.toLowerCase().includes(q))
-    .filter(item => status === "all" || (status === "assigned" ? item.current : !item.current))
-    .sort((a,b) => a.name.localeCompare(b.name, "es"));
-  if ($("#club-logo-count")) { $("#club-logo-count").textContent = `${clubs.length}/${Object.keys(state.clubs).length}`; }
-  root.innerHTML = clubs.map(item => renderLogoCard({ ...item, kind: "club" })).join("") || `<div class="logo-empty"><strong>No hay clubes para mostrar</strong><span>Probá con otro filtro o búsqueda.</span></div>`;
+
+  const rows = getLogoFilterData(kind);
+  const collection = isNation ? state.nations : state.clubs;
+  const allRows = Object.entries(collection || {}).map(([id, item]) => {
+    const settings = isNation ? (state.content.settings?.nationLogos || {}) : (state.content.settings?.clubLogos || {});
+    return Boolean(settings[id] || item.logo || "");
+  });
+  const assigned = allRows.filter(Boolean).length;
+
+  const countEl = $(isNation ? "#nation-logo-count" : "#club-logo-count");
+  const summaryEl = $(isNation ? "#nation-logo-summary" : "#club-logo-summary");
+  if (countEl) countEl.textContent = `${rows.length} ${isNation ? "selecciones" : "clubes"}`;
+  if (summaryEl) summaryEl.textContent = `${assigned}/${allRows.length}`;
+
+  root.innerHTML = rows.map(({ id, item, current }) => `
+    <div class="club-logo-row">
+      <div class="club-logo-preview">
+        ${current ? `<img src="${esc(current)}" alt="${esc(item.name || id)}" loading="lazy">` : `<span>—</span>`}
+      </div>
+      <div class="club-logo-name">
+        <strong>${esc(item.name || id)}</strong>
+        <small>${esc(item.shortName || id)}</small>
+        <span class="logo-status ${current ? "has" : "none"}">${current ? "Con escudo" : "Sin escudo"}</span>
+      </div>
+      <button class="action" data-${isNation ? "nation" : "club"}-pick="${esc(id)}">${current ? "CAMBIAR" : "ELEGIR"}</button>
+      ${current ? `<button class="action danger" data-${isNation ? "nation" : "club"}-clear="${esc(id)}">QUITAR</button>` : `<span></span>`}
+    </div>
+  `).join("") || `<div class="empty-state"><strong>No hay resultados</strong><span>Probá con otro término o filtro.</span></div>`;
+}
+
+function renderClubLogos() {
+  renderLogoRows("club");
 }
 
 function renderNationLogos() {
-  const root = $("#nation-logo-grid");
-  if (!root) return;
-  const logos = state.content.settings?.nationLogos || {};
-  const { q, status } = logoFilterValue("#nation-logo-search", "#nation-logo-status");
-  const nations = Object.entries(state.nations)
-    .map(([id, nation]) => ({ id, name: nation.name || id, meta: nation.shortName || id, current: logos[id] || nation.logo || "" }))
-    .filter(item => !q || `${item.name} ${item.meta} ${item.id}`.toLowerCase().includes(q))
-    .filter(item => status === "all" || (status === "assigned" ? item.current : !item.current))
-    .sort((a,b) => a.name.localeCompare(b.name, "es"));
-  if ($("#nation-logo-count")) { $("#nation-logo-count").textContent = `${nations.length}/${Object.keys(state.nations).length}`; }
-  root.innerHTML = nations.map(item => renderLogoCard({ ...item, kind: "nation" })).join("") || `<div class="logo-empty"><strong>No hay selecciones para mostrar</strong><span>Probá con otro filtro o búsqueda.</span></div>`;
+  renderLogoRows("nation");
 }
 
 async function assignClubLogo(
@@ -4228,6 +4262,21 @@ $("#fixture-competition-filter")
     "change",
     renderFixtures
   );
+
+/* =========================================================
+   FILTROS DE ESCUDOS
+========================================================= */
+
+["club-logo-search", "club-logo-filter"].forEach(id => {
+  const el = document.getElementById(id);
+  el?.addEventListener("input", renderClubLogos);
+  el?.addEventListener("change", renderClubLogos);
+});
+["nation-logo-search", "nation-logo-filter"].forEach(id => {
+  const el = document.getElementById(id);
+  el?.addEventListener("input", renderNationLogos);
+  el?.addEventListener("change", renderNationLogos);
+});
 
 /* =========================================================
    ESC
