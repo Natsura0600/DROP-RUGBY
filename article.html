@@ -839,10 +839,17 @@ content="Noticias de rugby en DropRugby."
           </div>
 
           <section class="article-reactions" aria-label="Reacciones">
-            <strong>¿Qué te pareció?</strong>
-            <div class="reaction-row">
-              ${['🔥','👍','😮','😢','👎'].map(x=>`<button type="button" data-reaction="${x}">${x}<span>0</span></button>`).join('')}
+            <div class="reaction-heading">
+              <div>
+                <strong>¿Qué te pareció?</strong>
+                <small>Elegí una reacción. Solo podés dejar una por noticia.</small>
+              </div>
+              <button type="button" class="reaction-remove" id="reaction-remove" hidden>Quitar mi reacción</button>
             </div>
+            <div class="reaction-row">
+              ${['🔥','👍','😮','😢','👎'].map(x=>`<button type="button" data-reaction="${x}"><span class="reaction-emoji">${x}</span><span class="reaction-count">0</span></button>`).join('')}
+            </div>
+            <p class="reaction-status" id="reaction-status" aria-live="polite"></p>
           </section>
 
           <section
@@ -935,11 +942,71 @@ content="Noticias de rugby en DropRugby."
           );
 
 
-        async function postAnalytics(payload) {
-          try { await fetch('/api/analytics', {method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify(payload)}); } catch (_) {}
+        const visitorStorageKey = 'drop_rugby_visitor_id_v1';
+        function getVisitorId() {
+          try {
+            let id = localStorage.getItem(visitorStorageKey);
+            if (!id) {
+              id = (globalThis.crypto?.randomUUID?.() || `v_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+              localStorage.setItem(visitorStorageKey, id);
+            }
+            return id;
+          } catch (_) {
+            return `v_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          }
         }
+
+        const visitorId = getVisitorId();
+        async function postAnalytics(payload) {
+          try {
+            const response = await fetch('/api/analytics', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              keepalive: true,
+              body: JSON.stringify({...payload, visitorId})
+            });
+            const data = await response.json().catch(() => null);
+            return data;
+          } catch (_) {
+            return null;
+          }
+        }
+
+        async function loadArticleStats() {
+          try {
+            const data = await fetch(
+              '/api/analytics?action=stats&articleId=' + encodeURIComponent(articleId) + '&visitorId=' + encodeURIComponent(visitorId),
+              {cache:'no-store'}
+            ).then(r => r.json());
+            if (!data?.ok) return;
+
+            const stats = data.stats || {};
+            const reactionMap = stats.reactions || {};
+            const myReaction = stats.myReaction || '';
+            const buttons = [...root.querySelectorAll('[data-reaction]')];
+            const remove = root.querySelector('#reaction-remove');
+            const status = root.querySelector('#reaction-status');
+
+            buttons.forEach(btn => {
+              const type = btn.dataset.reaction;
+              const count = btn.querySelector('.reaction-count');
+              if (count) count.textContent = String(Number(reactionMap[type] || 0));
+              btn.classList.toggle('selected', type === myReaction);
+              btn.disabled = Boolean(myReaction);
+              btn.setAttribute('aria-pressed', type === myReaction ? 'true' : 'false');
+            });
+
+            if (remove) remove.hidden = !myReaction;
+            if (status) status.textContent = myReaction
+              ? `Tu reacción: ${myReaction}. Podés quitarla cuando quieras.`
+              : 'Todavía no reaccionaste a esta noticia.';
+          } catch (_) {}
+        }
+
         const articleId = String(a.id);
-        postAnalytics({action:'view',articleId});
+        postAnalytics({action:'view', articleId});
+        loadArticleStats();
+
         let started = Date.now();
         const sessionKey='drop_article_session';
         const sessionId=localStorage.getItem(sessionKey)||crypto.randomUUID?.()||String(Date.now());
@@ -948,9 +1015,26 @@ content="Noticias de rugby en DropRugby."
         const sendReading=()=>{ if(readingSent) return; readingSent=true; postAnalytics({action:'reading',articleId,seconds:Math.round((Date.now()-started)/1000),sessionId}); };
         setTimeout(sendReading,30000);
         window.addEventListener('pagehide',sendReading,{once:true});
+
         root.querySelectorAll('[data-reaction]').forEach(btn=>btn.addEventListener('click',async()=>{
-          const type=btn.dataset.reaction; await postAnalytics({action:'reaction',articleId,type}); btn.classList.add('selected'); const n=btn.querySelector('span'); if(n)n.textContent=String(Number(n.textContent||0)+1);
+          const buttons = [...root.querySelectorAll('[data-reaction]')];
+          if (buttons.some(b => b.disabled)) return;
+          const type=btn.dataset.reaction;
+          btn.disabled=true;
+          const data=await postAnalytics({action:'reaction',articleId,type});
+          if (data?.ok) await loadArticleStats();
+          else buttons.forEach(b => b.disabled=false);
         }));
+
+        root.querySelector('#reaction-remove')?.addEventListener('click', async () => {
+          const button = root.querySelector('#reaction-remove');
+          if (!button || button.disabled) return;
+          button.disabled = true;
+          const data = await postAnalytics({action:'reaction-remove',articleId});
+          if (data?.ok) await loadArticleStats();
+          button.disabled = false;
+        });
+
         root.querySelectorAll('.drop-poll').forEach(poll=>poll.querySelectorAll('[data-poll-option]').forEach(btn=>btn.addEventListener('click',async()=>{
           const index=Number(poll.dataset.pollIndex); const option=Number(btn.dataset.pollOption);
           await postAnalytics({action:'poll',articleId,pollIndex:index,option});
