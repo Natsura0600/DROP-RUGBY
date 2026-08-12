@@ -270,8 +270,9 @@ function teamShield(value, className = "team-shield") {
         loading="eager"
         decoding="async"
         referrerpolicy="no-referrer"
-        onerror="this.onerror=null;this.outerHTML='${fallback.replace(/'/g, "\\'")}';"
+        onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='inline-flex';"
       >
+      <span class="${className} team-shield-fallback" aria-hidden="true" style="display:none">${initials}</span>
     </span>
   `;
 }
