@@ -4,7 +4,7 @@
 // ============================================================
 
 import { Resend } from "resend";
-import { list, put } from "@vercel/blob";
+import { r2GetJSON, r2PutText } from "../lib/r2.js";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -962,39 +962,7 @@ function normalizeContent(data) {
 // ============================================================
 
 async function readBlobContent() {
-  const result =
-    await list({
-      prefix: BLOB_PATH,
-      limit: 10
-    });
-
-  if (!result.blobs.length) {
-    return null;
-  }
-
-  const blob =
-    result.blobs.find(
-      (item) =>
-        item.pathname ===
-        BLOB_PATH
-    ) ||
-    result.blobs[0];
-
-  const response =
-    await fetch(
-      blob.url,
-      {
-        cache: "no-store"
-      }
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      `No se pudo leer Vercel Blob (${response.status})`
-    );
-  }
-
-  return await response.json();
+  return await r2GetJSON(BLOB_PATH);
 }
 
 async function readLocalContent() {
@@ -1188,21 +1156,13 @@ async function saveContent(
       content
     );
 
-  await put(
+  await r2PutText(
     BLOB_PATH,
     JSON.stringify(
       normalized,
       null,
       2
-    ),
-    {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType:
-        "application/json; charset=utf-8",
-      cacheControlMaxAge: 0
-    }
+    )
   );
 
   return normalized;
