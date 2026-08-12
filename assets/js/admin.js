@@ -620,7 +620,6 @@ function articleForm(article = {}) {
             "Los Pumas",
             "Super Rugby",
             "URBA TOP 14",
-            "URBA",
             "Internacional",
             "Rugby"
           ]
@@ -1112,8 +1111,7 @@ function fixtureForm(fixture = {}) {
           ${[
             "Los Pumas",
             "Super Rugby",
-            "URBA TOP 14",
-            "URBA"
+            "URBA TOP 14"
           ]
             .map(
               (competition) =>
