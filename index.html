@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby, URBA Top 14 y URBA. El rugby contado como tiene que ser.">
+  <meta name="description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby y URBA Top 14. El rugby contado como tiene que ser.">
   <link rel="canonical" href="https://www.droprugby.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DropRugby">
   <meta property="og:title" content="DropRugby">
-  <meta property="og:description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby, URBA Top 14 y URBA. El rugby contado como tiene que ser.">
+  <meta property="og:description" content="DropRugby: actualidad, análisis y opinión de Los Pumas, Super Rugby y URBA Top 14. El rugby contado como tiene que ser.">
   <meta property="og:url" content="https://www.droprugby.com/">
   <meta name="robots" content="index, follow">
   <title>DropRugby</title>
@@ -35,7 +35,6 @@
         <a href="los-pumas.html">LOS PUMAS</a>
         <a href="super-rugby.html">INTERNACIONAL</a>
         <a href="urba-top-14.html">URBA TOP 14</a>
-        <a href="urba.html">URBA</a>
         <a href="calendario.html">CALENDARIO</a>
         <a href="contacto.html">CONTACTO</a>
       </nav>
@@ -55,7 +54,6 @@
       <a href="los-pumas.html">LOS PUMAS</a>
       <a href="super-rugby.html">INTERNACIONAL</a>
       <a href="urba-top-14.html">URBA TOP 14</a>
-      <a href="urba.html">URBA</a>
       <a href="calendario.html">CALENDARIO</a>
       <a href="contacto.html">CONTACTO</a>
       <div class="mobile-social">
@@ -69,18 +67,18 @@
     <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
     <div class="search-overlay-inner">
       <input type="text" id="search-input" placeholder="Buscar noticias, equipos, jugadores…" autocomplete="off">
-      <p class="search-hint">Probá con "Los Pumas", "URBA", "Internacional" o el nombre de un equipo.</p>
+      <p class="search-hint">Probá con "Los Pumas", "Internacional", "URBA Top 14" o el nombre de un equipo.</p>
       <div class="search-results" id="search-results"></div>
     </div>
   </div>
 
-  <main>
+  <main class="home-page">
 
-    <section class="hero" id="hero">
+    <section class="hero hero-modern" id="hero">
       <div class="hero-copy reveal">
         <p class="eyebrow">DROP RUGBY · ACTUALIDAD</p>
         <h1>Tu drop diario<br><em>de noticias.</em></h1>
-        <p class="hero-text">Noticias, protagonistas y análisis para entender lo que pasa dentro y fuera de la cancha: Los Pumas, Super Rugby y el rugby de clubes de URBA.</p>
+        <p class="hero-text">Noticias, protagonistas y análisis para entender lo que pasa dentro y fuera de la cancha: Los Pumas, Super Rugby y el rugby de clubes de URBA Top 14.</p>
         <a class="button" id="home-hero-link" href="los-pumas.html">Leer la historia principal <span>→</span></a>
       </div>
       <div class="hero-card reveal" id="home-hero">
@@ -96,7 +94,6 @@
     <!-- ADSENSE SLOT -->
     <div class="ad-slot">ESPACIO PUBLICITARIO</div>
     
-  <div style="height: 5cm;"></div>
     
     <section class="section" id="ultimas-noticias">
       <div class="section-heading">
@@ -106,7 +103,6 @@
       <div class="stories-grid" id="home-top-stories"></div>
     </section>
     
-  <div style="height: 5cm;"></div>
     
     <section class="section" id="pumas">
       <div class="section-heading-row">
@@ -129,7 +125,6 @@
     </section>
     
 
-  <div style="height: 5cm;"></div>
 
     
     <section class="quote-band">
@@ -150,17 +145,7 @@
       <div class="category-cards" id="home-urba-top14"></div>
     </section>
 
-      <div style="height: 5cm;"></div>
-    
-    <section class="section" id="urba">
-      <div class="section-heading-row">
-        <div><p class="eyebrow">ASCENSO</p><h2>URBA</h2></div>
-        <a class="section-more" href="urba.html">VER TODAS LAS NOTICIAS DE URBA →</a>
-      </div>
-      <div class="category-cards" id="home-urba"></div>
-    </section>
-
-      <div style="height: 5cm;"></div>
+    <div style="height: 5cm;"></div>
 
     <section class="section" id="calendario-preview">
       <div class="section-heading-row">
@@ -540,7 +525,6 @@
       <a href="los-pumas.html">Los Pumas</a>
       <a href="super-rugby.html">Internacional</a>
       <a href="urba-top-14.html">Urba Top 14</a>
-      <a href="urba.html">Urba</a>
       <a href="calendario.html">Calendario</a>
       <a href="contacto.html">Contacto</a>
     </div>
@@ -678,15 +662,14 @@
 <script>
 /* =========================================================
    CARRUSELES DE:
-   Los Pumas / Internacional / URBA Top 14 / URBA
+   Los Pumas / Internacional / URBA Top 14
 ========================================================= */
 
 (function () {
   const carouselIds = [
     "home-los-pumas",
     "home-super-rugby",
-    "home-urba-top14",
-    "home-urba"
+    "home-urba-top14"
   ];
 
   const states = new Map();
