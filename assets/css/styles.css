@@ -1676,6 +1676,174 @@ body.home-v8 .v7-urba-section{background:#e1e1e1}
   }
 }
 
-/* DROP article builder / analytics / interactions */
-.article-builder-field,.seo-field{border:1px solid var(--line,#e5e7eb);padding:16px;border-radius:12px;background:#fff}.builder-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.builder-toolbar{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.builder-toolbar button{border:1px solid #d8dde3;background:#fff;border-radius:7px;padding:8px 11px;font-size:12px;cursor:pointer}.article-block{border:1px solid #dfe3e8;border-radius:10px;margin:10px 0;overflow:hidden;background:#fbfcfd}.article-block-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f3f5f7}.article-block-body{padding:10px;display:grid;gap:8px}.article-block textarea,.article-block input{width:100%;box-sizing:border-box}.block-actions{}.separator-preview{height:2px;background:#dfe3e8;margin:12px 0}.seo-score{font-weight:700}.compact-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.builder-legacy-label{display:block;margin-top:12px}.stats-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stats-kpis>div{border:1px solid #e3e6e9;border-radius:10px;padding:14px}.stats-kpis strong,.stats-kpis span{display:block}.stats-kpis strong{font-size:24px}.stats-kpis span{font-size:11px;color:#68707a}.stats-chart{height:150px;display:flex;align-items:end;gap:12px;border-bottom:1px solid #dfe3e8;padding:12px 8px}.stats-bar-col{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;height:100%;justify-content:end}.stats-bar{width:100%;max-width:36px;background:#111;border-radius:5px 5px 0 0;min-height:8px}.stats-reactions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.stats-reactions span{padding:6px 9px;border:1px solid #e3e6e9;border-radius:99px}.article-reactions{margin:30px 0;padding:18px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}.reaction-row{display:flex;gap:8px;margin-top:12px}.reaction-row button{border:1px solid #dfe3e8;background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer}.reaction-row button span{margin-left:6px;font-size:11px}.reaction-row button.selected{transform:translateY(-1px);box-shadow:0 0 0 2px rgba(0,0,0,.08)}.content-block{margin:24px 0}.block-image img,.block-gallery img{width:100%;height:auto;border-radius:10px}.block-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.block-video iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:10px}.block-quote{font-size:24px;line-height:1.35;border-left:4px solid #111;padding:10px 20px}.block-quote cite{display:block;font-size:13px;margin-top:10px}.table-wrap{overflow:auto}.table-wrap table{width:100%;border-collapse:collapse}.table-wrap th,.table-wrap td{border:1px solid #ddd;padding:8px;text-align:left}.drop-poll{border:1px solid #e0e3e7;padding:18px;border-radius:12px}.poll-options{display:grid;gap:8px}.poll-options button{padding:11px;border:1px solid #d7dce1;background:#fff;border-radius:8px;text-align:left;cursor:pointer}.poll-options button:disabled{opacity:.65}
-@media(max-width:800px){.compact-grid,.stats-kpis{grid-template-columns:1fr 1fr}.block-gallery{grid-template-columns:1fr}}
+/* =====================================================================
+   DROPRUGBY — MOTION PASS (SEGURO)
+   Animaciones visuales solo para la web pública.
+   NO aplica estilos globales a inputs, botones, modales ni al dashboard admin.
+   ===================================================================== */
+:root{--motion-fast:.18s;--motion-base:.28s;--motion-slow:.55s;--motion-ease:cubic-bezier(.22,.61,.36,1)}
+
+/* Scroll suave únicamente en la web pública */
+html:has(.site-header),html:has(.uar-header){scroll-behavior:smooth}
+
+@keyframes drFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes drFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes drScaleIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+@keyframes drShine{from{transform:translateX(-120%) skewX(-18deg)}to{transform:translateX(220%) skewX(-18deg)}}
+
+/* Entrada de bloques principales públicos */
+body:has(.site-header) main>section,
+body:has(.site-header) main>article,
+body:has(.uar-header) main>section,
+body:has(.uar-header) main>article,
+body:has(.uar-header) .v7-section,
+body:has(.uar-header) .uar-section{
+  animation:drFadeUp .55s var(--motion-ease) both;
+}
+
+/* Header y navegación pública */
+.site-header,.uar-header{
+  transition:box-shadow var(--motion-base) ease,background-color var(--motion-base) ease;
+}
+.site-header .main-nav a,
+.site-header .mobile-nav a,
+.uar-header .uar-main-nav a,
+.uar-header .uar-header-tools a{
+  transition:color var(--motion-fast) ease,background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,transform var(--motion-fast) ease;
+}
+.site-header .main-nav a:hover,
+.site-header .mobile-nav a:hover,
+.uar-header .uar-main-nav a:hover{
+  transform:translateY(-1px);
+}
+.site-header .brand,.uar-header .uar-brand{transition:transform var(--motion-base) var(--motion-ease)}
+.site-header .brand:hover,.uar-header .uar-brand:hover{transform:translateY(-1px)}
+.site-header .logo-mark img,.uar-header .uar-brand img{transition:transform .45s var(--motion-ease)}
+.site-header .brand:hover .logo-mark img,.uar-header .uar-brand:hover img{transform:scale(1.06) rotate(-1deg)}
+
+/* Cards públicas: no afecta .list-item ni componentes del admin */
+body:has(.site-header) .story,
+body:has(.site-header) .news-card,
+body:has(.site-header) .article-card,
+body:has(.site-header) .related-card,
+body:has(.site-header) .fixture-tile,
+body:has(.site-header) .score-card,
+body:has(.uar-header) .story,
+body:has(.uar-header) .news-card,
+body:has(.uar-header) .article-card,
+body:has(.uar-header) .related-card,
+body:has(.uar-header) .fixture-tile,
+body:has(.uar-header) .score-card{
+  transition:transform var(--motion-base) var(--motion-ease),box-shadow var(--motion-base) ease,border-color var(--motion-base) ease;
+}
+body:has(.site-header) .story:hover,
+body:has(.site-header) .news-card:hover,
+body:has(.site-header) .article-card:hover,
+body:has(.site-header) .fixture-tile:hover,
+body:has(.site-header) .score-card:hover,
+body:has(.uar-header) .story:hover,
+body:has(.uar-header) .news-card:hover,
+body:has(.uar-header) .article-card:hover,
+body:has(.uar-header) .fixture-tile:hover,
+body:has(.uar-header) .score-card:hover{transform:translateY(-4px)}
+body:has(.site-header) .related-card:hover,
+body:has(.uar-header) .related-card:hover{transform:translateY(-5px)}
+
+body:has(.site-header) .story-image img,
+body:has(.site-header) .news-card img,
+body:has(.site-header) .article-card img,
+body:has(.site-header) .related-card-image img,
+body:has(.site-header) .hero-image,
+body:has(.site-header) .home-v7-hero-media img,
+body:has(.uar-header) .story-image img,
+body:has(.uar-header) .news-card img,
+body:has(.uar-header) .article-card img,
+body:has(.uar-header) .related-card-image img,
+body:has(.uar-header) .hero-image,
+body:has(.uar-header) .home-v7-hero-media img{
+  transition:transform .65s var(--motion-ease),filter .35s ease;
+}
+body:has(.site-header) .story:hover .story-image img,
+body:has(.site-header) .news-card:hover img,
+body:has(.site-header) .article-card:hover img,
+body:has(.site-header) .related-card:hover .related-card-image img,
+body:has(.site-header) .hero-image:hover,
+body:has(.site-header) .home-v7-hero-media:hover img,
+body:has(.uar-header) .story:hover .story-image img,
+body:has(.uar-header) .news-card:hover img,
+body:has(.uar-header) .article-card:hover img,
+body:has(.uar-header) .related-card:hover .related-card-image img,
+body:has(.uar-header) .hero-image:hover,
+body:has(.uar-header) .home-v7-hero-media:hover img{transform:scale(1.035)}
+
+/* Enlaces públicos: nunca aplicar esto globalmente al admin */
+body:has(.site-header) a:not(.share-button):not(.brand),
+body:has(.uar-header) a:not(.share-button):not(.uar-brand){
+  transition:color var(--motion-fast) ease,opacity var(--motion-fast) ease;
+}
+
+/* Botones públicos, con selectores concretos */
+body:has(.site-header) .share-button,
+body:has(.site-header) .cta,
+body:has(.site-header) .social-btn,
+body:has(.uar-header) .share-button,
+body:has(.uar-header) .cta,
+body:has(.uar-header) .social-btn,
+body:has(.uar-header) .uar-header-tools a{
+  transition:transform var(--motion-fast) var(--motion-ease),box-shadow var(--motion-fast) ease,background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,filter var(--motion-fast) ease;
+}
+body:has(.site-header) .share-button:hover,
+body:has(.site-header) .cta:hover,
+body:has(.site-header) .social-btn:hover,
+body:has(.uar-header) .share-button:hover,
+body:has(.uar-header) .cta:hover,
+body:has(.uar-header) .social-btn:hover,
+body:has(.uar-header) .uar-header-tools a:hover{transform:translateY(-2px)}
+
+/* Brillo sutil para CTAs públicos */
+body:has(.site-header) .cta,
+body:has(.site-header) .share-button,
+body:has(.uar-header) .cta,
+body:has(.uar-header) .share-button{position:relative;overflow:hidden}
+body:has(.site-header) .cta::after,
+body:has(.site-header) .share-button::after,
+body:has(.uar-header) .cta::after,
+body:has(.uar-header) .share-button::after{
+  content:"";position:absolute;top:0;left:-130%;width:45%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+  transform:skewX(-18deg);pointer-events:none;
+}
+body:has(.site-header) .cta:hover::after,
+body:has(.site-header) .share-button:hover::after,
+body:has(.uar-header) .cta:hover::after,
+body:has(.uar-header) .share-button:hover::after{animation:drShine .6s ease both}
+
+/* Separadores públicos */
+body:has(.site-header) .v7-breaking a::after,
+body:has(.site-header) .breaking-news a::after,
+body:has(.uar-header) .v7-breaking a::after,
+body:has(.uar-header) .breaking-news a::after{
+  content:"";position:absolute;left:0;right:100%;bottom:-2px;height:1px;background:currentColor;transition:right .3s var(--motion-ease);
+}
+body:has(.site-header) .v7-breaking a:hover::after,
+body:has(.site-header) .breaking-news a:hover::after,
+body:has(.uar-header) .v7-breaking a:hover::after,
+body:has(.uar-header) .breaking-news a:hover::after{right:0}
+
+/* Artículo individual: entrada de contenido */
+body:has(.dynamic-article) .dynamic-article .dynamic-image,
+body:has(.dynamic-article) .dynamic-article .dynamic-body,
+body:has(.dynamic-article) .dynamic-related{
+  animation:drFadeUp .5s var(--motion-ease) both;
+}
+body:has(.dynamic-article) .dynamic-body img{transition:transform .45s var(--motion-ease),filter .35s ease}
+body:has(.dynamic-article) .dynamic-body img:hover{transform:scale(1.015)}
+
+/* Respeta accesibilidad sin tocar el admin */
+@media(prefers-reduced-motion:reduce){
+  html:has(.site-header),html:has(.uar-header){scroll-behavior:auto}
+  body:has(.site-header) *,body:has(.site-header) *::before,body:has(.site-header) *::after,
+  body:has(.uar-header) *,body:has(.uar-header) *::before,body:has(.uar-header) *::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important;
+  }
+}
