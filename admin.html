@@ -43,7 +43,7 @@
     </nav>
 
     <div class="side-bottom">
-      <a href="/" target="_blank">↗ Ver sitio web</a>
+      <button class="side-site-btn" data-site-nav="/">↗ Ver sitio web</button>
       <button id="logout-button">⇥ Cerrar sesión</button>
       <div class="admin-user"><i>A</i><div><strong id="admin-username">admin</strong><small>Administrador</small></div></div>
     </div>
@@ -57,7 +57,7 @@
       <div><small>ADMINISTRATION</small><h2 id="page-title">Dashboard</h2></div>
       <div class="top-actions">
         <button id="refresh-button" class="icon" title="Actualizar">↻</button>
-        <a href="/" target="_blank" class="site-btn">VER SITIO ↗</a>
+        <button type="button" class="site-btn" data-site-nav="/">VER SITIO ↗</button>
       </div>
     </header>
 
@@ -238,19 +238,46 @@
           <label class="btn primary media-upload-btn">+ SUBIR IMÁGENES<input id="media-upload-input" type="file" accept="image/*" multiple hidden></label>
         </div>
 
+        <div class="media-overview">
+          <div class="media-stat"><span>ARCHIVOS</span><strong id="media-stat-total">0</strong><small>en biblioteca</small></div>
+          <div class="media-stat"><span>WEBP</span><strong id="media-stat-webp">0</strong><small>optimizados</small></div>
+          <div class="media-stat"><span>ESPACIO</span><strong id="media-stat-size">0 KB</strong><small>almacenamiento estimado</small></div>
+          <div class="media-stat media-stat-tip"><span>ATAJO</span><strong>CTRL + U</strong><small>subir imágenes</small></div>
+        </div>
+
+        <div id="media-dropzone" class="media-dropzone" tabindex="0">
+          <div class="media-drop-icon">↑</div>
+          <div>
+            <strong>Arrastrá imágenes acá</strong>
+            <span>o usá “Subir imágenes” · JPG, PNG, WEBP, GIF y SVG · hasta 6 MB</span>
+          </div>
+          <button type="button" class="btn" id="media-dropzone-button">SELECCIONAR ARCHIVOS</button>
+        </div>
+
         <div class="toolbar media-toolbar">
-          <input id="media-search" placeholder="Buscar imagen..." autocomplete="off">
+          <div class="media-search-wrap"><span>⌕</span><input id="media-search" placeholder="Buscar por nombre..." autocomplete="off"></div>
           <select id="media-type-filter">
-            <option value="">Todas las imágenes</option>
+            <option value="">Todos los formatos</option>
             <option value="image/jpeg">JPG / JPEG</option>
             <option value="image/png">PNG</option>
             <option value="image/webp">WEBP</option>
             <option value="image/gif">GIF</option>
+            <option value="image/svg+xml">SVG</option>
           </select>
+          <select id="media-sort">
+            <option value="newest">Más recientes</option>
+            <option value="oldest">Más antiguas</option>
+            <option value="name">Nombre A–Z</option>
+            <option value="size">Mayor tamaño</option>
+          </select>
+          <button type="button" class="action" id="media-refresh">↻ ACTUALIZAR</button>
         </div>
 
         <div class="panel media-panel">
-          <div class="panel-head"><h3>Biblioteca de imágenes</h3><span class="muted">Noticias, escudos, jugadores y demás recursos</span></div>
+          <div class="panel-head">
+            <div><h3>Biblioteca de imágenes</h3><small class="muted" id="media-results-label">0 archivos</small></div>
+            <span class="media-selection-hint">Hacé clic en una imagen para verla · “USAR” para asignarla</span>
+          </div>
           <div id="media-grid" class="media-grid"></div>
         </div>
 
