@@ -104,6 +104,12 @@ const DROP_RUGBY_TEAMS = {
   }
 };
 
+/* ==========================================================================
+   ESCUDOS DE SELECCIONES
+   ========================================================================== */
+
+const DROP_RUGBY_NATIONS = {};
+
 
 /* ==========================================================================
    UTILIDADES DE EQUIPOS
@@ -123,6 +129,9 @@ function getTeamByName(value) {
   return Object.values(DROP_RUGBY_TEAMS).find(team =>
     normalizeTeamName(team.name) === key ||
     team.aliases.some(alias => normalizeTeamName(alias) === key)
+  ) || Object.values(DROP_RUGBY_NATIONS).find(team =>
+    normalizeTeamName(team.name) === key ||
+    team.aliases.some(alias => normalizeTeamName(alias) === key)
   ) || null;
 }
 
@@ -130,6 +139,7 @@ function applyTeamData(content) {
   if (!content) return;
 
   const clubLogos = content?.settings?.clubLogos || {};
+  const nationLogos = content?.settings?.nationLogos || {};
 
   if (content?.teams?.clubs && typeof content.teams.clubs === "object") {
     Object.entries(content.teams.clubs).forEach(([id, team]) => {
@@ -143,9 +153,33 @@ function applyTeamData(content) {
     });
   }
 
+  if (content?.teams?.nations && typeof content.teams.nations === "object") {
+    Object.entries(content.teams.nations).forEach(([id, team]) => {
+      if (!team || typeof team !== "object") return;
+
+      const name = team.name || id;
+      const shortName = team.shortName || "";
+      const aliases = Array.isArray(team.aliases)
+        ? team.aliases
+        : [shortName].filter(Boolean);
+
+      DROP_RUGBY_NATIONS[id] = {
+        name,
+        logo: nationLogos[id] || team.logo || "",
+        aliases
+      };
+    });
+  }
+
   Object.entries(clubLogos).forEach(([id, logo]) => {
     if (DROP_RUGBY_TEAMS[id]) {
       DROP_RUGBY_TEAMS[id].logo = logo;
+    }
+  });
+
+  Object.entries(nationLogos).forEach(([id, logo]) => {
+    if (DROP_RUGBY_NATIONS[id]) {
+      DROP_RUGBY_NATIONS[id].logo = logo;
     }
   });
 }
