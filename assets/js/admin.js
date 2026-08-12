@@ -99,12 +99,72 @@ function slugify(value) {
     .replace(/^-|-$/g, "");
 }
 
+const TOP14_TEAMS = [
+  "Newman",
+  "CASI",
+  "Hindú",
+  "Alumni",
+  "SIC",
+  "Regatas Bella Vista",
+  "Los Tilos",
+  "Belgrano Athletic",
+  "CUBA",
+  "Atletico del Rosario",
+  "Los Matreros",
+  "La Plata",
+  "Buenos Aires C&RC",
+  "Champagnat"
+];
+
+const TOP14_ALIASES = {
+  "belgrano": "Belgrano Athletic",
+  "belgrano athletic": "Belgrano Athletic",
+  "hindu": "Hindú",
+  "hindú": "Hindú",
+  "regatas": "Regatas Bella Vista",
+  "regatas bella vista": "Regatas Bella Vista",
+  "regatas de bella vista": "Regatas Bella Vista",
+  "plaza": "Atletico del Rosario",
+  "atletico del rosario": "Atletico del Rosario",
+  "atletico del rosario uba": "Atletico del Rosario",
+  "ca atletico del rosario": "Atletico del Rosario",
+  "biei": "Buenos Aires C&RC",
+  "bac": "Buenos Aires C&RC",
+  "buenos aires crc": "Buenos Aires C&RC",
+  "buenos aires c&rc": "Buenos Aires C&RC",
+  "champa": "Champagnat",
+  "champagnat": "Champagnat",
+  "la plata": "La Plata",
+  "cuba": "CUBA",
+  "newman": "Newman",
+  "alumni": "Alumni",
+  "casi": "CASI",
+  "sic": "SIC",
+  "los tilos": "Los Tilos",
+  "los matreros": "Los Matreros"
+};
+
+function normalizeTop14Team(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return "";
+  const key = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/^club\s+/, "").replace(/\s+/g, " ").trim();
+  return TOP14_ALIASES[key] || raw;
+}
+
+function isOfficialTop14Team(name) {
+  return TOP14_TEAMS.includes(normalizeTop14Team(name));
+}
+
 function fixtureKey(fixture) {
+  const competition = String(fixture.competition || "").trim().toUpperCase();
+  const home = fixture.home || fixture.team1 || fixture.local || "";
+  const away = fixture.away || fixture.team2 || fixture.visitante || "";
   return [
+
     fixture.date || "",
     fixture.time || "",
-    fixture.home || fixture.team1 || fixture.local || "",
-    fixture.away || fixture.team2 || fixture.visitante || "",
+    competition === "URBA TOP 14" ? normalizeTop14Team(home) : home,
+    competition === "URBA TOP 14" ? normalizeTop14Team(away) : away,
     fixture.competition || ""
   ]
     .join("|")
@@ -130,6 +190,10 @@ function getFixtureName(fixture) {
     fixture.visitante ||
     "Visitante";
 
+  const competition = String(fixture.competition || "").trim().toUpperCase();
+  if (competition === "URBA TOP 14") {
+    return `${normalizeTop14Team(home)} vs ${normalizeTop14Team(away)}`;
+  }
   return `${home} vs ${away}`;
 }
 
@@ -469,24 +533,17 @@ function renderDashboard() {
       .slice(0, 6)
       .map(
         (fixture) => `
-          <div class="list-item">
-            <div>
-              <b>${esc(getFixtureName(fixture))}</b>
-              <small class="muted">
-                ${esc(fixture.date || "—")}
-                ${fixture.time ? ` · ${esc(fixture.time)}` : ""}
-              </small>
+          <article class="dashboard-fixture-card">
+            <div class="dashboard-fixture-date">
+              <span>${esc(fixture.date || "—")}</span>
+              <small>${fixture.time ? esc(fixture.time) : ""}</small>
             </div>
-
-            <button
-              class="action"
-              data-add-result="${esc(
-                fixture.id || fixtureKey(fixture)
-              )}"
-            >
-              CARGAR RESULTADO
-            </button>
-          </div>
+            <div class="dashboard-fixture-main">
+              <b>${esc(getFixtureName(fixture))}</b>
+              <small>URBA TOP 14 · resultado pendiente</small>
+            </div>
+            <button class="action" data-add-result="${esc(fixture.id || fixtureKey(fixture))}">CARGAR</button>
+          </article>
         `
       )
       .join("") ||
@@ -1308,9 +1365,7 @@ function calculateStandings() {
 
   (state.content.standingsBase || [])
     .forEach((base) => {
-      const cleanName =
-        String(base.team || "").trim();
-
+      const cleanName = normalizeTop14Team(base.team);
       if (!cleanName) return;
 
       baseByTeam.set(
@@ -1327,13 +1382,10 @@ function calculateStandings() {
     });
 
   const ensureTeam = (name) => {
-    const clean =
-      String(name || "").trim();
+    const clean = normalizeTop14Team(name);
+    if (!clean || !isOfficialTop14Team(clean)) return null;
 
-    if (!clean) return null;
-
-    const key =
-      clean.toLowerCase();
+    const key = clean.toLowerCase();
 
     if (!teams.has(key)) {
       const base =
@@ -1432,12 +1484,7 @@ function calculateStandings() {
         away.pts += 2;
       }
 
-      const bonus =
-        String(
-          result.bonusTeam || ""
-        )
-          .trim()
-          .toLowerCase();
+      const bonus = normalizeTop14Team(result.bonusTeam || "").toLowerCase();
 
       if (
         bonus &&
