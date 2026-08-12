@@ -1,11 +1,9 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
-}
-{
-  "git": {
+    "git": {
     "deploymentEnabled": {
       "my-branch-name": false
-    }
-  }
+    },
+  "trailingSlash": false
 }
+    }
