@@ -568,234 +568,112 @@ body{min-width:0;overflow-x:hidden}
 
 
 /* =========================================================
-   NOTICIAS — FORMULARIO HTML / CHECKBOXES / MODAL POLISH
-   ========================================================= */
-.modal-back{
-  padding:18px;
-  align-items:center;
-  justify-items:center;
-}
-.modal{
-  width:min(820px, calc(100vw - 36px));
-  max-height:calc(100dvh - 36px);
-  border-radius:14px;
-}
-.modal-body{
-  padding:22px 24px 24px;
-}
-.modal-actions{
-  position:sticky;
-  bottom:0;
-  z-index:3;
-  padding:14px 24px;
-}
-.modal label.check{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-height:38px;
-  padding:9px 12px;
-  border:1px solid var(--line);
-  border-radius:9px;
-  background:#fafbfc;
-  font-size:10px;
-  letter-spacing:.06em;
-  cursor:pointer;
-}
-.modal label.check:hover{
-  background:#f6f7f8;
-  border-color:var(--line-strong);
-}
-.modal label.check input[type="checkbox"]{
-  width:16px;
-  height:16px;
-  min-width:16px;
-  margin:0;
+   FINAL FIX 2 — MISSING COMPONENT STYLES
+   Corrige listas del dashboard y checkboxes del modal.
+========================================================= */
+
+/* Dashboard: cada noticia ocupa una fila limpia */
+#dashboard-articles,
+#dashboard-scheduled{
   padding:0;
-  accent-color:var(--accent);
-  box-shadow:none;
-}
-.modal label.check input[type="checkbox"]:focus{
-  box-shadow:0 0 0 3px rgba(215,25,32,.10);
-}
-.article-html-field{
-  display:grid;
-  gap:8px;
-}
-.article-html-field .html-editor-title{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
-.article-html-field .html-editor-title strong{
-  font-size:11px;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-}
-.article-html-badge{
-  display:inline-flex;
-  align-items:center;
-  min-height:24px;
-  padding:0 9px;
-  border-radius:999px;
-  background:#111315;
-  color:#fff;
-  font:800 8px/1 var(--sans);
-  letter-spacing:.12em;
-}
-.modal textarea[name="content"],
-.modal .html-editor{
-  min-height:330px;
-  resize:vertical;
-  font:500 13px/1.65 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
-  letter-spacing:0;
-  tab-size:2;
-  background:#fbfcfd;
-}
-.modal textarea[name="content"]:focus,
-.modal .html-editor:focus{
-  background:#fff;
-}
-.html-editor-help{
-  margin:0;
-  padding:11px 13px;
-  border:1px solid #e6e8eb;
-  border-radius:9px;
-  background:#f8f9fa;
-  color:#6f757c;
-  font:500 10px/1.55 var(--sans);
-}
-.html-editor-help code{
-  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
-  color:#25282c;
-}
-.media-field{
-  min-width:0;
-}
-.media-inline{
-  min-width:0;
-}
-.article-image-preview{
-  min-height:150px;
-  max-height:230px;
-  border:1px dashed var(--line-strong);
-  border-radius:10px;
-  overflow:hidden;
-  background:#f7f8f9;
-}
-.article-image-preview img{
-  display:block;
-  width:100%;
-  height:100%;
-  max-height:230px;
-  object-fit:cover;
-}
-@media(max-width:620px){
-  .modal-back{padding:8px}
-  .modal{width:100%;max-height:calc(100dvh - 16px);border-radius:12px}
-  .modal-body{padding:18px 14px 20px}
-  .modal-actions{padding:12px 14px}
-  .modal textarea[name="content"],.modal .html-editor{min-height:270px;font-size:12px}
-  .article-html-field .html-editor-title{align-items:flex-start;flex-direction:column}
 }
 
-/* =========================================================
-   FINAL FIX — ARTICLE FORM / MODAL LAYOUT
-   ========================================================= */
-.modal-back{
-  padding:16px;
-  overflow-y:auto;
-  overflow-x:hidden;
-}
-.modal{
-  width:min(840px, calc(100vw - 32px));
-  max-height:calc(100dvh - 32px);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
-.modal-head{
-  position:sticky;
-  top:0;
-  z-index:5;
-  flex:0 0 auto;
+#dashboard-articles .list-item,
+#dashboard-scheduled .list-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  min-width:0;
+  padding:13px 19px;
+  border-bottom:1px solid var(--line);
   background:#fff;
 }
-.modal form{
-  min-height:0;
-  display:flex;
-  flex-direction:column;
+
+#dashboard-articles .list-item:last-child,
+#dashboard-scheduled .list-item:last-child{
+  border-bottom:0;
 }
-.modal-body{
-  min-height:0;
-  overflow:auto;
-  overscroll-behavior:contain;
-  padding:22px 24px 24px;
-}
-.modal-actions{
-  flex:0 0 auto;
-  position:relative;
-  z-index:6;
-  min-height:68px;
-  padding:14px 24px;
-}
-.form-grid{align-items:start}
-.form-grid > label,
-.form-grid > .media-field,
-.form-grid > .article-html-field,
-.form-grid > .article-flags{min-width:0}
-.form-grid label:not(.check){min-width:0}
-.form-grid label:not(.check) > input,
-.form-grid label:not(.check) > select,
-.form-grid label:not(.check) > textarea{min-width:0;max-width:100%}
-.media-inline{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
-  gap:8px;
-  align-items:center;
-  margin-top:7px;
-}
-.media-inline > input{
+
+#dashboard-articles .list-item>div:first-child,
+#dashboard-scheduled .list-item>div:first-child{
   min-width:0;
+  overflow:hidden;
 }
-.media-inline .action{
+
+#dashboard-articles .list-item b,
+#dashboard-scheduled .list-item b{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
   white-space:nowrap;
+  font-size:12px;
+  line-height:1.35;
 }
-.article-image-preview{
-  display:grid;
-  place-items:center;
-  margin-top:10px;
-  min-height:120px;
-  max-height:220px;
+
+#dashboard-articles .list-item small,
+#dashboard-scheduled .list-item small{
+  display:block;
+  margin-top:3px;
   color:var(--muted);
-  font-size:11px;
+  font-size:10px;
+  line-height:1.3;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
-.article-image-preview img{
-  width:100%;
-  height:220px;
-  max-height:220px;
-  object-fit:cover;
-}
-.article-flags{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin-top:2px;
-}
-.modal label.check{
-  width:100%;
+
+#dashboard-articles .list-item>div:last-child,
+#dashboard-scheduled .list-item>span{
+  flex:0 0 auto;
   min-width:0;
-  min-height:46px;
-  display:flex !important;
-  flex-direction:row !important;
+}
+
+/* Estados: nunca se mezclan con el título */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:230px;
+  min-height:24px;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:#f4f5f6;
+  color:#646a71;
+  font-size:8px;
+  line-height:1.15;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+.badge.live{
+  border-color:#bfe6d5;
+  background:var(--success-soft);
+  color:var(--success);
+}
+
+.badge.scheduled{
+  border-color:#ead8a5;
+  background:var(--warning-soft);
+  color:var(--warning);
+}
+
+/* Formularios: los checkboxes no deben ocupar todo el ancho */
+.modal label.check{
+  display:flex!important;
+  flex-direction:row;
   align-items:center;
   justify-content:flex-start;
   gap:10px;
-  margin:0;
+  min-height:40px;
   padding:10px 12px;
   border:1px solid var(--line);
-  border-radius:10px;
+  border-radius:9px;
   background:#fafbfc;
   color:var(--ink-2);
   text-transform:none;
@@ -803,115 +681,216 @@ body{min-width:0;overflow-x:hidden}
   font-size:11px;
   font-weight:800;
 }
+
 .modal label.check input[type="checkbox"]{
-  appearance:auto;
-  -webkit-appearance:checkbox;
-  flex:0 0 16px !important;
-  width:16px !important;
-  min-width:16px !important;
-  max-width:16px !important;
-  height:16px !important;
-  min-height:16px !important;
-  margin:0 !important;
-  padding:0 !important;
-  border:0 !important;
-  border-radius:3px;
-  box-shadow:none !important;
+  width:16px!important;
+  min-width:16px;
+  max-width:16px;
+  height:16px;
+  margin:0;
+  padding:0;
   accent-color:var(--accent);
-}
-.modal label.check span{min-width:0;overflow-wrap:break-word}
-.article-html-field{min-width:0}
-.article-html-field .html-editor-title{min-width:0}
-.modal textarea[name="content"],
-.modal .html-editor{
-  width:100%;
-  min-width:0;
-  min-height:360px;
-  max-height:58vh;
-  overflow:auto;
-}
-.html-editor-help{overflow-wrap:anywhere}
-@media(max-width:720px){
-  .modal{width:min(100%, calc(100vw - 16px));max-height:calc(100dvh - 16px)}
-  .modal-body{padding:18px 16px 20px}
-  .modal-actions{padding:12px 16px}
-  .article-flags{grid-template-columns:1fr}
-  .media-inline{grid-template-columns:1fr 1fr}
-  .media-inline > input{grid-column:1/-1}
-}
-@media(max-width:480px){
-  .modal-back{padding:8px}
-  .modal{width:100%;max-height:calc(100dvh - 16px);border-radius:12px}
-  .media-inline{grid-template-columns:1fr}
-  .media-inline > input{grid-column:auto}
-  .media-inline .action{width:100%}
-  .modal-actions{display:grid;grid-template-columns:1fr 1fr}
-  .modal-actions .action,.modal-actions .btn{width:100%}
+  box-shadow:none!important;
 }
 
-/* =========================================================
-   FINAL — CREAR/EDITAR NOTICIA: LAYOUT AUTHORITATIVE
-   ========================================================= */
-#modal-root .modal-back{
-  padding:12px;
-  overflow:auto;
-  align-items:center;
-  justify-items:center;
+.modal label.check:hover{
+  border-color:#c8cdd2;
+  background:#f7f8f9;
 }
-#modal-root .modal{
-  width:min(860px,calc(100vw - 24px));
-  max-width:860px;
-  height:auto;
-  max-height:calc(100dvh - 24px);
-  margin:0 auto;
+
+.form-help{
+  margin:0;
+  padding:10px 12px;
+  border-radius:8px;
+  background:#f7f8f9;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5;
+}
+
+/* Footer del modal: siempre visible y sin solaparse */
+.modal-actions{
   display:flex;
-  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:8px;
+  min-height:62px;
+}
+
+.modal-actions .btn{
+  flex:0 0 auto;
+}
+
+/* Textarea y campos no se salen del modal */
+.modal textarea{
+  min-height:180px;
+  resize:vertical;
+  max-width:100%;
+}
+
+@media (max-width:620px){
+  #dashboard-articles .list-item,
+  #dashboard-scheduled .list-item{
+    grid-template-columns:1fr;
+    gap:7px;
+    padding:13px 15px;
+  }
+
+  #dashboard-articles .list-item>div:last-child,
+  #dashboard-scheduled .list-item>span{
+    justify-self:start;
+  }
+
+  .badge{
+    max-width:100%;
+  }
+
+  .modal-actions{
+    justify-content:stretch;
+  }
+
+  .modal-actions .btn{
+    flex:1 1 120px;
+  }
+}
+
+
+/* =========================================================
+   DASHBOARD — LISTAS DE NOTICIAS
+   ========================================================= */
+#dashboard-articles,
+#dashboard-scheduled{
+  padding:0!important;
+  margin:0!important;
+  min-width:0;
   overflow:hidden;
 }
-#modal-root .modal-head{flex:0 0 auto;position:relative;z-index:2}
-#modal-root .modal form{min-height:0;display:flex;flex-direction:column}
-#modal-root .modal-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:20px 24px 24px}
-#modal-root .modal-actions{flex:0 0 auto;position:relative;z-index:3;min-height:66px;padding:13px 24px;background:#fafbfb}
-#modal-root .form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
-#modal-root .form-grid > *{min-width:0;max-width:100%}
-#modal-root .form-grid > .full{grid-column:1 / -1}
-#modal-root .form-grid label:not(.check){display:grid;gap:7px;min-width:0}
-#modal-root .form-grid label:not(.check) > input,
-#modal-root .form-grid label:not(.check) > select,
-#modal-root .form-grid label:not(.check) > textarea{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
-#modal-root .media-field{display:grid;gap:7px}
-#modal-root .media-inline{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;min-width:0}
-#modal-root .media-inline > input{min-width:0;width:100%}
-#modal-root .article-html-field{display:grid;gap:8px;min-width:0}
-#modal-root .article-html-field .html-editor-title{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
-#modal-root .modal textarea.html-editor,
-#modal-root .modal textarea[name="content"]{display:block;width:100%;min-width:0;min-height:360px;max-height:none;resize:vertical;box-sizing:border-box;font:500 13px/1.65 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;letter-spacing:0;white-space:pre;overflow:auto}
-#modal-root .article-flags{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0}
-#modal-root .article-flags .check,
-#modal-root .modal label.check{box-sizing:border-box;width:100%;min-width:0;min-height:46px;display:flex !important;flex-direction:row !important;align-items:center !important;justify-content:flex-start !important;gap:10px;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fafbfc;color:var(--ink-2);font-size:11px;font-weight:800;line-height:1.3;text-transform:none;letter-spacing:0;cursor:pointer}
-#modal-root .article-flags .check input[type="checkbox"],
-#modal-root .modal label.check input[type="checkbox"]{appearance:auto !important;-webkit-appearance:checkbox !important;display:block !important;flex:0 0 16px !important;width:16px !important;min-width:16px !important;max-width:16px !important;height:16px !important;min-height:16px !important;max-height:16px !important;margin:0 !important;padding:0 !important;border:0 !important;box-shadow:none !important;accent-color:var(--accent)}
-#modal-root .article-flags .check span{display:block;min-width:0;overflow-wrap:break-word}
-#modal-root .article-image-preview{width:100%;min-height:120px;max-height:230px;box-sizing:border-box;display:grid;place-items:center;overflow:hidden;border:1px dashed var(--line-strong);border-radius:10px;background:#f7f8f9}
-#modal-root .article-image-preview img{display:block;width:100%;height:220px;max-height:220px;object-fit:cover}
-@media(max-width:720px){
-  #modal-root .modal{width:min(100%,calc(100vw - 16px));max-height:calc(100dvh - 16px)}
-  #modal-root .modal-body{padding:18px 16px 20px}
-  #modal-root .modal-actions{padding:12px 16px}
-  #modal-root .form-grid{grid-template-columns:1fr}
-  #modal-root .form-grid > .full{grid-column:auto}
-  #modal-root .article-flags{grid-template-columns:1fr}
-  #modal-root .media-inline{grid-template-columns:minmax(0,1fr) auto}
-  #modal-root .media-inline > input{grid-column:1 / -1}
+
+.dashboard-news-list{
+  width:100%;
+  display:flex;
+  flex-direction:column;
 }
-@media(max-width:480px){
-  #modal-root .modal-back{padding:8px}
-  #modal-root .modal{width:100%;max-height:calc(100dvh - 16px);border-radius:12px}
-  #modal-root .modal-body{padding:16px 12px 18px}
-  #modal-root .modal-actions{padding:10px 12px}
-  #modal-root .media-inline{grid-template-columns:1fr}
-  #modal-root .media-inline > input{grid-column:auto}
-  #modal-root .media-inline .action{width:100%}
-  #modal-root .modal-actions{display:grid;grid-template-columns:1fr 1fr}
-  #modal-root .modal-actions .action,#modal-root .modal-actions .btn{width:100%}
+
+.dashboard-news-item{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:18px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--line);
+  background:#fff;
+}
+
+.dashboard-news-item:last-child{
+  border-bottom:0;
+}
+
+.dashboard-news-copy{
+  min-width:0;
+  overflow:hidden;
+}
+
+.dashboard-news-title{
+  display:block;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--ink);
+  font-size:12px;
+  line-height:1.4;
+  font-weight:800;
+}
+
+.dashboard-news-meta{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.3;
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+.dashboard-news-meta span:not(.dashboard-news-dot){
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.dashboard-news-dot{
+  flex:0 0 auto;
+  color:#b0b4b8;
+}
+
+.dashboard-news-status{
+  flex:0 0 auto;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+.dashboard-news-status .badge{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  width:auto!important;
+  min-width:72px;
+  max-width:180px;
+  min-height:22px;
+  padding:4px 8px;
+  box-sizing:border-box;
+  border-radius:999px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  overflow-wrap:normal;
+  font-size:8px;
+  line-height:1;
+  font-weight:900;
+}
+
+.dashboard-news-status .badge.live{
+  border:1px solid #bfe6d5;
+  background:var(--success-soft);
+  color:var(--success);
+}
+
+.dashboard-news-status .badge.scheduled{
+  min-width:132px;
+  border:1px solid #ead8a5;
+  background:var(--warning-soft);
+  color:var(--warning);
+}
+
+.dashboard-empty{
+  padding:28px 18px;
+  color:var(--muted);
+  font-size:12px;
+  text-align:center;
+}
+
+@media (max-width:620px){
+  .dashboard-news-item{
+    grid-template-columns:1fr;
+    row-gap:8px;
+    padding:13px 15px;
+  }
+
+  .dashboard-news-status{
+    justify-content:flex-start;
+  }
+
+  .dashboard-news-status .badge{
+    min-width:0;
+  }
 }
