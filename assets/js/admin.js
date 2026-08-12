@@ -727,15 +727,19 @@ function articleForm(article = {}) {
             ELEGIR
           </button>
 
-          <label class="action upload-inline">
-            SUBIR
-            <input
-              id="article-inline-upload"
-              type="file"
-              accept="image/*"
-              hidden
-            >
-          </label>
+          <button
+            type="button"
+            class="action upload-inline"
+            id="article-upload-image"
+          >
+            SUBIR IMAGEN
+          </button>
+          <input
+            id="article-inline-upload"
+            type="file"
+            accept="image/*"
+            hidden
+          >
         </div>
 
         <div
@@ -922,17 +926,25 @@ function openArticle(article = {}) {
 }
 
 function bindArticleMediaControls() {
+  $("#article-upload-image")?.addEventListener("click", () => {
+    $("#article-inline-upload")?.click();
+  });
+
   $("#article-pick-image")?.addEventListener(
     "click",
     async (event) => {
       event.preventDefault();
       event.stopPropagation();
 
+      const button = event.currentTarget;
+      if (button.dataset.busy === "1") return;
+      button.dataset.busy = "1";
+
       try {
-        // Siempre refrescamos la biblioteca antes de abrir el selector.
-        // Así también aparecen imágenes subidas recientemente.
-        const data = await mediaApi("list");
-        state.media = Array.isArray(data.media) ? data.media : [];
+        // No dependemos del estado viejo: consultamos la biblioteca real
+        // cada vez que se abre el selector.
+        await refreshMediaForPicker();
+
         openMediaPicker((url) => {
           const input = $("#article-image-url");
           if (input) input.value = url;
@@ -940,6 +952,8 @@ function bindArticleMediaControls() {
         });
       } catch (error) {
         toast("Media Manager", error.message, "error");
+      } finally {
+        button.dataset.busy = "0";
       }
     }
   );
@@ -3149,60 +3163,93 @@ async function uploadMediaFiles(
    SELECTOR DE IMÁGENES
 ========================================================= */
 
-function openMediaPicker(callback) {
-  // Copia defensiva: el selector debe trabajar con la biblioteca actual
-  // y no depender del estado que tenía el modal anterior.
-  const items = Array.isArray(state.media) ? [...state.media] : [];
+function getMediaItemUrl(item) {
+  return String(
+    item?.url ||
+    item?.publicUrl ||
+    item?.publicURL ||
+    item?.src ||
+    item?.pathname ||
+    ""
+  ).trim();
+}
 
-  const pickerHtml = `
-    <div class="media-picker-grid" role="listbox" aria-label="Imágenes disponibles">
-      ${items.map((item) => {
-        const url = String(item.url || item.pathname || "").trim();
-        if (!url) return "";
-        return `
-          <button
-            type="button"
-            class="media-picker-item"
-            data-picker-url="${esc(url)}"
-            title="Usar ${esc(mediaName(item))}"
-          >
-            <img
-              src="${esc(url)}"
-              alt="${esc(mediaName(item))}"
-              loading="lazy"
-            >
-            <span>${esc(mediaName(item))}</span>
-            <strong class="media-picker-use">USAR</strong>
-          </button>
-        `;
-      }).join("") || `
-        <div class="empty-state">
-          No hay imágenes cargadas todavía.
+async function refreshMediaForPicker() {
+  const data = await mediaApi("list");
+  state.media = Array.isArray(data.media) ? data.media : [];
+  return state.media;
+}
+
+function openMediaPicker(callback) {
+  const items = Array.isArray(state.media) ? [...state.media] : [];
+  const overlay = document.createElement("div");
+  overlay.className = "modal-back media-picker-back";
+  overlay.setAttribute("role", "presentation");
+  overlay.innerHTML = `
+    <div class="modal media-picker-modal" role="dialog" aria-modal="true" aria-label="Elegir imagen">
+      <div class="modal-head">
+        <div>
+          <span class="section-eyebrow">MEDIA MANAGER</span>
+          <h2>Elegir imagen</h2>
         </div>
-      `}
+        <button type="button" class="modal-close media-picker-close" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="media-picker-help">Elegí una imagen ya cargada. Al hacer clic se usará como portada de esta noticia.</p>
+        <div class="media-picker-grid">
+          ${items.map((item) => {
+            const url = getMediaItemUrl(item);
+            if (!url) return "";
+            const name = mediaName(item);
+            return `
+              <button type="button" class="media-picker-item" data-picker-url="${esc(url)}" title="Usar ${esc(name)}">
+                <span class="media-picker-image"><img src="${esc(url)}" alt="${esc(name)}" loading="lazy"></span>
+                <span class="media-picker-name">${esc(name)}</span>
+                <span class="media-picker-use">USAR IMAGEN</span>
+              </button>
+            `;
+          }).join("") || `
+            <div class="empty-state media-picker-empty">
+              <strong>No hay imágenes disponibles.</strong>
+              <span>Volvé al Media Manager y cargá una imagen.</span>
+            </div>
+          `}
+        </div>
+      </div>
     </div>
   `;
 
-  openModal("Elegir imagen", pickerHtml, async () => {});
+  // Se monta directamente sobre BODY para que ningún contenedor del modal
+  // de la noticia pueda tapar o interceptar los clics del selector.
+  document.body.appendChild(overlay);
 
-  const root = $("#modal-root");
-  root?.querySelectorAll("[data-picker-url]").forEach((btn) => {
+  let closed = false;
+  const finish = (url = "") => {
+    if (closed) return;
+    closed = true;
+    if (url) callback(url);
+    overlay.remove();
+  };
+
+  overlay.querySelector(".media-picker-close")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    finish();
+  });
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) finish();
+  });
+
+  overlay.querySelectorAll("[data-picker-url]").forEach((btn) => {
     btn.addEventListener("click", (event) => {
-      // Evita que el click sea interpretado por el formulario del modal.
       event.preventDefault();
       event.stopPropagation();
-
-      const url = String(btn.dataset.pickerUrl || "").trim();
-      if (!url) {
-        toast("Error", "La imagen no tiene una URL válida.", "error");
-        return;
-      }
-
-      callback(url);
-      closeModal();
+      finish(String(btn.dataset.pickerUrl || "").trim());
     });
   });
 }
+
 
 /* =========================================================
    NUEVO: ELEGIR DÓNDE USAR LA IMAGEN
