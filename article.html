@@ -18,13 +18,32 @@
     .dynamic-meta{margin:24px 0 34px;font:600 10px var(--sans);letter-spacing:.8px;color:#777}
     .dynamic-image{height:430px;margin:0 0 42px;border-radius:3px;overflow:hidden;background:#ddd}
     .dynamic-image img{width:100%;height:100%;object-fit:cover}
-    .dynamic-body{font:400 17px/1.9 var(--sans);color:#272727}
+    .dynamic-body{font:400 18px/1.85 var(--sans);color:#272727;overflow-wrap:anywhere}
     .dynamic-body p{margin:0 0 24px}
-    .dynamic-body h2{font:400 32px var(--serif);margin:42px 0 15px}
-    .dynamic-body blockquote{font:italic 25px/1.5 var(--serif);border-left:3px solid #111;padding:8px 0 8px 22px;margin:35px 0}
-    .dynamic-body img{max-width:100%;height:auto}
-    .dynamic-body figure{margin:35px 0}
-    .dynamic-body figcaption{font:500 11px/1.5 var(--sans);color:#777;margin-top:8px}
+    .dynamic-body h2{font:400 34px/1.2 var(--serif);margin:48px 0 16px;color:#111}
+    .dynamic-body h3{font:400 27px/1.25 var(--serif);margin:38px 0 14px;color:#111}
+    .dynamic-body h4{font:700 19px/1.35 var(--sans);margin:30px 0 12px;color:#111}
+    .dynamic-body strong{font-weight:700;color:#171717}
+    .dynamic-body em{font-style:italic}
+    .dynamic-body a{color:#111;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+    .dynamic-body a:hover{opacity:.68}
+    .dynamic-body ul,.dynamic-body ol{margin:0 0 26px;padding-left:28px}
+    .dynamic-body li{margin:0 0 9px;padding-left:4px}
+    .dynamic-body blockquote{font:italic 25px/1.5 var(--serif);border-left:3px solid #111;padding:10px 0 10px 24px;margin:38px 0;color:#222}
+    .dynamic-body blockquote p:last-child{margin-bottom:0}
+    .dynamic-body img{display:block;max-width:100%;width:auto;height:auto;margin:28px auto}
+    .dynamic-body figure{margin:38px 0}
+    .dynamic-body figure img{width:100%;max-height:720px;object-fit:cover;margin:0}
+    .dynamic-body figcaption{font:500 11px/1.5 var(--sans);color:#777;margin-top:9px}
+    .dynamic-body hr{border:0;border-top:1px solid #ddd;margin:42px 0}
+    .dynamic-body table{width:100%;border-collapse:collapse;margin:30px 0;font:500 14px/1.5 var(--sans)}
+    .dynamic-body th,.dynamic-body td{padding:11px 12px;border:1px solid #ddd;text-align:left;vertical-align:top}
+    .dynamic-body th{font-weight:700;background:#f5f5f3}
+    .dynamic-body pre{overflow:auto;padding:18px;border-radius:8px;background:#111;color:#fff;line-height:1.6;margin:28px 0}
+    .dynamic-body code{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:.92em}
+    .dynamic-body iframe,.dynamic-body video{display:block;width:100%;max-width:100%;border:0;margin:30px 0;border-radius:6px}
+    .dynamic-body iframe{min-height:430px}
+    .dynamic-body .content-block{margin:0 0 28px}
     .dynamic-share{margin-top:55px;padding-top:30px;border-top:1px solid #e5e5e5}
     .dynamic-share h3{font:700 11px var(--sans);letter-spacing:1.5px;text-transform:uppercase;margin:0 0 18px;color:#555}
     .share-buttons{display:flex;flex-wrap:wrap;gap:12px}
@@ -39,7 +58,7 @@
     .related-card-kicker{margin:0 0 5px;font:700 9px var(--sans);letter-spacing:1.4px;color:#777}.related-card h3{margin:0 0 8px;font:400 21px/1.2 var(--serif)}.related-card-date{font:500 10px var(--sans);color:#888}
     .dynamic-back{display:inline-block;margin-top:35px;font:700 10px var(--sans);letter-spacing:1px;text-decoration:none;color:#111}
     @media(max-width:700px){.related-grid{grid-template-columns:1fr}.related-card-image{height:220px}}
-    @media(max-width:600px){.dynamic-article{padding-top:45px}.dynamic-image{height:260px}.dynamic-body{font-size:16px}.dynamic-article .lead{font-size:17px}.share-buttons{flex-direction:column}.share-button{width:100%;min-height:48px}}
+    @media(max-width:600px){.dynamic-article{padding-top:45px}.dynamic-image{height:260px}.dynamic-body{font-size:16px}.dynamic-body h2{font-size:28px}.dynamic-body h3{font-size:24px}.dynamic-body blockquote{font-size:21px;padding-left:18px}.dynamic-body iframe{min-height:250px}.dynamic-article .lead{font-size:17px}.share-buttons{flex-direction:column}.share-button{width:100%;min-height:48px}}
   </style>
 </head>
 <body>
@@ -61,7 +80,9 @@
     const root=document.getElementById('article-root');
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const canonicalUrl=articleId=>new URL(`article.html?id=${encodeURIComponent(articleId)}`,location.href).href;
-    function renderBody(value){const text=String(value??'').trim();if(!text)return '';if(/<\/?[a-z][\s\S]*>/i.test(text))return text;return text.split(/\n\s*\n/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join('');}
+    function decodeEntities(value){const box=document.createElement('textarea');box.innerHTML=String(value??'');return box.value;}
+    function normalizeHtml(value){let text=String(value??'').trim();if(!text)return '';text=decodeEntities(text);text=text.replace(/^\s*```(?:html|htm)?\s*/i,'').replace(/\s*```\s*$/,'').trim();return text;}
+    function renderBody(value){const text=normalizeHtml(value);if(!text)return '';if(/<\/?[a-z][^>]*>/i.test(text))return text;return text.split(/\n\s*\n/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join('');}
     function articleImage(a,compact=false){if(a.imageUrl){return `<div class="${compact?'related-card-image':'dynamic-image'}"><img src="${esc(a.imageUrl)}" alt="${esc(a.title||'')}" loading="${compact?'lazy':'eager'}"></div>`;}return `<div class="${compact?'related-card-image':'dynamic-image'} ${esc(a.imageClass||'img-tone-1')}"></div>`;}
     function getRelated(all,current){const others=all.filter(a=>String(a.id)!==String(current.id)&&a.published!==false&&!a.scheduled);const same=others.filter(a=>String(a.category||'')===String(current.category||'')).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));const sub=others.filter(a=>String(a.subcategory||'')===String(current.subcategory||'')&&!same.includes(a)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));const rest=others.filter(a=>!same.includes(a)&&!sub.includes(a)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));return [...same,...sub,...rest].slice(0,3);}
     function renderRelated(items){if(!items.length)return '';return `<section class="dynamic-related"><h2>Artículos relacionados</h2><div class="related-grid">${items.map(a=>`<a class="related-card" href="article.html?id=${encodeURIComponent(a.id||'')}">${articleImage(a,true)}<p class="related-card-kicker">${esc(String(a.category||'RUGBY').toUpperCase())}</p><h3>${esc(a.title||'Sin título')}</h3><div class="related-card-date">${esc(a.date||'')}</div></a>`).join('')}</div></section>`;}
