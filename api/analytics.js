@@ -27,3 +27,4 @@ export default async function handler(req,res){
     await r2PutJSONSafe(PATH,db); return json(res,200,{ok:true,stats:{...a,avgReading:a.readingSamples?Math.round(a.readingSeconds/a.readingSamples):0}});
   }catch(e){return json(res,500,{ok:false,error:e.message||'Error de analytics'});}
 }
+ 
