@@ -750,10 +750,9 @@ async function renderHome() {
   const pumasEl = document.getElementById("home-los-pumas");
   const srEl = document.getElementById("home-super-rugby");
   const urbaTop14El = document.getElementById("home-urba-top14");
-  const urbaEl = document.getElementById("home-urba");
   const heroEl = document.getElementById("home-hero");
 
-  if (!grid && !heroEl && !pumasEl && !srEl && !urbaTop14El && !urbaEl) {
+  if (!grid && !heroEl && !pumasEl && !srEl && !urbaTop14El) {
     return;
   }
 
@@ -897,11 +896,6 @@ async function renderHome() {
     urbaTop14El
   );
 
-  renderCategory(
-    "URBA",
-    urbaEl
-  );
-
   observeReveals();
 }
 
@@ -985,8 +979,7 @@ async function renderCategoryPage(categoryName) {
 const COMPETITION_ORDER = [
   "LOS PUMAS",
   "SUPER RUGBY",
-  "URBA TOP 14",
-  "URBA"
+  "URBA TOP 14"
 ];
 
 function competitionSortKey(name) {
