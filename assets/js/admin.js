@@ -1175,9 +1175,6 @@ function openFixture(fixture = {}) {
           fixture.id ||
           undefined,
 
-        fixtureKey:
-          fixtureKey(fixture),
-
         home:
           value(fd, "home"),
 
@@ -1199,6 +1196,9 @@ function openFixture(fixture = {}) {
         venue:
           value(fd, "venue")
       };
+
+      fixtureData.fixtureKey =
+        fixtureKey(fixtureData);
 
       await api(
         "create-fixture",
