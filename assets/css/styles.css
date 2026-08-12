@@ -1268,3 +1268,174 @@ body.home-v8 .v7-urba-section{background:#e1e1e1}
  body.home-v8 .v7-news-columns{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){body.home-v8 *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* ========================================================================== 
+   DROP RUGBY — HOME UAR-INSPIRED
+   Estructura institucional/deportiva inspirada en portales de unión de rugby,
+   con identidad propia de DropRugby. Negro, blanco y grises.
+   ========================================================================== */
+.home-uar { background:#f4f4f2; color:#111; }
+.home-uar * { box-sizing:border-box; }
+.uar-container { width:min(1240px, calc(100% - 48px)); margin:0 auto; }
+.uar-header { background:#090909; color:#fff; position:relative; z-index:20; }
+.uar-header-top { border-bottom:1px solid #292929; }
+.uar-header-inner { width:min(1240px, calc(100% - 48px)); min-height:82px; margin:auto; display:flex; align-items:center; gap:34px; }
+.uar-brand { display:flex; align-items:center; gap:12px; min-width:205px; color:#fff; font-weight:800; letter-spacing:1px; }
+.uar-brand img { width:42px; height:42px; object-fit:contain; filter:grayscale(1) brightness(2); }
+.uar-brand > span { font-size:22px; letter-spacing:1.8px; }
+.uar-brand > span span { font-weight:400; }
+.uar-main-nav { display:flex; align-items:center; gap:25px; flex:1; }
+.uar-main-nav a { color:#ddd; font-size:11px; font-weight:700; letter-spacing:1px; padding:32px 0 29px; border-bottom:3px solid transparent; transition:.22s ease; }
+.uar-main-nav a:hover,.uar-main-nav a.active { color:#fff; border-bottom-color:#fff; }
+.uar-header-tools { display:flex; align-items:center; gap:9px; }
+.uar-header-tools a { border:1px solid #3a3a3a; color:#fff; padding:8px 10px; font-size:9px; font-weight:800; letter-spacing:1px; transition:.2s; }
+.uar-header-tools a:hover { background:#fff; color:#111; }
+.uar-header-tools .search-btn { width:34px;height:34px;border:1px solid #444;background:transparent;color:#fff;border-radius:50%;display:grid;place-items:center;cursor:pointer; }
+.uar-header-tools .search-btn svg { width:15px; }
+.uar-subnav { background:#111; border-bottom:1px solid #303030; }
+.uar-subnav-inner { min-height:38px; display:flex; align-items:center; gap:22px; overflow:auto; white-space:nowrap; }
+.uar-subnav a,.uar-subnav span { color:#aaa; font-size:9px; font-weight:700; letter-spacing:1.2px; }
+.uar-subnav a:hover { color:#fff; }
+.uar-live { color:#fff!important; }
+.uar-live i { display:inline-block;width:6px;height:6px;background:#fff;border-radius:50%;margin-right:6px; }
+.uar-subnav-spacer { flex:1; }
+.uar-menu-trigger { display:none; }
+
+.uar-home { padding:34px 0 70px; }
+.uar-title-top { display:flex; align-items:end; gap:18px; border-bottom:1px solid #d4d4d0; padding-bottom:13px; margin-bottom:18px; }
+.uar-title-top span,.uar-block-heading span,.uar-label,.uar-panel-heading span,.uar-strip-title span,.uar-team-card span,.uar-institutional span { font-size:9px; letter-spacing:1.8px; font-weight:800; }
+.uar-title-top h1 { margin:0; font-family:var(--serif); font-size:30px; font-weight:400; }
+
+.uar-hero { display:grid; grid-template-columns:minmax(0,2fr) minmax(320px,1fr); background:#fff; border:1px solid #deded9; box-shadow:0 8px 25px rgba(0,0,0,.04); }
+.uar-hero-main { min-width:0; border-right:1px solid #deded9; }
+.uar-hero-media { min-height:520px; }
+.uar-hero-media .hero-card-inner { display:block;height:100%; }
+.uar-hero-media .hero-image { height:520px; min-height:0; }
+.uar-hero-media .hero-image img { width:100%;height:100%;object-fit:cover;display:block; }
+.uar-hero-media .hero-card-caption { left:34px;right:34px;bottom:34px; }
+.uar-hero-media .hero-card-caption h2 { font-size:38px;max-width:760px; }
+.uar-hero-bottom { height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-top:1px solid #deded9;background:#fff; }
+.uar-hero-link { font-size:9px;font-weight:800;letter-spacing:1px; }
+.uar-hero-side { min-width:0;background:#fff; }
+.uar-panel-heading { height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #deded9; }
+.uar-panel-heading a { font-size:8px;font-weight:800;letter-spacing:1px; }
+.uar-latest-list { padding:0 22px; }
+.uar-latest-list .story { display:grid;grid-template-columns:118px 1fr;gap:15px;padding:17px 0;border-bottom:1px solid #e2e2de; }
+.uar-latest-list .story:last-child { border-bottom:0; }
+.uar-latest-list .story-image { height:82px;order:2; }
+.uar-latest-list .story-body { order:1;padding:0; }
+.uar-latest-list .story .category { font-size:8px;letter-spacing:1px;font-weight:800;color:#777;margin:0 0 7px; }
+.uar-latest-list .story h3 { font-family:var(--sans);font-size:13px;line-height:1.35;font-weight:700;margin:0; }
+.uar-latest-list .story p:not(.category) { display:none; }
+.uar-latest-list .meta { font-size:7px;margin-top:8px; }
+
+.uar-news-strip { display:flex;align-items:center;gap:0;background:#111;color:#fff;margin:18px 0 0;min-height:54px;overflow:auto; }
+.uar-strip-title { padding:0 20px;display:flex;gap:12px;align-items:center;min-width:245px;border-right:1px solid #333; }
+.uar-strip-title span { color:#999; }
+.uar-strip-title strong { font-size:11px;letter-spacing:.7px; }
+.uar-news-strip>a { color:#fff;font-size:9px;font-weight:800;letter-spacing:1px;padding:19px 20px;border-right:1px solid #333;white-space:nowrap;transition:.2s; }
+.uar-news-strip>a:hover { background:#222; }
+
+.uar-block,.uar-news-block { margin-top:38px; }
+.uar-block-heading { display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:16px;padding-bottom:11px;border-bottom:2px solid #111; }
+.uar-block-heading h2 { font-family:var(--serif);font-size:28px;font-weight:400;margin:3px 0 0; }
+.uar-block-heading>a { font-size:9px;font-weight:800;letter-spacing:1px; }
+.uar-match-grid { background:#fff;border:1px solid #ddd; }
+.uar-match-grid .competition-section { padding:0!important;margin:0!important;border:0!important; }
+.uar-match-grid .competition-section h3 { background:#111!important;color:#fff!important;padding:11px 16px!important;margin:0!important;font-size:10px!important;letter-spacing:1px!important; }
+.uar-match-grid .fixture-card { border:0!important;border-bottom:1px solid #e4e4e0!important;border-radius:0!important;box-shadow:none!important;padding:16px 18px!important;background:#fff!important; }
+.uar-match-grid .fixture-card:last-child { border-bottom:0!important; }
+
+.uar-team-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px; }
+.uar-team-card { min-height:210px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;background:#111;position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease; }
+.uar-team-card:hover { transform:translateY(-4px);box-shadow:0 12px 24px rgba(0,0,0,.12); }
+.uar-team-card:after { content:"";position:absolute;width:170px;height:170px;border:1px solid rgba(255,255,255,.15);border-radius:50%;right:-75px;bottom:-80px; }
+.uar-team-card h3 { font-family:var(--serif);font-size:30px;font-weight:400;margin:7px 0;position:relative;z-index:1; }
+.uar-team-card p { color:#bdbdbd;font-size:12px;line-height:1.55;max-width:280px;margin:0;position:relative;z-index:1; }
+.uar-team-card b { font-size:22px;font-weight:400;position:relative;z-index:1; }
+.uar-team-int { background:#252525; }
+.uar-team-urba { background:#dededb;color:#111; }
+.uar-team-urba p { color:#555; }
+.uar-team-urba:after { border-color:rgba(0,0,0,.12); }
+
+.uar-news-layout { display:grid;grid-template-columns:1.45fr 1fr 1fr;gap:18px;align-items:start; }
+.uar-news-layout .story { background:#fff;border:1px solid #ddd; }
+.uar-news-layout .story-image { height:205px; }
+.uar-news-layout .story-body { padding:15px 16px 18px; }
+.uar-news-layout .story h3 { font-family:var(--sans);font-weight:700;font-size:17px;line-height:1.35; }
+.uar-news-layout .story p:not(.category) { font-size:12px; }
+.uar-news-feature .story-image { height:300px; }
+.uar-news-feature .story h3 { font-family:var(--serif);font-weight:400;font-size:27px; }
+.uar-news-column { display:grid;gap:14px; }
+.uar-news-column .story { display:grid;grid-template-columns:120px 1fr; }
+.uar-news-column .story-image { height:100%;min-height:125px; }
+.uar-news-column .story-body { padding:13px; }
+.uar-news-column .story h3 { font-size:14px; }
+.uar-news-column .story p:not(.category) { display:none; }
+.uar-news-column .story .meta { display:none; }
+
+.uar-institutional { margin-top:42px;background:#111;color:#fff;padding:42px 48px;display:flex;justify-content:space-between;align-items:center;gap:30px; }
+.uar-institutional h2 { font-family:var(--serif);font-size:34px;font-weight:400;margin:7px 0; }
+.uar-institutional p { color:#aaa;font-size:13px;margin:0;max-width:640px; }
+.uar-institutional>a { color:#fff;border:1px solid #555;padding:12px 15px;font-size:9px;font-weight:800;letter-spacing:1px;white-space:nowrap; }
+.uar-institutional>a:hover { background:#fff;color:#111; }
+.uar-newsletter { margin:40px 0 0; border:1px solid #ddd;background:#fff; }
+
+.uar-footer { background:#0b0b0b;color:#fff;padding:48px 0 22px; }
+.uar-footer-main { display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:60px;padding-bottom:38px;border-bottom:1px solid #2c2c2c; }
+.uar-brand-footer { min-width:0; }
+.uar-footer-main p { color:#999;font-size:12px;max-width:330px;line-height:1.6; }
+.uar-footer-links { display:flex;flex-direction:column;gap:11px; }
+.uar-footer-links strong { font-size:9px;letter-spacing:1.5px;color:#777;margin-bottom:4px; }
+.uar-footer-links a { font-size:11px;color:#ddd; }
+.uar-footer-links a:hover { color:#fff;text-decoration:underline; }
+.uar-footer-bottom { display:flex;justify-content:space-between;padding-top:18px;color:#666;font-size:9px;letter-spacing:1px; }
+
+.home-uar .reveal { opacity:1;transform:none; }
+.home-uar .story,.home-uar .uar-team-card,.home-uar .uar-news-strip>a,.home-uar .uar-hero-main { transition:transform .25s ease,box-shadow .25s ease,background .25s ease; }
+.home-uar .story:hover .story-image img { transform:scale(1.025); }
+.home-uar .story-image img { transition:transform .45s ease; }
+
+@media (max-width:1000px) {
+  .uar-main-nav { gap:14px; }
+  .uar-main-nav a { font-size:9px; }
+  .uar-hero { grid-template-columns:1fr; }
+  .uar-hero-main { border-right:0;border-bottom:1px solid #ddd; }
+  .uar-latest-list { display:grid;grid-template-columns:repeat(2,1fr);gap:0 18px; }
+  .uar-news-layout { grid-template-columns:1fr 1fr; }
+  .uar-news-feature { grid-column:1/-1; }
+}
+@media (max-width:760px) {
+  .uar-container,.uar-header-inner { width:min(100% - 28px,1240px); }
+  .uar-header-inner { min-height:68px;justify-content:space-between;gap:10px; }
+  .uar-menu-trigger { display:flex;width:34px;height:34px;background:transparent;border:1px solid #444;flex-direction:column;justify-content:center;gap:4px;padding:8px; }
+  .uar-menu-trigger span { height:1px;background:#fff;width:100%; }
+  .uar-brand { min-width:0;gap:8px; }
+  .uar-brand img { width:34px;height:34px; }
+  .uar-brand > span { font-size:16px; }
+  .uar-main-nav { display:none; }
+  .uar-header-tools a { display:none; }
+  .uar-subnav-inner { width:100%;padding:0 14px;gap:16px; }
+  .uar-subnav-inner>span:last-child { display:none; }
+  .uar-home { padding:20px 0 45px; }
+  .uar-title-top h1 { font-size:24px; }
+  .uar-title-top { align-items:center; }
+  .uar-hero-media,.uar-hero-media .hero-image { min-height:330px;height:330px; }
+  .uar-hero-media .hero-card-caption h2 { font-size:27px; }
+  .uar-latest-list { display:block; }
+  .uar-latest-list .story { grid-template-columns:90px 1fr; }
+  .uar-news-strip { margin-top:12px; }
+  .uar-strip-title { min-width:190px; }
+  .uar-team-grid,.uar-news-layout { grid-template-columns:1fr; }
+  .uar-news-feature { grid-column:auto; }
+  .uar-news-column { grid-template-columns:1fr; }
+  .uar-news-column .story { grid-template-columns:115px 1fr; }
+  .uar-institutional { padding:30px 24px;display:block; }
+  .uar-institutional h2 { font-size:28px; }
+  .uar-institutional>a { display:inline-block;margin-top:20px; }
+  .uar-footer-main { grid-template-columns:1fr 1fr;gap:30px; }
+  .uar-footer-main>div:first-child { grid-column:1/-1; }
+  .uar-footer-bottom { flex-direction:column;gap:8px; }
+  .uar-newsletter { display:block;padding:30px; }
+  .uar-newsletter-form,.newsletter-form { width:100%; }
+}
