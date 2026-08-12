@@ -780,14 +780,34 @@ function articleForm(article = {}) {
         >
       </label>
 
-      <label class="full">
-        Contenido
+      <div class="full article-html-field">
+        <div class="html-editor-title">
+          <strong>Contenido de la noticia</strong>
+          <span class="article-html-badge">HTML</span>
+        </div>
+
         <textarea
           name="content"
-          rows="12"
-          placeholder="Escribí la noticia. Separá los párrafos con una línea en blanco."
+          class="html-editor"
+          rows="18"
+          spellcheck="false"
+          placeholder="Pegá o escribí el HTML de la noticia...
+
+Ejemplo:
+<h2>Un título</h2>
+<p>Primer párrafo de la noticia.</p>
+<p><strong>Una frase destacada</strong> dentro del texto.</p>
+<blockquote>Una cita importante.</blockquote>
+<img src="URL-DE-LA-IMAGEN" alt="Descripción">"
         >${esc(article.content || "")}</textarea>
-      </label>
+
+        <p class="html-editor-help">
+          Este campo guarda <strong>HTML real</strong>. Podés usar <code>&lt;p&gt;</code>,
+          <code>&lt;h2&gt;</code>, <code>&lt;h3&gt;</code>, <code>&lt;strong&gt;</code>,
+          <code>&lt;em&gt;</code>, <code>&lt;blockquote&gt;</code>, listas, tablas, enlaces e imágenes.
+          Las imágenes de portada siguen seleccionándose desde Media Manager.
+        </p>
+      </div>
 
       <label class="check">
         <input
