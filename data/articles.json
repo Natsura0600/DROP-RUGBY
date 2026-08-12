@@ -8,7 +8,7 @@
     "author": "Tomás Ibáñez",
     "imageClass": "img-pumas-1",
     "excerpt": "Toda la información sobre el próximo compromiso de Los Pumas: día, horario, rival y dónde seguir el partido en vivo.",
-    "url": "noticias/los-pumas-cuando-juegan-fixture.html",
+    "url": "article.html?id=los-pumas-cuando-juegan-fixture",
     "featured": true,
     "readTime": "4 MIN DE LECTURA",
     "demo": true
@@ -22,7 +22,7 @@
     "author": "Tomás Ibáñez",
     "imageClass": "img-pumas-2",
     "excerpt": "Velocidad, juego dinámico y una camada que empieza a pedir protagonismo dentro del seleccionado nacional.",
-    "url": "noticias/los-pumas-nueva-generacion.html",
+    "url": "article.html?id=los-pumas-nueva-generacion",
     "featured": false,
     "readTime": "6 MIN DE LECTURA",
     "demo": true
@@ -36,7 +36,7 @@
     "author": "Redacción DropRugby",
     "imageClass": "img-superrugby-1",
     "excerpt": "Cómo la velocidad de decisión en el punto de contacto se convirtió en una de las claves del juego moderno.",
-    "url": "noticias/super-rugby-detalle-tactico.html",
+    "url": "article.html?id=super-rugby-detalle-tactico",
     "featured": false,
     "readTime": "5 MIN DE LECTURA",
     "demo": true
@@ -50,7 +50,7 @@
     "author": "Redacción DropRugby",
     "imageClass": "img-superrugby-2",
     "excerpt": "Un repaso por los resultados de la última fecha y lo que se viene para los equipos que pelean arriba.",
-    "url": "noticias/super-rugby-tabla-posiciones.html",
+    "url": "article.html?id=super-rugby-tabla-posiciones",
     "featured": false,
     "readTime": "4 MIN DE LECTURA",
     "demo": true
@@ -64,7 +64,7 @@
     "author": "Julieta Farías",
     "imageClass": "img-urbatop14-1",
     "excerpt": "Resumen de los partidos más relevantes de la fecha y cómo quedó el panorama en la parte alta de la tabla.",
-    "url": "noticias/urba-top14-resumen-fecha.html",
+    "url": "article.html?id=urba-top14-resumen-fecha",
     "featured": false,
     "readTime": "5 MIN DE LECTURA",
     "demo": true
@@ -78,7 +78,7 @@
     "author": "Julieta Farías",
     "imageClass": "img-urbatop14-2",
     "excerpt": "A falta de varias fechas, un grupo de clubes se despega en la lucha por el campeonato de la máxima categoría.",
-    "url": "noticias/urba-top14-clubes-pelean-titulo.html",
+    "url": "article.html?id=urba-top14-clubes-pelean-titulo",
     "featured": false,
     "readTime": "5 MIN DE LECTURA",
     "demo": true
