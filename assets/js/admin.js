@@ -638,228 +638,134 @@ function renderArticles() {
 }
 
 function articleForm(article = {}) {
-  const publishDate =
-    article.publishAt
-      ? new Date(article.publishAt)
-      : null;
-
-  const localPublish =
-    publishDate &&
-    !Number.isNaN(publishDate.getTime())
-      ? new Date(
-          publishDate.getTime() -
-          publishDate.getTimezoneOffset() * 60000
-        )
-          .toISOString()
-          .slice(0, 16)
-      : "";
-
-  const imageUrl =
-    article.imageUrl ||
-    article.image ||
-    "";
+  const publishDate = article.publishAt ? new Date(article.publishAt) : null;
+  const localPublish = publishDate && !Number.isNaN(publishDate.getTime())
+    ? new Date(publishDate.getTime() - publishDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    : "";
+  const imageUrl = article.imageUrl || article.image || "";
+  const isPublished = article.published !== false;
+  const statusText = article.scheduled ? "Programada" : (isPublished ? "Publicada" : "Borrador");
 
   return `
-    <div class="form-grid">
-
-      <label class="full">
-        Título
-        <input
-          name="title"
-          required
-          value="${esc(article.title || "")}"
-        >
-      </label>
-
-      <label>
-        Categoría
-        <select name="category">
-          ${[
-            "Los Pumas",
-            "Super Rugby",
-            "URBA TOP 14",
-            "Internacional",
-            "Rugby"
-          ]
-            .map(
-              (category) =>
-                `<option ${
-                  article.category === category
-                    ? "selected"
-                    : ""
-                }>${category}</option>`
-            )
-            .join("")}
-        </select>
-      </label>
-
-      <label>
-        Autor
-        <input
-          name="author"
-          value="${esc(article.author || "DropRugby")}"
-        >
-      </label>
-
-      <label class="full">
-        Bajada / copete
-        <textarea name="excerpt" rows="3">${esc(
-          article.excerpt || ""
-        )}</textarea>
-      </label>
-
-      <div class="full media-field">
-        <label>Imagen de portada</label>
-
-        <div class="media-inline">
-          <input
-            name="imageUrl"
-            id="article-image-url"
-            placeholder="Seleccioná una imagen del Media Manager"
-            value="${esc(imageUrl)}"
-            readonly
-          >
-
-          <button
-            type="button"
-            class="action"
-            id="article-pick-image"
-          >
-            ELEGIR
-          </button>
-
-          <button
-            type="button"
-            class="action upload-inline"
-            id="article-upload-image"
-          >
-            SUBIR IMAGEN
-          </button>
-          <input
-            id="article-inline-upload"
-            type="file"
-            accept="image/*"
-            hidden
-          >
+    <div class="article-composer">
+      <div class="article-composer-intro">
+        <div>
+          <span class="article-composer-eyebrow">REDACCIÓN DROPRUGBY</span>
+          <h3>${article.id ? "Editar noticia" : "Nueva noticia"}</h3>
+          <p>Prepará la nota, ordená el contenido y dejala lista para publicar.</p>
         </div>
-
-        <div
-          id="article-image-preview"
-          class="article-image-preview"
-        >
-          ${
-            imageUrl
-              ? `<img src="${esc(imageUrl)}" alt="Vista previa">`
-              : `<span>Sin imagen seleccionada</span>`
-          }
+        <div class="article-status-pill ${article.scheduled ? "scheduled" : (isPublished ? "published" : "draft")}">
+          <span></span>${statusText}
         </div>
-
-        <p class="form-help">
-          Las imágenes se guardan en el Media Manager.
-          No necesitás pegar enlaces externos.
-        </p>
       </div>
 
-      <label>
-        Fecha de la noticia
-        <input
-          type="date"
-          name="date"
-          value="${esc(
-            String(article.date || "").slice(0, 10) ||
-            new Date().toISOString().slice(0, 10)
-          )}"
-        >
-      </label>
-
-      <label>
-        Programar para
-        <input
-          type="datetime-local"
-          name="publishAt"
-          value="${esc(localPublish)}"
-        >
-      </label>
-
-      <div class="full article-builder-field">
-        <div class="builder-head">
-          <div>
-            <label>Constructor visual de artículos</label>
-            <p class="form-help">Armá la nota por bloques. Podés mezclar texto, imágenes, galerías, citas, tablas, video y encuestas.</p>
-          </div>
-          <button type="button" class="action" id="article-review">🔍 REVISAR NOTICIA</button>
+      <section class="composer-section composer-main-section">
+        <div class="composer-section-head">
+          <div><span>01</span><div><strong>Información principal</strong><small>Título, copete y datos editoriales.</small></div></div>
         </div>
-        <div class="builder-toolbar" id="article-builder-toolbar">
-          <button type="button" data-add-block="text">Texto</button>
-          <button type="button" data-add-block="image">Imagen</button>
-          <button type="button" data-add-block="gallery">Galería</button>
-          <button type="button" data-add-block="video">Video</button>
-          <button type="button" data-add-block="quote">Cita</button>
-          <button type="button" data-add-block="table">Tabla</button>
-          <button type="button" data-add-block="poll">Encuesta</button>
-          <button type="button" data-add-block="separator">Separador</button>
+
+        <label class="composer-title-field">
+          <span>Título de la noticia</span>
+          <input name="title" required value="${esc(article.title || "")}" placeholder="Escribí un título claro y atractivo...">
+        </label>
+
+        <div class="composer-meta-grid">
+          <label>
+            <span>Categoría</span>
+            <select name="category">
+              ${["Los Pumas","Super Rugby","URBA TOP 14","Internacional","Rugby"].map(category => `<option ${article.category === category ? "selected" : ""}>${category}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span>Autor</span>
+            <input name="author" value="${esc(article.author || "DropRugby")}" placeholder="Autor de la nota">
+          </label>
+          <label>
+            <span>Fecha</span>
+            <input type="date" name="date" value="${esc(String(article.date || "").slice(0, 10) || new Date().toISOString().slice(0, 10))}">
+          </label>
+        </div>
+
+        <label class="composer-excerpt-field">
+          <span>Bajada / copete</span>
+          <textarea name="excerpt" rows="3" placeholder="Contale al lector en pocas líneas qué va a encontrar en la noticia...">${esc(article.excerpt || "")}</textarea>
+        </label>
+      </section>
+
+      <section class="composer-section composer-media-section">
+        <div class="composer-section-head">
+          <div><span>02</span><div><strong>Imagen de portada</strong><small>Elegí una imagen existente o subí una nueva.</small></div></div>
+          <span class="composer-section-tag">MEDIA MANAGER</span>
+        </div>
+        <div class="composer-cover-grid">
+          <div class="composer-cover-preview ${imageUrl ? "has-image" : ""}" id="article-image-preview">
+            ${imageUrl ? `<img src="${esc(imageUrl)}" alt="Vista previa">` : `<div class="composer-cover-empty"><b>＋</b><span>Sin imagen de portada</span><small>Elegí una imagen para darle identidad a la noticia.</small></div>`}
+          </div>
+          <div class="composer-cover-controls">
+            <input name="imageUrl" id="article-image-url" value="${esc(imageUrl)}" readonly aria-label="Imagen seleccionada">
+            <div class="composer-cover-actions">
+              <button type="button" class="btn primary" id="article-pick-image">ELEGIR DE MEDIA MANAGER</button>
+              <button type="button" class="action upload-inline" id="article-upload-image">SUBIR IMAGEN</button>
+              <input id="article-inline-upload" type="file" accept="image/*" hidden>
+            </div>
+            <label><span>Texto ALT</span><input name="imageAlt" value="${esc(article.imageAlt || article.seo?.imageAlt || "")}" placeholder="Describí la imagen para accesibilidad"></label>
+            <p class="form-help">No necesitás pegar URLs. La imagen queda vinculada directamente a la noticia.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="composer-section composer-content-section">
+        <div class="composer-section-head">
+          <div><span>03</span><div><strong>Contenido</strong><small>Construí la noticia por bloques y mirá el resultado mientras escribís.</small></div></div>
+          <button type="button" class="action" id="article-review">✓ REVISAR NOTICIA</button>
+        </div>
+        <div class="builder-toolbar article-builder-toolbar" id="article-builder-toolbar">
+          <div class="builder-toolbar-group"><span>Texto</span><button type="button" data-add-block="text">Párrafo</button><button type="button" data-add-block="quote">Cita</button><button type="button" data-add-block="separator">Separador</button></div>
+          <div class="builder-toolbar-group"><span>Multimedia</span><button type="button" data-add-block="image">Imagen</button><button type="button" data-add-block="gallery">Galería</button><button type="button" data-add-block="video">Video</button></div>
+          <div class="builder-toolbar-group"><span>Datos</span><button type="button" data-add-block="table">Tabla</button><button type="button" data-add-block="poll">Encuesta</button></div>
         </div>
         <div class="article-workspace">
           <div class="article-editor-pane">
-            <div class="pane-label">EDITOR <span>Arrastrá bloques para ordenar</span></div>
+            <div class="pane-label"><span>EDITOR</span><small>Arrastrá para ordenar · cada bloque se guarda al editar</small></div>
             <div id="article-blocks" class="article-blocks"></div>
             <input type="hidden" name="contentBlocks" id="article-content-blocks">
-            <label class="builder-legacy-label">Contenido de respaldo
-              <textarea name="content" rows="4" placeholder="Texto de respaldo para noticias antiguas.">${esc(article.content || "")}</textarea>
-            </label>
+            <label class="builder-legacy-label"><span>Contenido de respaldo</span><textarea name="content" rows="3" placeholder="Solo se usa como respaldo para noticias antiguas.">${esc(article.content || "")}</textarea></label>
           </div>
           <aside class="article-live-pane">
-            <div class="pane-label">VISTA PREVIA <span>Se actualiza al escribir</span></div>
+            <div class="pane-label"><span>VISTA PREVIA</span><small>Así se verá en el sitio</small></div>
             <div id="article-live-preview" class="article-live-preview"></div>
           </aside>
         </div>
-      </div>
+      </section>
 
-      <div class="full seo-field">
-        <div class="builder-head"><label>SEO</label><span id="seo-score" class="seo-score">Sin revisar</span></div>
-        <div class="form-grid compact-grid">
-          <label>Título SEO<input name="seoTitle" value="${esc(article.seo?.title || article.seoTitle || "")}" maxlength="60"></label>
-          <label>Descripción SEO<textarea name="seoDescription" rows="2" maxlength="160">${esc(article.seo?.description || article.seoDescription || article.excerpt || "")}</textarea></label>
-          <label>Texto ALT de imagen<input name="imageAlt" value="${esc(article.imageAlt || article.seo?.imageAlt || "")}"></label>
+      <section class="composer-section composer-publish-section">
+        <div class="composer-section-head">
+          <div><span>04</span><div><strong>Publicación</strong><small>Definí cuándo y cómo aparece la noticia.</small></div></div>
         </div>
-      </div>
+        <div class="composer-publish-grid">
+          <label class="composer-check-card ${article.featured ? "active" : ""}"><input type="checkbox" name="featured" ${article.featured ? "checked" : ""}><span><b>Destacada</b><small>Mostrar como contenido destacado.</small></span></label>
+          <label class="composer-check-card ${isPublished ? "active" : ""}"><input type="checkbox" name="published" ${isPublished ? "checked" : ""}><span><b>Publicada</b><small>Disponible públicamente.</small></span></label>
+          <label class="composer-check-card ${article.scheduled ? "active" : ""}"><input type="checkbox" name="scheduled" ${article.scheduled ? "checked" : ""}><span><b>Programar</b><small>Publicar automáticamente más tarde.</small></span></label>
+        </div>
+        <div class="composer-schedule-row">
+          <label><span>Fecha y hora de publicación</span><input type="datetime-local" name="publishAt" value="${esc(localPublish)}"></label>
+          <div class="composer-publish-note">Si programás la noticia, quedará como borrador hasta la fecha indicada.</div>
+        </div>
+      </section>
 
-      <label class="check">
-        <input
-          type="checkbox"
-          name="featured"
-          ${article.featured ? "checked" : ""}
-        >
-        Noticia destacada
-      </label>
-
-      <label class="check">
-        <input
-          type="checkbox"
-          name="published"
-          ${article.published !== false ? "checked" : ""}
-        >
-        Publicada
-      </label>
-
-      <label class="check">
-        <input
-          type="checkbox"
-          name="scheduled"
-          ${article.scheduled ? "checked" : ""}
-        >
-        Programar publicación
-      </label>
-
-      <p class="form-help full">
-        Si marcás "Programar publicación", la noticia no se mostrará
-        públicamente hasta la fecha y hora elegidas.
-      </p>
-
+      <section class="composer-section composer-seo-section">
+        <div class="composer-section-head">
+          <div><span>05</span><div><strong>SEO</strong><small>Dejá la noticia lista para buscadores.</small></div></div>
+          <span id="seo-score" class="seo-score">Sin revisar</span>
+        </div>
+        <div class="composer-seo-grid">
+          <label><span>Título SEO</span><input name="seoTitle" value="${esc(article.seo?.title || article.seoTitle || "")}" maxlength="60" placeholder="Título para Google"></label>
+          <label><span>Descripción SEO</span><textarea name="seoDescription" rows="3" maxlength="160" placeholder="Descripción para buscadores...">${esc(article.seo?.description || article.seoDescription || article.excerpt || "")}</textarea></label>
+        </div>
+      </section>
     </div>
   `;
 }
-
 
 async function openArticleStats(articleId) {
   try {
@@ -868,7 +774,7 @@ async function openArticleStats(articleId) {
     const a=data.stats||{}; const days=Object.entries(a.daily||{}).sort((x,y)=>x[0].localeCompare(y[0])).slice(-7); const max=Math.max(1,...days.map(([,v])=>v.views||0));
     const bars=days.map(([d,v])=>`<div class="stats-bar-col"><div class="stats-bar" style="height:${Math.max(8,((v.views||0)/max)*120)}px" title="${v.views||0} visitas"></div><small>${esc(d.slice(5))}</small></div>`).join('');
     const avg=a.avgReading||0; const mins=Math.floor(avg/60), secs=avg%60;
-    openModal('Estadísticas de la noticia',`<div class="article-stats"><div class="stats-kpis"><div><strong>${Number(a.views||0).toLocaleString('es-AR')}</strong><span>Visitas</span></div><div><strong>${mins}:${String(secs).padStart(2,'0')}</strong><span>Lectura promedio</span></div><div><strong>${Number(a.shares||0).toLocaleString('es-AR')}</strong><span>Compartidos</span></div><div><strong>${Object.values(a.reactions||{}).reduce((n,v)=>n+Number(v||0),0).toLocaleString('es-AR')}</strong><span>Reacciones</span></div></div><h3>Visitas · últimos 7 días</h3><div class="stats-chart">${bars||'<span class="muted">Todavía no hay datos.</span>'}</div><div class="stats-reactions">${Object.entries(a.reactions||{}).map(([k,v])=>`<span>${k} ${v}</span>`).join('')||'<span class="muted">Sin reacciones.</span>'}</div></div>`,async()=>{});
+    openModal('Estadísticas de la noticia',`<div class="article-stats"><div class="stats-kpis"><div><strong>${Number(a.uniqueViews ?? a.views ?? 0).toLocaleString('es-AR')}</strong><span>Vistas únicas</span></div><div><strong>${mins}:${String(secs).padStart(2,'0')}</strong><span>Lectura promedio</span></div><div><strong>${Number(a.shares||0).toLocaleString('es-AR')}</strong><span>Compartidos</span></div><div><strong>${Object.values(a.reactions||{}).reduce((n,v)=>n+Number(v||0),0).toLocaleString('es-AR')}</strong><span>Reacciones</span></div></div><h3>Visitas · últimos 7 días</h3><div class="stats-chart">${bars||'<span class="muted">Todavía no hay datos.</span>'}</div><div class="stats-reactions">${Object.entries(a.reactions||{}).map(([k,v])=>`<span>${k} ${v}</span>`).join('')||'<span class="muted">Sin reacciones.</span>'}</div></div>`,async()=>{});
   } catch(e){toast('Estadísticas',e.message,'error');}
 }
 
@@ -2156,8 +2062,8 @@ function openModal(
     $("#modal-root");
 
   root.innerHTML = `
-    <div class="modal-back">
-      <div class="modal">
+    <div class="modal-back ${/noticia/i.test(title) ? "article-modal-back" : ""}">
+      <div class="modal ${/noticia/i.test(title) ? "article-modal" : ""}">
 
         <div class="modal-head">
           <h2>${esc(title)}</h2>
