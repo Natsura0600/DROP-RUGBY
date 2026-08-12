@@ -4295,7 +4295,7 @@ $("#fixture-competition-filter")
 ========================================================= */
 
 document.addEventListener(
-  "keydown",
+  "keydown", 
   (event) => {
     if (
       event.key === "Escape"
