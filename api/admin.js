@@ -3210,5 +3210,5 @@ function calculateStandings(
           team.pts
       })
     );
-}
+} 
  
