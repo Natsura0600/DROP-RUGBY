@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>DropRugby — Administración</title>
-  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261110">
+  <!-- brand.css va DESPUÉS: es la identidad compartida con la web pública y manda sobre los colores del panel. -->
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261110">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
   <div class="login-card">
-    <div class="login-brand">DROP<span>RUGBY</span></div>
+    <div class="login-brand"><img src="/logo.png" alt=""><span class="drop-wordmark">Drop<span>Rugby</span></span></div>
     <div class="login-kicker">PANEL DE ADMINISTRACIÓN</div>
     <div class="login-line"></div>
     <h1>Iniciar sesión</h1>
@@ -27,7 +33,7 @@
 <div id="admin-app" class="app hidden">
   <aside id="sidebar" class="sidebar">
     <div class="side-head">
-      <div><div class="brand">DROP<span>RUGBY</span></div><small>ADMINISTRATION</small></div>
+      <div><div class="brand"><img src="/logo.png" alt=""><span class="drop-wordmark">Drop<span>Rugby</span></span></div><small>PANEL DE ADMINISTRACIÓN</small></div>
       <button id="sidebar-close" class="close">×</button>
     </div>
 
@@ -39,6 +45,7 @@
       <button class="nav-item" data-section="articles">▤ <span>Noticias</span><b id="nav-articles-count">0</b></button>
       <button class="nav-item" data-section="fixtures">◷ <span>Partidos</span><b id="nav-fixtures-count">0</b></button>
       <button class="nav-item" data-section="results">▥ <span>Resultados TOP 14</span><b id="nav-results-count">0</b></button>
+      <button class="nav-item" data-section="quiz">? <span>Quiz semanal</span><b id="nav-quiz-count">0</b></button>
       <button class="nav-item" data-section="media">▧ <span>Media Manager</span><b id="nav-media-count">0</b></button>
     </nav>
 
@@ -54,7 +61,7 @@
   <main>
     <header class="topbar">
       <button id="menu-button" class="hamb">☰</button>
-      <div><small>ADMINISTRATION</small><h2 id="page-title">Dashboard</h2></div>
+      <div><small>ADMINISTRACIÓN</small><h2 id="page-title">Dashboard</h2></div>
       <div class="top-actions">
         <button id="refresh-button" class="icon" title="Actualizar">↻</button>
         <button type="button" class="site-btn" data-site-nav="/">← VOLVER AL SITIO</button>
@@ -226,6 +233,43 @@
         </div>
       </section>
 
+      <section id="section-quiz" class="section">
+        <div class="heading">
+          <div>
+            <small>CONTENIDO</small>
+            <h1>Quiz semanal</h1>
+            <p class="muted">Las preguntas que aparecen en la home y en /quiz. Actualizalo cada semana.</p>
+          </div>
+          <div class="heading-actions">
+            <button type="button" class="btn" data-site-nav="/quiz.html">VER EN EL SITIO ↗</button>
+            <button id="quiz-new" type="button" class="btn">NUEVO QUIZ</button>
+            <button id="quiz-save" type="button" class="btn primary">GUARDAR QUIZ</button>
+          </div>
+        </div>
+
+        <div class="quiz-status" id="quiz-status"></div>
+
+        <div class="quiz-admin-grid">
+          <div class="panel">
+            <div class="panel-head"><h3>Presentación</h3></div>
+            <div class="quiz-fields">
+              <label>Título<input id="quiz-title" maxlength="140" placeholder="¿Cuánto sabés de Los Pumas?"></label>
+              <label>Bajada<textarea id="quiz-intro" rows="3" maxlength="300" placeholder="Una línea que invite a jugar."></textarea></label>
+              <label>Etiqueta de la semana<input id="quiz-week" maxlength="60" placeholder="Semana del 10 de noviembre"></label>
+              <label class="quiz-toggle"><input id="quiz-active" type="checkbox"> <span>Visible en el sitio</span></label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div><h3>Preguntas</h3><small class="muted" id="quiz-count-label">0 preguntas</small></div>
+              <button id="quiz-add" type="button" class="action">+ AGREGAR PREGUNTA</button>
+            </div>
+            <div id="quiz-questions" class="quiz-questions"></div>
+          </div>
+        </div>
+      </section>
+
       <section id="section-media" class="section">
         <div class="heading">
           <div>
@@ -328,8 +372,6 @@
 
 <div id="modal-root"></div>
 <div id="toast-container"></div>
-<script src="/assets/js/admin.js"></script>
+<script src="/assets/js/admin.js?v=20261110"></script>
 </body>
 </html>
- 
-   

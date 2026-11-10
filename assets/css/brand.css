@@ -1,0 +1,68 @@
+/* ==========================================================================
+   DropRugby — identidad compartida
+   Este archivo lo cargan la web pública Y el panel de administración.
+   Cambiar un color o una tipografía acá lo cambia en los dos lados.
+   ========================================================================== */
+
+:root {
+  /* Tinta y papel (salen del logo: silueta negra sobre hueso) */
+  --night: #0d0f11;
+  --night-2: #16191c;
+  --night-line: #2a2d31;
+  --ink: #111315;
+  --ink-2: #34383e;
+  --muted: #6b7077;
+  --muted-2: #9aa0a7;
+  --paper: #f4f1ec;
+  --paper-2: #ebe7e0;
+  --surface: #ffffff;
+  --surface-soft: #faf9f6;
+  --line: #e4dfd7;
+  --line-strong: #d3cdc3;
+
+  /* Acento único */
+  --accent: #d71920;
+  --accent-dark: #b01218;
+  --accent-soft: #fdecec;
+
+  /* Estados */
+  --success: #16835b;
+  --success-soft: #e8f6f0;
+  --warning: #9a6a00;
+  --warning-soft: #fff6dc;
+  --danger: #c5161d;
+  --danger-soft: #fdecec;
+
+  /* Tipografías */
+  --display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  /* Forma */
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow-sm: 0 1px 2px rgba(17, 19, 21, .05);
+  --shadow: 0 12px 32px rgba(17, 19, 21, .08);
+  --shadow-hover: 0 18px 44px rgba(17, 19, 21, .13);
+  --ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* Marca DROP RUGBY — idéntica en web y panel */
+.drop-wordmark {
+  font-family: var(--display);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.drop-wordmark span { color: var(--accent); }
+
+/* Etiqueta chica en mayúsculas (kickers, eyebrows) */
+.drop-kicker {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}

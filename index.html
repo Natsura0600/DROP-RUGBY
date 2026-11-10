@@ -3,140 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DropRugby: noticias, resultados y actualidad del rugby argentino e internacional.">
+  <title>DropRugby | Noticias de rugby argentino e internacional</title>
+  <meta name="description" content="DropRugby: noticias, resultados, calendario y el quiz semanal del rugby argentino e internacional.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0d0f11">
   <link rel="canonical" href="https://www.droprugby.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DropRugby">
-  <meta property="og:title" content="DropRugby">
-  <meta property="og:description" content="Noticias, resultados y actualidad del rugby argentino y mundial.">
+  <meta property="og:title" content="DropRugby | Noticias de rugby argentino e internacional">
+  <meta property="og:description" content="DropRugby: noticias, resultados, calendario y el quiz semanal del rugby argentino e internacional.">
   <meta property="og:url" content="https://www.droprugby.com/">
-  <meta name="robots" content="index, follow">
+  <meta property="og:image" content="https://www.droprugby.com/logo.png">
   <meta name="google-adsense-account" content="ca-pub-7081370352193016">
-  <title>DropRugby</title>
+  <link rel="icon" type="image/png" href="/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=DM+Sans:wght@400;500;600;700;800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css">
-  <link rel="icon" type="image/png" href="/logo.png">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7081370352193016"
-     crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/brand.css?v=20261110">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20261110">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7081370352193016" crossorigin="anonymous"></script>
 </head>
-<body class="home-uar">
-  <header class="uar-header">
-    <div class="uar-header-top">
-      <div class="uar-header-inner">
-        <button class="uar-menu-trigger menu-btn" type="button" aria-label="Abrir menú" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-        <a class="uar-brand" href="index.html" aria-label="DropRugby inicio">
-          <img src="/logo.png" alt="DropRugby">
-          <span>DROP<span>RUGBY</span></span>
-        </a>
-        <nav class="uar-main-nav" aria-label="Navegación principal">
-          <a href="index.html" class="active">INICIO</a>
-          <a href="los-pumas.html">LOS PUMAS</a>
-          <a href="super-rugby.html">INTERNACIONAL</a>
-          <a href="urba-top-14.html">URBA TOP 14</a>
-          <a href="calendario.html">CALENDARIO</a>
-          <a href="contacto.html">CONTACTO</a>
-        </nav>
-        <div class="uar-header-tools">
-          <button class="search-btn" aria-label="Buscar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-          </button>
-          <a href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">Instagram</a>
-          <a href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TikTok</a>
+<body data-page="home">
+  <!-- El header y el footer los arma assets/js/script.js (renderLayout) para que sean iguales en todas las páginas. -->
+  <div id="site-header" style="min-height:68px;background:#0d0f11"></div>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div id="home-hero" class="hero-main skeleton" aria-busy="true"></div>
+        <aside class="hero-side" aria-label="Últimas noticias">
+          <div class="side-title">Lo último</div>
+          <div class="rank-list" id="home-latest"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="matches" aria-labelledby="home-matches-title">
+      <div class="wrap">
+        <div class="matches-head">
+          <h2 id="home-matches-title">Próximos partidos</h2>
+          <a class="link-more" href="calendario.html">Calendario completo →</a>
         </div>
+        <div class="match-rail" id="home-matches"></div>
       </div>
-    </div>
-    <div class="uar-subnav">
-      <div class="uar-container uar-subnav-inner">
-        <span class="uar-live"><i></i> ACTUALIDAD</span>
-        <a href="#equipos">Torneos</a>
-        <a href="#equipos">Noticias destacadas</a>
-        <a href="#partidos">Partidos</a>
-        <span class="uar-subnav-spacer"></span>
-        <span>RUGBY ARGENTINO · RUGBY MUNDIAL</span>
+    </section>
+
+    <section class="section" id="noticias">
+      <div class="wrap feed-layout">
+        <div>
+          <div class="section-head">
+            <div><span class="drop-kicker">Actualidad</span><h2>Todas las noticias</h2></div>
+          </div>
+          <div class="feed-tools">
+            <div class="chips" id="home-feed-chips">
+              <button class="chip active" type="button" data-filter="">Todas</button>
+              <button class="chip" type="button" data-filter="los pumas">Los Pumas</button>
+              <button class="chip" type="button" data-filter="super rugby|internacional">Internacional</button>
+              <button class="chip" type="button" data-filter="urba top 14">URBA Top 14</button>
+            </div>
+          </div>
+          <div class="card-grid two" id="home-feed"></div>
+          <div class="feed-more"><button class="btn ghost hidden" type="button" id="home-feed-more">Cargar más noticias</button></div>
+        </div>
+
+        <aside class="sidebar">
+          <div class="side-card">
+            <div class="side-title">URBA Top 14</div>
+            <div id="home-standings"></div>
+            <a class="link-more" href="urba-top-14.html">Tabla completa →</a>
+          </div>
+          <div class="side-card dark side-news">
+            <span class="drop-kicker" style="color:#ff6b70">Newsletter</span>
+            <h3 style="margin-top:6px">Recibí lo mejor de la semana con un drop.</h3>
+            <p>Un mail breve con lo que importa.</p>
+            <form class="newsletter-form" novalidate>
+              <input type="email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required>
+              <button class="btn accent" type="submit">Suscribirme</button>
+              <small>Sin spam.</small>
+            </form>
+          </div>
+        </aside>
       </div>
-    </div>
-    <div class="mobile-nav">
-      <a href="index.html">INICIO</a><a href="los-pumas.html">LOS PUMAS</a><a href="super-rugby.html">INTERNACIONAL</a><a href="urba-top-14.html">URBA TOP 14</a><a href="calendario.html">TORNEOS</a><a href="contacto.html">CONTACTO</a>
-    </div>
-  </header>
+    </section>
 
-  <div class="search-overlay" id="search-overlay">
-    <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
-    <div class="search-overlay-inner"><input type="text" id="search-input" placeholder="Buscar noticias, equipos, jugadores…" autocomplete="off"><p class="search-hint">Buscá por título, categoría o equipo.</p><div class="search-results" id="search-results"></div></div>
-  </div>
-
-  <main class="uar-home">
-    <div class="uar-container">
-      <div class="uar-section-title uar-title-top"><span>DROP RUGBY</span><h1>Noticias y actualidad</h1></div>
-
-      <section class="uar-hero" id="ultimas-noticias">
-        <div class="uar-hero-main">
-          <div id="home-hero" class="uar-hero-media"></div>
-          <div class="uar-hero-bottom">
-            <span class="uar-label">NOTICIA DESTACADA</span>
-            <a id="home-hero-link" href="los-pumas.html" class="uar-hero-link">LEER NOTICIA →</a>
+    <section class="quiz-band" id="quiz-band">
+      <div class="wrap quiz-layout">
+        <div class="quiz-pitch">
+          <span class="drop-kicker">Quiz semanal</span>
+          <h2 id="quiz-title">¿Cuánto sabés de rugby?</h2>
+          <p id="quiz-intro">Preguntas nuevas todas las semanas. Jugá, sumá puntos y desafiá a tu equipo.</p>
+          <div class="quiz-facts">
+            <div><strong id="quiz-count">5</strong><span>Preguntas</span></div>
+            <div><strong>1'</strong><span>Para jugar</span></div>
           </div>
         </div>
-        <aside class="uar-hero-side">
-          <div class="uar-panel-heading"><span>ÚLTIMAS NOTICIAS</span></div>
-          <div id="home-top-stories" class="uar-latest-list"></div>
-        </aside>
-      </section>
+        <div class="quiz" data-quiz></div>
+      </div>
+    </section>
 
-      <section class="uar-news-strip">
-        <div class="uar-strip-title"><span>EN FOCO</span><strong>Lo último del rugby</strong></div>
-        <a href="los-pumas.html">LOS PUMAS</a><a href="super-rugby.html">INTERNACIONAL</a><a href="urba-top-14.html">URBA TOP 14</a><a href="calendario.html">PARTIDOS</a>
-      </section>
-
-      <section class="uar-block" id="partidos">
-        <div class="uar-block-heading"><div><span>AGENDA</span><h2>Próximos partidos</h2></div><a href="calendario.html">VER CALENDARIO →</a></div>
-        <div id="home-calendar-preview" class="uar-match-grid"></div>
-      </section>
-
-      <section class="uar-block" id="equipos">
-        <div class="uar-block-heading"><div><span>COMPETICIONES</span><h2>Competiciones Destacadas</h2></div></div>
-        <div class="uar-team-grid">
-          <a class="uar-team-card uar-team-pumas" href="los-pumas.html"><div><span>SELECCIÓN</span><h3>Los Pumas</h3><p>Noticias, plantel y actualidad de la selección argentina.</p></div><b>→</b></a>
-          <a class="uar-team-card uar-team-int" href="super-rugby.html"><div><span>RUGBY MUNDIAL</span><h3>Internacional</h3><p>Super Rugby, grandes torneos y todo el rugby internacional.</p></div><b>→</b></a>
-          <a class="uar-team-card uar-team-urba" href="urba-top-14.html"><div><span>CLUBES</span><h3>URBA Top 14</h3><p>Resultados, posiciones y noticias de los clubes.</p></div><b>→</b></a>
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head"><div><span class="drop-kicker">Competiciones</span><h2>Seguí tu torneo</h2></div></div>
+        <div class="comp-grid">
+          <a class="comp-card" data-word="PUMAS" href="los-pumas.html"><span class="drop-kicker">Selección</span><h3>Los Pumas</h3><p>Convocatorias, fixture y todo lo del seleccionado.</p><b>↗</b></a>
+          <a class="comp-card" data-word="MUNDO" href="super-rugby.html"><span class="drop-kicker">Rugby mundial</span><h3>Internacional</h3><p>Super Rugby y los grandes torneos del mundo.</p><b>↗</b></a>
+          <a class="comp-card" data-word="URBA" href="urba-top-14.html"><span class="drop-kicker">Clubes</span><h3>URBA Top 14</h3><p>Resultados, tabla de posiciones y clubes.</p><b>↗</b></a>
         </div>
-      </section>
-
-      <section class="uar-news-block" id="torneos">
-        <div class="uar-block-heading"><div><span>ACTUALIDAD</span><h2>Noticias destacadas</h2></div></div>
-        <div class="uar-news-layout">
-          <div class="uar-news-feature" id="home-los-pumas"></div>
-          <div class="uar-news-column" id="home-super-rugby"></div>
-          <div class="uar-news-column" id="home-urba-top14"></div>
-        </div>
-      </section>
-
-      <section class="uar-institutional">
-        <div><span>DROP RUGBY</span><h2>El rugby, contado desde adentro.</h2><p>Información, protagonistas y resultados para seguir cada fecha del rugby argentino y mundial.</p></div>
-        <a href="contacto.html">CONOCÉ DROP RUGBY →</a>
-      </section>
-
-      <section class="newsletter uar-newsletter">
-        <div><p class="eyebrow">NEWSLETTER</p><h2>Suscribite para recibir noticias,<br>directo a tu mail con un drop.</h2></div>
-        <form class="newsletter-form" id="newsletter-form"><input type="email" id="newsletter-email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required><button type="submit" id="newsletter-submit">Suscribirme →</button><small id="newsletter-message">Una selección breve de lo más importante de DropRugby.</small></form>
-      </section>
-    </div>
+      </div>
+    </section>
   </main>
 
-  <footer class="uar-footer">
-    <div class="uar-container">
-      <div class="uar-footer-main">
-        <div><a class="uar-brand uar-brand-footer" href="index.html"><img src="/logo.png" alt="DropRugby"><span>DROP<span>RUGBY</span></span></a><p>Rugby argentino e internacional. Noticias, resultados y protagonistas.</p></div>
-        <div class="uar-footer-links"><strong>SECCIONES</strong><a href="los-pumas.html">Los Pumas</a><a href="super-rugby.html">Internacional</a><a href="urba-top-14.html">URBA Top 14</a><a href="calendario.html">Calendario</a></div>
-        <div class="uar-footer-links"><strong>SEGUINOS</strong><a href="https://www.instagram.com/drop_rugby/" target="_blank" rel="noopener">Instagram</a><a href="https://www.tiktok.com/@drop.rugby" target="_blank" rel="noopener">TikTok</a><a href="contacto.html">Contacto</a></div>
-      </div>
-      <div class="uar-footer-bottom"><span>© 2026 DropRugby</span><span>LO ULTIMO DEL RUGBY CON UN DROP</span></div>
-    </div>
-  </footer>
-  <script src="assets/js/script.js"></script>
+  <div id="site-footer"></div>
+  <script src="assets/js/script.js?v=20261110"></script>
 </body>
 </html>

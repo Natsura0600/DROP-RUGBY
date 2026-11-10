@@ -1,0 +1,39 @@
+{
+  "id": "quiz-inicial",
+  "title": "¿Cuánto sabés de rugby?",
+  "intro": "Cinco preguntas para calentar motores. Jugá, sumá puntos y desafiá a tu equipo.",
+  "week": "Quiz semanal",
+  "active": true,
+  "questions": [
+    {
+      "q": "¿Cuántos puntos vale un try?",
+      "options": ["3 puntos", "4 puntos", "5 puntos", "7 puntos"],
+      "correct": 2,
+      "explain": "El try vale 5 puntos. Con la conversión (2 más) se llega a 7."
+    },
+    {
+      "q": "¿Cuánto suma un drop convertido?",
+      "options": ["1 punto", "2 puntos", "3 puntos", "5 puntos"],
+      "correct": 2,
+      "explain": "El drop vale 3 puntos, igual que un penal."
+    },
+    {
+      "q": "¿Qué número lleva tradicionalmente el medio scrum?",
+      "options": ["El 7", "El 9", "El 10", "El 12"],
+      "correct": 1,
+      "explain": "El 9 es el medio scrum; el 10, el apertura."
+    },
+    {
+      "q": "¿En qué Mundial lograron Los Pumas su histórico tercer puesto?",
+      "options": ["Gales 1999", "Francia 2007", "Inglaterra 2015", "Japón 2019"],
+      "correct": 1,
+      "explain": "Fue en Francia 2007, tras vencer al local en el partido por el bronce."
+    },
+    {
+      "q": "¿Cuántos jugadores por equipo hay en cancha en el rugby de quince?",
+      "options": ["13", "14", "15", "16"],
+      "correct": 2,
+      "explain": "Quince por lado: ocho forwards y siete backs."
+    }
+  ]
+}

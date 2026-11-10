@@ -36,4 +36,9 @@
   <url>
     <loc>https://www.droprugby.com/article.html?id=urba-top14-clubes-pelean-titulo</loc>
   </url>
+  <url>
+    <loc>https://www.droprugby.com/quiz.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>

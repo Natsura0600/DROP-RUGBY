@@ -1522,6 +1522,86 @@ export default async function handler(
     }
 
     // ========================================================
+    // QUIZ SEMANAL
+    // ========================================================
+
+    if (action === "save-quiz") {
+      const incoming =
+        body.quiz && typeof body.quiz === "object"
+          ? body.quiz
+          : {};
+
+      const text = (value, max) =>
+        String(value ?? "").trim().slice(0, max);
+
+      const questions = (
+        Array.isArray(incoming.questions)
+          ? incoming.questions
+          : []
+      )
+        .slice(0, 30)
+        .map((question) => {
+          const options = (
+            Array.isArray(question?.options)
+              ? question.options
+              : []
+          )
+            .slice(0, 4)
+            .map((option) => text(option, 160));
+
+          while (options.length < 4) options.push("");
+
+          let correct = Number(question?.correct) || 0;
+
+          if (
+            correct < 0 ||
+            correct > 3 ||
+            !options[correct]
+          ) {
+            correct = Math.max(
+              0,
+              options.findIndex(Boolean)
+            );
+          }
+
+          return {
+            id: text(question?.id, 60) || makeId("q"),
+            q: text(question?.q, 300),
+            options,
+            correct,
+            explain: text(question?.explain, 400)
+          };
+        })
+        .filter(
+          (question) =>
+            question.q &&
+            question.options.filter(Boolean).length >= 2
+        );
+
+      const content = await readContent();
+
+      content.quiz = {
+        id: text(incoming.id, 60) || makeId("quiz"),
+        title: text(incoming.title, 140) || "Quiz semanal",
+        intro: text(incoming.intro, 300),
+        week: text(incoming.week, 60),
+        active: incoming.active !== false,
+        questions,
+        updatedAt: new Date().toISOString()
+      };
+
+      addHistory(content, "save", "quiz", content.quiz);
+
+      const saved = await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        quiz: saved.quiz,
+        content: saved
+      });
+    }
+
+    // ========================================================
     // SAVE GENERAL
     // ========================================================
 

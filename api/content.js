@@ -127,6 +127,64 @@ async function readData() {
   return repaired;
 }
 
+// ============================================================
+// VISTA PÚBLICA
+//
+// content.json también guarda datos internos (suscriptores del
+// newsletter, historial, papelera, borradores). Este endpoint es
+// público, así que devolvemos SOLO lo que la web necesita.
+// ============================================================
+
+async function readSeedQuiz() {
+  try {
+    const file = await fs.readFile(
+      path.join(process.cwd(), 'data', 'quiz.json'),
+      'utf8'
+    );
+    return JSON.parse(file);
+  } catch (_) {
+    return null;
+  }
+}
+
+async function toPublic(data) {
+  const now = Date.now();
+
+  const articles = (Array.isArray(data.articles) ? data.articles : []).filter(
+    (article) => {
+      if (!article || article.published === false) return false;
+
+      // Programadas a futuro: todavía no se muestran.
+      if (article.scheduled) {
+        const at = new Date(article.publishAt || 0).getTime();
+        if (!at || at > now) return false;
+      }
+
+      return true;
+    }
+  ).map((article) =>
+    article.scheduled ? { ...article, scheduled: false } : article
+  );
+
+  // Quiz: el que se guardó desde el panel; si nunca se guardó uno,
+  // usamos el de data/quiz.json.
+  let quiz = data.quiz === undefined ? await readSeedQuiz() : data.quiz;
+  if (!quiz || quiz.active === false) quiz = null;
+
+  return {
+    articles,
+    fixtures: Array.isArray(data.fixtures) ? data.fixtures : [],
+    results: Array.isArray(data.results) ? data.results : [],
+    standings: Array.isArray(data.standings) ? data.standings : [],
+    teams: data.teams && typeof data.teams === 'object' ? data.teams : {},
+    settings: {
+      clubLogos: data.settings?.clubLogos || {},
+      nationLogos: data.settings?.nationLogos || {}
+    },
+    quiz
+  };
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'GET') {
@@ -135,7 +193,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const data = await readData();
+    const data = await toPublic(await readData());
 
     // Evita que /api/content quede cacheado por Vercel
     res.setHeader(

@@ -304,7 +304,13 @@ function normalizeContent(content) {
 
     media: Array.isArray(data.media)
       ? data.media
-      : []
+      : [],
+
+    quiz:
+      data.quiz &&
+      typeof data.quiz === "object"
+        ? data.quiz
+        : null
   };
 }
 
@@ -374,6 +380,7 @@ function switchSection(section) {
     articles: "Noticias",
     fixtures: "Partidos",
     results: "Resultados TOP 14",
+    quiz: "Quiz semanal",
     media: "Media Manager"
   };
 
@@ -401,6 +408,7 @@ function renderAll() {
   renderArticles();
   renderFixtures();
   renderResults();
+  renderQuizAdmin();
 
   if (state.section === "media") {
     renderMedia();
@@ -418,6 +426,13 @@ function renderCounts() {
 
   $("#nav-results-count").textContent =
     content.results.length;
+
+  if ($("#nav-quiz-count")) {
+    $("#nav-quiz-count").textContent =
+      Array.isArray(content.quiz?.questions)
+        ? content.quiz.questions.length
+        : 0;
+  }
 
   $("#stat-articles").textContent =
     content.articles.length;
@@ -4283,6 +4298,360 @@ document.addEventListener(
     }
   }
 );
+
+/* =========================================================
+   QUIZ SEMANAL
+   Se guarda con la acción "save-quiz" y se publica en la home
+   y en /quiz. Cambiar el id (botón NUEVO QUIZ) hace que los
+   lectores puedan volver a jugar.
+========================================================= */
+
+let quizDraft = null;
+let quizDirty = false;
+
+function blankQuizQuestion() {
+  return {
+    id: makeId("q"),
+    q: "",
+    options: ["", "", "", ""],
+    correct: 0,
+    explain: ""
+  };
+}
+
+// Mientras no se haya guardado ningún quiz, el sitio muestra el de
+// data/quiz.json: lo precargamos para editar sobre lo que está publicado.
+let quizSeed = null;
+let quizSeedRequested = false;
+
+async function loadQuizSeed() {
+  if (quizSeedRequested) return;
+  quizSeedRequested = true;
+
+  try {
+    const response = await fetch("/data/quiz.json", { cache: "no-store" });
+    if (!response.ok) return;
+    quizSeed = await response.json();
+    if (!state.content.quiz) renderQuizAdmin();
+  } catch (_) {}
+}
+
+function quizFromContent() {
+  const quiz = state.content.quiz || quizSeed;
+
+  return {
+    id: quiz?.id || makeId("quiz"),
+    title: quiz?.title || "",
+    intro: quiz?.intro || "",
+    week: quiz?.week || "",
+    active: quiz ? quiz.active !== false : true,
+    updatedAt: quiz?.updatedAt || "",
+    questions: (Array.isArray(quiz?.questions) ? quiz.questions : []).map(
+      (question) => ({
+        id: question.id || makeId("q"),
+        q: question.q || "",
+        options: [0, 1, 2, 3].map((i) => question.options?.[i] || ""),
+        correct: Number(question.correct) || 0,
+        explain: question.explain || ""
+      })
+    )
+  };
+}
+
+function paintQuizStatus() {
+  const box = $("#quiz-status");
+  if (!box || !quizDraft) return;
+
+  const count = quizDraft.questions.length;
+
+  if ($("#quiz-count-label")) {
+    $("#quiz-count-label").textContent =
+      `${count} ${count === 1 ? "pregunta" : "preguntas"}`;
+  }
+
+  box.className = "quiz-status";
+
+  if (quizDirty) {
+    box.classList.add("dirty");
+    box.innerHTML = "<i></i>Tenés cambios sin guardar. Tocá GUARDAR QUIZ para publicarlos.";
+    return;
+  }
+
+  const saved = state.content.quiz;
+
+  if (!saved) {
+    box.innerHTML = "<i></i>Este es el quiz de ejemplo que hoy muestra el sitio. Editalo y guardá para publicar el tuyo.";
+    return;
+  }
+
+  if (saved.active === false) {
+    box.innerHTML = "<i></i>Quiz oculto: no se muestra en el sitio.";
+    return;
+  }
+
+  box.classList.add("live");
+  box.innerHTML = saved.updatedAt
+    ? `<i></i>Publicado en el sitio · última actualización ${esc(fmtDT(saved.updatedAt))}`
+    : "<i></i>Publicado en el sitio.";
+}
+
+function paintQuizQuestions() {
+  const list = $("#quiz-questions");
+  if (!list || !quizDraft) return;
+
+  if (!quizDraft.questions.length) {
+    list.innerHTML = `
+      <div class="quiz-empty-admin">
+        <strong>Sin preguntas todavía.</strong><br>
+        Sumá la primera con “+ AGREGAR PREGUNTA”.
+      </div>`;
+    return;
+  }
+
+  const total = quizDraft.questions.length;
+
+  list.innerHTML = quizDraft.questions.map((question, qi) => `
+    <div class="quiz-q" data-qi="${qi}">
+      <div class="quiz-q-head">
+        <strong>PREGUNTA ${qi + 1}</strong>
+        <div>
+          <button type="button" class="action" data-quiz-act="up" title="Subir" ${qi === 0 ? "disabled" : ""}>↑</button>
+          <button type="button" class="action" data-quiz-act="down" title="Bajar" ${qi === total - 1 ? "disabled" : ""}>↓</button>
+          <button type="button" class="action danger" data-quiz-act="delete">ELIMINAR</button>
+        </div>
+      </div>
+
+      <label>Pregunta
+        <textarea rows="2" maxlength="300" data-quiz-field="q" placeholder="¿Cuántos puntos vale un try?">${esc(question.q)}</textarea>
+      </label>
+
+      <label>Opciones <span class="quiz-hint">Marcá con el círculo cuál es la correcta. Podés dejar vacías las que no uses (mínimo 2).</span></label>
+      <div class="quiz-opts">
+        ${question.options.map((option, oi) => `
+          <div class="quiz-opt ${question.correct === oi ? "correct" : ""}">
+            <input type="radio" name="quiz-correct-${qi}" value="${oi}" ${question.correct === oi ? "checked" : ""} aria-label="Opción ${oi + 1} es la correcta">
+            <input type="text" maxlength="160" data-quiz-option="${oi}" value="${esc(option)}" placeholder="Opción ${"ABCD"[oi]}">
+          </div>`).join("")}
+      </div>
+
+      <label>Explicación <span class="quiz-hint">Se muestra después de responder (opcional).</span>
+        <input type="text" maxlength="400" data-quiz-field="explain" value="${esc(question.explain)}" placeholder="El try vale 5 puntos; con la conversión, 7.">
+      </label>
+    </div>`).join("");
+}
+
+function renderQuizAdmin(force = false) {
+  if (!$("#section-quiz")) return;
+
+  // No pisamos lo que se está editando si llega un refresco de contenido.
+  if (quizDirty && !force) {
+    paintQuizStatus();
+    return;
+  }
+
+  if (!state.content.quiz) loadQuizSeed();
+
+  quizDraft = quizFromContent();
+  quizDirty = false;
+
+  $("#quiz-title").value = quizDraft.title;
+  $("#quiz-intro").value = quizDraft.intro;
+  $("#quiz-week").value = quizDraft.week;
+  $("#quiz-active").checked = quizDraft.active;
+
+  paintQuizQuestions();
+  paintQuizStatus();
+}
+
+function markQuizDirty() {
+  quizDirty = true;
+  paintQuizStatus();
+}
+
+async function saveQuiz() {
+  if (!quizDraft) return;
+
+  if (!quizDraft.title.trim()) {
+    toast("Falta el título", "Poné un título para el quiz.", "error");
+    $("#quiz-title")?.focus();
+    return;
+  }
+
+  for (let i = 0; i < quizDraft.questions.length; i++) {
+    const question = quizDraft.questions[i];
+    const filled = question.options.filter((option) => option.trim()).length;
+
+    if (!question.q.trim()) {
+      toast("Pregunta incompleta", `La pregunta ${i + 1} no tiene texto.`, "error");
+      return;
+    }
+
+    if (filled < 2) {
+      toast("Faltan opciones", `La pregunta ${i + 1} necesita al menos 2 opciones.`, "error");
+      return;
+    }
+
+    if (!String(question.options[question.correct] || "").trim()) {
+      toast("Respuesta correcta vacía", `En la pregunta ${i + 1}, la opción marcada como correcta está vacía.`, "error");
+      return;
+    }
+  }
+
+  if (quizDraft.active && !quizDraft.questions.length) {
+    toast("Sin preguntas", "Agregá al menos una pregunta o desmarcá “Visible en el sitio”.", "error");
+    return;
+  }
+
+  const button = $("#quiz-save");
+
+  try {
+    if (button) {
+      button.disabled = true;
+      button.textContent = "GUARDANDO…";
+    }
+
+    const data = await api("save-quiz", { quiz: quizDraft });
+
+    state.content.quiz = data.quiz;
+    quizDirty = false;
+
+    renderQuizAdmin(true);
+    renderCounts();
+
+    toast("Quiz guardado", "Ya está publicado en el sitio.");
+  } catch (error) {
+    toast("Error", error.message, "error");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "GUARDAR QUIZ";
+    }
+  }
+}
+
+async function startNewQuiz() {
+  const ok = await askConfirm(
+    "¿Empezar un quiz nuevo?",
+    "Se vacían las preguntas actuales y los lectores van a poder jugar de nuevo. No se publica hasta que toques GUARDAR QUIZ.",
+    "EMPEZAR"
+  );
+
+  if (!ok) return;
+
+  const weekLabel = new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "long"
+  }).format(new Date());
+
+  quizDraft = {
+    id: makeId("quiz"),
+    title: "",
+    intro: "",
+    week: `Semana del ${weekLabel}`,
+    active: true,
+    questions: [blankQuizQuestion()]
+  };
+
+  $("#quiz-title").value = "";
+  $("#quiz-intro").value = "";
+  $("#quiz-week").value = quizDraft.week;
+  $("#quiz-active").checked = true;
+
+  paintQuizQuestions();
+  markQuizDirty();
+  $("#quiz-title")?.focus();
+}
+
+$("#quiz-save")?.addEventListener("click", saveQuiz);
+$("#quiz-new")?.addEventListener("click", startNewQuiz);
+
+$("#quiz-add")?.addEventListener("click", () => {
+  if (!quizDraft) return;
+
+  quizDraft.questions.push(blankQuizQuestion());
+  paintQuizQuestions();
+  markQuizDirty();
+
+  const cards = $$("#quiz-questions .quiz-q");
+  const last = cards[cards.length - 1];
+  last?.scrollIntoView({ behavior: "smooth", block: "center" });
+  last?.querySelector("textarea")?.focus({ preventScroll: true });
+});
+
+$("#section-quiz")?.addEventListener("input", (event) => {
+  if (!quizDraft) return;
+
+  const target = event.target;
+
+  if (target.id === "quiz-title") quizDraft.title = target.value;
+  else if (target.id === "quiz-intro") quizDraft.intro = target.value;
+  else if (target.id === "quiz-week") quizDraft.week = target.value;
+  else if (target.id === "quiz-active") quizDraft.active = target.checked;
+  else {
+    const card = target.closest(".quiz-q");
+    if (!card) return;
+
+    const question = quizDraft.questions[Number(card.dataset.qi)];
+    if (!question) return;
+
+    if (target.dataset.quizField) {
+      question[target.dataset.quizField] = target.value;
+    } else if (target.dataset.quizOption !== undefined) {
+      question.options[Number(target.dataset.quizOption)] = target.value;
+    } else if (target.type === "radio") {
+      question.correct = Number(target.value);
+      card.querySelectorAll(".quiz-opt").forEach((option, i) => {
+        option.classList.toggle("correct", i === question.correct);
+      });
+    }
+  }
+
+  markQuizDirty();
+});
+
+$("#section-quiz")?.addEventListener("change", (event) => {
+  if (event.target.id === "quiz-active" && quizDraft) {
+    quizDraft.active = event.target.checked;
+    markQuizDirty();
+  }
+});
+
+$("#quiz-questions")?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-quiz-act]");
+  if (!button || !quizDraft) return;
+
+  const index = Number(button.closest(".quiz-q")?.dataset.qi);
+  const list = quizDraft.questions;
+  const act = button.dataset.quizAct;
+
+  if (act === "delete") {
+    const ok = await askConfirm(
+      "¿Eliminar esta pregunta?",
+      "Se quita del quiz cuando guardes.",
+      "ELIMINAR"
+    );
+    if (!ok) return;
+    list.splice(index, 1);
+  }
+
+  if (act === "up" && index > 0) {
+    [list[index - 1], list[index]] = [list[index], list[index - 1]];
+  }
+
+  if (act === "down" && index < list.length - 1) {
+    [list[index + 1], list[index]] = [list[index], list[index + 1]];
+  }
+
+  paintQuizQuestions();
+  markQuizDirty();
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (quizDirty) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
 
 /* =========================================================
    INICIO

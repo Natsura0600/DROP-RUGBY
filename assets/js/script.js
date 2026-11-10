@@ -1,15 +1,7 @@
 /* ==========================================================================
-   DropRugby V5 — script.js
-   Optimizado para:
-   - Una sola carga de /api/content por página
-   - Caché de datos en memoria
-   - Calendario con fecha real
-   - Escudos de clubes
-   - Noticias
-   - Buscador
-   - Tabla URBA
-   - Menú mobile
-   - Fallbacks locales
+   DropRugby — script.js
+   Datos (una sola carga de /api/content), layout compartido, noticias,
+   calendario, tabla URBA, artículo, quiz semanal, buscador y newsletter.
    ========================================================================== */
 
 const BASE = window.ASSET_BASE || "";
@@ -591,514 +583,6 @@ function escapeHTML(value) {
     }[char]));
 }
 
-
-/* ==========================================================================
-   MENÚ MOBILE
-   ========================================================================== */
-
-function setupMobileMenu() {
-  const menuBtn = document.querySelector(".menu-btn");
-  const mobileNav = document.querySelector(".mobile-nav");
-
-  if (!menuBtn || !mobileNav) return;
-
-  menuBtn.addEventListener("click", () => {
-    const open = mobileNav.classList.toggle("open");
-
-    menuBtn.setAttribute(
-      "aria-expanded",
-      String(open)
-    );
-  });
-
-  mobileNav.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      mobileNav.classList.remove("open");
-
-      menuBtn.setAttribute(
-        "aria-expanded",
-        "false"
-      );
-    });
-  });
-}
-
-
-/* ==========================================================================
-   ANIMACIONES
-   ========================================================================== */
-
-let revealObserver = null;
-
-function setupRevealObserver() {
-  if (!("IntersectionObserver" in window)) {
-    document
-      .querySelectorAll(".reveal")
-      .forEach(el => el.classList.add("visible"));
-
-    return;
-  }
-
-  revealObserver = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-
-        entry.target.classList.add("visible");
-
-        revealObserver.unobserve(entry.target);
-      });
-    },
-    {
-      threshold: 0.12
-    }
-  );
-}
-
-function observeReveals(root = document) {
-  if (!revealObserver) return;
-
-  root
-    .querySelectorAll(".reveal:not(.visible)")
-    .forEach(el => revealObserver.observe(el));
-}
-
-
-/* ==========================================================================
-   NEWSLETTER
-   ========================================================================== */
-
-function setupNewsletter() {
-  document.querySelectorAll(".newsletter-form").forEach(form => {
-    form.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      const input = form.querySelector(
-        'input[type="email"], input[name="email"]'
-      );
-
-      const button = form.querySelector("#newsletter-submit");
-      const message = form.querySelector("#newsletter-message");
-
-      if (!input || !message) {
-        console.error("Newsletter: faltan elementos del formulario.");
-        return;
-      }
-
-      const email = input.value.trim().toLowerCase();
-
-      // -----------------------------
-      // VALIDAR EMAIL
-      // -----------------------------
-
-      if (!email || !input.checkValidity()) {
-        message.textContent = "Ingresá un email válido.";
-        message.classList.remove("success");
-        message.classList.add("error");
-        input.focus();
-        return;
-      }
-
-      // -----------------------------
-      // ESTADO ENVIANDO
-      // -----------------------------
-
-      if (button) {
-        button.disabled = true;
-        button.innerHTML = 'Enviando… <span>→</span>';
-      }
-
-      message.textContent = "Procesando suscripción…";
-      message.classList.remove("success", "error");
-
-      try {
-
-        // -----------------------------
-        // LLAMAR AL BACKEND
-        // -----------------------------
-
-        const response = await fetch(
-          BASE + "api/newsletter",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              email: email
-            })
-          }
-        );
-
-        const data = await response.json().catch(() => ({}));
-
-        // -----------------------------
-        // ERROR
-        // -----------------------------
-
-        if (!response.ok || !data.ok) {
-          throw new Error(
-            data.error ||
-            "No se pudo completar la suscripción."
-          );
-        }
-
-        // -----------------------------
-        // ÉXITO REAL
-        // -----------------------------
-
-        form.classList.add("submitted");
-
-        message.textContent =
-          "¡Listo! Ya estás suscripto a Drop Rugby.";
-
-        message.classList.remove("error");
-        message.classList.add("success");
-
-        input.value = "";
-
-        if (button) {
-          button.disabled = false;
-          button.innerHTML = 'Suscripto ✓';
-        }
-
-      } catch (error) {
-
-        console.error(
-          "NEWSLETTER FRONTEND ERROR:",
-          error
-        );
-
-        message.textContent =
-          error.message ||
-          "No se pudo completar la suscripción.";
-
-        message.classList.remove("success");
-        message.classList.add("error");
-
-        if (button) {
-          button.disabled = false;
-          button.innerHTML =
-            'Suscribirme <span>→</span>';
-        }
-      }
-    });
-  });
-}
-
-
-/* ==========================================================================
-   TARJETAS DE NOTICIAS
-   ========================================================================== */
-
-function storyCardHTML(article, options = {}) {
-  const featuredClass =
-    options.featured
-      ? "story-featured"
-      : "";
-
-  const title =
-    escapeHTML(article.title || "Sin título");
-
-  const excerpt =
-    escapeHTML(article.excerpt || "");
-
-  const category =
-    escapeHTML(
-      String(article.category || "Rugby").toUpperCase()
-    );
-
-  const subcategory =
-    escapeHTML(
-      String(article.subcategory || "ACTUALIDAD").toUpperCase()
-    );
-
-  const author =
-    escapeHTML(article.author || "DropRugby");
-
-  const date =
-    article.date ||
-    getTodayISO();
-
-  const visual = article.imageUrl
-    ? `
-      <div class="story-image photo-not-clickable">
-        <img
-          src="${escapeHTML(article.imageUrl)}"
-          alt=""
-          loading="lazy"
-          decoding="async"
-        >
-      </div>
-    `
-    : `
-      <div class="story-image ph-image photo-not-clickable ${escapeHTML(
-        article.imageClass || "img-tone-1"
-      )}"></div>
-    `;
-
-  const articleUrl =
-    `${BASE}article.html?id=${encodeURIComponent(article.id || "")}`;
-
-  return `
-    <article class="story ${featuredClass} reveal">
-      ${visual}
-
-      <div class="story-body">
-
-        <p class="category">
-          ${category} · ${subcategory}
-        </p>
-
-        <h3>
-          <a href="${articleUrl}">
-            ${title}
-          </a>
-        </h3>
-
-        <p>${excerpt}</p>
-
-        <div class="meta">
-          Por ${author} · ${formatDateShort(date).toUpperCase()}
-        </div>
-
-      </div>
-    </article>
-  `;
-}
-
-
-/* ==========================================================================
-   HOME
-   ========================================================================== */
-
-async function renderHome() {
-  const grid = document.getElementById("home-top-stories");
-  const pumasEl = document.getElementById("home-los-pumas");
-  const srEl = document.getElementById("home-super-rugby");
-  const urbaTop14El = document.getElementById("home-urba-top14");
-  const heroEl = document.getElementById("home-hero");
-
-  if (!grid && !heroEl && !pumasEl && !srEl && !urbaTop14El) {
-    return;
-  }
-
-  const articles = (await loadArticles())
-    .filter(article =>
-      article.published !== false &&
-      !article.scheduled
-    )
-    .slice()
-    .sort((a, b) =>
-      String(b.date || "").localeCompare(
-        String(a.date || "")
-      )
-    );
-
-  const featured =
-    articles.find(article => article.featured) ||
-    articles[0];
-
-  if (heroEl && featured) {
-    const category =
-      escapeHTML(
-        String(featured.category || "RUGBY").toUpperCase()
-      );
-
-    const title =
-      escapeHTML(featured.title || "");
-
-    const heroVisual = featured.imageUrl
-      ? `
-        <div class="hero-image photo-not-clickable">
-          <img
-            src="${escapeHTML(featured.imageUrl)}"
-            alt=""
-            loading="eager"
-            decoding="async"
-          >
-
-          <div class="image-overlay"></div>
-
-          <div class="hero-card-caption">
-            <span>TOP STORY · ${category}</span>
-            <h2>${title}</h2>
-          </div>
-        </div>
-      `
-      : `
-        <div class="hero-image ${escapeHTML(
-          featured.imageClass || "img-tone-1"
-        )} photo-not-clickable ph-image">
-
-          <div class="image-overlay"></div>
-
-          <div class="hero-card-caption">
-            <span>TOP STORY · ${category}</span>
-            <h2>${title}</h2>
-          </div>
-
-        </div>
-      `;
-
-    const canonicalHeroUrl =
-      `${BASE}article.html?id=${encodeURIComponent(featured.id || "")}`;
-
-    heroEl.innerHTML = `
-      <a
-        class="hero-card-inner hero-card-link"
-        href="${canonicalHeroUrl}"
-      >
-        ${heroVisual}
-      </a>
-    `;
-
-    const heroLink =
-      document.getElementById("home-hero-link");
-
-    if (heroLink) {
-      heroLink.href = canonicalHeroUrl;
-    }
-  }
-
-  const featuredId =
-    featured ? featured.id : null;
-
-  const rest =
-    articles.filter(article =>
-      article.id !== featuredId
-    );
-
-  if (grid) {
-    grid.innerHTML =
-      rest
-        .slice(0, 3)
-        .map((article, index) =>
-          storyCardHTML(
-            article,
-            { featured: index === 0 }
-          )
-        )
-        .join("");
-  }
-
-  function renderCategory(
-    categoryName,
-    element,
-    amount = 3
-  ) {
-    if (!element) return;
-
-    const items =
-      articles
-        .filter(article =>
-          article.category === categoryName
-        )
-        .slice(0, amount);
-
-    element.innerHTML =
-      items.length
-        ? items.map(article =>
-            storyCardHTML(article)
-          ).join("")
-        : `
-          <p class="empty-state">
-            Todavía no hay noticias publicadas en esta categoría.
-          </p>
-        `;
-  }
-
-  renderCategory(
-    "Los Pumas",
-    pumasEl
-  );
-
-  renderCategory(
-    "Super Rugby",
-    srEl
-  );
-
-  renderCategory(
-    "URBA TOP 14",
-    urbaTop14El
-  );
-
-  observeReveals();
-}
-
-
-/* ==========================================================================
-   CATEGORÍAS
-   ========================================================================== */
-
-async function renderCategoryPage(categoryName) {
-  const grid =
-    document.getElementById("category-grid");
-
-  if (!grid) return;
-
-  const articles =
-    (await loadArticles())
-      .filter(article =>
-        article.category === categoryName &&
-        article.published !== false &&
-        !article.scheduled
-      )
-      .sort((a, b) =>
-        String(b.date || "").localeCompare(
-          String(a.date || "")
-        )
-      );
-
-  const chips =
-    document.querySelectorAll(
-      ".filter-bar .filter-chip"
-    );
-
-  let activeFilter = "TODAS";
-
-  function paint() {
-    const filtered =
-      activeFilter === "TODAS"
-        ? articles
-        : articles.filter(article =>
-            String(article.subcategory || "")
-              .toUpperCase() === activeFilter
-          );
-
-    grid.innerHTML =
-      filtered.length
-        ? filtered.map(article =>
-            storyCardHTML(article)
-          ).join("")
-        : `
-          <p class="empty-state">
-            No hay noticias para este filtro todavía.
-          </p>
-        `;
-
-    observeReveals();
-  }
-
-  chips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      chips.forEach(button =>
-        button.classList.remove("active")
-      );
-
-      chip.classList.add("active");
-
-      activeFilter =
-        chip.dataset.filter || "TODAS";
-
-      paint();
-    });
-  });
-
-  paint();
-}
-
-
 /* ==========================================================================
    CALENDARIO — mini rectángulos por competición
    ========================================================================== */
@@ -1586,62 +1070,6 @@ async function renderCalendar() {
 
 
 /* ==========================================================================
-   PREVIEW CALENDARIO HOME
-   ========================================================================== */
-
-async function renderCalendarPreview() {
-  const element =
-    document.getElementById(
-      "home-calendar-preview"
-    );
-
-  if (!element) return;
-
-  const fixtures =
-    (await loadFixtures())
-      .slice()
-      .sort((a, b) =>
-        `${a.date || ""}${a.time || ""}`
-          .localeCompare(
-            `${b.date || ""}${b.time || ""}`
-          )
-      );
-
-  const upcoming =
-    fixtures.slice(0, 6);
-
-  if (!upcoming.length) {
-    element.innerHTML = `
-      <p class="empty-state">
-        No hay partidos cargados.
-      </p>
-    `;
-
-    return;
-  }
-
-
-  const grouped = {};
-
-  upcoming.forEach(fixture => {
-    const competition =
-      fixture.competition || "RUGBY";
-
-    if (!grouped[competition]) {
-      grouped[competition] = [];
-    }
-
-    grouped[competition].push(fixture);
-  });
-
-  element.classList.add("calendar-preview");
-
-  element.innerHTML =
-    renderCompetitionSections(grouped);
-}
-
-
-/* ==========================================================================
    TABLA URBA TOP 14
    ========================================================================== */
 
@@ -1828,207 +1256,960 @@ async function renderUrbaStandings() {
   `;
 }
 
+/* ==========================================================================
+   LAYOUT COMPARTIDO (header, ticker, buscador, footer)
+   Una sola definición para todas las páginas: si cambia el menú, se cambia acá.
+   ========================================================================== */
+
+const SITE_NAV = [
+  ["index.html", "Inicio", "home"],
+  ["los-pumas.html", "Los Pumas", "pumas"],
+  ["super-rugby.html", "Internacional", "internacional"],
+  ["urba-top-14.html", "URBA Top 14", "urba"],
+  ["calendario.html", "Calendario", "calendario"],
+  ["quiz.html", "Quiz", "quiz"],
+  ["contacto.html", "Contacto", "contacto"]
+];
+
+const SOCIAL = {
+  instagram: "https://www.instagram.com/drop_rugby/",
+  tiktok: "https://www.tiktok.com/@drop.rugby",
+  mail: "contactodroprugby@gmail.com"
+};
+
+const ICONS = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>',
+  tiktok: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.3 2.2 1.6 3.7 3.8 4v3c-1.4 0-2.7-.4-3.8-1.1v6.300c0 3.200-2.400 5.800-5.700 5.800a5.700 5.700 0 0 1-1-11.300v3.200a2.600 2.600 0 1 0 3.500 2.400V3z"/></svg>'
+};
+
+function renderLayout() {
+  const page = document.body.dataset.page || "";
+  const header = document.getElementById("site-header");
+  const footer = document.getElementById("site-footer");
+
+  const navLinks = SITE_NAV.map(([href, label, key]) =>
+    `<a href="${BASE}${href}" class="${key === page ? "active" : ""}${key === "quiz" ? " nav-quiz" : ""}">${label}</a>`
+  ).join("");
+
+  if (header) {
+    header.outerHTML = `
+      <div class="read-progress" aria-hidden="true"><i id="read-progress-bar"></i></div>
+      <header class="site-header">
+        <div class="wrap header-inner">
+          <a class="brand" href="${BASE}index.html" aria-label="DropRugby inicio">
+            <img src="/logo.png" alt="" width="42" height="42">
+            <span class="drop-wordmark">Drop<span>Rugby</span></span>
+          </a>
+          <nav class="main-nav" aria-label="Navegación principal">${navLinks}</nav>
+          <div class="header-tools">
+            <button class="icon-btn search-btn" type="button" aria-label="Buscar">${ICONS.search}</button>
+            <a class="icon-btn social" href="${SOCIAL.instagram}" target="_blank" rel="noopener" aria-label="Instagram">${ICONS.instagram}</a>
+            <a class="icon-btn social" href="${SOCIAL.tiktok}" target="_blank" rel="noopener" aria-label="TikTok">${ICONS.tiktok}</a>
+            <button class="icon-btn menu-btn" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+          </div>
+        </div>
+        <nav class="mobile-nav" aria-label="Menú">
+          ${navLinks}
+          <div class="mobile-social">
+            <a href="${SOCIAL.instagram}" target="_blank" rel="noopener">Instagram ↗</a>
+            <a href="${SOCIAL.tiktok}" target="_blank" rel="noopener">TikTok ↗</a>
+          </div>
+        </nav>
+        <div class="ticker hidden" id="ticker">
+          <div class="wrap ticker-inner">
+            <span class="ticker-label"><i></i><span>ÚLTIMO</span></span>
+            <div class="ticker-track"><div class="ticker-move" id="ticker-move"></div></div>
+          </div>
+        </div>
+      </header>
+      <div class="search-overlay" id="search-overlay" role="dialog" aria-label="Buscar">
+        <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
+        <div class="search-overlay-inner">
+          <input type="search" id="search-input" placeholder="Buscar noticias, equipos…" autocomplete="off">
+          <p class="search-hint">Probá con "Los Pumas", "URBA" o el nombre de un club.</p>
+          <div class="search-results" id="search-results"></div>
+        </div>
+      </div>`;
+  }
+
+  if (footer) {
+    footer.outerHTML = `
+      <footer class="site-footer">
+        <div class="wrap">
+          <div class="footer-grid">
+            <div>
+              <a class="brand" href="${BASE}index.html">
+                <img src="/logo.png" alt="" width="42" height="42" loading="lazy">
+                <span class="drop-wordmark">Drop<span>Rugby</span></span>
+              </a>
+              <p>Rugby argentino e internacional: noticias, resultados y protagonistas, contados desde adentro.</p>
+            </div>
+            <div class="footer-col">
+              <strong>SECCIONES</strong>
+              ${SITE_NAV.slice(1, 6).map(([href, label]) => `<a href="${BASE}${href}">${label}</a>`).join("")}
+            </div>
+            <div class="footer-col">
+              <strong>SEGUINOS</strong>
+              <a href="${SOCIAL.instagram}" target="_blank" rel="noopener">Instagram</a>
+              <a href="${SOCIAL.tiktok}" target="_blank" rel="noopener">TikTok</a>
+              <a href="${BASE}contacto.html">Contacto</a>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <span>© ${new Date().getFullYear()} DropRugby</span>
+            <span>Lo último del rugby con un drop</span>
+          </div>
+        </div>
+      </footer>
+      <button class="to-top" id="to-top" type="button" aria-label="Volver arriba">↑</button>`;
+  }
+}
+
+function setupMobileMenu() {
+  const btn = document.querySelector(".menu-btn");
+  const nav = document.querySelector(".mobile-nav");
+  if (!btn || !nav) return;
+
+  const set = open => {
+    nav.classList.toggle("open", open);
+    btn.setAttribute("aria-expanded", String(open));
+  };
+
+  btn.addEventListener("click", () => set(!nav.classList.contains("open")));
+  nav.querySelectorAll("a").forEach(a => a.addEventListener("click", () => set(false)));
+  window.addEventListener("resize", () => { if (window.innerWidth > 1100) set(false); });
+}
+
+function setupScrollUI() {
+  const bar = document.getElementById("read-progress-bar");
+  const toTop = document.getElementById("to-top");
+  let ticking = false;
+
+  function update() {
+    ticking = false;
+    const y = window.scrollY;
+    if (toTop) toTop.classList.toggle("show", y > 900);
+
+    if (bar) {
+      const body = document.querySelector(".article-body");
+      if (!body) { bar.style.width = "0"; return; }
+      const start = body.offsetTop - 120;
+      const end = body.offsetTop + body.offsetHeight - window.innerHeight * 0.6;
+      const pct = Math.max(0, Math.min(1, (y - start) / Math.max(1, end - start)));
+      bar.style.width = (pct * 100).toFixed(1) + "%";
+    }
+  }
+
+  window.addEventListener("scroll", () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+
+  toTop?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  update();
+}
+
+let revealObserver = null;
+
+function observeReveals(root = document) {
+  const items = root.querySelectorAll(".reveal:not(.visible)");
+  if (!("IntersectionObserver" in window)) {
+    items.forEach(el => el.classList.add("visible"));
+    return;
+  }
+  if (!revealObserver) {
+    revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("visible");
+        revealObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -30px 0px" });
+  }
+  items.forEach(el => revealObserver.observe(el));
+}
+
+
+/* ==========================================================================
+   NOTICIAS — helpers
+   ========================================================================== */
+
+const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+function formatDateLong(iso) {
+  const parts = String(iso || "").slice(0, 10).split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return String(iso || "");
+  return `${parts[2]} de ${MESES_LARGOS[parts[1] - 1]} de ${parts[0]}`;
+}
+
+function isPublicArticle(article) {
+  return article && article.published !== false && !article.scheduled;
+}
+
+async function loadPublicArticles() {
+  return (await loadArticles())
+    .filter(isPublicArticle)
+    .slice()
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+}
+
+function articleUrl(article) {
+  return `${BASE}article.html?id=${encodeURIComponent(article.id || "")}`;
+}
+
+function categoryLabel(category) {
+  const key = normalizeTeamName(category);
+  if (key === "super rugby") return "Internacional";
+  if (key === "urba top 14") return "URBA Top 14";
+  return category || "Rugby";
+}
+
+function categoryUrl(category) {
+  const key = normalizeTeamName(category);
+  if (key === "los pumas") return BASE + "los-pumas.html";
+  if (key === "urba top 14") return BASE + "urba-top-14.html";
+  if (key === "super rugby" || key === "internacional") return BASE + "super-rugby.html";
+  return BASE + "index.html";
+}
+
+function readMinutes(article) {
+  const text = String(article.content || "").replace(/<[^>]+>/g, " ");
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  if (words > 80) return Math.max(1, Math.round(words / 210));
+  const declared = parseInt(String(article.readTime || ""), 10);
+  return Number.isFinite(declared) && declared > 0 ? declared : 3;
+}
+
+function thumbHTML(article, { eager = false } = {}) {
+  const label = escapeHTML(categoryLabel(article.category));
+  const tone = (String(article.id || article.title || "").length % 2) + 1;
+
+  if (article.imageUrl) {
+    return `
+      <div class="thumb" data-label="${label}" data-tone="${tone}">
+        <img src="${escapeHTML(article.imageUrl)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"
+             onerror="this.parentNode.classList.add('ph');this.remove()">
+      </div>`;
+  }
+
+  return `<div class="thumb ph" data-label="${label}" data-tone="${tone}"></div>`;
+}
+
+function metaHTML(article, { author = true } = {}) {
+  return `
+    <div class="meta">
+      ${author ? `<span>${escapeHTML(article.author || "DropRugby")}</span>` : ""}
+      <span>${formatDateShort(article.date || getTodayISO())}</span>
+      <span>${readMinutes(article)} min</span>
+    </div>`;
+}
+
+function cardHTML(article, variant = "") {
+  const url = articleUrl(article);
+  const kicker = [categoryLabel(article.category), article.subcategory].filter(Boolean).join(" · ");
+
+  return `
+    <article class="card ${variant} reveal">
+      <a href="${url}" tabindex="-1" aria-hidden="true">${thumbHTML(article, { eager: variant === "lead" })}</a>
+      <div class="card-body">
+        <span class="drop-kicker">${escapeHTML(kicker)}</span>
+        <h3><a href="${url}">${escapeHTML(article.title || "Sin título")}</a></h3>
+        ${variant === "row" ? "" : `<p class="excerpt">${escapeHTML(article.excerpt || "")}</p>`}
+        ${metaHTML(article, { author: variant !== "row" })}
+      </div>
+    </article>`;
+}
+
+
+/* ==========================================================================
+   HOME
+   ========================================================================== */
+
+async function renderTicker() {
+  const ticker = document.getElementById("ticker");
+  const move = document.getElementById("ticker-move");
+  if (!ticker || !move || document.body.dataset.page === "article") return;
+
+  const latest = (await loadPublicArticles()).slice(0, 6);
+  if (!latest.length) return;
+
+  const items = latest.map(a =>
+    `<a href="${articleUrl(a)}"><b>${escapeHTML(categoryLabel(a.category).toUpperCase())}</b>${escapeHTML(a.title || "")}</a>`
+  ).join("");
+
+  // Se duplica para que el desplazamiento sea continuo.
+  move.innerHTML = items + items;
+  ticker.classList.remove("hidden");
+}
+
+async function renderHome() {
+  const heroEl = document.getElementById("home-hero");
+  if (!heroEl) return;
+
+  const articles = await loadPublicArticles();
+  const latestEl = document.getElementById("home-latest");
+  const feedEl = document.getElementById("home-feed");
+  const moreBtn = document.getElementById("home-feed-more");
+  const chips = document.querySelectorAll("#home-feed-chips .chip");
+
+  if (!articles.length) {
+    heroEl.outerHTML = `<p class="empty-state">Todavía no hay noticias publicadas. Volvé en un rato.</p>`;
+    if (latestEl) latestEl.closest(".hero-side")?.remove();
+    if (feedEl) feedEl.innerHTML = "";
+    moreBtn?.classList.add("hidden");
+    return;
+  }
+
+  const featured = articles.find(a => a.featured) || articles[0];
+  const rest = articles.filter(a => a.id !== featured.id);
+
+  heroEl.outerHTML = `
+    <a class="hero-main" href="${articleUrl(featured)}">
+      ${thumbHTML(featured, { eager: true })}
+      <div class="hero-copy">
+        <span class="hero-tag">Destacada · ${escapeHTML(categoryLabel(featured.category))}</span>
+        <h1>${escapeHTML(featured.title || "")}</h1>
+        <p>${escapeHTML(featured.excerpt || "")}</p>
+        ${metaHTML(featured)}
+        <span class="hero-cta">Leer la nota <i>→</i></span>
+      </div>
+    </a>`;
+
+  if (latestEl) {
+    latestEl.innerHTML = rest.slice(0, 5).map(a => `
+      <a class="rank-item" href="${articleUrl(a)}">
+        <div>
+          <span class="drop-kicker">${escapeHTML(categoryLabel(a.category))}</span>
+          <h3>${escapeHTML(a.title || "")}</h3>
+          <time>${formatDateShort(a.date)} · ${readMinutes(a)} min</time>
+        </div>
+      </a>`).join("") || `<p class="empty-state">Pronto, más noticias.</p>`;
+  }
+
+  if (!feedEl) return;
+
+  const PAGE = 6;
+  let filter = "";
+  let shown = PAGE + 1;
+
+  function paintFeed() {
+    const pool = rest.filter(a => {
+      if (!filter) return true;
+      const key = normalizeTeamName(a.category);
+      return filter.split("|").includes(key);
+    });
+
+    const visible = pool.slice(0, shown);
+
+    feedEl.innerHTML = visible.length
+      ? visible.map((a, i) => cardHTML(a, i === 0 ? "lead" : "")).join("")
+      : `<p class="empty-state">Todavía no hay noticias en esta sección.</p>`;
+
+    moreBtn?.classList.toggle("hidden", pool.length <= shown);
+    observeReveals(feedEl);
+  }
+
+  chips.forEach(chip => chip.addEventListener("click", () => {
+    chips.forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    filter = chip.dataset.filter || "";
+    shown = PAGE + 1;
+    paintFeed();
+  }));
+
+  moreBtn?.addEventListener("click", () => { shown += PAGE; paintFeed(); });
+
+  paintFeed();
+}
+
+async function renderMatches() {
+  const rail = document.getElementById("home-matches");
+  if (!rail) return;
+
+  const fixtures = (await loadFixtures())
+    .filter(f => f && f.date)
+    .slice()
+    .sort((a, b) => `${a.date}${a.time || ""}`.localeCompare(`${b.date}${b.time || ""}`));
+
+  const today = getTodayISO();
+  let list = fixtures.filter(f => f.date >= today).slice(0, 10);
+  const title = document.getElementById("home-matches-title");
+
+  if (!list.length) {
+    // Sin partidos futuros cargados: mostramos los últimos para no dejar la franja vacía.
+    list = fixtures.slice(-6).reverse();
+    if (title && list.length) title.textContent = "Últimos partidos";
+  }
+
+  if (!list.length) {
+    rail.outerHTML = `<p class="empty-state">Todavía no hay partidos cargados.</p>`;
+    return;
+  }
+
+  rail.innerHTML = list.map(f => {
+    const d = dateFromISO(f.date);
+    const day = f.date === today ? "HOY" : `${DIAS[d.getDay()].slice(0, 3)} ${formatDateShort(f.date).slice(0, 6)}`;
+    return `
+      <article class="match-card">
+        <div class="match-top"><b>${escapeHTML(String(categoryLabel(f.competition || "Rugby")).toUpperCase())}</b><span>${day}</span></div>
+        <div class="match-team">${teamShield(f.home)}<span>${escapeHTML(f.home || "")}</span></div>
+        <div class="match-team">${teamShield(f.away)}<span>${escapeHTML(f.away || "")}</span></div>
+        <div class="match-foot"><time>${escapeHTML(f.time || "--:--")}</time><span>${escapeHTML(f.channel || f.venue || "")}</span></div>
+      </article>`;
+  }).join("");
+}
+
+async function renderMiniStandings() {
+  const el = document.getElementById("home-standings");
+  if (!el) return;
+
+  const rows = (await loadStandings())
+    .slice()
+    .sort((a, b) => (Number(b.pts) || 0) - (Number(a.pts) || 0) || (Number(b.diff) || 0) - (Number(a.diff) || 0))
+    .slice(0, 6);
+
+  if (!rows.length) {
+    el.closest(".side-card")?.remove();
+    return;
+  }
+
+  el.innerHTML = `
+    <table class="mini-table">
+      ${rows.map((t, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><div class="standing-team">${teamShield(t.team)}<span>${escapeHTML(t.team || "")}</span></div></td>
+          <td>${Number(t.pts) || 0}</td>
+        </tr>`).join("")}
+    </table>`;
+}
+
+
+/* ==========================================================================
+   CATEGORÍAS
+   ========================================================================== */
+
+async function renderCategoryPage() {
+  const grid = document.getElementById("category-grid");
+  if (!grid) return;
+
+  // data-category admite varias categorías separadas por "|"
+  const wanted = String(grid.dataset.category || "").split("|").map(normalizeTeamName);
+  const articles = (await loadPublicArticles()).filter(a => wanted.includes(normalizeTeamName(a.category)));
+  const chips = document.querySelectorAll(".filter-bar .filter-chip");
+  let active = "TODAS";
+
+  function paint() {
+    const list = active === "TODAS"
+      ? articles
+      : articles.filter(a => normalizeTeamName(a.subcategory) === normalizeTeamName(active));
+
+    grid.innerHTML = list.length
+      ? list.map((a, i) => cardHTML(a, i === 0 ? "lead" : "")).join("")
+      : `<p class="empty-state">No hay noticias para este filtro todavía.</p>`;
+
+    observeReveals(grid);
+  }
+
+  chips.forEach(chip => chip.addEventListener("click", () => {
+    chips.forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    active = chip.dataset.filter || "TODAS";
+    paint();
+  }));
+
+  paint();
+}
+
+
+/* ==========================================================================
+   ARTÍCULO
+   ========================================================================== */
+
+function normalizeArticleHtml(value) {
+  let text = String(value ?? "").trim();
+  if (!text) return "";
+
+  const box = document.createElement("textarea");
+  for (let i = 0; i < 3; i++) {
+    box.innerHTML = text;
+    if (box.value === text) break;
+    text = box.value;
+  }
+
+  return text.replace(/^\s*```(?:html|htm)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+}
+
+function articleBodyHTML(value) {
+  const text = normalizeArticleHtml(value);
+  if (!text) return "";
+  if (/<\/?[a-z][^>]*>/i.test(text)) return text;
+  return text.split(/\n\s*\n/).map(p => `<p>${escapeHTML(p).replace(/\n/g, "<br>")}</p>`).join("");
+}
+
+// Evita que un marcador ("24") se parta en dos líneas dentro de bloques embebidos.
+function protectAtomicNumbers(scope) {
+  if (!scope) return;
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    if (!node.parentElement || node.parentElement.closest("script,style,pre,code")) continue;
+    if (/^\s*\d{1,3}\s*$/.test(node.nodeValue || "")) nodes.push(node);
+  }
+  nodes.forEach(n => {
+    const span = document.createElement("span");
+    span.className = "dr-atomic-number";
+    span.textContent = n.nodeValue;
+    n.parentNode.replaceChild(span, n);
+  });
+}
+
+async function postAnalytics(payload) {
+  try {
+    await fetch(BASE + "api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify(payload)
+    });
+  } catch (_) {}
+}
+
+async function renderArticle() {
+  const root = document.getElementById("article-root");
+  if (!root) return;
+
+  const id = new URLSearchParams(location.search).get("id");
+  const all = await loadPublicArticles();
+  const article = all.find(a => String(a.id) === String(id));
+
+  if (!article) {
+    document.title = "Artículo no encontrado | DropRugby";
+    root.innerHTML = `
+      <div class="article">
+        <div class="article-kicker"><span>DropRugby</span></div>
+        <h1>No encontramos esta nota.</h1>
+        <p class="lead">Puede que haya sido eliminada o que todavía no esté publicada.</p>
+        <p style="margin-top:28px"><a class="btn" href="${BASE}index.html">Volver al inicio</a></p>
+      </div>`;
+    return;
+  }
+
+  const title = String(article.title || "Artículo");
+  const excerpt = String(article.excerpt || "");
+  const url = new URL(`article.html?id=${encodeURIComponent(article.id)}`, location.href).href;
+  const author = String(article.author || "DropRugby");
+  const initials = author.split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+
+  document.title = `${title} | DropRugby`;
+  document.querySelector('meta[name="description"]')?.setAttribute("content", excerpt);
+  document.querySelector('meta[property="og:title"]')?.setAttribute("content", title);
+  document.querySelector('meta[property="og:description"]')?.setAttribute("content", excerpt);
+  if (article.imageUrl) document.querySelector('meta[property="og:image"]')?.setAttribute("content", article.imageUrl);
+
+  const others = all.filter(a => String(a.id) !== String(article.id));
+  const same = others.filter(a => a.category === article.category);
+  const ordered = [...same, ...others.filter(a => !same.includes(a))];
+  const next = ordered[0];
+  const related = ordered.slice(1, 4);
+
+  const shareText = encodeURIComponent(title);
+  const shareUrl = encodeURIComponent(url);
+  const quiz = await loadQuiz();
+
+  root.innerHTML = `
+    <article>
+      <header class="article">
+        <div class="article-kicker">
+          <a href="${categoryUrl(article.category)}">${escapeHTML(categoryLabel(article.category))}</a>
+          ${article.subcategory ? `<span>${escapeHTML(article.subcategory)}</span>` : ""}
+        </div>
+        <h1>${escapeHTML(title)}</h1>
+        ${excerpt ? `<p class="lead">${escapeHTML(excerpt)}</p>` : ""}
+        <div class="article-meta">
+          <span class="avatar" aria-hidden="true">${escapeHTML(initials || "DR")}</span>
+          <div>
+            <strong>${escapeHTML(author)}</strong>
+            <small>${formatDateLong(article.date)} · ${readMinutes(article)} min de lectura</small>
+          </div>
+          <div class="share-mini">
+            <a href="https://wa.me/?text=${shareText}%20${shareUrl}" target="_blank" rel="noopener" aria-label="Compartir por WhatsApp" data-net="whatsapp">W</a>
+            <a href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}" target="_blank" rel="noopener" aria-label="Compartir en X" data-net="x">𝕏</a>
+            <button type="button" aria-label="Copiar enlace" data-copy>⧉</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="article-cover">${thumbHTML(article, { eager: true })}</div>
+
+      <div class="article-body">${articleBodyHTML(article.content) || `<p>${escapeHTML(excerpt)}</p>`}</div>
+
+      <footer class="article-end">
+        <section class="share-box" aria-label="Compartir">
+          <h3>¿Te gustó? Compartila</h3>
+          <div class="share-buttons">
+            <a class="chip share-button" data-net="whatsapp" href="https://wa.me/?text=${shareText}%20${shareUrl}" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="chip share-button" data-net="x" href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}" target="_blank" rel="noopener">X</a>
+            <a class="chip share-button" data-net="facebook" href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" target="_blank" rel="noopener">Facebook</a>
+            <button class="chip share-button" type="button" data-copy>Copiar enlace</button>
+          </div>
+        </section>
+
+        ${quiz ? `
+          <a class="quiz-promo" href="${BASE}quiz.html">
+            <div>
+              <span class="drop-kicker">Quiz semanal</span>
+              <h3>${escapeHTML(quiz.title)}</h3>
+            </div>
+            <span class="btn on-dark">Jugar ahora →</span>
+          </a>` : ""}
+
+        ${next ? `
+          <a class="next-read" href="${articleUrl(next)}">
+            ${thumbHTML(next)}
+            <div>
+              <span class="drop-kicker">Seguí leyendo · ${escapeHTML(categoryLabel(next.category))}</span>
+              <h3>${escapeHTML(next.title || "")}</h3>
+              <span class="hero-cta">Leer la nota <i>→</i></span>
+            </div>
+          </a>` : ""}
+      </footer>
+    </article>
+
+    ${related.length ? `
+      <section class="related">
+        <div class="wrap">
+          <div class="section-head"><div><span class="drop-kicker">Más para leer</span><h2>Notas relacionadas</h2></div><a class="link-more" href="${categoryUrl(article.category)}">Ver todas →</a></div>
+          <div class="card-grid">${related.map(a => cardHTML(a)).join("")}</div>
+        </div>
+      </section>` : ""}`;
+
+  protectAtomicNumbers(root.querySelector(".article-body"));
+  observeReveals(root);
+
+  // Compartir / copiar
+  root.querySelectorAll("[data-copy]").forEach(btn => btn.addEventListener("click", async () => {
+    try {
+      if (navigator.share && window.matchMedia("(max-width: 640px)").matches) {
+        await navigator.share({ title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        const original = btn.textContent;
+        btn.textContent = btn.classList.contains("chip") ? "¡Enlace copiado!" : "✓";
+        setTimeout(() => { btn.textContent = original; }, 1800);
+      }
+      postAnalytics({ action: "share", articleId: String(article.id), network: "other" });
+    } catch (_) {}
+  }));
+
+  root.querySelectorAll("[data-net]").forEach(link => link.addEventListener("click", () =>
+    postAnalytics({ action: "share", articleId: String(article.id), network: link.dataset.net })
+  ));
+
+  // Analítica de lectura (igual que antes)
+  const articleId = String(article.id);
+  postAnalytics({ action: "view", articleId });
+
+  const started = Date.now();
+  let sent = false;
+  const sendReading = () => {
+    if (sent) return;
+    sent = true;
+    postAnalytics({ action: "reading", articleId, seconds: Math.round((Date.now() - started) / 1000) });
+  };
+  setTimeout(sendReading, 30000);
+  window.addEventListener("pagehide", sendReading, { once: true });
+}
+
+
+/* ==========================================================================
+   QUIZ SEMANAL
+   El contenido se edita desde el panel (sección "Quiz semanal").
+   ========================================================================== */
+
+let QUIZ_CACHE;
+
+async function loadQuiz() {
+  if (QUIZ_CACHE !== undefined) return QUIZ_CACHE;
+
+  let quiz = (await loadContent())?.quiz;
+
+  if (!quiz) {
+    try {
+      const response = await fetch(BASE + "data/quiz.json", { cache: "no-store" });
+      if (response.ok) quiz = await response.json();
+    } catch (_) {}
+  }
+
+  const questions = Array.isArray(quiz?.questions)
+    ? quiz.questions.filter(q => q && q.q && Array.isArray(q.options) && q.options.filter(Boolean).length >= 2)
+    : [];
+
+  QUIZ_CACHE = quiz && quiz.active !== false && questions.length
+    ? { ...quiz, id: quiz.id || "quiz", title: quiz.title || "Quiz semanal", questions }
+    : null;
+
+  return QUIZ_CACHE;
+}
+
+function quizStore(quiz, value) {
+  const key = `drop_quiz_${quiz.id}`;
+  try {
+    if (value === undefined) return JSON.parse(localStorage.getItem(key) || "null");
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  } catch (_) {}
+  return null;
+}
+
+function quizVerdict(score, total) {
+  const pct = total ? score / total : 0;
+  if (pct === 1) return ["Puntaje perfecto.", "Capitán indiscutido: no se te escapó ni una."];
+  if (pct >= 0.7) return ["Gran partido.", "Titular asegurado para el fin de semana."];
+  if (pct >= 0.4) return ["Zafaste.", "Arrancás en el banco, pero entrás en el segundo tiempo."];
+  return ["A entrenar.", "Te toca tercer tiempo de estudio. La semana que viene hay revancha."];
+}
+
+function mountQuiz(el, quiz) {
+  const total = quiz.questions.length;
+  const letters = "ABCDEF";
+  let index = 0;
+  let score = 0;
+  let marks = [];
+
+  const top = () => `
+    <div class="quiz-top">
+      <span class="drop-kicker">${escapeHTML(quiz.week || "Quiz semanal")}</span>
+      <span class="quiz-score">${score} / ${total}</span>
+    </div>
+    <div class="quiz-bar">${quiz.questions.map((_, i) =>
+      `<i class="${marks[i] === true ? "ok" : marks[i] === false ? "bad" : i === index ? "now" : ""}"></i>`
+    ).join("")}</div>`;
+
+  function intro() {
+    el.innerHTML = `
+      <div class="quiz-top"><span class="drop-kicker">${escapeHTML(quiz.week || "Quiz semanal")}</span><span class="quiz-score">${total} preguntas</span></div>
+      <h3>${escapeHTML(quiz.title)}</h3>
+      ${quiz.intro ? `<p class="quiz-intro-text">${escapeHTML(quiz.intro)}</p>` : ""}
+      <div class="quiz-actions"><button class="btn accent" type="button" data-start>Empezar el quiz →</button></div>`;
+    el.querySelector("[data-start]").addEventListener("click", () => { index = 0; score = 0; marks = []; question(); });
+  }
+
+  function question() {
+    const q = quiz.questions[index];
+    const options = q.options.map((text, i) => ({ text, i })).filter(o => String(o.text || "").trim());
+
+    el.innerHTML = `
+      ${top()}
+      <h3>${escapeHTML(q.q)}</h3>
+      <div class="quiz-options">
+        ${options.map((o, n) => `<button class="quiz-option" type="button" data-option="${o.i}"><b>${letters[n]}</b><span>${escapeHTML(o.text)}</span></button>`).join("")}
+      </div>
+      <div data-feedback></div>
+      <div class="quiz-actions"></div>`;
+
+    el.querySelectorAll(".quiz-option").forEach(btn => btn.addEventListener("click", () => {
+      const picked = Number(btn.dataset.option);
+      const correct = Number(q.correct) || 0;
+      const ok = picked === correct;
+
+      marks[index] = ok;
+      if (ok) score++;
+
+      el.querySelectorAll(".quiz-option").forEach(b => {
+        b.disabled = true;
+        const i = Number(b.dataset.option);
+        if (i === correct) b.classList.add("is-correct");
+        else if (i === picked) b.classList.add("is-wrong");
+      });
+
+      el.querySelector(".quiz-score").textContent = `${score} / ${total}`;
+      el.querySelector(".quiz-bar").children[index].className = ok ? "ok" : "bad";
+
+      el.querySelector("[data-feedback]").innerHTML = `
+        <div class="quiz-feedback ${ok ? "ok" : "bad"}" role="status">
+          <strong>${ok ? "¡Correcto!" : "No era esa."}</strong>
+          ${q.explain ? escapeHTML(q.explain) : ok ? "" : `La respuesta correcta: ${escapeHTML(q.options[correct] || "")}.`}
+        </div>`;
+
+      const last = index === total - 1;
+      const actions = el.querySelector(".quiz-actions");
+      actions.innerHTML = `<button class="btn" type="button">${last ? "Ver mi resultado →" : "Siguiente pregunta →"}</button>`;
+      const nextBtn = actions.firstElementChild;
+      nextBtn.addEventListener("click", () => {
+        if (last) { quizStore(quiz, { score, total, marks }); result(); }
+        else { index++; question(); }
+      });
+      nextBtn.focus({ preventScroll: true });
+    }));
+  }
+
+  function result() {
+    const [headline, line] = quizVerdict(score, total);
+    const pageUrl = new URL(BASE + "quiz.html", location.href).href;
+    const text = `Saqué ${score}/${total} en el quiz semanal de DropRugby 🏉 ¿Me ganás?`;
+    index = -1;
+
+    el.innerHTML = `
+      ${top()}
+      <div class="quiz-result">
+        <div class="quiz-result-score">${score}<small> / ${total}</small></div>
+        <h3>${headline}</h3>
+        <p>${line}</p>
+        <div class="quiz-share">
+          <a class="chip" href="https://wa.me/?text=${encodeURIComponent(text + " " + pageUrl)}" target="_blank" rel="noopener">Desafiar por WhatsApp</a>
+          <a class="chip" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(pageUrl)}" target="_blank" rel="noopener">Compartir en X</a>
+          <button class="chip" type="button" data-copy>Copiar resultado</button>
+        </div>
+      </div>
+      <div class="quiz-actions">
+        <button class="btn ghost" type="button" data-retry>Jugar de nuevo</button>
+        <a class="btn" href="${BASE}index.html#noticias">Seguir leyendo →</a>
+      </div>`;
+
+    el.querySelector("[data-copy]").addEventListener("click", async event => {
+      try {
+        await navigator.clipboard.writeText(`${text} ${pageUrl}`);
+        event.currentTarget.textContent = "¡Copiado!";
+      } catch (_) {}
+    });
+
+    el.querySelector("[data-retry]").addEventListener("click", () => {
+      quizStore(quiz, null);
+      index = 0; score = 0; marks = [];
+      question();
+    });
+  }
+
+  const saved = quizStore(quiz);
+  if (saved && saved.total === total) {
+    score = Number(saved.score) || 0;
+    marks = Array.isArray(saved.marks) ? saved.marks : [];
+    result();
+  } else {
+    intro();
+  }
+}
+
+async function renderQuiz() {
+  const mounts = document.querySelectorAll("[data-quiz]");
+  if (!mounts.length) return;
+
+  const quiz = await loadQuiz();
+  const band = document.getElementById("quiz-band");
+
+  if (!quiz) {
+    // En la home la franja se oculta; en quiz.html avisamos.
+    if (band) band.remove();
+    mounts.forEach(el => {
+      if (!el.isConnected) return;
+      el.innerHTML = `<div class="quiz-empty"><h3>El quiz vuelve pronto.</h3><p>Estamos preparando las preguntas de esta semana.</p></div>`;
+    });
+    return;
+  }
+
+  const set = (id, value) => { const el = document.getElementById(id); if (el && value) el.textContent = value; };
+  set("quiz-title", quiz.title);
+  set("quiz-intro", quiz.intro);
+  set("quiz-count", String(quiz.questions.length));
+
+  mounts.forEach(el => mountQuiz(el, quiz));
+}
+
+
+/* ==========================================================================
+   NEWSLETTER
+   ========================================================================== */
+
+function setupNewsletter() {
+  document.querySelectorAll(".newsletter-form").forEach(form => {
+    const input = form.querySelector('input[type="email"]');
+    const button = form.querySelector('button[type="submit"]');
+    const message = form.querySelector("small");
+    if (!input || !message) return;
+
+    const label = button ? button.textContent : "";
+    const say = (text, type) => {
+      message.textContent = text;
+      message.classList.remove("success", "error");
+      if (type) message.classList.add(type);
+    };
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const email = input.value.trim().toLowerCase();
+
+      if (!email || !input.checkValidity()) {
+        say("Ingresá un email válido.", "error");
+        input.focus();
+        return;
+      }
+
+      if (button) { button.disabled = true; button.textContent = "Enviando…"; }
+      say("Procesando suscripción…");
+
+      try {
+        const response = await fetch(BASE + "api/newsletter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error || "No se pudo completar la suscripción.");
+
+        say("¡Listo! Ya estás suscripto a DropRugby.", "success");
+        input.value = "";
+        if (button) { button.disabled = false; button.textContent = "Suscripto ✓"; }
+      } catch (error) {
+        say(error.message || "No se pudo completar la suscripción.", "error");
+        if (button) { button.disabled = false; button.textContent = label; }
+      }
+    });
+  });
+}
+
 
 /* ==========================================================================
    BUSCADOR
    ========================================================================== */
 
 function setupSearch() {
-  const openButtons =
-    document.querySelectorAll(
-      ".search-btn"
-    );
+  const overlay = document.getElementById("search-overlay");
+  const input = document.getElementById("search-input");
+  const results = document.getElementById("search-results");
+  const openButtons = document.querySelectorAll(".search-btn");
+  if (!overlay || !input || !results || !openButtons.length) return;
 
-  const overlay =
-    document.getElementById(
-      "search-overlay"
-    );
+  let pool = null;
+  const close = () => overlay.classList.remove("open");
 
-  const closeButton =
-    document.getElementById(
-      "search-close"
-    );
+  openButtons.forEach(btn => btn.addEventListener("click", async () => {
+    overlay.classList.add("open");
+    input.focus();
+    if (!pool) pool = await loadPublicArticles();
+  }));
 
-  const input =
-    document.getElementById(
-      "search-input"
-    );
+  document.getElementById("search-close")?.addEventListener("click", close);
+  overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+  document.addEventListener("keydown", event => { if (event.key === "Escape") close(); });
 
-  const results =
-    document.getElementById(
-      "search-results"
-    );
+  input.addEventListener("input", () => {
+    const query = normalizeTeamName(input.value);
+    if (!query) { results.innerHTML = ""; return; }
 
-  if (
-    !overlay ||
-    !openButtons.length ||
-    !input ||
-    !results
-  ) {
-    return;
-  }
+    const matches = (pool || []).filter(a =>
+      [a.title, a.category, a.subcategory, a.excerpt, a.author].some(field => normalizeTeamName(field).includes(query))
+    ).slice(0, 12);
 
-
-  let articlesForSearch = null;
-
-
-  async function ensureSearchData() {
-    if (!articlesForSearch) {
-      articlesForSearch =
-        await loadArticles();
-    }
-  }
-
-
-  openButtons.forEach(button => {
-    button.addEventListener(
-      "click",
-      async () => {
-
-        overlay.classList.add("open");
-
-        input.focus();
-
-        await ensureSearchData();
-      }
-    );
+    results.innerHTML = matches.length
+      ? matches.map(a => `
+          <a class="search-result" href="${articleUrl(a)}">
+            <span class="drop-kicker">${escapeHTML(categoryLabel(a.category))}</span>
+            <h3>${escapeHTML(a.title || "")}</h3>
+          </a>`).join("")
+      : `<p class="search-empty">Sin resultados para "${escapeHTML(input.value)}".</p>`;
   });
-
-
-  if (closeButton) {
-    closeButton.addEventListener(
-      "click",
-      () => {
-        overlay.classList.remove("open");
-      }
-    );
-  }
-
-
-  overlay.addEventListener(
-    "click",
-    event => {
-      if (event.target === overlay) {
-        overlay.classList.remove("open");
-      }
-    }
-  );
-
-
-  document.addEventListener(
-    "keydown",
-    event => {
-      if (event.key === "Escape") {
-        overlay.classList.remove("open");
-      }
-    }
-  );
-
-
-  input.addEventListener(
-    "input",
-    () => {
-
-      const query =
-        input.value
-          .trim()
-          .toLowerCase();
-
-
-      if (!query) {
-        results.innerHTML = "";
-        return;
-      }
-
-
-      const matches =
-        (articlesForSearch || [])
-          .filter(article => {
-
-            const title =
-              String(article.title || "")
-                .toLowerCase();
-
-            const category =
-              String(article.category || "")
-                .toLowerCase();
-
-            const subcategory =
-              String(article.subcategory || "")
-                .toLowerCase();
-
-            const excerpt =
-              String(article.excerpt || "")
-                .toLowerCase();
-
-            return (
-              title.includes(query) ||
-              category.includes(query) ||
-              subcategory.includes(query) ||
-              excerpt.includes(query)
-            );
-          });
-
-
-      if (!matches.length) {
-        results.innerHTML = `
-          <p class="search-empty">
-            Sin resultados para "${escapeHTML(input.value)}".
-          </p>
-        `;
-
-        return;
-      }
-
-
-      results.innerHTML =
-        matches.map(article => {
-
-          const category =
-            escapeHTML(
-              String(
-                article.category || "RUGBY"
-              ).toUpperCase()
-            );
-
-          const subcategory =
-            escapeHTML(
-              String(
-                article.subcategory ||
-                "ACTUALIDAD"
-              ).toUpperCase()
-            );
-
-          const title =
-            escapeHTML(
-              article.title || ""
-            );
-
-          const url =
-            `${BASE}article.html?id=${encodeURIComponent(
-              article.id || ""
-            )}`;
-
-          return `
-            <a
-              class="search-result"
-              href="${url}"
-            >
-
-              <p class="category">
-                ${category} · ${subcategory}
-              </p>
-
-              <h3>
-                ${title}
-              </h3>
-
-            </a>
-          `;
-        })
-        .join("");
-    }
-  );
 }
 
 
@@ -2037,49 +2218,30 @@ function setupSearch() {
    ========================================================================== */
 
 async function initDropRugby() {
+  renderLayout();
   setupMobileMenu();
-
-  setupRevealObserver();
-
-  setupNewsletter();
-
   setupSearch();
-
-  /*
-    Las funciones comprueban internamente si los elementos existen.
-    Por eso podemos lanzarlas sin hacer peticiones innecesarias.
-  */
+  setupNewsletter();
+  setupScrollUI();
 
   await Promise.all([
     renderHome(),
-    renderCalendarPreview(),
+    renderMatches(),
+    renderMiniStandings(),
+    renderCategoryPage(),
     renderCalendar(),
-    renderUrbaStandings()
-  ]);
-
-  const categoryGrid =
-    document.getElementById(
-      "category-grid"
-    );
-
-  if (categoryGrid) {
-    await renderCategoryPage(
-      categoryGrid.dataset.category
-    );
-  }
+    renderUrbaStandings(),
+    renderArticle(),
+    renderQuiz(),
+    renderTicker()
+  ].map(p => p.catch(error => console.error("DropRugby:", error))));
 
   observeReveals();
+  window.dispatchEvent(new Event("scroll"));
 }
 
-
-if (
-  document.readyState === "loading"
-) {
-  document.addEventListener(
-    "DOMContentLoaded",
-    initDropRugby,
-    { once: true }
-  );
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initDropRugby, { once: true });
 } else {
   initDropRugby();
 }
