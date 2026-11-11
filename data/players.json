@@ -1,4 +1,755 @@
 {
-  "_ayuda": "Cada jugador: name, club (nombre como en la tabla, ej. Newman) y position (1 a 15). Con jugadores cargados, Rugby XV los sugiere por puesto y la página URBA Top 14 los lista por club.",
-  "players": []
+  "_ayuda": "Generado con tools/import-players.mjs desde data/players.csv. Editá el CSV y volvé a correr el script.",
+  "players": [
+    {
+      "name": "Francisco Ferronato",
+      "club": "Belgrano Athletic",
+      "position": 1
+    },
+    {
+      "name": "Francisco Lusarreta",
+      "club": "Belgrano Athletic",
+      "position": 2
+    },
+    {
+      "name": "Eliseo Marchetti",
+      "club": "Belgrano Athletic",
+      "position": 3
+    },
+    {
+      "name": "Ramón Duggan",
+      "club": "Belgrano Athletic",
+      "position": 4
+    },
+    {
+      "name": "Rodrigo Fernández Criado",
+      "club": "Belgrano Athletic",
+      "position": 5
+    },
+    {
+      "name": "Mateo Gasparotti",
+      "club": "Belgrano Athletic",
+      "position": 6
+    },
+    {
+      "name": "Julián Rebussone",
+      "club": "Belgrano Athletic",
+      "position": 7
+    },
+    {
+      "name": "Jerónimo Sorondo",
+      "club": "Belgrano Athletic",
+      "position": 8
+    },
+    {
+      "name": "Theo Blacksley",
+      "club": "Belgrano Athletic",
+      "position": 9
+    },
+    {
+      "name": "Juan Landó",
+      "club": "Belgrano Athletic",
+      "position": 10
+    },
+    {
+      "name": "Félix Geñal",
+      "club": "Belgrano Athletic",
+      "position": 11
+    },
+    {
+      "name": "Martín Arana",
+      "club": "Belgrano Athletic",
+      "position": 12
+    },
+    {
+      "name": "Tomás Etchepare",
+      "club": "Belgrano Athletic",
+      "position": 13
+    },
+    {
+      "name": "Ignacio Díaz",
+      "club": "Belgrano Athletic",
+      "position": 14
+    },
+    {
+      "name": "Pedro Arana",
+      "club": "Belgrano Athletic",
+      "position": 15
+    },
+    {
+      "name": "Tomás Gallo",
+      "club": "Buenos Aires C&RC",
+      "position": 1
+    },
+    {
+      "name": "Tomás Rosasco",
+      "club": "Buenos Aires C&RC",
+      "position": 2
+    },
+    {
+      "name": "Blas Coria",
+      "club": "Buenos Aires C&RC",
+      "position": 3
+    },
+    {
+      "name": "Pedro Del Carril",
+      "club": "Buenos Aires C&RC",
+      "position": 4
+    },
+    {
+      "name": "Francisco Syriani",
+      "club": "Buenos Aires C&RC",
+      "position": 5
+    },
+    {
+      "name": "Lucas Etcheverry",
+      "club": "Buenos Aires C&RC",
+      "position": 6
+    },
+    {
+      "name": "Francisco Sluga",
+      "club": "Buenos Aires C&RC",
+      "position": 7
+    },
+    {
+      "name": "Pablo Bourdal",
+      "club": "Buenos Aires C&RC",
+      "position": 8
+    },
+    {
+      "name": "Mateo Freire",
+      "club": "Buenos Aires C&RC",
+      "position": 9
+    },
+    {
+      "name": "Tomás Bunge",
+      "club": "Buenos Aires C&RC",
+      "position": 10
+    },
+    {
+      "name": "Alfonso Latorre",
+      "club": "Buenos Aires C&RC",
+      "position": 11
+    },
+    {
+      "name": "Agustín Lamensa",
+      "club": "Buenos Aires C&RC",
+      "position": 12
+    },
+    {
+      "name": "Tobías Díaz Borda",
+      "club": "Buenos Aires C&RC",
+      "position": 13
+    },
+    {
+      "name": "Julián Quetglas",
+      "club": "Buenos Aires C&RC",
+      "position": 14
+    },
+    {
+      "name": "Nicolás Pizzo",
+      "club": "Buenos Aires C&RC",
+      "position": 15
+    },
+    {
+      "name": "Honorio Basualdo Quintana",
+      "club": "Champagnat",
+      "position": 1
+    },
+    {
+      "name": "Simón Panelo",
+      "club": "Champagnat",
+      "position": 2
+    },
+    {
+      "name": "Tomás Yanzon",
+      "club": "Champagnat",
+      "position": 3
+    },
+    {
+      "name": "Iñaki Ustariz",
+      "club": "Champagnat",
+      "position": 4
+    },
+    {
+      "name": "Santiago Escuti",
+      "club": "Champagnat",
+      "position": 5
+    },
+    {
+      "name": "Tobías Rivas Orozco",
+      "club": "Champagnat",
+      "position": 6
+    },
+    {
+      "name": "Nicolás Rojo",
+      "club": "Champagnat",
+      "position": 7
+    },
+    {
+      "name": "Lucas Moresco",
+      "club": "Champagnat",
+      "position": 8
+    },
+    {
+      "name": "Juan Segundo Panelo",
+      "club": "Champagnat",
+      "position": 9
+    },
+    {
+      "name": "Tomás Luchía Puig",
+      "club": "Champagnat",
+      "position": 10
+    },
+    {
+      "name": "Felipe Ortíz Soldati",
+      "club": "Champagnat",
+      "position": 11
+    },
+    {
+      "name": "Santiago Carrara",
+      "club": "Champagnat",
+      "position": 12
+    },
+    {
+      "name": "Tomás Cotter Daireaux",
+      "club": "Champagnat",
+      "position": 13
+    },
+    {
+      "name": "Bautista Rodríguez",
+      "club": "Champagnat",
+      "position": 14
+    },
+    {
+      "name": "Joaquín Núñez",
+      "club": "Champagnat",
+      "position": 15
+    },
+    {
+      "name": "Francisco Garoby",
+      "club": "CUBA",
+      "position": 1
+    },
+    {
+      "name": "Tomás Anderlic",
+      "club": "CUBA",
+      "position": 2
+    },
+    {
+      "name": "Esteban Iribarne",
+      "club": "CUBA",
+      "position": 3
+    },
+    {
+      "name": "Santiago Uriarte",
+      "club": "CUBA",
+      "position": 4
+    },
+    {
+      "name": "Santos Cayol",
+      "club": "CUBA",
+      "position": 5
+    },
+    {
+      "name": "Lucas Campion",
+      "club": "CUBA",
+      "position": 6
+    },
+    {
+      "name": "Segundo Pisani",
+      "club": "CUBA",
+      "position": 7
+    },
+    {
+      "name": "Benito Ortíz de Rozas",
+      "club": "CUBA",
+      "position": 8
+    },
+    {
+      "name": "Félix Corleto",
+      "club": "CUBA",
+      "position": 9
+    },
+    {
+      "name": "Agustín Peres",
+      "club": "CUBA",
+      "position": 10
+    },
+    {
+      "name": "Agustín Fraga",
+      "club": "CUBA",
+      "position": 11
+    },
+    {
+      "name": "Felipe De la Vega",
+      "club": "CUBA",
+      "position": 12
+    },
+    {
+      "name": "Felipe Perdomo",
+      "club": "CUBA",
+      "position": 13
+    },
+    {
+      "name": "Tomás Passaro",
+      "club": "CUBA",
+      "position": 14
+    },
+    {
+      "name": "Marcos Eliçagaray",
+      "club": "CUBA",
+      "position": 15
+    },
+    {
+      "name": "Ariel Del Cerro",
+      "club": "La Plata",
+      "position": 1
+    },
+    {
+      "name": "Martín Fontán",
+      "club": "La Plata",
+      "position": 2
+    },
+    {
+      "name": "Martín Patat",
+      "club": "La Plata",
+      "position": 3
+    },
+    {
+      "name": "Bautista Ozog",
+      "club": "La Plata",
+      "position": 4
+    },
+    {
+      "name": "Iván Kucic",
+      "club": "La Plata",
+      "position": 5
+    },
+    {
+      "name": "Segundo Pineda",
+      "club": "La Plata",
+      "position": 6
+    },
+    {
+      "name": "Carlos Mendieta",
+      "club": "La Plata",
+      "position": 7
+    },
+    {
+      "name": "Juan Pedro Bernasconi",
+      "club": "La Plata",
+      "position": 8
+    },
+    {
+      "name": "Manuel De la Fuente",
+      "club": "La Plata",
+      "position": 9
+    },
+    {
+      "name": "Santino Di Lucca",
+      "club": "La Plata",
+      "position": 10
+    },
+    {
+      "name": "Pedro Addiechi",
+      "club": "La Plata",
+      "position": 11
+    },
+    {
+      "name": "Francisco Paz Rizzoli",
+      "club": "La Plata",
+      "position": 12
+    },
+    {
+      "name": "Luca Juliano",
+      "club": "La Plata",
+      "position": 13
+    },
+    {
+      "name": "Matías Rivademar",
+      "club": "La Plata",
+      "position": 14
+    },
+    {
+      "name": "Tomás Suárez Folch",
+      "club": "La Plata",
+      "position": 15
+    },
+    {
+      "name": "Matías Salina",
+      "club": "Los Matreros",
+      "position": 1
+    },
+    {
+      "name": "Boris Cec",
+      "club": "Los Matreros",
+      "position": 2
+    },
+    {
+      "name": "Juan Pablo Zeiss",
+      "club": "Los Matreros",
+      "position": 3
+    },
+    {
+      "name": "Tomás Gahan",
+      "club": "Los Matreros",
+      "position": 4
+    },
+    {
+      "name": "Alejo Villañañe",
+      "club": "Los Matreros",
+      "position": 5
+    },
+    {
+      "name": "Juan Pablo Guevara",
+      "club": "Los Matreros",
+      "position": 6
+    },
+    {
+      "name": "Colin McCormack",
+      "club": "Los Matreros",
+      "position": 7
+    },
+    {
+      "name": "Santiago Villarino",
+      "club": "Los Matreros",
+      "position": 8
+    },
+    {
+      "name": "Marcos Amorisa",
+      "club": "Los Matreros",
+      "position": 9
+    },
+    {
+      "name": "Juan Francisco Morales",
+      "club": "Los Matreros",
+      "position": 10
+    },
+    {
+      "name": "Santiago Marelli",
+      "club": "Los Matreros",
+      "position": 11
+    },
+    {
+      "name": "Pedro Del Busto",
+      "club": "Los Matreros",
+      "position": 12
+    },
+    {
+      "name": "Nicolás Santecchia",
+      "club": "Los Matreros",
+      "position": 13
+    },
+    {
+      "name": "Germán Gallastegui",
+      "club": "Los Matreros",
+      "position": 14
+    },
+    {
+      "name": "Juan Pablo García Michero",
+      "club": "Los Matreros",
+      "position": 15
+    },
+    {
+      "name": "Elio Bsualdo",
+      "club": "Los Tilos",
+      "position": 1
+    },
+    {
+      "name": "Hipólito San Sebastián",
+      "club": "Los Tilos",
+      "position": 2
+    },
+    {
+      "name": "Ramiro Berardi",
+      "club": "Los Tilos",
+      "position": 3
+    },
+    {
+      "name": "Juan Blaiotta Lago",
+      "club": "Los Tilos",
+      "position": 4
+    },
+    {
+      "name": "Bautista Gatti",
+      "club": "Los Tilos",
+      "position": 5
+    },
+    {
+      "name": "Valentino Cortopasso",
+      "club": "Los Tilos",
+      "position": 6
+    },
+    {
+      "name": "Felipe Puertas",
+      "club": "Los Tilos",
+      "position": 7
+    },
+    {
+      "name": "Felipe Bares",
+      "club": "Los Tilos",
+      "position": 8
+    },
+    {
+      "name": "Pedro Rodríguez Alcobendas",
+      "club": "Los Tilos",
+      "position": 9
+    },
+    {
+      "name": "Matías Cordero",
+      "club": "Los Tilos",
+      "position": 10
+    },
+    {
+      "name": "Gastón Martínez Salgado",
+      "club": "Los Tilos",
+      "position": 11
+    },
+    {
+      "name": "Tomás Fernández Armendáriz",
+      "club": "Los Tilos",
+      "position": 12
+    },
+    {
+      "name": "Segundo Tuculet",
+      "club": "Los Tilos",
+      "position": 13
+    },
+    {
+      "name": "Ignacio Guichon",
+      "club": "Los Tilos",
+      "position": 14
+    },
+    {
+      "name": "Bautista Santamarina",
+      "club": "Los Tilos",
+      "position": 15
+    },
+    {
+      "name": "Isidro Bosch",
+      "club": "Newman",
+      "position": 1
+    },
+    {
+      "name": "Teófilo Mackinlay",
+      "club": "Newman",
+      "position": 2
+    },
+    {
+      "name": "Luciano Borio",
+      "club": "Newman",
+      "position": 3
+    },
+    {
+      "name": "Jerónimo Ureta",
+      "club": "Newman",
+      "position": 4
+    },
+    {
+      "name": "Francisco Lascombes",
+      "club": "Newman",
+      "position": 5
+    },
+    {
+      "name": "Mateo Montoya",
+      "club": "Newman",
+      "position": 6
+    },
+    {
+      "name": "Joaquín De la Vega",
+      "club": "Newman",
+      "position": 7
+    },
+    {
+      "name": "Rodrigo Díaz de Vívar",
+      "club": "Newman",
+      "position": 8
+    },
+    {
+      "name": "Lucas Nava",
+      "club": "Newman",
+      "position": 9
+    },
+    {
+      "name": "Florencio Llerena",
+      "club": "Newman",
+      "position": 10
+    },
+    {
+      "name": "Justo Ortíz Basualdo",
+      "club": "Newman",
+      "position": 11
+    },
+    {
+      "name": "Tomás Keena",
+      "club": "Newman",
+      "position": 12
+    },
+    {
+      "name": "Cruz Ulloa",
+      "club": "Newman",
+      "position": 13
+    },
+    {
+      "name": "Jerónimo Ulloa",
+      "club": "Newman",
+      "position": 14
+    },
+    {
+      "name": "Carlos Quinto Menéndez",
+      "club": "Newman",
+      "position": 15
+    },
+    {
+      "name": "Fabrizio Cebrón",
+      "club": "Regatas Bella Vista",
+      "position": 1
+    },
+    {
+      "name": "Beltrán Landívar",
+      "club": "Regatas Bella Vista",
+      "position": 2
+    },
+    {
+      "name": "Felipe Galli",
+      "club": "Regatas Bella Vista",
+      "position": 3
+    },
+    {
+      "name": "Valentín Sanguinetti",
+      "club": "Regatas Bella Vista",
+      "position": 4
+    },
+    {
+      "name": "Marcelo Toledo",
+      "club": "Regatas Bella Vista",
+      "position": 5
+    },
+    {
+      "name": "Tomás Sanguinetti",
+      "club": "Regatas Bella Vista",
+      "position": 6
+    },
+    {
+      "name": "Lucas Gobet",
+      "club": "Regatas Bella Vista",
+      "position": 7
+    },
+    {
+      "name": "Felipe Camerlinckx",
+      "club": "Regatas Bella Vista",
+      "position": 8
+    },
+    {
+      "name": "Marcos Joseph",
+      "club": "Regatas Bella Vista",
+      "position": 9
+    },
+    {
+      "name": "José De la Torre",
+      "club": "Regatas Bella Vista",
+      "position": 10
+    },
+    {
+      "name": "Enrique Camerlinckx",
+      "club": "Regatas Bella Vista",
+      "position": 11
+    },
+    {
+      "name": "Mateo Camerlinckx",
+      "club": "Regatas Bella Vista",
+      "position": 12
+    },
+    {
+      "name": "Juan Cruz Corso",
+      "club": "Regatas Bella Vista",
+      "position": 13
+    },
+    {
+      "name": "Felipe Rugolo",
+      "club": "Regatas Bella Vista",
+      "position": 14
+    },
+    {
+      "name": "Justo Camerlinckx",
+      "club": "Regatas Bella Vista",
+      "position": 15
+    },
+    {
+      "name": "Marcos Piccinini",
+      "club": "SIC",
+      "position": 1
+    },
+    {
+      "name": "Ignacio Bottazzini",
+      "club": "SIC",
+      "position": 2
+    },
+    {
+      "name": "Benjamín Chiappe",
+      "club": "SIC",
+      "position": 3
+    },
+    {
+      "name": "Lucas Sommer",
+      "club": "SIC",
+      "position": 4
+    },
+    {
+      "name": "Ciro Plorutti",
+      "club": "SIC",
+      "position": 5
+    },
+    {
+      "name": "Andrea Panzarini",
+      "club": "SIC",
+      "position": 6
+    },
+    {
+      "name": "Franco Delger",
+      "club": "SIC",
+      "position": 7
+    },
+    {
+      "name": "Tomás Meyrelles",
+      "club": "SIC",
+      "position": 8
+    },
+    {
+      "name": "Mateo Albanese",
+      "club": "SIC",
+      "position": 9
+    },
+    {
+      "name": "Santiago Pavlovsky",
+      "club": "SIC",
+      "position": 10
+    },
+    {
+      "name": "Bernabé López Fleming",
+      "club": "SIC",
+      "position": 11
+    },
+    {
+      "name": "Ignacio Pietranera",
+      "club": "SIC",
+      "position": 12
+    },
+    {
+      "name": "Carlos Pirán",
+      "club": "SIC",
+      "position": 13
+    },
+    {
+      "name": "Timoteo Silva",
+      "club": "SIC",
+      "position": 14
+    },
+    {
+      "name": "Francisco González Capdevila",
+      "club": "SIC",
+      "position": 15
+    }
+  ]
 }

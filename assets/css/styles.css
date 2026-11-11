@@ -643,3 +643,24 @@ h1, h2, h3, h4, p { margin: 0; }
 .xv-final .xv-slot.filled:hover { background: rgba(255,255,255,.94); }
 div.xv-slot { cursor: default; }
 @media (max-width: 640px) { .xv-modes { grid-template-columns: minmax(0, 1fr); } }
+
+/* Escudos reales: fondo claro para que se vean bien en cualquier tarjeta */
+.team-shield { object-fit: contain; }
+
+/* Wordle */
+.wd-board { display: grid; gap: 6px; margin-top: 4px; }
+.wd-head, .wd-row { display: grid; grid-template-columns: minmax(0, 1.7fr) repeat(5, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+.wd-head span { padding: 0 2px 4px; color: var(--muted); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+.wd-head span:first-child { text-align: left; }
+.wd-name { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; font-weight: 800; line-height: 1.15; }
+.wd-name span { overflow-wrap: anywhere; }
+.wd-cell { display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 4px; border-radius: 8px; font-size: 13px; font-weight: 800; text-align: center; color: #fff; animation: popin .35s var(--ease); }
+.wd-cell.ok { background: var(--success); }
+.wd-cell.near { background: #d9a400; }
+.wd-cell.no { background: #7a7f86; }
+.wd-cell .team-shield { width: 28px; height: 28px; background: #fff; border-radius: 6px; padding: 2px; }
+.wd-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.wd-legend span.ok::before, .wd-legend span.near::before, .wd-legend span.no::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 3px; }
+.wd-legend .ok::before { background: var(--success); } .wd-legend .near::before { background: #d9a400; } .wd-legend .no::before { background: #7a7f86; }
+@media (max-width: 640px) { .wd-head span { font-size: 9px; } .wd-cell { min-height: 40px; font-size: 11.5px; } .wd-name { font-size: 11.5px; } .wd-name .team-shield-wrap { display: none; } }
+.comp-grid.four { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }

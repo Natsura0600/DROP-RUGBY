@@ -585,6 +585,143 @@ async function mountHigherLower(root) {
   ask();
 }
 
+
+/* ==========================================================================
+   5) WORDLE DE JUGADORES — adiviná al jugador del día
+   Cada intento compara: club, puesto, línea (delanteros/backs), cantidad de
+   letras del nombre y la inicial del nombre. Verde = igual, amarillo = cerca.
+   ========================================================================== */
+
+const WD_MAX = 8;
+
+function wdToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function wdHash(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+async function mountPlayerWordle(root) {
+  const all = (await loadPlayers()).filter(p => p.name && Number(p.position) >= 1 && Number(p.position) <= 15);
+  if (all.length < 10) {
+    root.innerHTML = `<div class="quiz-empty"><h3>El Wordle vuelve pronto.</h3><p>Estamos cargando los jugadores.</p></div>`;
+    return;
+  }
+  const roster = all.slice().sort((a, b) => `${a.club}|${a.name}`.localeCompare(`${b.club}|${b.name}`));
+  const key = n => normalizeTeamName(n).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const letters = p => key(p.name).replace(/ /g, "").length;
+  const initial = p => key(p.name)[0] || "";
+  const posName = n => (XV_POSITIONS.find(x => x.n === Number(n)) || {}).name || "";
+  const forwards = p => Number(p.position) <= 8;
+
+  const date = wdToday();
+  const STORE = `wordle_${date}`;
+  let daily = true;
+  let secret, guesses, over;
+
+  function dailySecret() { return roster[wdHash("drop-" + date) % roster.length]; }
+
+  function compare(g, s) {
+    const dPos = Math.abs(g.position - s.position);
+    const dLen = Math.abs(letters(g) - letters(s));
+    const dIni = Math.abs(initial(g).charCodeAt(0) - initial(s).charCodeAt(0));
+    const arrow = (a, b) => (b > a ? "↑" : b < a ? "↓" : "");
+    return [
+      { cls: g.club === s.club ? "ok" : "no", html: g.club ? teamShield(g.club, "team-shield") : "—", emoji: g.club === s.club ? "🟩" : "⬛" },
+      { cls: dPos === 0 ? "ok" : dPos <= 2 ? "near" : "no", html: `${g.position} ${arrow(g.position, s.position)}`, emoji: dPos === 0 ? "🟩" : dPos <= 2 ? "🟨" : "⬛" },
+      { cls: forwards(g) === forwards(s) ? "ok" : "no", html: forwards(g) ? "Delantero" : "Back", emoji: forwards(g) === forwards(s) ? "🟩" : "⬛" },
+      { cls: dLen === 0 ? "ok" : dLen <= 3 ? "near" : "no", html: `${letters(g)} ${arrow(letters(g), letters(s))}`, emoji: dLen === 0 ? "🟩" : dLen <= 3 ? "🟨" : "⬛" },
+      { cls: dIni === 0 ? "ok" : dIni <= 3 ? "near" : "no", html: `${initial(g).toUpperCase()} ${arrow(initial(g).charCodeAt(0), initial(s).charCodeAt(0))}`, emoji: dIni === 0 ? "🟩" : dIni <= 3 ? "🟨" : "⬛" }
+    ];
+  }
+
+  function save() {
+    if (daily) gStore(STORE, { guesses: guesses.map(g => g.name) });
+  }
+
+  function start(isDaily) {
+    daily = isDaily;
+    guesses = [];
+    over = false;
+    if (daily) {
+      secret = dailySecret();
+      const saved = gStore(STORE);
+      if (saved?.guesses) saved.guesses.forEach(n => { const p = roster.find(x => x.name === n); if (p) guesses.push(p); });
+    } else {
+      secret = roster[Math.floor(Math.random() * roster.length)];
+    }
+    over = guesses.some(g => g === secret) || guesses.length >= WD_MAX;
+    paint();
+  }
+
+  function rowHTML(g) {
+    const cells = compare(g, secret);
+    return `<div class="wd-row">
+      <div class="wd-name">${g.club ? teamShield(g.club, "team-shield") : ""}<span>${escapeHTML(g.name)}</span></div>
+      ${cells.map(c => `<div class="wd-cell ${c.cls}">${c.html}</div>`).join("")}
+    </div>`;
+  }
+
+  function paint() {
+    const won = guesses.includes(secret);
+    root.innerHTML = `
+      <div class="quiz-top"><span class="drop-kicker">${daily ? "Jugador del día" : "Práctica"}</span><span class="quiz-score">${guesses.length} / ${WD_MAX}</span></div>
+      ${over ? "" : `
+      <form class="xv-input-row" id="wd-form" autocomplete="off">
+        <input id="wd-input" type="text" list="wd-list" maxlength="50" placeholder="Elegí un jugador…" autocomplete="off">
+        <button class="btn accent" type="submit">Probar</button>
+        <datalist id="wd-list">${roster.map(p => `<option value="${escapeHTML(p.name)}">${escapeHTML(p.club || "")}</option>`).join("")}</datalist>
+      </form>
+      <div class="xv-msg" id="wd-msg" role="status" aria-live="polite">Adiviná quién es. Tenés ${WD_MAX} intentos.</div>`}
+      <div class="wd-board">
+        <div class="wd-head"><span>Jugador</span><span>Club</span><span>Puesto</span><span>Línea</span><span>Letras</span><span>Inicial</span></div>
+        ${guesses.map(rowHTML).join("")}
+      </div>
+      <div class="wd-legend"><span class="ok">igual</span><span class="near">cerca</span><span class="no">no</span><span>↑ más alto · ↓ más bajo</span></div>
+      ${over ? `
+      <div class="quiz-feedback ${won ? "" : ""}">
+        <strong>${won ? `¡Era ${escapeHTML(secret.name)}! En ${guesses.length} ${guesses.length === 1 ? "intento" : "intentos"}.` : `Se acabaron los intentos. Era ${escapeHTML(secret.name)}.`}</strong>
+        ${teamShield(secret.club || "", "team-shield")} ${escapeHTML(secret.club || "")} · ${secret.position} · ${escapeHTML(posName(secret.position))}
+        <div class="quiz-actions">
+          <button class="btn accent" type="button" data-share>Compartir</button>
+          <button class="btn ghost" type="button" data-practice>Jugar otro</button>
+        </div>
+      </div>` : ""}`;
+
+    if (over) {
+      root.querySelector("[data-share]").addEventListener("click", e => {
+        const grid = guesses.map(g => compare(g, secret).map(c => c.emoji).join("")).join("\n");
+        copyText(`DropRugby Wordle ${daily ? date + " " : ""}${won ? guesses.length : "X"}/${WD_MAX} 🏉\n${grid}\n${location.origin}/wordle`, e.currentTarget);
+      });
+      root.querySelector("[data-practice]").addEventListener("click", () => start(false));
+      return;
+    }
+
+    const input = root.querySelector("#wd-input");
+    const msg = root.querySelector("#wd-msg");
+    const say = (t, type) => { msg.textContent = t; msg.className = "xv-msg" + (type ? " " + type : ""); };
+    input.focus();
+    root.querySelector("#wd-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const q = key(input.value);
+      if (!q) return;
+      const guess = roster.find(p => key(p.name) === q);
+      if (!guess) { say("Elegí un jugador de la lista de sugerencias.", "bad"); input.classList.remove("shake"); void input.offsetWidth; input.classList.add("shake"); return; }
+      if (guesses.includes(guess)) { say(`${guess.name} ya lo probaste.`, "bad"); return; }
+      guesses.push(guess);
+      over = guess === secret || guesses.length >= WD_MAX;
+      save();
+      paint();
+    });
+  }
+
+  start(true);
+}
+
 /* ==========================================================================
    4) URBA TOP 14 — clubes y jugadores
    ========================================================================== */
@@ -621,4 +758,5 @@ async function renderGames() {
   if (page === "xv") await mountRugbyXV(mount);
   else if (page === "escudos") await mountShieldGame(mount);
   else if (page === "mayormenor") await mountHigherLower(mount);
+  else if (page === "wordle") await mountPlayerWordle(mount);
 }

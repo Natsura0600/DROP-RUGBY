@@ -96,6 +96,30 @@ const DROP_RUGBY_TEAMS = {
   }
 };
 
+
+/* Escudos locales (assets/clubs). Los links de Discord vencen; si un club
+   no tiene logo o tiene uno de Discord, usamos el archivo propio. */
+const LOCAL_CLUB_LOGOS = {
+  newman: "/assets/clubs/newman.png",
+  cuba: "/assets/clubs/cuba.png",
+  la_plata: "/assets/clubs/la_plata.png",
+  regatas_bella_vista: "/assets/clubs/regatas_bella_vista.png",
+  sic: "/assets/clubs/sic.png",
+  buenos_aires_crc: "/assets/clubs/buenos_aires_crc.png",
+  belgrano_athletic: "/assets/clubs/belgrano_athletic.png",
+  los_matreros: "/assets/clubs/los_matreros.png",
+  champagnat: "/assets/clubs/champagnat.png",
+  los_tilos: "/assets/clubs/los_tilos.png"
+};
+
+function applyLocalLogos() {
+  Object.entries(LOCAL_CLUB_LOGOS).forEach(([id, logo]) => {
+    const team = DROP_RUGBY_TEAMS[id];
+    if (team && (!team.logo || /discordapp\.com/.test(team.logo))) team.logo = logo;
+  });
+}
+applyLocalLogos();
+
 /* ==========================================================================
    ESCUDOS DE SELECCIONES
    ========================================================================== */
@@ -193,6 +217,8 @@ function applyTeamData(content) {
       DROP_RUGBY_TEAMS[id].logo = logo;
     }
   });
+
+  applyLocalLogos();
 
   Object.entries(nationLogos).forEach(([key, logo]) => {
     if (!logo) return;
@@ -1208,6 +1234,7 @@ const SITE_NAV = [
   ["rugby-xv.html", "Rugby XV", "xv"],
   ["escudos.html", "Escudos", "escudos"],
   ["mayor-menor.html", "Mayor o menor", "mayormenor"],
+  ["wordle.html", "Wordle", "wordle"],
   ["quiz.html", "Quiz", "quiz"],
   ["urba-top-14.html", "URBA Top 14", "urba"],
   ["calendario.html", "Calendario", "calendario"],
@@ -1231,9 +1258,11 @@ function renderLayout() {
   const header = document.getElementById("site-header");
   const footer = document.getElementById("site-footer");
 
-  const navLinks = SITE_NAV.map(([href, label, key]) =>
-    `<a href="${BASE}${href}" class="${key === page ? "active" : ""}${key === "quiz" ? " nav-quiz" : ""}">${label}</a>`
-  ).join("");
+  const linkHTML = ([href, label, key]) =>
+    `<a href="${BASE}${href}" class="${key === page ? "active" : ""}${key === "quiz" ? " nav-quiz" : ""}">${label}</a>`;
+  const navLinks = SITE_NAV.map(linkHTML).join("");
+  // En escritorio el logo ya lleva al inicio: se omite "Inicio" para que entre el menú.
+  const desktopLinks = SITE_NAV.slice(1).map(linkHTML).join("");
 
   if (header) {
     header.outerHTML = `
@@ -1244,7 +1273,7 @@ function renderLayout() {
             <img src="/logo.png" alt="" width="42" height="42">
             <span class="drop-wordmark">Drop<span>Rugby</span></span>
           </a>
-          <nav class="main-nav" aria-label="Navegación principal">${navLinks}</nav>
+          <nav class="main-nav" aria-label="Navegación principal">${desktopLinks}</nav>
           <div class="header-tools">
             <a class="icon-btn social" href="${SOCIAL.instagram}" target="_blank" rel="noopener" aria-label="Instagram">${ICONS.instagram}</a>
             <a class="icon-btn social" href="${SOCIAL.tiktok}" target="_blank" rel="noopener" aria-label="TikTok">${ICONS.tiktok}</a>
@@ -1275,7 +1304,7 @@ function renderLayout() {
             </div>
             <div class="footer-col">
               <strong>SECCIONES</strong>
-              ${SITE_NAV.slice(1, 7).map(([href, label]) => `<a href="${BASE}${href}">${label}</a>`).join("")}
+              ${SITE_NAV.slice(1, 8).map(([href, label]) => `<a href="${BASE}${href}">${label}</a>`).join("")}
             </div>
             <div class="footer-col">
               <strong>SEGUINOS</strong>
