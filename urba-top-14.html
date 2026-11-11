@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>URBA Top 14 | Noticias, tabla y resultados | DropRugby</title>
-  <meta name="description" content="La máxima categoría del rugby de clubes de Buenos Aires: resultados, tabla de posiciones y las historias detrás de cada fecha.">
+  <title>URBA Top 14 | Tabla y clubes | DropRugby</title>
+  <meta name="description" content="La máxima categoría del rugby de clubes de Buenos Aires: tabla de posiciones, clubes y jugadores.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0d0f11">
   <link rel="canonical" href="https://www.droprugby.com/urba-top-14.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DropRugby">
-  <meta property="og:title" content="URBA Top 14 | Noticias, tabla y resultados | DropRugby">
-  <meta property="og:description" content="La máxima categoría del rugby de clubes de Buenos Aires: resultados, tabla de posiciones y las historias detrás de cada fecha.">
+  <meta property="og:title" content="URBA Top 14 | Tabla y clubes | DropRugby">
+  <meta property="og:description" content="La máxima categoría del rugby de clubes de Buenos Aires: tabla de posiciones, clubes y jugadores.">
   <meta property="og:url" content="https://www.droprugby.com/urba-top-14.html">
   <meta property="og:image" content="https://www.droprugby.com/logo.png">
   <meta name="google-adsense-account" content="ca-pub-7081370352193016">
@@ -33,7 +33,7 @@
         <div class="breadcrumbs"><a href="index.html">Inicio</a><span>/</span><span>URBA Top 14</span></div>
         <span class="drop-kicker">Clubes de Buenos Aires</span>
         <h1>URBA Top 14</h1>
-        <p class="intro">La máxima categoría del rugby de clubes de Buenos Aires: resultados, tabla de posiciones y las historias de cada fecha.</p>
+        <p class="intro">La máxima categoría del rugby de clubes de Buenos Aires: tabla de posiciones, clubes y jugadores.</p>
       </div>
     </section>
 
@@ -42,34 +42,22 @@
         <div class="section-head"><div><span class="drop-kicker">URBA Top 14</span><h2>Tabla de posiciones</h2></div></div>
         <div class="standings-card"><div id="urba-standings"></div></div>
 
-        <div class="section-head"><div><span class="drop-kicker">Noticias</span><h2>Lo último del torneo</h2></div></div>
-        <div class="filter-bar">
-        <button class="filter-chip active" data-filter="TODAS">TODAS</button>
-        <button class="filter-chip" data-filter="NOTICIAS">NOTICIAS</button>
-        <button class="filter-chip" data-filter="RESULTADOS">RESULTADOS</button>
-        <button class="filter-chip" data-filter="TABLA">TABLA</button>
-        <button class="filter-chip" data-filter="ANÁLISIS">ANÁLISIS</button>
-        <button class="filter-chip" data-filter="CLUBES">CLUBES</button>
+        <div class="section-head"><div><span class="drop-kicker">Clubes</span><h2>Los 14 del Top 14</h2></div></div>
+        <div class="club-grid" id="urba-clubs"></div>
+
+        <div class="section-head"><div><span class="drop-kicker">Jugá</span><h2>Minijuegos del Top 14</h2></div></div>
+        <div class="comp-grid">
+          <a class="comp-card" data-word="XV" href="rugby-xv.html"><span class="drop-kicker">Armá tu equipo</span><h3>Rugby XV</h3><p>Elegí jugadores y clubes del Top 14.</p><b>↗</b></a>
+          <a class="comp-card" data-word="CLUB" href="escudos.html"><span class="drop-kicker">Adiviná</span><h3>¿De qué club es?</h3><p>Reconocé los escudos de los 14 clubes.</p><b>↗</b></a>
+          <a class="comp-card" data-word="RACHA" href="mayor-menor.html"><span class="drop-kicker">Con la tabla</span><h3>Mayor o menor</h3><p>Comparás clubes con los números reales.</p><b>↗</b></a>
         </div>
-        <div class="card-grid" id="category-grid" data-category="URBA TOP 14"></div>
       </div>
     </section>
 
-    <section class="section" style="padding-top:0">
-      <div class="wrap">
-        <div class="newsletter">
-          <div><span class="drop-kicker">Newsletter</span><h2>Lo más importante del rugby, directo a tu mail.</h2></div>
-          <form class="newsletter-form" novalidate>
-            <input type="email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required>
-            <button class="btn accent" type="submit">Suscribirme</button>
-            <small>Una selección breve, sin spam. Te das de baja cuando quieras.</small>
-          </form>
-        </div>
-      </div>
-    </section>
   </main>
 
   <div id="site-footer"></div>
   <script src="assets/js/script.js?v=20261110"></script>
+  <script src="assets/js/games.js?v=20261110"></script>
 </body>
 </html>

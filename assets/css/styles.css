@@ -551,3 +551,70 @@ h1, h2, h3, h4, p { margin: 0; }
   .ticker-track { overflow-x: auto; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ==========================================================================
+   MINIJUEGOS
+   ========================================================================== */
+.home-hero { background: var(--night); color: #fff; padding: 72px 0 80px; margin-top: 0; }
+.home-hero h1 { margin-top: 12px; font-family: var(--display); font-size: clamp(40px, 7vw, 84px); font-weight: 900; letter-spacing: -.05em; line-height: .98; text-transform: uppercase; }
+.home-hero .lead { margin-top: 20px; max-width: 560px; color: #c8ccd1; font-size: 18px; }
+.hero-buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+.comp-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.home-table { max-width: 560px; }
+.side-text { margin-top: 12px; color: var(--muted); font-size: 15px; }
+
+.game-shell { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 36px; align-items: start; max-width: 1080px; margin: 0 auto; }
+.game-box { min-height: 420px; }
+.team-shield.big { width: 56px; height: 56px; }
+.shield-stage { display: grid; place-items: center; height: 190px; margin: 6px 0 14px; border-radius: 16px; background: var(--paper); }
+.shield-stage img { max-height: 150px; width: auto; object-fit: contain; }
+.shield-q { font-family: var(--display); font-weight: 800; letter-spacing: -.02em; }
+.quiz-feedback.hidden { display: none; }
+
+.hl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+.hl-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 24px 12px; border: 1.5px solid var(--line-strong); border-radius: 16px; background: var(--surface); text-align: center; transition: border-color .16s, transform .16s var(--ease); }
+.hl-card:not(:disabled):hover { border-color: var(--ink); transform: translateY(-3px); }
+.hl-card strong { font-family: var(--display); font-size: 18px; font-weight: 800; }
+.hl-value { font-family: var(--display); font-size: 28px; font-weight: 900; }
+.hl-value small { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.hl-card.is-correct { border-color: var(--success); background: var(--success-soft); }
+.hl-card.is-wrong { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Rugby XV */
+.xv-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.xv-count { display: block; font-family: var(--display); font-size: 22px; font-weight: 900; }
+.xv-actions { display: flex; gap: 8px; }
+.xv-pitch { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(78px, auto)); gap: 8px; padding: 14px 8px; border-radius: 16px; background: repeating-linear-gradient(180deg, #1f6b3a 0 56px, #1b6234 56px 112px); }
+.xv-slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 2px; border: 2px dashed rgba(255,255,255,.55); border-radius: 12px; background: rgba(0,0,0,.18); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; transition: transform .16s var(--ease), background .16s; }
+.xv-slot:hover { transform: translateY(-2px); background: rgba(0,0,0,.32); }
+.xv-slot.filled { border-style: solid; border-color: #fff; background: rgba(255,255,255,.94); color: var(--ink); }
+.xv-num { position: absolute; top: -9px; left: -4px; display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--display); font-size: 11px; font-weight: 900; }
+.xv-plus { font-size: 22px; line-height: 1; }
+.xv-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.15; }
+.xv-name.muted { opacity: .75; font-weight: 600; }
+.xv-shield .team-shield { width: 24px; height: 24px; }
+.xv-hint { margin-top: 12px; color: var(--muted); font-size: 14px; }
+.xv-dialog { width: min(440px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+.xv-dialog::backdrop { background: rgba(13,15,17,.6); }
+.xv-form { display: grid; gap: 14px; padding: 24px; }
+.xv-form label { display: grid; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.xv-form input, .xv-form select { min-height: 46px; padding: 0 12px; border: 1.5px solid var(--line-strong); border-radius: 10px; background: #fff; font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.xv-form-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Clubes (URBA) */
+.club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 44px; }
+.club-card { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.club-head { display: flex; align-items: center; gap: 14px; }
+.club-head h3 { font-family: var(--display); font-size: 18px; font-weight: 800; }
+.club-head span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.club-players { margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); list-style: none; display: grid; gap: 4px; font-size: 14px; }
+.club-players b { display: inline-block; min-width: 24px; color: var(--accent); }
+
+@media (max-width: 1100px) { .game-shell { grid-template-columns: minmax(0, 1fr); } .comp-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .comp-grid.four { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) {
+  .home-hero { padding: 44px 0 52px; }
+  .hl-grid { gap: 10px; }
+  .xv-pitch { gap: 6px; padding: 12px 4px; grid-template-rows: repeat(6, minmax(70px, auto)); }
+  .xv-slot { font-size: 10.5px; }
+}

@@ -277,7 +277,6 @@ function teamShield(value, className = "team-shield") {
 let CONTENT_CACHE = null;
 let CONTENT_LOADING = null;
 
-let ARTICLES_CACHE = null;
 let FIXTURES_CACHE = null;
 let STANDINGS_CACHE = null;
 let TEAMS_LOADED = false;
@@ -356,63 +355,6 @@ async function loadContent() {
   })();
 
   return CONTENT_LOADING;
-}
-
-
-/* ==========================================================================
-   ARTÍCULOS
-   ========================================================================== */
-
-async function loadArticles() {
-  if (ARTICLES_CACHE) {
-    return ARTICLES_CACHE;
-  }
-
-  const content = await loadContent();
-
-  if (content && Array.isArray(content.articles)) {
-    ARTICLES_CACHE = content.articles;
-    return ARTICLES_CACHE;
-  }
-
-  try {
-    const localStorageData = localStorage.getItem("droprugby_articles");
-
-    if (localStorageData) {
-      ARTICLES_CACHE = JSON.parse(localStorageData);
-
-      if (Array.isArray(ARTICLES_CACHE)) {
-        return ARTICLES_CACHE;
-      }
-    }
-  } catch (_) {}
-
-  if (Array.isArray(window.DROP_RUGBY_DATA?.articles)) {
-    ARTICLES_CACHE = window.DROP_RUGBY_DATA.articles;
-    return ARTICLES_CACHE;
-  }
-
-  try {
-    const response = await fetch(
-      BASE + "data/articles.json",
-      { cache: "default" }
-    );
-
-    if (!response.ok) {
-      throw new Error();
-    }
-
-    ARTICLES_CACHE = await response.json();
-
-    if (!Array.isArray(ARTICLES_CACHE)) {
-      ARTICLES_CACHE = [];
-    }
-
-  } catch (_) {
-    ARTICLES_CACHE = [];
-  }
-
-  return ARTICLES_CACHE;
 }
 
 
@@ -1257,17 +1199,18 @@ async function renderUrbaStandings() {
 }
 
 /* ==========================================================================
-   LAYOUT COMPARTIDO (header, ticker, buscador, footer)
+   LAYOUT COMPARTIDO (header y footer)
    Una sola definición para todas las páginas: si cambia el menú, se cambia acá.
    ========================================================================== */
 
 const SITE_NAV = [
   ["index.html", "Inicio", "home"],
-  ["los-pumas.html", "Los Pumas", "pumas"],
-  ["super-rugby.html", "Internacional", "internacional"],
+  ["rugby-xv.html", "Rugby XV", "xv"],
+  ["escudos.html", "Escudos", "escudos"],
+  ["mayor-menor.html", "Mayor o menor", "mayormenor"],
+  ["quiz.html", "Quiz", "quiz"],
   ["urba-top-14.html", "URBA Top 14", "urba"],
   ["calendario.html", "Calendario", "calendario"],
-  ["quiz.html", "Quiz", "quiz"],
   ["contacto.html", "Contacto", "contacto"]
 ];
 
@@ -1303,7 +1246,6 @@ function renderLayout() {
           </a>
           <nav class="main-nav" aria-label="Navegación principal">${navLinks}</nav>
           <div class="header-tools">
-            <button class="icon-btn search-btn" type="button" aria-label="Buscar">${ICONS.search}</button>
             <a class="icon-btn social" href="${SOCIAL.instagram}" target="_blank" rel="noopener" aria-label="Instagram">${ICONS.instagram}</a>
             <a class="icon-btn social" href="${SOCIAL.tiktok}" target="_blank" rel="noopener" aria-label="TikTok">${ICONS.tiktok}</a>
             <button class="icon-btn menu-btn" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
@@ -1316,21 +1258,7 @@ function renderLayout() {
             <a href="${SOCIAL.tiktok}" target="_blank" rel="noopener">TikTok ↗</a>
           </div>
         </nav>
-        <div class="ticker hidden" id="ticker">
-          <div class="wrap ticker-inner">
-            <span class="ticker-label"><i></i><span>ÚLTIMO</span></span>
-            <div class="ticker-track"><div class="ticker-move" id="ticker-move"></div></div>
-          </div>
-        </div>
-      </header>
-      <div class="search-overlay" id="search-overlay" role="dialog" aria-label="Buscar">
-        <button class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
-        <div class="search-overlay-inner">
-          <input type="search" id="search-input" placeholder="Buscar noticias, equipos…" autocomplete="off">
-          <p class="search-hint">Probá con "Los Pumas", "URBA" o el nombre de un club.</p>
-          <div class="search-results" id="search-results"></div>
-        </div>
-      </div>`;
+      </header>`;
   }
 
   if (footer) {
@@ -1343,11 +1271,11 @@ function renderLayout() {
                 <img src="/logo.png" alt="" width="42" height="42" loading="lazy">
                 <span class="drop-wordmark">Drop<span>Rugby</span></span>
               </a>
-              <p>Rugby argentino e internacional: noticias, resultados y protagonistas, contados desde adentro.</p>
+              <p>Minijuegos de rugby: armá tu XV, adiviná escudos y jugá con el URBA Top 14.</p>
             </div>
             <div class="footer-col">
               <strong>SECCIONES</strong>
-              ${SITE_NAV.slice(1, 6).map(([href, label]) => `<a href="${BASE}${href}">${label}</a>`).join("")}
+              ${SITE_NAV.slice(1, 7).map(([href, label]) => `<a href="${BASE}${href}">${label}</a>`).join("")}
             </div>
             <div class="footer-col">
               <strong>SEGUINOS</strong>
@@ -1358,7 +1286,7 @@ function renderLayout() {
           </div>
           <div class="footer-bottom">
             <span>© ${new Date().getFullYear()} DropRugby</span>
-            <span>Lo último del rugby con un drop</span>
+            <span>Rugby para jugar</span>
           </div>
         </div>
       </footer>
@@ -1431,31 +1359,8 @@ function observeReveals(root = document) {
 
 
 /* ==========================================================================
-   NOTICIAS — helpers
+   AYUDAS DE ROTULADO
    ========================================================================== */
-
-const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-
-function formatDateLong(iso) {
-  const parts = String(iso || "").slice(0, 10).split("-").map(Number);
-  if (parts.length !== 3 || parts.some(Number.isNaN)) return String(iso || "");
-  return `${parts[2]} de ${MESES_LARGOS[parts[1] - 1]} de ${parts[0]}`;
-}
-
-function isPublicArticle(article) {
-  return article && article.published !== false && !article.scheduled;
-}
-
-async function loadPublicArticles() {
-  return (await loadArticles())
-    .filter(isPublicArticle)
-    .slice()
-    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-}
-
-function articleUrl(article) {
-  return `${BASE}article.html?id=${encodeURIComponent(article.id || "")}`;
-}
 
 function categoryLabel(category) {
   const key = normalizeTeamName(category);
@@ -1464,163 +1369,9 @@ function categoryLabel(category) {
   return category || "Rugby";
 }
 
-function categoryUrl(category) {
-  const key = normalizeTeamName(category);
-  if (key === "los pumas") return BASE + "los-pumas.html";
-  if (key === "urba top 14") return BASE + "urba-top-14.html";
-  if (key === "super rugby" || key === "internacional") return BASE + "super-rugby.html";
-  return BASE + "index.html";
-}
-
-function readMinutes(article) {
-  const text = String(article.content || "").replace(/<[^>]+>/g, " ");
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  if (words > 80) return Math.max(1, Math.round(words / 210));
-  const declared = parseInt(String(article.readTime || ""), 10);
-  return Number.isFinite(declared) && declared > 0 ? declared : 3;
-}
-
-function thumbHTML(article, { eager = false } = {}) {
-  const label = escapeHTML(categoryLabel(article.category));
-  const tone = (String(article.id || article.title || "").length % 2) + 1;
-
-  if (article.imageUrl) {
-    return `
-      <div class="thumb" data-label="${label}" data-tone="${tone}">
-        <img src="${escapeHTML(article.imageUrl)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"
-             onerror="this.parentNode.classList.add('ph');this.remove()">
-      </div>`;
-  }
-
-  return `<div class="thumb ph" data-label="${label}" data-tone="${tone}"></div>`;
-}
-
-function metaHTML(article, { author = true } = {}) {
-  return `
-    <div class="meta">
-      ${author ? `<span>${escapeHTML(article.author || "DropRugby")}</span>` : ""}
-      <span>${formatDateShort(article.date || getTodayISO())}</span>
-      <span>${readMinutes(article)} min</span>
-    </div>`;
-}
-
-function cardHTML(article, variant = "") {
-  const url = articleUrl(article);
-  const kicker = [categoryLabel(article.category), article.subcategory].filter(Boolean).join(" · ");
-
-  return `
-    <article class="card ${variant} reveal">
-      <a href="${url}" tabindex="-1" aria-hidden="true">${thumbHTML(article, { eager: variant === "lead" })}</a>
-      <div class="card-body">
-        <span class="drop-kicker">${escapeHTML(kicker)}</span>
-        <h3><a href="${url}">${escapeHTML(article.title || "Sin título")}</a></h3>
-        ${variant === "row" ? "" : `<p class="excerpt">${escapeHTML(article.excerpt || "")}</p>`}
-        ${metaHTML(article, { author: variant !== "row" })}
-      </div>
-    </article>`;
-}
-
-
 /* ==========================================================================
-   HOME
+   PRÓXIMOS PARTIDOS Y TABLA (home)
    ========================================================================== */
-
-async function renderTicker() {
-  const ticker = document.getElementById("ticker");
-  const move = document.getElementById("ticker-move");
-  if (!ticker || !move || document.body.dataset.page === "article") return;
-
-  const latest = (await loadPublicArticles()).slice(0, 6);
-  if (!latest.length) return;
-
-  const items = latest.map(a =>
-    `<a href="${articleUrl(a)}"><b>${escapeHTML(categoryLabel(a.category).toUpperCase())}</b>${escapeHTML(a.title || "")}</a>`
-  ).join("");
-
-  // Se duplica para que el desplazamiento sea continuo.
-  move.innerHTML = items + items;
-  ticker.classList.remove("hidden");
-}
-
-async function renderHome() {
-  const heroEl = document.getElementById("home-hero");
-  if (!heroEl) return;
-
-  const articles = await loadPublicArticles();
-  const latestEl = document.getElementById("home-latest");
-  const feedEl = document.getElementById("home-feed");
-  const moreBtn = document.getElementById("home-feed-more");
-  const chips = document.querySelectorAll("#home-feed-chips .chip");
-
-  if (!articles.length) {
-    heroEl.outerHTML = `<p class="empty-state">Todavía no hay noticias publicadas. Volvé en un rato.</p>`;
-    if (latestEl) latestEl.closest(".hero-side")?.remove();
-    if (feedEl) feedEl.innerHTML = "";
-    moreBtn?.classList.add("hidden");
-    return;
-  }
-
-  const featured = articles.find(a => a.featured) || articles[0];
-  const rest = articles.filter(a => a.id !== featured.id);
-
-  heroEl.outerHTML = `
-    <a class="hero-main" href="${articleUrl(featured)}">
-      ${thumbHTML(featured, { eager: true })}
-      <div class="hero-copy">
-        <span class="hero-tag">Destacada · ${escapeHTML(categoryLabel(featured.category))}</span>
-        <h1>${escapeHTML(featured.title || "")}</h1>
-        <p>${escapeHTML(featured.excerpt || "")}</p>
-        ${metaHTML(featured)}
-        <span class="hero-cta">Leer la nota <i>→</i></span>
-      </div>
-    </a>`;
-
-  if (latestEl) {
-    latestEl.innerHTML = rest.slice(0, 5).map(a => `
-      <a class="rank-item" href="${articleUrl(a)}">
-        <div>
-          <span class="drop-kicker">${escapeHTML(categoryLabel(a.category))}</span>
-          <h3>${escapeHTML(a.title || "")}</h3>
-          <time>${formatDateShort(a.date)} · ${readMinutes(a)} min</time>
-        </div>
-      </a>`).join("") || `<p class="empty-state">Pronto, más noticias.</p>`;
-  }
-
-  if (!feedEl) return;
-
-  const PAGE = 6;
-  let filter = "";
-  let shown = PAGE + 1;
-
-  function paintFeed() {
-    const pool = rest.filter(a => {
-      if (!filter) return true;
-      const key = normalizeTeamName(a.category);
-      return filter.split("|").includes(key);
-    });
-
-    const visible = pool.slice(0, shown);
-
-    feedEl.innerHTML = visible.length
-      ? visible.map((a, i) => cardHTML(a, i === 0 ? "lead" : "")).join("")
-      : `<p class="empty-state">Todavía no hay noticias en esta sección.</p>`;
-
-    moreBtn?.classList.toggle("hidden", pool.length <= shown);
-    observeReveals(feedEl);
-  }
-
-  chips.forEach(chip => chip.addEventListener("click", () => {
-    chips.forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    filter = chip.dataset.filter || "";
-    shown = PAGE + 1;
-    paintFeed();
-  }));
-
-  moreBtn?.addEventListener("click", () => { shown += PAGE; paintFeed(); });
-
-  paintFeed();
-}
 
 async function renderMatches() {
   const rail = document.getElementById("home-matches");
@@ -1682,244 +1433,6 @@ async function renderMiniStandings() {
           <td>${Number(t.pts) || 0}</td>
         </tr>`).join("")}
     </table>`;
-}
-
-
-/* ==========================================================================
-   CATEGORÍAS
-   ========================================================================== */
-
-async function renderCategoryPage() {
-  const grid = document.getElementById("category-grid");
-  if (!grid) return;
-
-  // data-category admite varias categorías separadas por "|"
-  const wanted = String(grid.dataset.category || "").split("|").map(normalizeTeamName);
-  const articles = (await loadPublicArticles()).filter(a => wanted.includes(normalizeTeamName(a.category)));
-  const chips = document.querySelectorAll(".filter-bar .filter-chip");
-  let active = "TODAS";
-
-  function paint() {
-    const list = active === "TODAS"
-      ? articles
-      : articles.filter(a => normalizeTeamName(a.subcategory) === normalizeTeamName(active));
-
-    grid.innerHTML = list.length
-      ? list.map((a, i) => cardHTML(a, i === 0 ? "lead" : "")).join("")
-      : `<p class="empty-state">No hay noticias para este filtro todavía.</p>`;
-
-    observeReveals(grid);
-  }
-
-  chips.forEach(chip => chip.addEventListener("click", () => {
-    chips.forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    active = chip.dataset.filter || "TODAS";
-    paint();
-  }));
-
-  paint();
-}
-
-
-/* ==========================================================================
-   ARTÍCULO
-   ========================================================================== */
-
-function normalizeArticleHtml(value) {
-  let text = String(value ?? "").trim();
-  if (!text) return "";
-
-  const box = document.createElement("textarea");
-  for (let i = 0; i < 3; i++) {
-    box.innerHTML = text;
-    if (box.value === text) break;
-    text = box.value;
-  }
-
-  return text.replace(/^\s*```(?:html|htm)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
-}
-
-function articleBodyHTML(value) {
-  const text = normalizeArticleHtml(value);
-  if (!text) return "";
-  if (/<\/?[a-z][^>]*>/i.test(text)) return text;
-  return text.split(/\n\s*\n/).map(p => `<p>${escapeHTML(p).replace(/\n/g, "<br>")}</p>`).join("");
-}
-
-// Evita que un marcador ("24") se parta en dos líneas dentro de bloques embebidos.
-function protectAtomicNumbers(scope) {
-  if (!scope) return;
-  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
-  const nodes = [];
-  let node;
-  while ((node = walker.nextNode())) {
-    if (!node.parentElement || node.parentElement.closest("script,style,pre,code")) continue;
-    if (/^\s*\d{1,3}\s*$/.test(node.nodeValue || "")) nodes.push(node);
-  }
-  nodes.forEach(n => {
-    const span = document.createElement("span");
-    span.className = "dr-atomic-number";
-    span.textContent = n.nodeValue;
-    n.parentNode.replaceChild(span, n);
-  });
-}
-
-async function postAnalytics(payload) {
-  try {
-    await fetch(BASE + "api/analytics", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      keepalive: true,
-      body: JSON.stringify(payload)
-    });
-  } catch (_) {}
-}
-
-async function renderArticle() {
-  const root = document.getElementById("article-root");
-  if (!root) return;
-
-  const id = new URLSearchParams(location.search).get("id");
-  const all = await loadPublicArticles();
-  const article = all.find(a => String(a.id) === String(id));
-
-  if (!article) {
-    document.title = "Artículo no encontrado | DropRugby";
-    root.innerHTML = `
-      <div class="article">
-        <div class="article-kicker"><span>DropRugby</span></div>
-        <h1>No encontramos esta nota.</h1>
-        <p class="lead">Puede que haya sido eliminada o que todavía no esté publicada.</p>
-        <p style="margin-top:28px"><a class="btn" href="${BASE}index.html">Volver al inicio</a></p>
-      </div>`;
-    return;
-  }
-
-  const title = String(article.title || "Artículo");
-  const excerpt = String(article.excerpt || "");
-  const url = new URL(`article.html?id=${encodeURIComponent(article.id)}`, location.href).href;
-  const author = String(article.author || "DropRugby");
-  const initials = author.split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
-
-  document.title = `${title} | DropRugby`;
-  document.querySelector('meta[name="description"]')?.setAttribute("content", excerpt);
-  document.querySelector('meta[property="og:title"]')?.setAttribute("content", title);
-  document.querySelector('meta[property="og:description"]')?.setAttribute("content", excerpt);
-  if (article.imageUrl) document.querySelector('meta[property="og:image"]')?.setAttribute("content", article.imageUrl);
-
-  const others = all.filter(a => String(a.id) !== String(article.id));
-  const same = others.filter(a => a.category === article.category);
-  const ordered = [...same, ...others.filter(a => !same.includes(a))];
-  const next = ordered[0];
-  const related = ordered.slice(1, 4);
-
-  const shareText = encodeURIComponent(title);
-  const shareUrl = encodeURIComponent(url);
-  const quiz = await loadQuiz();
-
-  root.innerHTML = `
-    <article>
-      <header class="article">
-        <div class="article-kicker">
-          <a href="${categoryUrl(article.category)}">${escapeHTML(categoryLabel(article.category))}</a>
-          ${article.subcategory ? `<span>${escapeHTML(article.subcategory)}</span>` : ""}
-        </div>
-        <h1>${escapeHTML(title)}</h1>
-        ${excerpt ? `<p class="lead">${escapeHTML(excerpt)}</p>` : ""}
-        <div class="article-meta">
-          <span class="avatar" aria-hidden="true">${escapeHTML(initials || "DR")}</span>
-          <div>
-            <strong>${escapeHTML(author)}</strong>
-            <small>${formatDateLong(article.date)} · ${readMinutes(article)} min de lectura</small>
-          </div>
-          <div class="share-mini">
-            <a href="https://wa.me/?text=${shareText}%20${shareUrl}" target="_blank" rel="noopener" aria-label="Compartir por WhatsApp" data-net="whatsapp">W</a>
-            <a href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}" target="_blank" rel="noopener" aria-label="Compartir en X" data-net="x">𝕏</a>
-            <button type="button" aria-label="Copiar enlace" data-copy>⧉</button>
-          </div>
-        </div>
-      </header>
-
-      <div class="article-cover">${thumbHTML(article, { eager: true })}</div>
-
-      <div class="article-body">${articleBodyHTML(article.content) || `<p>${escapeHTML(excerpt)}</p>`}</div>
-
-      <footer class="article-end">
-        <section class="share-box" aria-label="Compartir">
-          <h3>¿Te gustó? Compartila</h3>
-          <div class="share-buttons">
-            <a class="chip share-button" data-net="whatsapp" href="https://wa.me/?text=${shareText}%20${shareUrl}" target="_blank" rel="noopener">WhatsApp</a>
-            <a class="chip share-button" data-net="x" href="https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}" target="_blank" rel="noopener">X</a>
-            <a class="chip share-button" data-net="facebook" href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" target="_blank" rel="noopener">Facebook</a>
-            <button class="chip share-button" type="button" data-copy>Copiar enlace</button>
-          </div>
-        </section>
-
-        ${quiz ? `
-          <a class="quiz-promo" href="${BASE}quiz.html">
-            <div>
-              <span class="drop-kicker">Quiz semanal</span>
-              <h3>${escapeHTML(quiz.title)}</h3>
-            </div>
-            <span class="btn on-dark">Jugar ahora →</span>
-          </a>` : ""}
-
-        ${next ? `
-          <a class="next-read" href="${articleUrl(next)}">
-            ${thumbHTML(next)}
-            <div>
-              <span class="drop-kicker">Seguí leyendo · ${escapeHTML(categoryLabel(next.category))}</span>
-              <h3>${escapeHTML(next.title || "")}</h3>
-              <span class="hero-cta">Leer la nota <i>→</i></span>
-            </div>
-          </a>` : ""}
-      </footer>
-    </article>
-
-    ${related.length ? `
-      <section class="related">
-        <div class="wrap">
-          <div class="section-head"><div><span class="drop-kicker">Más para leer</span><h2>Notas relacionadas</h2></div><a class="link-more" href="${categoryUrl(article.category)}">Ver todas →</a></div>
-          <div class="card-grid">${related.map(a => cardHTML(a)).join("")}</div>
-        </div>
-      </section>` : ""}`;
-
-  protectAtomicNumbers(root.querySelector(".article-body"));
-  observeReveals(root);
-
-  // Compartir / copiar
-  root.querySelectorAll("[data-copy]").forEach(btn => btn.addEventListener("click", async () => {
-    try {
-      if (navigator.share && window.matchMedia("(max-width: 640px)").matches) {
-        await navigator.share({ title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        const original = btn.textContent;
-        btn.textContent = btn.classList.contains("chip") ? "¡Enlace copiado!" : "✓";
-        setTimeout(() => { btn.textContent = original; }, 1800);
-      }
-      postAnalytics({ action: "share", articleId: String(article.id), network: "other" });
-    } catch (_) {}
-  }));
-
-  root.querySelectorAll("[data-net]").forEach(link => link.addEventListener("click", () =>
-    postAnalytics({ action: "share", articleId: String(article.id), network: link.dataset.net })
-  ));
-
-  // Analítica de lectura (igual que antes)
-  const articleId = String(article.id);
-  postAnalytics({ action: "view", articleId });
-
-  const started = Date.now();
-  let sent = false;
-  const sendReading = () => {
-    if (sent) return;
-    sent = true;
-    postAnalytics({ action: "reading", articleId, seconds: Math.round((Date.now() - started) / 1000) });
-  };
-  setTimeout(sendReading, 30000);
-  window.addEventListener("pagehide", sendReading, { once: true });
 }
 
 
@@ -2119,122 +1632,22 @@ async function renderQuiz() {
 
 
 /* ==========================================================================
-   NEWSLETTER
-   ========================================================================== */
-
-function setupNewsletter() {
-  document.querySelectorAll(".newsletter-form").forEach(form => {
-    const input = form.querySelector('input[type="email"]');
-    const button = form.querySelector('button[type="submit"]');
-    const message = form.querySelector("small");
-    if (!input || !message) return;
-
-    const label = button ? button.textContent : "";
-    const say = (text, type) => {
-      message.textContent = text;
-      message.classList.remove("success", "error");
-      if (type) message.classList.add(type);
-    };
-
-    form.addEventListener("submit", async event => {
-      event.preventDefault();
-      const email = input.value.trim().toLowerCase();
-
-      if (!email || !input.checkValidity()) {
-        say("Ingresá un email válido.", "error");
-        input.focus();
-        return;
-      }
-
-      if (button) { button.disabled = true; button.textContent = "Enviando…"; }
-      say("Procesando suscripción…");
-
-      try {
-        const response = await fetch(BASE + "api/newsletter", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok) throw new Error(data.error || "No se pudo completar la suscripción.");
-
-        say("¡Listo! Ya estás suscripto a DropRugby.", "success");
-        input.value = "";
-        if (button) { button.disabled = false; button.textContent = "Suscripto ✓"; }
-      } catch (error) {
-        say(error.message || "No se pudo completar la suscripción.", "error");
-        if (button) { button.disabled = false; button.textContent = label; }
-      }
-    });
-  });
-}
-
-
-/* ==========================================================================
-   BUSCADOR
-   ========================================================================== */
-
-function setupSearch() {
-  const overlay = document.getElementById("search-overlay");
-  const input = document.getElementById("search-input");
-  const results = document.getElementById("search-results");
-  const openButtons = document.querySelectorAll(".search-btn");
-  if (!overlay || !input || !results || !openButtons.length) return;
-
-  let pool = null;
-  const close = () => overlay.classList.remove("open");
-
-  openButtons.forEach(btn => btn.addEventListener("click", async () => {
-    overlay.classList.add("open");
-    input.focus();
-    if (!pool) pool = await loadPublicArticles();
-  }));
-
-  document.getElementById("search-close")?.addEventListener("click", close);
-  overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
-  document.addEventListener("keydown", event => { if (event.key === "Escape") close(); });
-
-  input.addEventListener("input", () => {
-    const query = normalizeTeamName(input.value);
-    if (!query) { results.innerHTML = ""; return; }
-
-    const matches = (pool || []).filter(a =>
-      [a.title, a.category, a.subcategory, a.excerpt, a.author].some(field => normalizeTeamName(field).includes(query))
-    ).slice(0, 12);
-
-    results.innerHTML = matches.length
-      ? matches.map(a => `
-          <a class="search-result" href="${articleUrl(a)}">
-            <span class="drop-kicker">${escapeHTML(categoryLabel(a.category))}</span>
-            <h3>${escapeHTML(a.title || "")}</h3>
-          </a>`).join("")
-      : `<p class="search-empty">Sin resultados para "${escapeHTML(input.value)}".</p>`;
-  });
-}
-
-
-/* ==========================================================================
    INICIALIZACIÓN
    ========================================================================== */
 
 async function initDropRugby() {
   renderLayout();
   setupMobileMenu();
-  setupSearch();
-  setupNewsletter();
   setupScrollUI();
 
   await Promise.all([
-    renderHome(),
     renderMatches(),
     renderMiniStandings(),
-    renderCategoryPage(),
     renderCalendar(),
     renderUrbaStandings(),
-    renderArticle(),
     renderQuiz(),
-    renderTicker()
-  ].map(p => p.catch(error => console.error("DropRugby:", error))));
+    typeof renderGames === "function" ? renderGames() : null
+  ].map(p => Promise.resolve(p).catch(error => console.error("DropRugby:", error))));
 
   observeReveals();
   window.dispatchEvent(new Event("scroll"));

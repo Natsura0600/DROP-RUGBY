@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DropRugby | Noticias de rugby argentino e internacional</title>
-  <meta name="description" content="DropRugby: noticias, resultados, calendario y el quiz semanal del rugby argentino e internacional.">
+  <title>DropRugby | Minijuegos de rugby y URBA Top 14</title>
+  <meta name="description" content="Armá tu XV, adiviná escudos y jugá con la tabla del URBA Top 14. Calendario de partidos y quiz de rugby.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0d0f11">
   <link rel="canonical" href="https://www.droprugby.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DropRugby">
-  <meta property="og:title" content="DropRugby | Noticias de rugby argentino e internacional">
-  <meta property="og:description" content="DropRugby: noticias, resultados, calendario y el quiz semanal del rugby argentino e internacional.">
+  <meta property="og:title" content="DropRugby | Minijuegos de rugby y URBA Top 14">
+  <meta property="og:description" content="Armá tu XV, adiviná escudos y jugá con la tabla del URBA Top 14. Calendario de partidos y quiz de rugby.">
   <meta property="og:url" content="https://www.droprugby.com/">
   <meta property="og:image" content="https://www.droprugby.com/logo.png">
   <meta name="google-adsense-account" content="ca-pub-7081370352193016">
@@ -19,8 +19,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/brand.css?v=20261110">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20261110">
+  <link rel="stylesheet" href="assets/css/brand.css?v=20261111">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20261111">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7081370352193016" crossorigin="anonymous"></script>
 </head>
 <body data-page="home">
@@ -28,13 +28,27 @@
   <div id="site-header" style="min-height:68px;background:#0d0f11"></div>
 
   <main>
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div id="home-hero" class="hero-main skeleton" aria-busy="true"></div>
-        <aside class="hero-side" aria-label="Últimas noticias">
-          <div class="side-title">Lo último</div>
-          <div class="rank-list" id="home-latest"></div>
-        </aside>
+    <section class="hero home-hero">
+      <div class="wrap">
+        <span class="drop-kicker">Rugby para jugar</span>
+        <h1>Armá tu XV.<br>Adiviná el club.<br>Ganale a tus amigos.</h1>
+        <p class="lead">Minijuegos de rugby argentino con los clubes y la tabla del URBA Top 14.</p>
+        <div class="hero-buttons">
+          <a class="btn accent" href="rugby-xv.html">Armar mi XV →</a>
+          <a class="btn ghost on-dark" href="escudos.html">Jugar a los escudos</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head"><div><span class="drop-kicker">Minijuegos</span><h2>Elegí tu juego</h2></div></div>
+        <div class="comp-grid four">
+          <a class="comp-card" data-word="XV" href="rugby-xv.html"><span class="drop-kicker">Armá tu equipo</span><h3>Rugby XV</h3><p>Los 15 puestos, tu equipo ideal, listo para compartir.</p><b>↗</b></a>
+          <a class="comp-card" data-word="CLUB" href="escudos.html"><span class="drop-kicker">Adiviná</span><h3>¿De qué club es?</h3><p>Diez escudos del Top 14. ¿Cuántos conocés?</p><b>↗</b></a>
+          <a class="comp-card" data-word="RACHA" href="mayor-menor.html"><span class="drop-kicker">Con la tabla real</span><h3>Mayor o menor</h3><p>Puntos, victorias y diferencia: elegí bien y seguí la racha.</p><b>↗</b></a>
+          <a class="comp-card" data-word="QUIZ" href="quiz.html"><span class="drop-kicker">Preguntas</span><h3>Quiz de rugby</h3><p>Reglamento, historia y datos. Compartí tu puntaje.</p><b>↗</b></a>
+        </div>
       </div>
     </section>
 
@@ -48,72 +62,19 @@
       </div>
     </section>
 
-    <section class="section" id="noticias">
-      <div class="wrap feed-layout">
-        <div>
-          <div class="section-head">
-            <div><span class="drop-kicker">Actualidad</span><h2>Todas las noticias</h2></div>
-          </div>
-          <div class="feed-tools">
-            <div class="chips" id="home-feed-chips">
-              <button class="chip active" type="button" data-filter="">Todas</button>
-              <button class="chip" type="button" data-filter="los pumas">Los Pumas</button>
-              <button class="chip" type="button" data-filter="super rugby|internacional">Internacional</button>
-              <button class="chip" type="button" data-filter="urba top 14">URBA Top 14</button>
-            </div>
-          </div>
-          <div class="card-grid two" id="home-feed"></div>
-          <div class="feed-more"><button class="btn ghost hidden" type="button" id="home-feed-more">Cargar más noticias</button></div>
-        </div>
-
-        <aside class="sidebar">
-          <div class="side-card">
-            <div class="side-title">URBA Top 14</div>
-            <div id="home-standings"></div>
-            <a class="link-more" href="urba-top-14.html">Tabla completa →</a>
-          </div>
-          <div class="side-card dark side-news">
-            <span class="drop-kicker" style="color:#ff6b70">Newsletter</span>
-            <h3 style="margin-top:6px">Recibí lo mejor de la semana con un drop.</h3>
-            <p>Un mail breve con lo que importa.</p>
-            <form class="newsletter-form" novalidate>
-              <input type="email" name="email" placeholder="Tu email" aria-label="Tu email" autocomplete="email" required>
-              <button class="btn accent" type="submit">Suscribirme</button>
-              <small>Sin spam.</small>
-            </form>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="quiz-band" id="quiz-band">
-      <div class="wrap quiz-layout">
-        <div class="quiz-pitch">
-          <span class="drop-kicker">Quiz semanal</span>
-          <h2 id="quiz-title">¿Cuánto sabés de rugby?</h2>
-          <p id="quiz-intro">Preguntas nuevas todas las semanas. Jugá, sumá puntos y desafiá a tu equipo.</p>
-          <div class="quiz-facts">
-            <div><strong id="quiz-count">5</strong><span>Preguntas</span></div>
-            <div><strong>1'</strong><span>Para jugar</span></div>
-          </div>
-        </div>
-        <div class="quiz" data-quiz></div>
-      </div>
-    </section>
-
     <section class="section">
       <div class="wrap">
-        <div class="section-head"><div><span class="drop-kicker">Competiciones</span><h2>Seguí tu torneo</h2></div></div>
-        <div class="comp-grid">
-          <a class="comp-card" data-word="PUMAS" href="los-pumas.html"><span class="drop-kicker">Selección</span><h3>Los Pumas</h3><p>Convocatorias, fixture y todo lo del seleccionado.</p><b>↗</b></a>
-          <a class="comp-card" data-word="MUNDO" href="super-rugby.html"><span class="drop-kicker">Rugby mundial</span><h3>Internacional</h3><p>Super Rugby y los grandes torneos del mundo.</p><b>↗</b></a>
-          <a class="comp-card" data-word="URBA" href="urba-top-14.html"><span class="drop-kicker">Clubes</span><h3>URBA Top 14</h3><p>Resultados, tabla de posiciones y clubes.</p><b>↗</b></a>
+        <div class="side-card home-table">
+          <div class="side-title">URBA Top 14</div>
+          <div id="home-standings"></div>
+          <a class="link-more" href="urba-top-14.html">Tabla y clubes →</a>
         </div>
       </div>
     </section>
   </main>
 
   <div id="site-footer"></div>
-  <script src="assets/js/script.js?v=20261110"></script>
+  <script src="assets/js/script.js?v=20261111"></script>
+  <script src="assets/js/games.js?v=20261111"></script>
 </body>
 </html>

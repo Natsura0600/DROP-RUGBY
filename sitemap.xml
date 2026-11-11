@@ -4,10 +4,16 @@
     <loc>https://www.droprugby.com/</loc>
   </url>
   <url>
-    <loc>https://www.droprugby.com/los-pumas.html</loc>
+    <loc>https://www.droprugby.com/rugby-xv.html</loc>
   </url>
   <url>
-    <loc>https://www.droprugby.com/super-rugby.html</loc>
+    <loc>https://www.droprugby.com/escudos.html</loc>
+  </url>
+  <url>
+    <loc>https://www.droprugby.com/mayor-menor.html</loc>
+  </url>
+  <url>
+    <loc>https://www.droprugby.com/quiz.html</loc>
   </url>
   <url>
     <loc>https://www.droprugby.com/urba-top-14.html</loc>
@@ -17,28 +23,5 @@
   </url>
   <url>
     <loc>https://www.droprugby.com/contacto.html</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/article.html?id=los-pumas-cuando-juegan-fixture</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/article.html?id=los-pumas-nueva-generacion</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/article.html?id=super-rugby-detalle-tactico</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/article.html?id=super-rugby-tabla-posiciones</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/article.html?id=urba-top14-resumen-fecha</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/article.html?id=urba-top14-clubes-pelean-titulo</loc>
-  </url>
-  <url>
-    <loc>https://www.droprugby.com/quiz.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
 </urlset>
