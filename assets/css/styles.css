@@ -618,3 +618,28 @@ h1, h2, h3, h4, p { margin: 0; }
   .xv-pitch { gap: 6px; padding: 12px 4px; grid-template-rows: repeat(6, minmax(70px, auto)); }
   .xv-slot { font-size: 10.5px; }
 }
+
+/* Rugby XV — modo contrarreloj */
+.xv-menu h3 { margin-top: 6px; font-family: var(--display); font-size: 26px; font-weight: 900; letter-spacing: -.03em; }
+.xv-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 22px; }
+.xv-mode { display: grid; gap: 4px; padding: 18px 10px; border: 1.5px solid var(--line-strong); border-radius: 14px; background: var(--surface); text-align: center; transition: border-color .16s, background .16s; }
+.xv-mode strong { font-family: var(--display); font-size: 16px; font-weight: 800; }
+.xv-mode small { color: var(--muted); font-size: 12px; font-weight: 600; }
+.xv-mode.active { border-color: var(--accent); background: var(--accent-soft); }
+.xv-clock { font-family: var(--display); font-size: 38px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.xv-clock.low { color: var(--accent); animation: pulse .8s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+.xv-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 10px; }
+.xv-input-row input { min-height: 50px; padding: 0 14px; border: 1.5px solid var(--ink); border-radius: 12px; background: #fff; font-size: 17px; font-weight: 600; }
+.xv-msg { min-height: 44px; margin-bottom: 12px; padding: 10px 14px; border-radius: 10px; background: var(--paper); font-size: 14.5px; font-weight: 600; }
+.xv-msg.ok { background: var(--success-soft); color: var(--success); }
+.xv-msg.bad { background: var(--accent-soft); color: var(--accent-dark); }
+.shake { animation: shake .4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.pop-in { animation: popin .35s var(--ease); }
+@keyframes popin { from { transform: scale(.7); } to { transform: scale(1); } }
+.xv-final .xv-slot { cursor: default; }
+.xv-final .xv-slot:hover { transform: none; background: rgba(0,0,0,.18); }
+.xv-final .xv-slot.filled:hover { background: rgba(255,255,255,.94); }
+div.xv-slot { cursor: default; }
+@media (max-width: 640px) { .xv-modes { grid-template-columns: minmax(0, 1fr); } }

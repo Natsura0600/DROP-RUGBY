@@ -113,7 +113,7 @@ const XV_POSITIONS = [
   { n: 14, name: "Wing derecho", short: "Wing", row: 1, col: 5 }
 ];
 
-async function mountRugbyXV(root) {
+async function mountRugbyXVManual(root) {
   const [clubs, players] = await Promise.all([loadClubs(), loadPlayers()]);
   const KEY = "xv";
   let lineup = gStore(KEY) || {};
@@ -230,6 +230,191 @@ async function mountRugbyXV(root) {
   }
 
   paint();
+}
+
+
+/* ---- Modo principal: escribí jugadores, el juego los ubica en su puesto ---- */
+
+const XV_MODES = [
+  { id: "60", label: "60 segundos", secs: 60 },
+  { id: "90", label: "90 segundos", secs: 90 },
+  { id: "free", label: "Sin tiempo", secs: 0 }
+];
+
+async function mountRugbyXV(root) {
+  const players = (await loadPlayers()).filter(p => p.name);
+  // Sin jugadores cargados no hay con qué validar: modo manual.
+  if (!players.length) return mountRugbyXVManual(root);
+
+  const withPos = players.filter(p => Number(p.position) >= 1 && Number(p.position) <= 15);
+  const key = n => normalizeTeamName(n).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const bestKey = id => `xv_best_${id}`;
+
+  function findPlayers(text) {
+    const q = key(text);
+    if (q.length < 2) return [];
+    const exact = withPos.concat(players.filter(p => !withPos.includes(p))).filter(p => key(p.name) === q);
+    if (exact.length) return exact;
+    const tokens = q.split(" ");
+    return players.filter(p => {
+      const name = key(p.name);
+      return tokens.every(t => name.split(" ").includes(t));
+    });
+  }
+
+  let mode = XV_MODES[0];
+
+  function menu() {
+    root.innerHTML = `
+      <div class="xv-menu">
+        <span class="drop-kicker">Elegí cómo jugar</span>
+        <h3>¿Cuántos del XV te acordás?</h3>
+        <p class="quiz-intro-text">Escribí el nombre de un jugador y lo ubicamos en su puesto. Si ese puesto ya está ocupado, rebota.</p>
+        <div class="xv-modes">
+          ${XV_MODES.map(m => {
+            const best = gStore(bestKey(m.id));
+            return `<button type="button" class="xv-mode ${m.id === mode.id ? "active" : ""}" data-mode="${m.id}">
+              <strong>${m.label}</strong><small>${best ? "Récord: " + best + "/15" : "Sin récord"}</small></button>`;
+          }).join("")}
+        </div>
+        <div class="quiz-actions"><button class="btn accent" type="button" data-start>Empezar →</button></div>
+      </div>`;
+    root.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+      mode = XV_MODES.find(m => m.id === b.dataset.mode);
+      root.querySelectorAll("[data-mode]").forEach(x => x.classList.toggle("active", x === b));
+    }));
+    root.querySelector("[data-start]").addEventListener("click", play);
+  }
+
+  function play() {
+    const lineup = {};
+    let left = mode.secs;
+    let started = Date.now();
+    let timer = null;
+    let over = false;
+
+    root.innerHTML = `
+      <div class="xv-top">
+        <div><span class="drop-kicker">${mode.label}</span><strong class="xv-count" id="xv-count">0 / 15</strong></div>
+        <div class="xv-clock ${mode.secs ? "" : "hidden"}" id="xv-clock">${mode.secs}</div>
+        <button class="btn ghost" type="button" data-finish>Terminar</button>
+      </div>
+      <form class="xv-input-row" id="xv-form" autocomplete="off">
+        <input id="xv-input" type="text" maxlength="50" placeholder="Escribí un jugador y apretá Enter" autocomplete="off" autocapitalize="words" enterkeyhint="send">
+        <button class="btn accent" type="submit">Ubicar</button>
+      </form>
+      <div class="xv-msg" id="xv-msg" role="status" aria-live="polite">Arrancá con quien quieras.</div>
+      <div class="xv-pitch" role="group" aria-label="Cancha de rugby">
+        ${XV_POSITIONS.map(p => `
+          <div class="xv-slot" data-n="${p.n}" style="grid-row:${p.row};grid-column:${p.col}">
+            <span class="xv-num">${p.n}</span>
+            <span class="xv-shield"></span>
+            <span class="xv-name muted">${escapeHTML(p.short)}</span>
+          </div>`).join("")}
+      </div>`;
+
+    const input = root.querySelector("#xv-input");
+    const msg = root.querySelector("#xv-msg");
+    const say = (text, type) => { msg.textContent = text; msg.className = "xv-msg" + (type ? " " + type : ""); };
+    const count = () => XV_POSITIONS.filter(p => lineup[p.n]).length;
+    const slotEl = n => root.querySelector(`.xv-slot[data-n="${n}"]`);
+    const bump = (el, cls) => { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+    input.focus();
+
+    function finish(reason) {
+      if (over) return;
+      over = true;
+      clearInterval(timer);
+      const done = count();
+      const best = Math.max(Number(gStore(bestKey(mode.id))) || 0, done);
+      gStore(bestKey(mode.id), best);
+      const secs = Math.round((Date.now() - started) / 1000);
+      const title = done === 15 ? "¡XV completo!" : reason === "time" ? "Se acabó el tiempo." : "Cerraste el partido.";
+      const shareLines = [...XV_POSITIONS].sort((a, b) => a.n - b.n)
+        .map(p => `${p.n}. ${lineup[p.n] ? lineup[p.n].name : "—"}`).join("\n");
+
+      root.innerHTML = `
+        <div class="quiz-top"><span class="drop-kicker">${mode.label}</span><span class="quiz-score">Récord: ${best}/15</span></div>
+        <div class="quiz-result-score">${done}<small>/15</small></div>
+        <h3>${title}</h3>
+        <p class="quiz-intro-text">${done === 15 ? `Lo armaste en ${secs} segundos.` : "Estos son los que lograste ubicar."}</p>
+        <div class="xv-pitch xv-final">
+          ${XV_POSITIONS.map(p => {
+            const pick = lineup[p.n];
+            return `<div class="xv-slot ${pick ? "filled" : ""}" style="grid-row:${p.row};grid-column:${p.col}">
+              <span class="xv-num">${p.n}</span>
+              ${pick ? `<span class="xv-shield">${pick.club ? teamShield(pick.club, "team-shield") : ""}</span><span class="xv-name">${escapeHTML(pick.name)}</span>`
+                     : `<span class="xv-name muted">${escapeHTML(p.short)}</span>`}
+            </div>`;
+          }).join("")}
+        </div>
+        <div class="quiz-actions">
+          <button class="btn accent" type="button" data-again>Jugar de nuevo</button>
+          <button class="btn ghost" type="button" data-menu>Cambiar tiempo</button>
+          <button class="btn ghost" type="button" data-share>Copiar mi XV</button>
+        </div>`;
+      root.querySelector("[data-again]").addEventListener("click", play);
+      root.querySelector("[data-menu]").addEventListener("click", menu);
+      root.querySelector("[data-share]").addEventListener("click", e =>
+        copyText(`Armé ${done}/15 de mi XV en DropRugby (${mode.label}) 🏉\n${shareLines}\n${location.origin}/rugby-xv`, e.currentTarget));
+    }
+
+    if (mode.secs) {
+      const clock = root.querySelector("#xv-clock");
+      const endAt = Date.now() + mode.secs * 1000;
+      timer = setInterval(() => {
+        left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+        clock.textContent = left;
+        clock.classList.toggle("low", left <= 10);
+        if (left <= 0) finish("time");
+      }, 250);
+    }
+
+    root.querySelector("[data-finish]").addEventListener("click", () => finish("manual"));
+
+    root.querySelector("#xv-form").addEventListener("submit", event => {
+      event.preventDefault();
+      if (over) return;
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      input.focus();
+
+      const found = findPlayers(text);
+      if (!found.length) { say(`No encontramos a "${text}". Probá con nombre y apellido.`, "bad"); bump(input, "shake"); return; }
+
+      // Varias coincidencias: nos quedamos con las que tienen puesto y, si hay más de una persona, pedimos precisión.
+      const placeable = found.filter(p => Number(p.position) >= 1 && Number(p.position) <= 15);
+      const names = [...new Set((placeable.length ? placeable : found).map(p => p.name))];
+      if (names.length > 1) { say(`Hay varios: ${names.slice(0, 4).join(", ")}. Escribí el nombre completo.`, "bad"); bump(input, "shake"); return; }
+
+      const player = (placeable.length ? placeable : found)[0];
+      const n = Number(player.position);
+      if (!(n >= 1 && n <= 15)) { say(`${player.name} todavía no tiene puesto cargado.`, "bad"); bump(input, "shake"); return; }
+
+      const pos = XV_POSITIONS.find(p => p.n === n);
+      if (Object.values(lineup).some(l => l.name === player.name)) { say(`${player.name} ya está en tu equipo.`, "bad"); return; }
+      if (lineup[n]) {
+        say(`${player.name} es ${n} (${pos.name}) y ese puesto ya lo ocupa ${lineup[n].name}. ¡Rebota!`, "bad");
+        bump(slotEl(n), "shake");
+        return;
+      }
+
+      lineup[n] = { name: player.name, club: player.club || "" };
+      const el = slotEl(n);
+      el.classList.add("filled");
+      el.querySelector(".xv-shield").innerHTML = player.club ? teamShield(player.club, "team-shield") : "";
+      const nameEl = el.querySelector(".xv-name");
+      nameEl.textContent = player.name;
+      nameEl.classList.remove("muted");
+      bump(el, "pop-in");
+      root.querySelector("#xv-count").textContent = `${count()} / 15`;
+      say(`✓ ${player.name} — ${n} · ${pos.name}`, "ok");
+      if (count() === 15) finish("complete");
+    });
+  }
+
+  menu();
 }
 
 /* ==========================================================================
