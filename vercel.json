@@ -2,8 +2,25 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/los-pumas", "destination": "/", "permanent": true },
-    { "source": "/super-rugby", "destination": "/", "permanent": true },
-    { "source": "/article", "destination": "/", "permanent": true }
+    {
+      "source": "/los-pumas",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/super-rugby",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/article",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/mayor-menor",
+      "destination": "/",
+      "permanent": false
+    }
   ]
 }

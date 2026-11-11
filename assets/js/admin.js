@@ -310,6 +310,12 @@ function normalizeContent(content) {
       ? data.players
       : [],
 
+    games:
+      data.games &&
+      typeof data.games === "object"
+        ? data.games
+        : null,
+
     quiz:
       data.quiz &&
       typeof data.quiz === "object"
@@ -384,7 +390,8 @@ function switchSection(section) {
     articles: "Noticias",
     fixtures: "Partidos",
     results: "Resultados TOP 14",
-    quiz: "Quiz semanal",
+    quiz: "Quiz",
+    games: "Juegos",
     players: "Jugadores",
     media: "Media Manager"
   };
@@ -400,6 +407,7 @@ function switchSection(section) {
   if (section === "fixtures") renderFixtures();
   if (section === "results") renderResults();
   if (section === "players") renderPlayersAdmin();
+  if (section === "games") renderGamesAdmin();
   if (section === "media") loadMedia();
 }
 
@@ -416,6 +424,8 @@ function renderAll() {
   renderResults();
   renderQuizAdmin();
   renderPlayersAdmin();
+  renderGamesAdmin();
+  renderGamesDashboard();
 
   if (state.section === "media") {
     renderMedia();
@@ -434,7 +444,6 @@ function renderCounts() {
   $("#nav-results-count").textContent =
     content.results.length;
 
-  if ($("#nav-players-count")) $("#nav-players-count").textContent = content.players.length;
 
   if ($("#nav-quiz-count")) {
     $("#nav-quiz-count").textContent =
@@ -4670,24 +4679,21 @@ checkSession();
 
 
 /* ==========================================================================
-   JUGADORES
-   Se guardan con la acción "save-players" (content.players) y los usan
-   Rugby XV y la página URBA Top 14.
+   JUGADORES Y JUEGOS — utilidades compartidas
    ========================================================================== */
 
-let playersDraft = [];
-let playersDirty = false;
-let clubIndex = new Map();
-let clubNames = [];
-let teamsSeedRequested = false;
-let teamsSeed = null;
+const TOP14_NAMES = [
+  "Newman", "CASI", "Hindú", "Alumni", "SIC", "Regatas Bella Vista", "Los Tilos",
+  "Belgrano Athletic", "CUBA", "Atletico del Rosario", "Los Matreros", "La Plata",
+  "Buenos Aires C&RC", "Champagnat"
+];
 
 const PLAYER_POSITIONS = [
-  [1, "1 · Pilar izquierdo"], [2, "2 · Hooker"], [3, "3 · Pilar derecho"],
-  [4, "4 · Segunda línea"], [5, "5 · Segunda línea"], [6, "6 · Ala ciego"],
-  [7, "7 · Ala abierto"], [8, "8 · Octavo"], [9, "9 · Medio scrum"],
-  [10, "10 · Apertura"], [11, "11 · Wing izquierdo"], [12, "12 · Primer centro"],
-  [13, "13 · Segundo centro"], [14, "14 · Wing derecho"], [15, "15 · Fullback"]
+  [1, "1 · Pilar"], [2, "2 · Hooker"], [3, "3 · Pilar"],
+  [4, "4 · Segunda línea"], [5, "5 · Segunda línea"], [6, "6 · Ala"],
+  [7, "7 · Ala"], [8, "8 · Octavo"], [9, "9 · Medio scrum"],
+  [10, "10 · Apertura"], [11, "11 · Wing"], [12, "12 · Centro"],
+  [13, "13 · Centro"], [14, "14 · Wing"], [15, "15 · Fullback"]
 ];
 
 const PLAYER_POSITION_NAMES = {
@@ -4699,17 +4705,56 @@ const PLAYER_POSITION_NAMES = {
 };
 
 const normKey = (value) =>
-  String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  String(value ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+
+const cleanText = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+
+function positionLabel(n) {
+  return PLAYER_POSITIONS.find(([num]) => num === Number(n))?.[1] || "Sin puesto";
+}
+
+function normalizePlayer(p) {
+  let first = cleanText(p?.first);
+  let last = cleanText(p?.last);
+  if (!last) {
+    const parts = cleanText(p?.name).split(" ").filter(Boolean);
+    first = parts.length > 1 ? parts[0] : "";
+    last = parts.slice(parts.length > 1 ? 1 : 0).join(" ");
+  }
+  const position = Number(p?.position);
+  return {
+    first,
+    last,
+    name: `${first} ${last}`.trim(),
+    club: canonicalClub(p?.club),
+    position: Number.isInteger(position) && position >= 1 && position <= 15 ? position : null
+  };
+}
+
+/* ---- clubes ---- */
+
+let teamsSeed = null;
+let teamsSeedRequested = false;
+let clubIndex = new Map();
+let clubNames = TOP14_NAMES.slice();
 
 function buildClubIndex() {
   clubIndex = new Map();
   const add = (club) => {
     if (!club?.name) return;
-    for (const key of [club.name, ...(Array.isArray(club.aliases) ? club.aliases : [])]) clubIndex.set(normKey(key), club.name);
+    for (const key of [club.name, ...(Array.isArray(club.aliases) ? club.aliases : [])]) {
+      if (!clubIndex.has(normKey(key))) clubIndex.set(normKey(key), club.name);
+    }
   };
+  TOP14_NAMES.forEach((name) => add({ name }));
   Object.values(teamsSeed?.clubs || {}).forEach(add);
   Object.values(state.content.teams?.clubs || {}).forEach(add);
   clubNames = [...new Set(clubIndex.values())].sort((a, b) => a.localeCompare(b));
+}
+
+function canonicalClub(value) {
+  const raw = cleanText(value);
+  return clubIndex.get(normKey(raw)) || raw;
 }
 
 async function loadTeamsSeed() {
@@ -4717,13 +4762,244 @@ async function loadTeamsSeed() {
   teamsSeedRequested = true;
   try {
     const response = await fetch("/data/teams.json", { cache: "no-store" });
-    if (response.ok) { teamsSeed = await response.json(); buildClubIndex(); paintPlayersControls(); }
+    if (response.ok) {
+      teamsSeed = await response.json();
+      buildClubIndex();
+      renderPlayersAdmin();
+      renderGamesAdmin();
+      renderGamesDashboard();
+    }
   } catch (_) {}
+}
+
+/* ---- Wordle: mismas reglas que assets/js/games.js ---- */
+
+function wordLetters(value) {
+  return String(value || "")
+    .normalize("NFC")
+    .toUpperCase()
+    .replace(/Ñ/g, "\u0001")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\u0001/g, "Ñ")
+    .replace(/[^A-ZÑ]/g, "");
+}
+
+function wordleWord(player) {
+  if (!player.last || /\s/.test(player.last.trim())) return "";
+  const word = wordLetters(player.last);
+  return word.length >= 4 && word.length <= 9 ? word : "";
+}
+
+function wordlePool(players) {
+  const seen = new Set();
+  return players
+    .map((player) => ({ word: wordleWord(player), player }))
+    .filter((e) => e.word && !seen.has(e.word) && seen.add(e.word))
+    .sort((a, b) => a.word.localeCompare(b.word));
+}
+
+function wordleHash(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+
+/* ==========================================================================
+   JUGADORES
+   Se guardan con la acción "save-players" (content.players).
+   Mientras no se haya guardado nada desde el panel, el sitio usa
+   data/players.json: lo precargamos para editar sobre lo publicado.
+   ========================================================================== */
+
+let playersDraft = [];
+let playersDirty = false;
+let playersSeed = null;
+let playersSeedRequested = false;
+let playerEditing = -1;
+
+async function loadPlayersSeed() {
+  if (playersSeedRequested) return;
+  playersSeedRequested = true;
+  try {
+    const response = await fetch("/data/players.json", { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json();
+    playersSeed = Array.isArray(data) ? data : Array.isArray(data.players) ? data.players : [];
+    renderPlayersAdmin();
+    renderGamesAdmin();
+    renderGamesDashboard();
+    renderCounts();
+  } catch (_) {}
+}
+
+/** Lo que hoy ve el sitio: lo guardado en el panel o, si no hay, la base. */
+function livePlayers() {
+  const saved = state.content.players;
+  return (saved.length ? saved : playersSeed || []).map(normalizePlayer);
+}
+
+/** Lo que se está editando (incluye cambios sin guardar). */
+function workingPlayers() {
+  return playersDirty ? playersDraft : livePlayers();
+}
+
+function markPlayersDirty() {
+  playersDirty = true;
+  paintPlayersStatus();
+  paintPlayersClubs();
+}
+
+function paintPlayersStatus() {
+  const box = $("#players-status");
+  if (!box) return;
+
+  if (playersDirty) {
+    box.className = "quiz-status dirty";
+    box.innerHTML = "<i></i>Tenés cambios sin guardar. Tocá GUARDAR JUGADORES para publicarlos.";
+    return;
+  }
+
+  if (!state.content.players.length && playersDraft.length) {
+    box.className = "quiz-status";
+    box.innerHTML = `<i></i>Estos ${playersDraft.length} jugadores son la base que hoy usa el sitio. Editalos y guardá para administrarlos desde el panel.`;
+    return;
+  }
+
+  box.className = "quiz-status live";
+  box.innerHTML = `<i></i>${playersDraft.length} jugadores publicados.`;
+}
+
+function paintPlayersClubs() {
+  const box = $("#players-clubs");
+  if (!box) return;
+  const filter = $("#players-club-filter")?.value || "";
+  const counts = {};
+  playersDraft.forEach((p) => { counts[p.club] = (counts[p.club] || 0) + 1; });
+  const names = [...new Set([...TOP14_NAMES.map(canonicalClub), ...Object.keys(counts)])];
+
+  box.innerHTML = names.map((name) => {
+    const n = counts[name] || 0;
+    const cls = n === 0 ? "empty" : n >= 15 ? "full" : "part";
+    return `<button type="button" class="club-chip ${cls} ${filter === name ? "active" : ""}" data-club-chip="${esc(name)}">
+      <span>${esc(name)}</span><b>${n}</b></button>`;
+  }).join("");
+}
+
+function paintPlayersControls() {
+  const options = clubNames.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  const clubSel = $("#player-club");
+  if (clubSel) {
+    const current = clubSel.value;
+    clubSel.innerHTML = options;
+    if (current) clubSel.value = current;
+  }
+  const filter = $("#players-club-filter");
+  if (filter) {
+    const current = filter.value;
+    filter.innerHTML = `<option value="">Todos los clubes</option>` + options;
+    filter.value = current;
+  }
+  const pos = $("#player-position");
+  if (pos && pos.options.length <= 1) {
+    pos.innerHTML = `<option value="">Sin puesto</option>` +
+      PLAYER_POSITIONS.map(([n, label]) => `<option value="${n}">${esc(label)}</option>`).join("");
+  }
+}
+
+function paintPlayersTable() {
+  const body = $("#players-table");
+  if (!body) return;
+  const q = normKey($("#players-search")?.value);
+  const club = $("#players-club-filter")?.value || "";
+
+  const rows = playersDraft
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => (!club || p.club === club) && (!q || normKey(p.name).includes(q)))
+    .sort((a, b) =>
+      a.p.club.localeCompare(b.p.club) ||
+      (a.p.position || 99) - (b.p.position || 99) ||
+      a.p.last.localeCompare(b.p.last));
+
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty-state"><strong>Sin jugadores</strong>${playersDraft.length ? "Ninguno coincide con el filtro." : "Importá un CSV o agregá uno a mano."}</div></td></tr>`;
+    return;
+  }
+
+  const LIMIT = 300;
+  body.innerHTML = rows.slice(0, LIMIT).map(({ p, i }) => `
+    <tr class="${i === playerEditing ? "editing" : ""}">
+      <td>${p.position ? `<span class="pos-badge">${p.position}</span> ${esc(positionLabel(p.position).split(" · ")[1])}` : `<span class="muted">Sin puesto</span>`}</td>
+      <td>${esc(p.first)} <b>${esc(p.last)}</b></td>
+      <td>${esc(p.club)}</td>
+      <td>${wordleWord(p) ? `<span class="pill ok">${esc(wordleWord(p))}</span>` : `<span class="muted" title="El Wordle usa apellidos de una sola palabra, de 4 a 9 letras">—</span>`}</td>
+      <td class="row-actions">
+        <button type="button" class="action" data-player-edit="${i}">EDITAR</button>
+        <button type="button" class="action danger" data-player-del="${i}">ELIMINAR</button>
+      </td>
+    </tr>`).join("") +
+    (rows.length > LIMIT ? `<tr><td colspan="5" class="muted">Mostrando ${LIMIT} de ${rows.length}. Usá el buscador o tocá un club.</td></tr>` : "");
+}
+
+function resetPlayerForm() {
+  playerEditing = -1;
+  const form = $("#player-form");
+  if (!form) return;
+  $("#player-first").value = "";
+  $("#player-last").value = "";
+  $("#player-form-title").textContent = "Agregar jugador";
+  $("#player-add").textContent = "+ AGREGAR";
+  $("#player-cancel").classList.add("hidden");
+}
+
+function renderPlayersAdmin(force = false) {
+  if (!$("#section-players")) return;
+  loadTeamsSeed();
+  if (!state.content.players.length) loadPlayersSeed();
+  buildClubIndex();
+
+  if (!playersDirty || force) {
+    playersDraft = livePlayers();
+    playersDirty = false;
+    resetPlayerForm();
+  }
+
+  paintPlayersControls();
+  paintPlayersStatus();
+  paintPlayersClubs();
+  paintPlayersTable();
+}
+
+function playerKey(p) {
+  return `${normKey(p.club)}|${normKey(p.name)}`;
+}
+
+function addPlayers(list, replace) {
+  const next = replace ? [] : playersDraft.slice();
+  const seen = new Set(next.map(playerKey));
+  let added = 0, repeated = 0;
+  for (const p of list) {
+    if (seen.has(playerKey(p))) { repeated++; continue; }
+    seen.add(playerKey(p));
+    next.push(p);
+    added++;
+  }
+  playersDraft = next;
+  if (added || replace) markPlayersDirty();
+  paintPlayersTable();
+  return { added, repeated };
 }
 
 function parsePlayersCSV(text) {
   const first = text.split(/\r?\n/)[0] || "";
-  const sep = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ";" : ",";
+  const sep = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ";"
+    : (first.match(/\t/g) || []).length > (first.match(/,/g) || []).length ? "\t" : ",";
   const rows = [];
   let row = [], cell = "", quoted = false;
   for (let i = 0; i < text.length; i++) {
@@ -4746,115 +5022,46 @@ function parsePlayersCSV(text) {
   return rows;
 }
 
-function markPlayersDirty() {
-  playersDirty = true;
-  paintPlayersStatus();
-}
-
-function paintPlayersStatus() {
-  const box = $("#players-status");
-  if (!box) return;
-  box.className = "quiz-status " + (playersDirty ? "dirty" : "live");
-  box.innerHTML = playersDirty
-    ? "<i></i>Tenés cambios sin guardar. Tocá GUARDAR JUGADORES para publicarlos."
-    : `<i></i>${playersDraft.length} jugadores publicados.`;
-}
-
-function paintPlayersControls() {
-  const clubSel = $("#player-club");
-  const filter = $("#players-club-filter");
-  if (clubSel) clubSel.innerHTML = clubNames.map((n) => `<option>${esc(n)}</option>`).join("");
-  if (filter) {
-    const current = filter.value;
-    filter.innerHTML = `<option value="">Todos los clubes</option>` + clubNames.map((n) => `<option>${esc(n)}</option>`).join("");
-    filter.value = current;
-  }
-  const pos = $("#player-position");
-  if (pos && pos.options.length <= 1) {
-    pos.innerHTML = `<option value="">Cualquiera</option>` + PLAYER_POSITIONS.map(([n, l]) => `<option value="${n}">${esc(l)}</option>`).join("");
-  }
-}
-
-function paintPlayersTable() {
-  const body = $("#players-table");
-  if (!body) return;
-  const q = normKey($("#players-search")?.value);
-  const club = $("#players-club-filter")?.value || "";
-
-  const rows = playersDraft
-    .map((p, i) => ({ p, i }))
-    .filter(({ p }) => (!club || p.club === club) && (!q || normKey(p.name).includes(q)))
-    .sort((a, b) => a.p.club.localeCompare(b.p.club) || (a.p.position || 99) - (b.p.position || 99) || a.p.name.localeCompare(b.p.name));
-
-  if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><strong>Sin jugadores</strong>Importá un CSV o agregá uno a mano.</div></td></tr>`;
-    return;
-  }
-
-  body.innerHTML = rows.slice(0, 400).map(({ p, i }) => `
-    <tr>
-      <td>${esc(p.name)}</td>
-      <td>${esc(p.club)}</td>
-      <td>${p.position ? esc(PLAYER_POSITIONS.find(([n]) => n === p.position)?.[1] || p.position) : "Cualquiera"}</td>
-      <td><button type="button" class="action danger" data-player-del="${i}">ELIMINAR</button></td>
-    </tr>`).join("") +
-    (rows.length > 400 ? `<tr><td colspan="4" class="muted">Mostrando 400 de ${rows.length}. Usá el buscador o el filtro de club.</td></tr>` : "");
-}
-
-function renderPlayersAdmin(force = false) {
-  if (!$("#section-players")) return;
-  loadTeamsSeed();
-  buildClubIndex();
-  if (!playersDirty || force) {
-    playersDraft = state.content.players.map((p) => ({ ...p }));
-    playersDirty = false;
-  }
-  paintPlayersControls();
-  paintPlayersStatus();
-  paintPlayersTable();
-}
-
-function addPlayers(list, replace) {
-  const existing = replace ? [] : playersDraft.slice();
-  const seen = new Set(existing.map((p) => `${normKey(p.club)}|${normKey(p.name)}`));
-  let added = 0, repeated = 0;
-  for (const p of list) {
-    const key = `${normKey(p.club)}|${normKey(p.name)}`;
-    if (seen.has(key)) { repeated++; continue; }
-    seen.add(key);
-    existing.push(p);
-    added++;
-  }
-  playersDraft = existing;
-  markPlayersDirty();
-  paintPlayersTable();
-  return { added, repeated };
-}
-
 function importPlayersFromText(text) {
-  const rows = parsePlayersCSV(text.replace(/^\uFEFF/, ""));
-  const header = rows.length ? rows[0].map(normKey) : [];
-  const hasHeader = header.includes("club") && (header.includes("jugador") || header.includes("nombre"));
-  const iClub = hasHeader ? header.indexOf("club") : 0;
-  const iName = hasHeader ? Math.max(header.indexOf("jugador"), header.indexOf("nombre")) : 1;
-  const iPos = hasHeader ? Math.max(header.indexOf("puesto"), header.indexOf("posicion")) : 2;
-  if (hasHeader) rows.shift();
+  const rows = parsePlayersCSV(text.replace(/^﻿/, ""));
+  if (!rows.length) return;
+
+  const header = rows[0].map(normKey);
+  const hasHeader = header.includes("club");
+  let iClub = 0, iFirst = -1, iLast = -1, iFull = -1, iPos = -1;
+
+  if (hasHeader) {
+    iClub = header.indexOf("club");
+    iFirst = header.indexOf("nombre");
+    iLast = header.indexOf("apellido");
+    iFull = header.indexOf("jugador");
+    iPos = Math.max(header.indexOf("puesto"), header.indexOf("posicion"));
+    rows.shift();
+  } else if (rows[0].length >= 4) {
+    iFirst = 1; iLast = 2; iPos = 3;
+  } else {
+    iFull = 1; iPos = 2;
+  }
 
   const valid = [], errors = [];
   rows.forEach((r, n) => {
     const line = n + (hasHeader ? 2 : 1);
-    const name = String(r[iName] || "").replace(/\s+/g, " ").trim();
-    const clubRaw = String(r[iClub] || "").trim();
-    const posRaw = iPos >= 0 ? String(r[iPos] || "").trim() : "";
-    if (!name) return errors.push(`Línea ${line}: falta el jugador.`);
+    const raw = iLast >= 0
+      ? { first: iFirst >= 0 ? r[iFirst] : "", last: r[iLast] }
+      : { name: r[iFull >= 0 ? iFull : iFirst] };
+    const clubRaw = cleanText(r[iClub]);
+    const posRaw = iPos >= 0 ? cleanText(r[iPos]) : "";
     const club = clubIndex.get(normKey(clubRaw));
-    if (!club) return errors.push(`Línea ${line}: club desconocido “${clubRaw}” (${name}).`);
-    let position = null;
+    const player = normalizePlayer({ ...raw, club: club || clubRaw });
+
+    if (!player.last) return errors.push(`Línea ${line}: falta el apellido.`);
+    if (!club) return errors.push(`Línea ${line}: club desconocido “${clubRaw}” (${player.name}).`);
     if (posRaw) {
-      position = /^\d+$/.test(posRaw) ? Number(posRaw) : PLAYER_POSITION_NAMES[normKey(posRaw)];
-      if (!(position >= 1 && position <= 15)) return errors.push(`Línea ${line}: puesto no válido “${posRaw}” (${name}).`);
+      const position = /^\d+$/.test(posRaw) ? Number(posRaw) : PLAYER_POSITION_NAMES[normKey(posRaw)];
+      if (!(position >= 1 && position <= 15)) return errors.push(`Línea ${line}: puesto no válido “${posRaw}” (${player.name}).`);
+      player.position = position;
     }
-    valid.push(position ? { name, club, position } : { name, club });
+    valid.push(player);
   });
 
   const { added, repeated } = addPlayers(valid, $("#players-replace")?.checked);
@@ -4867,6 +5074,24 @@ function importPlayersFromText(text) {
   toast("Importación lista", `${added} jugadores agregados. Falta guardar.`, errors.length ? "error" : "ok");
 }
 
+function exportPlayersCSV() {
+  const quote = (v) => (/[",;\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  const lines = ["club,nombre,apellido,puesto"].concat(
+    playersDraft
+      .slice()
+      .sort((a, b) => a.club.localeCompare(b.club) || (a.position || 99) - (b.position || 99))
+      .map((p) => [p.club, p.first, p.last, p.position || ""].map(quote).join(","))
+  );
+  const blob = new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "jugadores-droprugby.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+}
+
 async function savePlayers() {
   const button = $("#players-save");
   try {
@@ -4876,6 +5101,8 @@ async function savePlayers() {
     playersDirty = false;
     renderCounts();
     renderPlayersAdmin(true);
+    renderGamesAdmin();
+    renderGamesDashboard();
     toast("Jugadores guardados", `${state.content.players.length} jugadores publicados.`);
   } catch (error) {
     toast("No se pudo guardar", error.message || "Probá de nuevo.", "error");
@@ -4885,8 +5112,19 @@ async function savePlayers() {
 }
 
 $("#players-save")?.addEventListener("click", savePlayers);
+$("#players-export")?.addEventListener("click", exportPlayersCSV);
 $("#players-search")?.addEventListener("input", paintPlayersTable);
-$("#players-club-filter")?.addEventListener("change", paintPlayersTable);
+$("#players-club-filter")?.addEventListener("change", () => { paintPlayersTable(); paintPlayersClubs(); });
+
+$("#players-clubs")?.addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-club-chip]");
+  if (!chip) return;
+  const filter = $("#players-club-filter");
+  filter.value = filter.value === chip.dataset.clubChip ? "" : chip.dataset.clubChip;
+  if ($("#player-club") && filter.value) $("#player-club").value = filter.value;
+  paintPlayersTable();
+  paintPlayersClubs();
+});
 
 $("#players-import")?.addEventListener("click", async () => {
   const file = $("#players-file")?.files?.[0];
@@ -4899,20 +5137,332 @@ $("#players-import")?.addEventListener("click", async () => {
   if ($("#players-paste")) $("#players-paste").value = "";
 });
 
-$("#player-add")?.addEventListener("click", () => {
-  const name = $("#player-name").value.replace(/\s+/g, " ").trim();
-  const club = $("#player-club").value;
-  const position = Number($("#player-position").value) || null;
-  if (!name || !club) { toast("Faltan datos", "Poné el nombre y elegí el club.", "error"); return; }
-  const { repeated } = addPlayers([position ? { name, club, position } : { name, club }], false);
-  if (repeated) toast("Ya estaba", `${name} ya figura en ${club}.`, "error");
-  else $("#player-name").value = "";
-});
+$("#player-form")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const player = normalizePlayer({
+    first: $("#player-first").value,
+    last: $("#player-last").value,
+    club: $("#player-club").value,
+    position: $("#player-position").value
+  });
 
-$("#players-table")?.addEventListener("click", (event) => {
-  const btn = event.target.closest("[data-player-del]");
-  if (!btn) return;
-  playersDraft.splice(Number(btn.dataset.playerDel), 1);
+  if (!player.last || !player.club) {
+    toast("Faltan datos", "Poné el apellido y elegí el club.", "error");
+    $("#player-last").focus();
+    return;
+  }
+
+  const clash = playersDraft.findIndex((p, i) => i !== playerEditing && playerKey(p) === playerKey(player));
+  if (clash >= 0) {
+    toast("Ya estaba", `${player.name} ya figura en ${player.club}.`, "error");
+    return;
+  }
+
+  if (playerEditing >= 0) {
+    playersDraft[playerEditing] = player;
+    toast("Jugador actualizado", "Falta guardar para publicarlo.");
+  } else {
+    playersDraft.push(player);
+  }
+
+  resetPlayerForm();
   markPlayersDirty();
   paintPlayersTable();
+  $("#player-first").focus();
 });
+
+$("#player-cancel")?.addEventListener("click", () => { resetPlayerForm(); paintPlayersTable(); });
+
+$("#players-table")?.addEventListener("click", (event) => {
+  const edit = event.target.closest("[data-player-edit]");
+  const del = event.target.closest("[data-player-del]");
+
+  if (edit) {
+    playerEditing = Number(edit.dataset.playerEdit);
+    const p = playersDraft[playerEditing];
+    if (!p) return;
+    $("#player-first").value = p.first;
+    $("#player-last").value = p.last;
+    if (![...$("#player-club").options].some((o) => o.value === p.club)) {
+      $("#player-club").insertAdjacentHTML("beforeend", `<option value="${esc(p.club)}">${esc(p.club)}</option>`);
+    }
+    $("#player-club").value = p.club;
+    $("#player-position").value = p.position ? String(p.position) : "";
+    $("#player-form-title").textContent = "Editar jugador";
+    $("#player-add").textContent = "GUARDAR CAMBIOS";
+    $("#player-cancel").classList.remove("hidden");
+    paintPlayersTable();
+    $("#player-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("#player-last").focus({ preventScroll: true });
+    return;
+  }
+
+  if (del) {
+    const index = Number(del.dataset.playerDel);
+    const p = playersDraft[index];
+    if (!p || !confirm(`¿Eliminar a ${p.name} (${p.club})?`)) return;
+    playersDraft.splice(index, 1);
+    resetPlayerForm();
+    markPlayersDirty();
+    paintPlayersTable();
+  }
+});
+
+
+/* ==========================================================================
+   JUEGOS
+   Configuración de Rugby XV, Wordle, Escudos y Quiz.
+   Se guarda con la acción "save-games" (content.games) y el sitio la lee
+   de /api/content. Los valores por defecto son los de assets/js/script.js.
+   ========================================================================== */
+
+const GAME_DEFAULTS = {
+  xv: { enabled: true, times: [60, 90, 0], flex: { pilares: true, segundas: true, alas: true, centros: true, wings: true } },
+  wordle: { enabled: true, attempts: 6, hintClubAfter: 3, hintPositionAfter: 5, manualDate: "", manualPlayer: "" },
+  escudos: { enabled: true, rounds: 10 },
+  quiz: { enabled: true }
+};
+
+const GAME_LABELS = { xv: "Rugby XV", wordle: "Wordle", escudos: "Escudos", quiz: "Quiz" };
+
+let gamesDraft = null;
+let gamesDirty = false;
+
+function clampInt(value, min, max, fallback) {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+function gamesFromContent() {
+  const r = state.content.games || {};
+  const d = GAME_DEFAULTS;
+  const times = Array.isArray(r.xv?.times)
+    ? [...new Set(r.xv.times.map((t) => clampInt(t, 0, 600, -1)).filter((t) => t >= 0))].slice(0, 4)
+    : [];
+  return {
+    xv: {
+      enabled: r.xv?.enabled !== false,
+      times: times.length ? times : d.xv.times.slice(),
+      flex: { ...d.xv.flex, ...(r.xv?.flex && typeof r.xv.flex === "object" ? r.xv.flex : {}) }
+    },
+    wordle: {
+      enabled: r.wordle?.enabled !== false,
+      attempts: clampInt(r.wordle?.attempts, 3, 10, d.wordle.attempts),
+      hintClubAfter: clampInt(r.wordle?.hintClubAfter, 0, 10, d.wordle.hintClubAfter),
+      hintPositionAfter: clampInt(r.wordle?.hintPositionAfter, 0, 10, d.wordle.hintPositionAfter),
+      manualDate: String(r.wordle?.manualDate || ""),
+      manualPlayer: String(r.wordle?.manualPlayer || "")
+    },
+    escudos: { enabled: r.escudos?.enabled !== false, rounds: clampInt(r.escudos?.rounds, 3, 14, d.escudos.rounds) },
+    quiz: { enabled: r.quiz?.enabled !== false }
+  };
+}
+
+function paintGamesStatus() {
+  const box = $("#games-status");
+  if (!box || !gamesDraft) return;
+  const active = Object.keys(GAME_LABELS).filter((id) => gamesDraft[id].enabled).length;
+
+  if ($("#nav-games-count")) $("#nav-games-count").textContent = active;
+
+  if (gamesDirty) {
+    box.className = "quiz-status dirty";
+    box.innerHTML = "<i></i>Tenés cambios sin guardar. Tocá GUARDAR JUEGOS para publicarlos.";
+    return;
+  }
+  box.className = "quiz-status live";
+  box.innerHTML = `<i></i>${active} de 4 juegos activos en el sitio.` +
+    (state.content.games?.updatedAt ? ` Último cambio: ${esc(new Date(state.content.games.updatedAt).toLocaleString("es-AR"))}.` : " Configuración por defecto.");
+}
+
+function paintGamesInfo() {
+  if (!gamesDraft) return;
+  const players = workingPlayers();
+  const withPos = players.filter((p) => p.position);
+  const squads = new Set(withPos.map((p) => p.club)).size;
+  const pool = wordlePool(players);
+  const set = (id, text) => { const el = $(id); if (el) el.textContent = text; };
+
+  set("#g-xv-info", `${withPos.length} jugadores con puesto · ${squads} clubes`);
+  set("#g-wordle-info", `${pool.length} apellidos jugables`);
+
+  const logos = state.content.settings?.clubLogos || {};
+  const withLogo = Object.values(logos).filter(Boolean).length;
+  set("#g-escudos-info", withLogo ? `${withLogo} clubes con escudo` : "Escudos del sitio");
+  const questions = (state.content.quiz || quizSeed)?.questions?.length || 0;
+  set("#g-quiz-info", `${questions} preguntas`);
+
+  // Jugador del día
+  const today = todayISO();
+  const box = $("#g-wordle-today");
+  if (box) {
+    if (!pool.length) {
+      box.textContent = "Todavía no hay apellidos jugables: cargá jugadores.";
+    } else {
+      const manual = gamesDraft.wordle.manualDate === today && gamesDraft.wordle.manualPlayer
+        ? pool.find((e) => normKey(e.player.name) === normKey(gamesDraft.wordle.manualPlayer))
+        : null;
+      const entry = manual || pool[wordleHash("droprugby-" + today) % pool.length];
+      box.innerHTML = `Hoy sale: <b>${esc(entry.player.name)}</b> (${esc(entry.player.club)}) · ${entry.word.length} letras ${manual ? '<span class="pill ok">elegido a mano</span>' : '<span class="pill">automático</span>'}`;
+    }
+  }
+
+  const select = $("#g-wordle-player");
+  if (select) {
+    const current = gamesDraft.wordle.manualPlayer;
+    select.innerHTML = `<option value="">Automático</option>` + pool
+      .map((e) => `<option value="${esc(e.player.name)}">${esc(e.word)} — ${esc(e.player.name)} (${esc(e.player.club)})</option>`).join("");
+    select.value = pool.some((e) => e.player.name === current) ? current : "";
+  }
+}
+
+function paintGamesForm() {
+  if (!gamesDraft) return;
+  const g = gamesDraft;
+  const check = (id, value) => { const el = $(id); if (el) el.checked = !!value; };
+  const val = (id, value) => { const el = $(id); if (el) el.value = value; };
+
+  check("#g-xv-enabled", g.xv.enabled);
+  check("#g-wordle-enabled", g.wordle.enabled);
+  check("#g-escudos-enabled", g.escudos.enabled);
+  check("#g-quiz-enabled", g.quiz.enabled);
+
+  $$("#g-xv-times input").forEach((input) => { input.checked = g.xv.times.includes(Number(input.value)); });
+  $$("#g-xv-flex input").forEach((input) => { input.checked = g.xv.flex[input.value] !== false; });
+
+  val("#g-wordle-attempts", g.wordle.attempts);
+  val("#g-wordle-club", g.wordle.hintClubAfter);
+  val("#g-wordle-pos", g.wordle.hintPositionAfter);
+  val("#g-wordle-date", g.wordle.manualDate || todayISO());
+  val("#g-escudos-rounds", g.escudos.rounds);
+
+  $$("[data-game-panel]").forEach((panel) => {
+    panel.classList.toggle("off", !g[panel.dataset.gamePanel].enabled);
+  });
+}
+
+function renderGamesAdmin(force = false) {
+  if (!$("#section-games")) return;
+  loadTeamsSeed();
+  if (!state.content.players.length) loadPlayersSeed();
+  if (!state.content.quiz && typeof loadQuizSeed === "function") loadQuizSeed();
+
+  if (!gamesDirty || force || !gamesDraft) {
+    gamesDraft = gamesFromContent();
+    gamesDirty = false;
+    paintGamesForm();
+  }
+  paintGamesInfo();
+  paintGamesStatus();
+}
+
+function readGamesForm() {
+  const g = gamesDraft;
+  g.xv.enabled = $("#g-xv-enabled").checked;
+  g.wordle.enabled = $("#g-wordle-enabled").checked;
+  g.escudos.enabled = $("#g-escudos-enabled").checked;
+  g.quiz.enabled = $("#g-quiz-enabled").checked;
+
+  // De menor a mayor; "sin tiempo" (0) siempre al final.
+  g.xv.times = $$("#g-xv-times input:checked")
+    .map((i) => Number(i.value))
+    .sort((a, b) => (a || Infinity) - (b || Infinity));
+  $$("#g-xv-flex input").forEach((input) => { g.xv.flex[input.value] = input.checked; });
+
+  g.wordle.attempts = clampInt($("#g-wordle-attempts").value, 3, 10, 6);
+  g.wordle.hintClubAfter = clampInt($("#g-wordle-club").value, 0, 10, 3);
+  g.wordle.hintPositionAfter = clampInt($("#g-wordle-pos").value, 0, 10, 5);
+  g.wordle.manualPlayer = $("#g-wordle-player").value;
+  g.wordle.manualDate = g.wordle.manualPlayer ? $("#g-wordle-date").value || todayISO() : "";
+  g.escudos.rounds = clampInt($("#g-escudos-rounds").value, 3, 14, 10);
+}
+
+async function saveGames() {
+  if (!gamesDraft) return;
+  readGamesForm();
+
+  if (!gamesDraft.xv.times.length) {
+    toast("Falta un tiempo", "Rugby XV necesita al menos una opción de tiempo.", "error");
+    return;
+  }
+  if (gamesDraft.xv.times.length > 4) {
+    toast("Demasiados tiempos", "Elegí hasta 4 opciones de tiempo para Rugby XV.", "error");
+    return;
+  }
+
+  const button = $("#games-save");
+  try {
+    if (button) { button.disabled = true; button.textContent = "GUARDANDO…"; }
+    const data = await api("save-games", { games: gamesDraft });
+    state.content.games = data.games || gamesDraft;
+    gamesDirty = false;
+    renderGamesAdmin(true);
+    renderGamesDashboard();
+    toast("Juegos guardados", "La configuración ya está en el sitio.");
+  } catch (error) {
+    toast("No se pudo guardar", error.message || "Probá de nuevo.", "error");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "GUARDAR JUEGOS"; }
+  }
+}
+
+$("#games-save")?.addEventListener("click", saveGames);
+
+const onGamesChange = (event) => {
+  if (!gamesDraft || !event.target.matches("input, select")) return;
+  readGamesForm();
+  gamesDirty = true;
+  $$("[data-game-panel]").forEach((panel) => {
+    panel.classList.toggle("off", !gamesDraft[panel.dataset.gamePanel].enabled);
+  });
+  paintGamesInfo();
+  paintGamesStatus();
+};
+$("#section-games")?.addEventListener("change", onGamesChange);
+
+
+/* ==========================================================================
+   DASHBOARD — juegos y planteles
+   ========================================================================== */
+
+function renderGamesDashboard() {
+  buildClubIndex();
+  const players = livePlayers();
+  const games = gamesFromContent();
+
+  const counts = {};
+  players.forEach((p) => { counts[p.club] = (counts[p.club] || 0) + 1; });
+  const top14 = TOP14_NAMES.map(canonicalClub);
+  const squads = top14.filter((name) => counts[name]).length;
+
+  if ($("#stat-players")) $("#stat-players").textContent = players.length;
+  if ($("#stat-squads")) $("#stat-squads").textContent = squads;
+  if ($("#nav-players-count")) $("#nav-players-count").textContent = players.length;
+  if ($("#nav-games-count") && !gamesDirty) {
+    $("#nav-games-count").textContent = Object.keys(GAME_LABELS).filter((id) => games[id].enabled).length;
+  }
+
+  const gamesBox = $("#dashboard-games");
+  if (gamesBox) {
+    const pool = wordlePool(players);
+    const detail = {
+      xv: `${games.xv.times.map((t) => (t ? t + " s" : "sin tiempo")).join(" · ")}`,
+      wordle: `${games.wordle.attempts} intentos · ${pool.length} apellidos`,
+      escudos: `${games.escudos.rounds} rondas`,
+      quiz: `${(state.content.quiz || quizSeed)?.questions?.length || 0} preguntas`
+    };
+    gamesBox.innerHTML = Object.entries(GAME_LABELS).map(([id, label]) => `
+      <div class="list-item">
+        <div><b>${label}</b><small class="muted">${esc(detail[id])}</small></div>
+        <span class="pill ${games[id].enabled ? "ok" : "off"}">${games[id].enabled ? "Activo" : "Pausado"}</span>
+      </div>`).join("");
+  }
+
+  const squadsBox = $("#dashboard-squads");
+  if (squadsBox) {
+    squadsBox.innerHTML = `<div class="squad-bars">` + top14.map((name) => {
+      const n = counts[name] || 0;
+      return `<div class="squad-bar ${n ? "" : "empty"}"><span>${esc(name)}</span><i><u style="width:${Math.min(100, (n / 15) * 100)}%"></u></i><b>${n}</b></div>`;
+    }).join("") + `</div>`;
+  }
+}

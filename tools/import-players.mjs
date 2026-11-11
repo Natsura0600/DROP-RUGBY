@@ -2,9 +2,10 @@
 //   node tools/import-players.mjs            (usa data/players.csv)
 //   node tools/import-players.mjs otro.csv
 //
-// Columnas: club, jugador, puesto
-//   club    nombre del club o alias (Newman, CASI, Hindu, Biei, Champa…)
-//   jugador nombre y apellido
+// Columnas: club, nombre, apellido, puesto   (también acepta club, jugador, puesto)
+//   club     nombre del club o alias (Newman, CASI, Hindu, Biei, Champa…)
+//   nombre   nombre de pila (puede ser compuesto: Juan Pablo)
+//   apellido apellido (puede ser compuesto: De la Vega). Es lo que se adivina en el Wordle.
 //   puesto  número 1-15 o nombre (pilar, hooker, segunda linea, ala, octavo,
 //           medio scrum, apertura, wing, centro, fullback). Si el nombre es
 //           ambiguo (pilar, ala, wing, centro, segunda linea) se puede
@@ -65,16 +66,26 @@ if (!fs.existsSync(input)) { console.error(`No encuentro ${input}`); process.exi
 const rows = parseCSV(fs.readFileSync(input, "utf8").replace(/^﻿/, ""));
 const header = rows.shift().map(norm);
 const col = (...names) => header.findIndex(h => names.includes(h));
-const iClub = col("club"), iName = col("jugador", "nombre"), iPos = col("puesto", "posicion");
-if (iClub < 0 || iName < 0) { console.error("Faltan columnas: club, jugador (y puesto)."); process.exit(1); }
+const iClub = col("club"), iFirst = col("nombre"), iLast = col("apellido"), iFull = col("jugador"), iPos = col("puesto", "posicion");
+const split = iFirst >= 0 && iLast >= 0;
+if (iClub < 0 || (!split && iFull < 0 && iFirst < 0)) { console.error("Faltan columnas: club, nombre, apellido, puesto (o club, jugador, puesto)."); process.exit(1); }
+const clean = v => String(v || "").trim().replace(/\s+/g, " ");
 
 const players = [], errors = [], seen = new Set();
 rows.forEach((r, n) => {
   const line = n + 2;
-  const name = (r[iName] || "").trim().replace(/\s+/g, " ");
+  let first, last;
+  if (split) { first = clean(r[iFirst]); last = clean(r[iLast]); }
+  else {
+    // Una sola columna: la primera palabra es el nombre y el resto el apellido.
+    const parts = clean(r[iFull >= 0 ? iFull : iFirst]).split(" ");
+    first = parts.length > 1 ? parts[0] : "";
+    last = parts.slice(parts.length > 1 ? 1 : 0).join(" ");
+  }
+  const name = clean(`${first} ${last}`);
   const clubRaw = (r[iClub] || "").trim();
   const posRaw = iPos >= 0 ? (r[iPos] || "").trim() : "";
-  if (!name) return errors.push(`Línea ${line}: falta el jugador.`);
+  if (!last) return errors.push(`Línea ${line}: falta el apellido.`);
   const club = clubIndex.get(norm(clubRaw));
   if (!club) return errors.push(`Línea ${line}: club desconocido "${clubRaw}" (${name}).`);
   let position = null;
@@ -85,7 +96,7 @@ rows.forEach((r, n) => {
   const key = `${norm(club)}|${norm(name)}`;
   if (seen.has(key)) return errors.push(`Línea ${line}: repetido ${name} (${club}).`);
   seen.add(key);
-  players.push(position ? { name, club, position } : { name, club });
+  players.push(position ? { first, last, name, club, position } : { first, last, name, club });
 });
 
 players.sort((a, b) => a.club.localeCompare(b.club) || (a.position || 99) - (b.position || 99) || a.name.localeCompare(b.name));

@@ -182,6 +182,7 @@ async function toPublic(data) {
       nationLogos: data.settings?.nationLogos || {}
     },
     players: Array.isArray(data.players) ? data.players : [],
+    games: data.games && typeof data.games === 'object' ? data.games : null,
     quiz
   };
 }

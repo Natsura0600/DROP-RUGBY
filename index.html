@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DropRugby | Minijuegos de rugby y URBA Top 14</title>
-  <meta name="description" content="Armá tu XV, adiviná escudos y jugá con la tabla del URBA Top 14. Calendario de partidos y quiz de rugby.">
+  <meta name="description" content="Armá tu XV contra reloj, adiviná al jugador del día y reconocé los escudos del URBA Top 14. Minijuegos de rugby gratis.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0d0f11">
   <link rel="canonical" href="https://www.droprugby.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DropRugby">
   <meta property="og:title" content="DropRugby | Minijuegos de rugby y URBA Top 14">
-  <meta property="og:description" content="Armá tu XV, adiviná escudos y jugá con la tabla del URBA Top 14. Calendario de partidos y quiz de rugby.">
+  <meta property="og:description" content="Armá tu XV contra reloj, adiviná al jugador del día y reconocé los escudos del URBA Top 14. Minijuegos de rugby gratis.">
   <meta property="og:url" content="https://www.droprugby.com/">
   <meta property="og:image" content="https://www.droprugby.com/logo.png">
   <meta name="google-adsense-account" content="ca-pub-7081370352193016">
@@ -19,8 +19,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/brand.css?v=20261111">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20261111">
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261112">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20261112">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7081370352193016" crossorigin="anonymous"></script>
 </head>
 <body data-page="home">
@@ -28,29 +28,106 @@
   <div id="site-header" style="min-height:68px;background:#0d0f11"></div>
 
   <main>
-    <section class="hero home-hero">
-      <div class="wrap">
-        <span class="drop-kicker">Rugby para jugar</span>
-        <h1>Armá tu XV.<br>Adiviná el club.<br>Ganale a tus amigos.</h1>
-        <p class="lead">Minijuegos de rugby argentino con los clubes y la tabla del URBA Top 14.</p>
-        <div class="hero-buttons">
-          <a class="btn accent" href="rugby-xv.html">Armar mi XV →</a>
-          <a class="btn ghost on-dark" href="escudos.html">Jugar a los escudos</a>
+    <section class="home-hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="wrap hero-split">
+        <div class="hero-text">
+          <span class="drop-kicker rise" style="--d:0">Rugby para jugar</span>
+          <h1>
+            <span class="rise" style="--d:1">Armá tu XV.</span>
+            <span class="rise" style="--d:2">Adiviná al jugador.</span>
+            <span class="rise hl" style="--d:3">Ganale a tus amigos.</span>
+          </h1>
+          <p class="lead rise" style="--d:4">Minijuegos con los clubes, los planteles y la tabla del URBA Top 14. Gratis, sin registrarte, en un minuto.</p>
+          <div class="hero-buttons rise" style="--d:5">
+            <a class="btn accent big" href="rugby-xv.html" data-game-id="xv">Armar mi XV →</a>
+            <a class="btn ghost on-dark big" href="wordle.html" data-game-id="wordle">Jugador del día</a>
+          </div>
+        </div>
+        <div class="hero-demo rise" style="--d:3" aria-hidden="true">
+          <div class="demo-card">
+            <div class="demo-head"><span>Jugador del día</span><b>3 / 6</b></div>
+            <div class="demo-board"><div class="demo-row"><b class="a" style="--t:0.00s">T</b><b class="p" style="--t:0.12s">R</b><b class="a" style="--t:0.24s">I</b><b class="a" style="--t:0.36s">E</b><b class="a" style="--t:0.48s">S</b></div><div class="demo-row"><b class="p" style="--t:0.90s">G</b><b class="p" style="--t:1.02s">R</b><b class="p" style="--t:1.14s">U</b><b class="c" style="--t:1.26s">B</b><b class="c" style="--t:1.38s">Y</b></div><div class="demo-row"><b class="c" style="--t:1.80s">R</b><b class="c" style="--t:1.92s">U</b><b class="c" style="--t:2.04s">G</b><b class="c" style="--t:2.16s">B</b><b class="c" style="--t:2.28s">Y</b></div></div>
+            <div class="demo-foot">¡Lo sacaste! 🏉</div>
+          </div>
+          <span class="demo-chip chip-a">⏱ 60″</span>
+          <span class="demo-chip chip-b">15 / 15</span>
         </div>
       </div>
     </section>
 
-    <section class="section">
+    <section class="stats-strip" aria-label="DropRugby en números">
+      <div class="wrap stats-grid" id="home-stats">
+        <div><strong data-stat="games">4</strong><span>Juegos</span></div>
+        <div><strong data-stat="players">0</strong><span>Jugadores</span></div>
+        <div><strong data-stat="clubs">14</strong><span>Clubes del Top 14</span></div>
+        <div><strong>100%</strong><span>Gratis</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="juegos">
       <div class="wrap">
-        <div class="section-head"><div><span class="drop-kicker">Minijuegos</span><h2>Elegí tu juego</h2></div></div>
-        <div class="comp-grid four">
-          <a class="comp-card" data-word="XV" href="rugby-xv.html"><span class="drop-kicker">Armá tu equipo</span><h3>Rugby XV</h3><p>Escribí jugadores contra reloj y completá los 15 puestos.</p><b>↗</b></a>
-          <a class="comp-card" data-word="CLUB" href="escudos.html"><span class="drop-kicker">Adiviná</span><h3>¿De qué club es?</h3><p>Diez escudos del Top 14. ¿Cuántos conocés?</p><b>↗</b></a>
-          <a class="comp-card" data-word="RACHA" href="mayor-menor.html"><span class="drop-kicker">Con la tabla real</span><h3>Mayor o menor</h3><p>Puntos, victorias y diferencia: elegí bien y seguí la racha.</p><b>↗</b></a>
-          <a class="comp-card" data-word="WORDLE" href="wordle.html"><span class="drop-kicker">Uno por día</span><h3>Wordle de jugadores</h3><p>Adiviná al jugador del URBA Top 14 en 8 intentos.</p><b>↗</b></a>
-          <a class="comp-card" data-word="QUIZ" href="quiz.html"><span class="drop-kicker">Preguntas</span><h3>Quiz de rugby</h3><p>Reglamento, historia y datos. Compartí tu puntaje.</p><b>↗</b></a>
+        <div class="section-head reveal"><div><span class="drop-kicker">Minijuegos</span><h2>Elegí tu juego</h2></div></div>
+        <div class="game-grid">
+          <a class="game-card reveal" data-game-id="xv" href="rugby-xv.html" style="transition-delay:0ms">
+            <div class="game-art art-xv" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="game-card-body">
+              <span class="drop-kicker">Contra reloj</span>
+              <h3>Rugby XV</h3>
+              <p>Escribí apellidos y completá los 15 puestos antes de que se acabe el tiempo.</p>
+              <span class="game-card-cta">Jugar <i>→</i></span>
+            </div>
+          </a>
+          <a class="game-card reveal" data-game-id="wordle" href="wordle.html" style="transition-delay:70ms">
+            <div class="game-art art-wordle" aria-hidden="true"><b class="c">P</b><b class="p">U</b><b class="a">M</b><b class="c">A</b><b class="p">S</b></div>
+            <div class="game-card-body">
+              <span class="drop-kicker">Uno por día</span>
+              <h3>Wordle</h3>
+              <p>Adiviná el apellido del jugador del día. Verde, naranja o gris: letra por letra.</p>
+              <span class="game-card-cta">Jugar <i>→</i></span>
+            </div>
+          </a>
+          <a class="game-card reveal" data-game-id="escudos" href="escudos.html" style="transition-delay:140ms">
+            <div class="game-art art-escudos" aria-hidden="true"><img src="/assets/clubs/newman.png" alt="" loading="lazy"><img src="/assets/clubs/sic.png" alt="" loading="lazy"><img src="/assets/clubs/los_tilos.png" alt="" loading="lazy"><span>?</span></div>
+            <div class="game-card-body">
+              <span class="drop-kicker">Diez rondas</span>
+              <h3>¿De qué club es?</h3>
+              <p>Te mostramos un escudo del Top 14 y elegís el club. ¿Cuántos conocés?</p>
+              <span class="game-card-cta">Jugar <i>→</i></span>
+            </div>
+          </a>
+          <a class="game-card reveal" data-game-id="quiz" href="quiz.html" style="transition-delay:210ms">
+            <div class="game-art art-quiz" aria-hidden="true"><span>A</span><span class="ok">B</span><span>C</span><span>D</span></div>
+            <div class="game-card-body">
+              <span class="drop-kicker">Preguntas</span>
+              <h3>Quiz de rugby</h3>
+              <p>Reglamento, historia y datos del juego. Compartí tu puntaje.</p>
+              <span class="game-card-cta">Jugar <i>→</i></span>
+            </div>
+          </a>
         </div>
       </div>
+    </section>
+
+    <section class="daily-band" data-game-id="wordle">
+      <div class="wrap daily-inner reveal">
+        <div>
+          <span class="drop-kicker">Wordle · Jugador del día</span>
+          <h2>Hay un jugador nuevo para adivinar.</h2>
+          <p id="home-wordle-state">Todavía no jugaste el de hoy.</p>
+        </div>
+        <div class="daily-side">
+          <div class="daily-clock"><small>Cambia en</small><b id="home-wordle-countdown">--:--:--</b></div>
+          <a class="btn accent big" href="wordle.html">Jugar ahora →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section clubs-section">
+      <div class="wrap">
+        <div class="section-head reveal"><div><span class="drop-kicker">URBA Top 14</span><h2>Los clubes del torneo</h2></div><a class="link-more" href="urba-top-14.html#clubes">Clubes y planteles →</a></div>
+      </div>
+      <div class="club-marquee" id="home-clubs"></div>
     </section>
 
     <section class="matches" aria-labelledby="home-matches-title">
@@ -64,18 +141,27 @@
     </section>
 
     <section class="section">
-      <div class="wrap">
-        <div class="side-card home-table">
+      <div class="wrap home-bottom">
+        <div class="side-card home-table reveal">
           <div class="side-title">URBA Top 14</div>
           <div id="home-standings"></div>
-          <a class="link-more" href="urba-top-14.html">Tabla y clubes →</a>
+          <a class="link-more" href="urba-top-14.html">Tabla completa →</a>
+        </div>
+        <div class="how-steps reveal">
+          <span class="drop-kicker">Cómo funciona</span>
+          <h2>Entrás, jugás, compartís.</h2>
+          <ol>
+            <li><b>1</b><div><strong>Elegí un juego</strong><span>No hay que registrarse ni bajar nada.</span></div></li>
+            <li><b>2</b><div><strong>Jugá en un minuto</strong><span>Partidas cortas, con tu récord guardado en el dispositivo.</span></div></li>
+            <li><b>3</b><div><strong>Compartí el resultado</strong><span>Copialo y mandalo al grupo del club.</span></div></li>
+          </ol>
         </div>
       </div>
     </section>
   </main>
 
   <div id="site-footer"></div>
-  <script src="assets/js/script.js?v=20261111"></script>
-  <script src="assets/js/games.js?v=20261111"></script>
+  <script src="/assets/js/script.js?v=20261112"></script>
+  <script src="/assets/js/games.js?v=20261112"></script>
 </body>
 </html>

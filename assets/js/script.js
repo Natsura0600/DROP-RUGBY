@@ -1,7 +1,7 @@
 /* ==========================================================================
    DropRugby — script.js
-   Datos (una sola carga de /api/content), layout compartido, noticias,
-   calendario, tabla URBA, artículo, quiz semanal, buscador y newsletter.
+   Datos (una sola carga de /api/content), layout compartido, calendario,
+   tabla URBA, quiz y configuración de los minijuegos (assets/js/games.js).
    ========================================================================== */
 
 const BASE = window.ASSET_BASE || "";
@@ -1232,14 +1232,16 @@ async function renderUrbaStandings() {
 const SITE_NAV = [
   ["index.html", "Inicio", "home"],
   ["rugby-xv.html", "Rugby XV", "xv"],
-  ["escudos.html", "Escudos", "escudos"],
-  ["mayor-menor.html", "Mayor o menor", "mayormenor"],
   ["wordle.html", "Wordle", "wordle"],
+  ["escudos.html", "Escudos", "escudos"],
   ["quiz.html", "Quiz", "quiz"],
   ["urba-top-14.html", "URBA Top 14", "urba"],
   ["calendario.html", "Calendario", "calendario"],
   ["contacto.html", "Contacto", "contacto"]
 ];
+
+// Claves del menú que son juegos (se pueden pausar desde el panel).
+const GAME_IDS = ["xv", "wordle", "escudos", "quiz"];
 
 const SOCIAL = {
   instagram: "https://www.instagram.com/drop_rugby/",
@@ -1259,7 +1261,7 @@ function renderLayout() {
   const footer = document.getElementById("site-footer");
 
   const linkHTML = ([href, label, key]) =>
-    `<a href="${BASE}${href}" class="${key === page ? "active" : ""}${key === "quiz" ? " nav-quiz" : ""}">${label}</a>`;
+    `<a href="${BASE}${href}" class="${key === page ? "active" : ""}${key === "wordle" ? " nav-quiz" : ""}"${GAME_IDS.includes(key) ? ` data-game-id="${key}"` : ""}>${label}</a>`;
   const navLinks = SITE_NAV.map(linkHTML).join("");
   // En escritorio el logo ya lleva al inicio: se omite "Inicio" para que entre el menú.
   const desktopLinks = SITE_NAV.slice(1).map(linkHTML).join("");
@@ -1291,20 +1293,28 @@ function renderLayout() {
   }
 
   if (footer) {
+    const footLink = ([href, label, key]) =>
+      `<a href="${BASE}${href}"${GAME_IDS.includes(key) ? ` data-game-id="${key}"` : ""}>${label}</a>`;
     footer.outerHTML = `
       <footer class="site-footer">
         <div class="wrap">
-          <div class="footer-grid">
+          <div class="footer-grid four">
             <div>
               <a class="brand" href="${BASE}index.html">
                 <img src="/logo.png" alt="" width="42" height="42" loading="lazy">
                 <span class="drop-wordmark">Drop<span>Rugby</span></span>
               </a>
-              <p>Minijuegos de rugby: armá tu XV, adiviná escudos y jugá con el URBA Top 14.</p>
+              <p>Rugby para jugar: armá tu XV contra reloj, adiviná al jugador del día y poné a prueba cuánto sabés del URBA Top 14.</p>
             </div>
             <div class="footer-col">
-              <strong>SECCIONES</strong>
-              ${SITE_NAV.slice(1, 8).map(([href, label]) => `<a href="${BASE}${href}">${label}</a>`).join("")}
+              <strong>JUEGOS</strong>
+              ${SITE_NAV.filter(item => GAME_IDS.includes(item[2])).map(footLink).join("")}
+            </div>
+            <div class="footer-col">
+              <strong>TORNEO</strong>
+              <a href="${BASE}urba-top-14.html">Tabla de posiciones</a>
+              <a href="${BASE}urba-top-14.html#clubes">Clubes y planteles</a>
+              <a href="${BASE}calendario.html">Calendario</a>
             </div>
             <div class="footer-col">
               <strong>SEGUINOS</strong>
@@ -1462,6 +1472,82 @@ async function renderMiniStandings() {
           <td>${Number(t.pts) || 0}</td>
         </tr>`).join("")}
     </table>`;
+}
+
+
+/* ==========================================================================
+   CONFIGURACIÓN DE LOS JUEGOS
+   Se edita en el panel (sección "Juegos") y llega en /api/content → games.
+   Si la API no responde, valen estos valores por defecto.
+   ========================================================================== */
+
+const GAME_DEFAULTS = {
+  xv: {
+    enabled: true,
+    times: [60, 90, 0],                 // segundos; 0 = sin tiempo
+    flex: { pilares: true, segundas: true, alas: true, centros: true, wings: true }
+  },
+  wordle: {
+    enabled: true,
+    attempts: 6,
+    hintClubAfter: 3,                   // intentos fallidos para mostrar el club (0 = nunca)
+    hintPositionAfter: 5,               // ídem para el puesto
+    manualDate: "",                     // "AAAA-MM-DD": ese día el jugador es manualPlayer
+    manualPlayer: ""
+  },
+  escudos: { enabled: true, rounds: 10 },
+  quiz: { enabled: true }
+};
+
+let GAME_SETTINGS = null;
+
+function clampInt(value, min, max, fallback) {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+async function loadGameSettings() {
+  if (GAME_SETTINGS) return GAME_SETTINGS;
+
+  const remote = (await loadContent())?.games;
+  const r = remote && typeof remote === "object" ? remote : {};
+  const d = GAME_DEFAULTS;
+
+  const times = Array.isArray(r.xv?.times)
+    ? [...new Set(r.xv.times.map(t => clampInt(t, 0, 600, -1)).filter(t => t >= 0))].slice(0, 4)
+    : [];
+
+  GAME_SETTINGS = {
+    xv: {
+      enabled: r.xv?.enabled !== false,
+      times: (times.length ? times : d.xv.times).slice().sort((a, b) => (a || Infinity) - (b || Infinity)),
+      flex: { ...d.xv.flex, ...(r.xv?.flex && typeof r.xv.flex === "object" ? r.xv.flex : {}) }
+    },
+    wordle: {
+      enabled: r.wordle?.enabled !== false,
+      attempts: clampInt(r.wordle?.attempts, 3, 10, d.wordle.attempts),
+      hintClubAfter: clampInt(r.wordle?.hintClubAfter, 0, 10, d.wordle.hintClubAfter),
+      hintPositionAfter: clampInt(r.wordle?.hintPositionAfter, 0, 10, d.wordle.hintPositionAfter),
+      manualDate: String(r.wordle?.manualDate || ""),
+      manualPlayer: String(r.wordle?.manualPlayer || "")
+    },
+    escudos: {
+      enabled: r.escudos?.enabled !== false,
+      rounds: clampInt(r.escudos?.rounds, 3, 14, d.escudos.rounds)
+    },
+    quiz: { enabled: r.quiz?.enabled !== false }
+  };
+
+  return GAME_SETTINGS;
+}
+
+/** Saca del menú, del footer y de las tarjetas los juegos pausados. */
+async function applyGameSettings() {
+  const settings = await loadGameSettings();
+  GAME_IDS.forEach(id => {
+    if (settings[id].enabled) return;
+    document.querySelectorAll(`[data-game-id="${id}"]`).forEach(el => el.remove());
+  });
 }
 
 
@@ -1638,7 +1724,7 @@ async function renderQuiz() {
   const mounts = document.querySelectorAll("[data-quiz]");
   if (!mounts.length) return;
 
-  const quiz = await loadQuiz();
+  const quiz = (await loadGameSettings()).quiz.enabled ? await loadQuiz() : null;
   const band = document.getElementById("quiz-band");
 
   if (!quiz) {
@@ -1668,8 +1754,10 @@ async function initDropRugby() {
   renderLayout();
   setupMobileMenu();
   setupScrollUI();
+  observeReveals();
 
   await Promise.all([
+    applyGameSettings(),
     renderMatches(),
     renderMiniStandings(),
     renderCalendar(),
@@ -1679,6 +1767,7 @@ async function initDropRugby() {
   ].map(p => Promise.resolve(p).catch(error => console.error("DropRugby:", error))));
 
   observeReveals();
+  document.body.classList.add("ready");
   window.dispatchEvent(new Event("scroll"));
 }
 

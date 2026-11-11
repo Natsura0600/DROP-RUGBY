@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/admin.css?v=20261110">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261112">
   <!-- brand.css va DESPUÉS: es la identidad compartida con la web pública y manda sobre los colores del panel. -->
-  <link rel="stylesheet" href="/assets/css/brand.css?v=20261110">
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261112">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -41,13 +41,19 @@
       <div class="nav-title">PRINCIPAL</div>
       <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
 
-      <div class="nav-title">CONTENIDO</div>
-      <button class="nav-item" data-section="articles">▤ <span>Noticias</span><b id="nav-articles-count">0</b></button>
+      <div class="nav-title">JUEGOS</div>
+      <button class="nav-item" data-section="games">◈ <span>Juegos</span><b id="nav-games-count">4</b></button>
+      <button class="nav-item" data-section="players">⚑ <span>Jugadores</span><b id="nav-players-count">0</b></button>
+      <button class="nav-item" data-section="quiz">? <span>Quiz</span><b id="nav-quiz-count">0</b></button>
+
+      <div class="nav-title">TORNEO</div>
       <button class="nav-item" data-section="fixtures">◷ <span>Partidos</span><b id="nav-fixtures-count">0</b></button>
       <button class="nav-item" data-section="results">▥ <span>Resultados TOP 14</span><b id="nav-results-count">0</b></button>
-      <button class="nav-item" data-section="quiz">? <span>Quiz semanal</span><b id="nav-quiz-count">0</b></button>
-      <button class="nav-item" data-section="players">⚑ <span>Jugadores</span><b id="nav-players-count">0</b></button>
-      <button class="nav-item" data-section="media">▧ <span>Media Manager</span><b id="nav-media-count">0</b></button>
+
+      <div class="nav-title">ARCHIVOS</div>
+      <button class="nav-item" data-section="media">▧ <span>Escudos y media</span><b id="nav-media-count">0</b></button>
+      <!-- Las noticias ya no se muestran en el sitio; se conserva el acceso oculto para no perder lo cargado. -->
+      <button class="nav-item" data-section="articles" style="display:none">▤ <span>Noticias</span><b id="nav-articles-count">0</b></button>
     </nav>
 
     <div class="side-bottom">
@@ -76,27 +82,30 @@
           <div>
             <small>RESUMEN</small>
             <h1>Dashboard</h1>
-            <p class="muted">Noticias, partidos y resultados de URBA TOP 14.</p>
+            <p class="muted">Juegos, jugadores y torneo del URBA Top 14.</p>
           </div>
-          <button id="dashboard-new-article" class="btn primary">+ NUEVA NOTICIA</button>
+          <div class="heading-actions">
+            <button type="button" class="btn" data-go="players">CARGAR JUGADORES</button>
+            <button type="button" class="btn primary" data-go="games">ADMINISTRAR JUEGOS</button>
+          </div>
         </div>
 
         <div class="stats">
-          <div><small>NOTICIAS</small><strong id="stat-articles">0</strong><span>registradas</span></div>
+          <div><small>JUGADORES</small><strong id="stat-players">0</strong><span>cargados</span></div>
+          <div><small>PLANTELES</small><strong id="stat-squads">0</strong><span>de 14 clubes</span></div>
           <div><small>PARTIDOS</small><strong id="stat-fixtures">0</strong><span>registrados</span></div>
           <div><small>RESULTADOS</small><strong id="stat-results">0</strong><span>cargados</span></div>
-          <div><small>PROGRAMADAS</small><strong id="stat-scheduled">0</strong><span>pendientes</span></div>
         </div>
 
         <div class="grid2">
           <div class="panel">
-            <div class="panel-head"><h3>Últimas noticias</h3><button class="link-btn" data-go="articles">VER TODAS →</button></div>
-            <div id="dashboard-articles"></div>
+            <div class="panel-head"><h3>Juegos</h3><button class="link-btn" data-go="games">CONFIGURAR →</button></div>
+            <div id="dashboard-games"></div>
           </div>
 
           <div class="panel">
-            <div class="panel-head"><h3>Próximas publicaciones</h3><button class="link-btn" data-go="articles">VER NOTICIAS →</button></div>
-            <div id="dashboard-scheduled"></div>
+            <div class="panel-head"><h3>Planteles por club</h3><button class="link-btn" data-go="players">VER JUGADORES →</button></div>
+            <div id="dashboard-squads"></div>
           </div>
         </div>
 
@@ -109,6 +118,13 @@
             <button class="link-btn" data-go="results">IR A RESULTADOS →</button>
           </div>
           <div id="dashboard-pending-results"></div>
+        </div>
+
+        <!-- Elementos de noticias que usa el script del panel; ya no se muestran. -->
+        <div style="display:none" aria-hidden="true">
+          <button id="dashboard-new-article" type="button"></button>
+          <strong id="stat-articles">0</strong><strong id="stat-scheduled">0</strong>
+          <div id="dashboard-articles"></div><div id="dashboard-scheduled"></div>
         </div>
       </section>
 
@@ -237,9 +253,9 @@
       <section id="section-quiz" class="section">
         <div class="heading">
           <div>
-            <small>CONTENIDO</small>
-            <h1>Quiz semanal</h1>
-            <p class="muted">Las preguntas que aparecen en la home y en /quiz. Actualizalo cada semana.</p>
+            <small>JUEGOS</small>
+            <h1>Quiz</h1>
+            <p class="muted">Las preguntas del juego de preguntas (/quiz). Actualizalas cuando quieras.</p>
           </div>
           <div class="heading-actions">
             <button type="button" class="btn" data-site-nav="/quiz.html">VER EN EL SITIO ↗</button>
@@ -271,41 +287,159 @@
         </div>
       </section>
 
+      <section id="section-games" class="section">
+        <div class="heading">
+          <div>
+            <small>JUEGOS</small>
+            <h1>Juegos</h1>
+            <p class="muted">Prendé o pausá cada juego y ajustá cómo se juega. Los cambios se ven en el sitio al guardar.</p>
+          </div>
+          <div class="heading-actions">
+            <button type="button" class="btn" data-site-nav="/#juegos">VER EN EL SITIO ↗</button>
+            <button id="games-save" type="button" class="btn primary">GUARDAR JUEGOS</button>
+          </div>
+        </div>
+
+        <div class="quiz-status" id="games-status"></div>
+
+        <div class="games-admin-grid">
+          <div class="panel game-panel" data-game-panel="xv">
+            <div class="panel-head">
+              <div><h3>Rugby XV</h3><small class="muted" id="g-xv-info">—</small></div>
+              <label class="switch"><input id="g-xv-enabled" type="checkbox"><i></i><span>Activo</span></label>
+            </div>
+            <div class="quiz-fields">
+              <div class="field-group">
+                <b>Tiempos disponibles</b>
+                <small class="muted">Elegí hasta 4. Se muestran de menor a mayor y el primero aparece marcado.</small>
+                <div class="check-row" id="g-xv-times">
+                  <label><input type="checkbox" value="30"> 30 s</label>
+                  <label><input type="checkbox" value="45"> 45 s</label>
+                  <label><input type="checkbox" value="60"> 60 s</label>
+                  <label><input type="checkbox" value="90"> 90 s</label>
+                  <label><input type="checkbox" value="120"> 120 s</label>
+                  <label><input type="checkbox" value="0"> Sin tiempo</label>
+                </div>
+              </div>
+              <div class="field-group">
+                <b>Puestos que valen de los dos lados</b>
+                <small class="muted">Si está marcado, un pilar entra de 1 o de 3, un wing de 11 o de 14, etc.</small>
+                <div class="check-row" id="g-xv-flex">
+                  <label><input type="checkbox" value="pilares"> Pilares (1-3)</label>
+                  <label><input type="checkbox" value="segundas"> Segundas líneas (4-5)</label>
+                  <label><input type="checkbox" value="alas"> Alas (6-7)</label>
+                  <label><input type="checkbox" value="centros"> Centros (12-13)</label>
+                  <label><input type="checkbox" value="wings"> Wings (11-14)</label>
+                </div>
+              </div>
+              <button type="button" class="action" data-site-nav="/rugby-xv.html">PROBAR EL JUEGO ↗</button>
+            </div>
+          </div>
+
+          <div class="panel game-panel" data-game-panel="wordle">
+            <div class="panel-head">
+              <div><h3>Wordle</h3><small class="muted" id="g-wordle-info">—</small></div>
+              <label class="switch"><input id="g-wordle-enabled" type="checkbox"><i></i><span>Activo</span></label>
+            </div>
+            <div class="quiz-fields">
+              <div class="field-row">
+                <label>Intentos<input id="g-wordle-attempts" type="number" min="3" max="10" step="1"></label>
+                <label>Pista de club tras<input id="g-wordle-club" type="number" min="0" max="10" step="1"></label>
+                <label>Pista de puesto tras<input id="g-wordle-pos" type="number" min="0" max="10" step="1"></label>
+              </div>
+              <small class="muted">Las pistas se destraban después de esa cantidad de intentos fallidos. Con 0 no se muestran nunca.</small>
+              <div class="field-group">
+                <b>Jugador del día</b>
+                <div class="today-box" id="g-wordle-today">—</div>
+                <small class="muted">Sale solo, uno distinto por día. Si querés elegirlo vos para una fecha, completá abajo.</small>
+                <div class="field-row two">
+                  <label>Fecha<input id="g-wordle-date" type="date"></label>
+                  <label>Jugador<select id="g-wordle-player"><option value="">Automático</option></select></label>
+                </div>
+              </div>
+              <button type="button" class="action" data-site-nav="/wordle.html">PROBAR EL JUEGO ↗</button>
+            </div>
+          </div>
+
+          <div class="panel game-panel" data-game-panel="escudos">
+            <div class="panel-head">
+              <div><h3>Escudos</h3><small class="muted" id="g-escudos-info">—</small></div>
+              <label class="switch"><input id="g-escudos-enabled" type="checkbox"><i></i><span>Activo</span></label>
+            </div>
+            <div class="quiz-fields">
+              <div class="field-row two">
+                <label>Rondas por partida<input id="g-escudos-rounds" type="number" min="3" max="14" step="1"></label>
+              </div>
+              <small class="muted">Usa los escudos cargados en “Escudos y media”. Un club sin escudo no aparece en el juego.</small>
+              <div class="check-row">
+                <button type="button" class="action" data-go="media">CARGAR ESCUDOS →</button>
+                <button type="button" class="action" data-site-nav="/escudos.html">PROBAR EL JUEGO ↗</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel game-panel" data-game-panel="quiz">
+            <div class="panel-head">
+              <div><h3>Quiz</h3><small class="muted" id="g-quiz-info">—</small></div>
+              <label class="switch"><input id="g-quiz-enabled" type="checkbox"><i></i><span>Activo</span></label>
+            </div>
+            <div class="quiz-fields">
+              <small class="muted">Las preguntas se editan en la sección Quiz. Si lo pausás, desaparece del menú y de la home.</small>
+              <div class="check-row">
+                <button type="button" class="action" data-go="quiz">EDITAR PREGUNTAS →</button>
+                <button type="button" class="action" data-site-nav="/quiz.html">PROBAR EL JUEGO ↗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="section-players" class="section">
         <div class="heading">
           <div>
-            <small>CONTENIDO</small>
+            <small>JUEGOS</small>
             <h1>Jugadores</h1>
-            <p class="muted">Alimentan el juego Rugby XV y la página URBA Top 14. Subí un CSV (club, jugador, puesto) o cargalos de a uno.</p>
+            <p class="muted">Los usan Rugby XV, el Wordle y la página URBA Top 14. Cargalos de a uno o importá un CSV.</p>
           </div>
           <div class="heading-actions">
-            <button type="button" class="btn" data-site-nav="/rugby-xv.html">VER EN EL SITIO ↗</button>
+            <button id="players-export" type="button" class="btn">EXPORTAR CSV</button>
             <button id="players-save" type="button" class="btn primary">GUARDAR JUGADORES</button>
           </div>
         </div>
 
         <div class="quiz-status" id="players-status"></div>
 
+        <div class="club-chips" id="players-clubs"></div>
+
         <div class="quiz-admin-grid">
           <div class="panel">
-            <div class="panel-head"><h3>Importar CSV</h3></div>
-            <div class="quiz-fields">
-              <p class="muted">Columnas: <b>club, jugador, puesto</b>. El puesto es un número de 1 a 15 o un nombre (apertura, hooker, fullback…); puede ir vacío. Acepta coma o punto y coma.</p>
-              <label>Archivo CSV<input id="players-file" type="file" accept=".csv,text/csv,text/plain"></label>
-              <label>o pegá el texto<textarea id="players-paste" rows="5" placeholder="Newman;Nombre Apellido;10"></textarea></label>
-              <label class="quiz-toggle"><input id="players-replace" type="checkbox"> <span>Reemplazar todos los jugadores actuales</span></label>
-              <button id="players-import" type="button" class="btn">IMPORTAR</button>
-              <div id="players-import-report" class="muted"></div>
-            </div>
+            <div class="panel-head"><h3 id="player-form-title">Agregar jugador</h3></div>
+            <form class="quiz-fields" id="player-form" autocomplete="off">
+              <div class="field-row two">
+                <label>Nombre<input id="player-first" maxlength="40" placeholder="Juan Pablo"></label>
+                <label>Apellido<input id="player-last" maxlength="50" placeholder="De la Vega" required></label>
+              </div>
+              <div class="field-row two">
+                <label>Club<select id="player-club"></select></label>
+                <label>Puesto<select id="player-position"><option value="">Sin puesto</option></select></label>
+              </div>
+              <small class="muted">El apellido es lo que se escribe en Rugby XV y lo que se adivina en el Wordle. Sin puesto, el jugador no entra en Rugby XV.</small>
+              <div class="check-row">
+                <button id="player-add" type="submit" class="btn primary">+ AGREGAR</button>
+                <button id="player-cancel" type="button" class="btn hidden">CANCELAR</button>
+              </div>
+            </form>
           </div>
 
           <div class="panel">
-            <div class="panel-head"><h3>Agregar uno</h3></div>
+            <div class="panel-head"><h3>Importar CSV</h3></div>
             <div class="quiz-fields">
-              <label>Club<select id="player-club"></select></label>
-              <label>Jugador<input id="player-name" maxlength="60" placeholder="Nombre y apellido"></label>
-              <label>Puesto<select id="player-position"><option value="">Cualquiera</option></select></label>
-              <button id="player-add" type="button" class="btn">+ AGREGAR</button>
+              <p class="muted">Columnas: <b>club, nombre, apellido, puesto</b> (también sirve <b>club, jugador, puesto</b>). El puesto es un número de 1 a 15 o un nombre (apertura, hooker, fullback…). Acepta coma o punto y coma.</p>
+              <label>Archivo CSV<input id="players-file" type="file" accept=".csv,text/csv,text/plain"></label>
+              <label>o pegá el texto<textarea id="players-paste" rows="4" placeholder="Newman;Isidro;Bosch;1"></textarea></label>
+              <label class="quiz-toggle"><input id="players-replace" type="checkbox"> <span>Reemplazar todos los jugadores actuales</span></label>
+              <div class="check-row"><button id="players-import" type="button" class="btn">IMPORTAR</button></div>
+              <div id="players-import-report" class="muted"></div>
             </div>
           </div>
         </div>
@@ -315,9 +449,9 @@
           <select id="players-club-filter"><option value="">Todos los clubes</option></select>
         </div>
 
-        <div class="panel table-wrap">
+        <div class="panel table-wrap compact">
           <table>
-            <thead><tr><th>JUGADOR</th><th>CLUB</th><th>PUESTO</th><th>ACCIONES</th></tr></thead>
+            <thead><tr><th>PUESTO</th><th>JUGADOR</th><th>CLUB</th><th>WORDLE</th><th>ACCIONES</th></tr></thead>
             <tbody id="players-table"></tbody>
           </table>
         </div>
@@ -425,6 +559,6 @@
 
 <div id="modal-root"></div>
 <div id="toast-container"></div>
-<script src="/assets/js/admin.js?v=20261110"></script>
+<script src="/assets/js/admin.js?v=20261112"></script>
 </body>
 </html>

@@ -1602,7 +1602,7 @@ export default async function handler(
     }
 
     // ========================================================
-    // JUGADORES (Rugby XV y página URBA Top 14)
+    // JUGADORES (Rugby XV, Wordle y página URBA Top 14)
     // ========================================================
 
     if (action === "save-players") {
@@ -1613,9 +1613,20 @@ export default async function handler(
       const players = [];
 
       for (const item of Array.isArray(body.players) ? body.players : []) {
-        const name = text(item?.name, 60);
+        let first = text(item?.first, 40);
+        let last = text(item?.last, 50);
+
+        // Compatibilidad: si solo llega "name", la primera palabra es el nombre.
+        if (!last) {
+          const parts = text(item?.name, 90).split(" ").filter(Boolean);
+          first = parts.length > 1 ? parts[0] : "";
+          last = parts.slice(parts.length > 1 ? 1 : 0).join(" ");
+        }
+
         const club = text(item?.club, 60);
-        if (!name || !club) continue;
+        if (!last || !club) continue;
+
+        const name = `${first} ${last}`.trim();
 
         let position = Number(item?.position);
         position = Number.isInteger(position) && position >= 1 && position <= 15 ? position : null;
@@ -1624,7 +1635,7 @@ export default async function handler(
         if (seen.has(key)) continue;
         seen.add(key);
 
-        players.push(position ? { name, club, position } : { name, club });
+        players.push(position ? { first, last, name, club, position } : { first, last, name, club });
         if (players.length >= 5000) break;
       }
 
@@ -1637,6 +1648,74 @@ export default async function handler(
       return json(res, 200, {
         ok: true,
         players: saved.players,
+        content: saved
+      });
+    }
+
+    // ========================================================
+    // JUEGOS (configuración de Rugby XV, Wordle, Escudos y Quiz)
+    // ========================================================
+
+    if (action === "save-games") {
+      const incoming = body.games && typeof body.games === "object" ? body.games : {};
+
+      const int = (value, min, max, fallback) => {
+        const n = Math.round(Number(value));
+        return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+      };
+      const text = (value, max) =>
+        String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+
+      const times = [
+        ...new Set(
+          (Array.isArray(incoming.xv?.times) ? incoming.xv.times : [60, 90, 0])
+            .map((t) => int(t, 0, 600, -1))
+            .filter((t) => t >= 0)
+        )
+      ].slice(0, 4);
+
+      const flexIn = incoming.xv?.flex && typeof incoming.xv.flex === "object" ? incoming.xv.flex : {};
+      const manualDate = text(incoming.wordle?.manualDate, 10);
+
+      const games = {
+        xv: {
+          enabled: incoming.xv?.enabled !== false,
+          times: times.length ? times : [60, 90, 0],
+          flex: {
+            pilares: flexIn.pilares !== false,
+            segundas: flexIn.segundas !== false,
+            alas: flexIn.alas !== false,
+            centros: flexIn.centros !== false,
+            wings: flexIn.wings !== false
+          }
+        },
+        wordle: {
+          enabled: incoming.wordle?.enabled !== false,
+          attempts: int(incoming.wordle?.attempts, 3, 10, 6),
+          hintClubAfter: int(incoming.wordle?.hintClubAfter, 0, 10, 3),
+          hintPositionAfter: int(incoming.wordle?.hintPositionAfter, 0, 10, 5),
+          manualDate: /^\d{4}-\d{2}-\d{2}$/.test(manualDate) ? manualDate : "",
+          manualPlayer: text(incoming.wordle?.manualPlayer, 90)
+        },
+        escudos: {
+          enabled: incoming.escudos?.enabled !== false,
+          rounds: int(incoming.escudos?.rounds, 3, 14, 10)
+        },
+        quiz: {
+          enabled: incoming.quiz?.enabled !== false
+        },
+        updatedAt: new Date().toISOString()
+      };
+
+      const content = await readContent();
+      content.games = games;
+      addHistory(content, "save", "games", { id: "games", title: "Configuración de juegos" });
+
+      const saved = await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        games: saved.games,
         content: saved
       });
     }

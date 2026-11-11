@@ -32,7 +32,8 @@ const content = {
   fixtures: await readJSON("fixtures.json", []),
   teams: await readJSON("teams.json", {}),
   quiz: await readJSON("quiz.json", null),
-  players: (await readJSON("players.json", {})).players || [],
+  players: [],
+  games: null,
   results: [], standings: [], standingsBase: [], settings: {}
 };
 
@@ -75,8 +76,14 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: true, quiz: content.quiz, content });
     }
     if (action === "save-players") {
-      content.players = (Array.isArray(body.players) ? body.players : []).filter(p => p && p.name && p.club);
+      content.players = (Array.isArray(body.players) ? body.players : [])
+        .filter(p => p && (p.last || p.name) && p.club)
+        .map(p => ({ ...p, name: p.last ? `${p.first || ""} ${p.last}`.trim() : p.name }));
       return send(res, 200, { ok: true, players: content.players, content });
+    }
+    if (action === "save-games") {
+      content.games = { ...body.games, updatedAt: new Date().toISOString() };
+      return send(res, 200, { ok: true, games: content.games, content });
     }
     return send(res, 400, { ok: false, error: "Acción no disponible en el servidor local de prueba." });
   }
