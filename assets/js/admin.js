@@ -306,6 +306,10 @@ function normalizeContent(content) {
       ? data.media
       : [],
 
+    players: Array.isArray(data.players)
+      ? data.players
+      : [],
+
     quiz:
       data.quiz &&
       typeof data.quiz === "object"
@@ -381,6 +385,7 @@ function switchSection(section) {
     fixtures: "Partidos",
     results: "Resultados TOP 14",
     quiz: "Quiz semanal",
+    players: "Jugadores",
     media: "Media Manager"
   };
 
@@ -394,6 +399,7 @@ function switchSection(section) {
   if (section === "articles") renderArticles();
   if (section === "fixtures") renderFixtures();
   if (section === "results") renderResults();
+  if (section === "players") renderPlayersAdmin();
   if (section === "media") loadMedia();
 }
 
@@ -409,6 +415,7 @@ function renderAll() {
   renderFixtures();
   renderResults();
   renderQuizAdmin();
+  renderPlayersAdmin();
 
   if (state.section === "media") {
     renderMedia();
@@ -426,6 +433,8 @@ function renderCounts() {
 
   $("#nav-results-count").textContent =
     content.results.length;
+
+  if ($("#nav-players-count")) $("#nav-players-count").textContent = content.players.length;
 
   if ($("#nav-quiz-count")) {
     $("#nav-quiz-count").textContent =
@@ -4658,3 +4667,252 @@ window.addEventListener("beforeunload", (event) => {
 ========================================================= */
 
 checkSession();
+
+
+/* ==========================================================================
+   JUGADORES
+   Se guardan con la acción "save-players" (content.players) y los usan
+   Rugby XV y la página URBA Top 14.
+   ========================================================================== */
+
+let playersDraft = [];
+let playersDirty = false;
+let clubIndex = new Map();
+let clubNames = [];
+let teamsSeedRequested = false;
+let teamsSeed = null;
+
+const PLAYER_POSITIONS = [
+  [1, "1 · Pilar izquierdo"], [2, "2 · Hooker"], [3, "3 · Pilar derecho"],
+  [4, "4 · Segunda línea"], [5, "5 · Segunda línea"], [6, "6 · Ala ciego"],
+  [7, "7 · Ala abierto"], [8, "8 · Octavo"], [9, "9 · Medio scrum"],
+  [10, "10 · Apertura"], [11, "11 · Wing izquierdo"], [12, "12 · Primer centro"],
+  [13, "13 · Segundo centro"], [14, "14 · Wing derecho"], [15, "15 · Fullback"]
+];
+
+const PLAYER_POSITION_NAMES = {
+  pilar: 1, "pilar izquierdo": 1, hooker: 2, talonador: 2, "pilar derecho": 3,
+  "segunda linea": 4, "2da linea": 4, segunda: 4, ala: 6, "ala ciego": 6, "ala abierto": 7,
+  octavo: 8, "numero 8": 8, "medio scrum": 9, scrum: 9, apertura: 10, "medio apertura": 10,
+  centro: 12, "primer centro": 12, "segundo centro": 13, wing: 11, "wing izquierdo": 11,
+  "wing derecho": 14, fullback: 15
+};
+
+const normKey = (value) =>
+  String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+function buildClubIndex() {
+  clubIndex = new Map();
+  const add = (club) => {
+    if (!club?.name) return;
+    for (const key of [club.name, ...(Array.isArray(club.aliases) ? club.aliases : [])]) clubIndex.set(normKey(key), club.name);
+  };
+  Object.values(teamsSeed?.clubs || {}).forEach(add);
+  Object.values(state.content.teams?.clubs || {}).forEach(add);
+  clubNames = [...new Set(clubIndex.values())].sort((a, b) => a.localeCompare(b));
+}
+
+async function loadTeamsSeed() {
+  if (teamsSeedRequested) return;
+  teamsSeedRequested = true;
+  try {
+    const response = await fetch("/data/teams.json", { cache: "no-store" });
+    if (response.ok) { teamsSeed = await response.json(); buildClubIndex(); paintPlayersControls(); }
+  } catch (_) {}
+}
+
+function parsePlayersCSV(text) {
+  const first = text.split(/\r?\n/)[0] || "";
+  const sep = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ";" : ",";
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (c === '"') quoted = false;
+      else cell += c;
+    } else if (c === '"') quoted = true;
+    else if (c === sep) { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); cell = "";
+      if (row.some((x) => x.trim())) rows.push(row);
+      row = [];
+    } else cell += c;
+  }
+  row.push(cell);
+  if (row.some((x) => x.trim())) rows.push(row);
+  return rows;
+}
+
+function markPlayersDirty() {
+  playersDirty = true;
+  paintPlayersStatus();
+}
+
+function paintPlayersStatus() {
+  const box = $("#players-status");
+  if (!box) return;
+  box.className = "quiz-status " + (playersDirty ? "dirty" : "live");
+  box.innerHTML = playersDirty
+    ? "<i></i>Tenés cambios sin guardar. Tocá GUARDAR JUGADORES para publicarlos."
+    : `<i></i>${playersDraft.length} jugadores publicados.`;
+}
+
+function paintPlayersControls() {
+  const clubSel = $("#player-club");
+  const filter = $("#players-club-filter");
+  if (clubSel) clubSel.innerHTML = clubNames.map((n) => `<option>${esc(n)}</option>`).join("");
+  if (filter) {
+    const current = filter.value;
+    filter.innerHTML = `<option value="">Todos los clubes</option>` + clubNames.map((n) => `<option>${esc(n)}</option>`).join("");
+    filter.value = current;
+  }
+  const pos = $("#player-position");
+  if (pos && pos.options.length <= 1) {
+    pos.innerHTML = `<option value="">Cualquiera</option>` + PLAYER_POSITIONS.map(([n, l]) => `<option value="${n}">${esc(l)}</option>`).join("");
+  }
+}
+
+function paintPlayersTable() {
+  const body = $("#players-table");
+  if (!body) return;
+  const q = normKey($("#players-search")?.value);
+  const club = $("#players-club-filter")?.value || "";
+
+  const rows = playersDraft
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => (!club || p.club === club) && (!q || normKey(p.name).includes(q)))
+    .sort((a, b) => a.p.club.localeCompare(b.p.club) || (a.p.position || 99) - (b.p.position || 99) || a.p.name.localeCompare(b.p.name));
+
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><strong>Sin jugadores</strong>Importá un CSV o agregá uno a mano.</div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = rows.slice(0, 400).map(({ p, i }) => `
+    <tr>
+      <td>${esc(p.name)}</td>
+      <td>${esc(p.club)}</td>
+      <td>${p.position ? esc(PLAYER_POSITIONS.find(([n]) => n === p.position)?.[1] || p.position) : "Cualquiera"}</td>
+      <td><button type="button" class="action danger" data-player-del="${i}">ELIMINAR</button></td>
+    </tr>`).join("") +
+    (rows.length > 400 ? `<tr><td colspan="4" class="muted">Mostrando 400 de ${rows.length}. Usá el buscador o el filtro de club.</td></tr>` : "");
+}
+
+function renderPlayersAdmin(force = false) {
+  if (!$("#section-players")) return;
+  loadTeamsSeed();
+  buildClubIndex();
+  if (!playersDirty || force) {
+    playersDraft = state.content.players.map((p) => ({ ...p }));
+    playersDirty = false;
+  }
+  paintPlayersControls();
+  paintPlayersStatus();
+  paintPlayersTable();
+}
+
+function addPlayers(list, replace) {
+  const existing = replace ? [] : playersDraft.slice();
+  const seen = new Set(existing.map((p) => `${normKey(p.club)}|${normKey(p.name)}`));
+  let added = 0, repeated = 0;
+  for (const p of list) {
+    const key = `${normKey(p.club)}|${normKey(p.name)}`;
+    if (seen.has(key)) { repeated++; continue; }
+    seen.add(key);
+    existing.push(p);
+    added++;
+  }
+  playersDraft = existing;
+  markPlayersDirty();
+  paintPlayersTable();
+  return { added, repeated };
+}
+
+function importPlayersFromText(text) {
+  const rows = parsePlayersCSV(text.replace(/^\uFEFF/, ""));
+  const header = rows.length ? rows[0].map(normKey) : [];
+  const hasHeader = header.includes("club") && (header.includes("jugador") || header.includes("nombre"));
+  const iClub = hasHeader ? header.indexOf("club") : 0;
+  const iName = hasHeader ? Math.max(header.indexOf("jugador"), header.indexOf("nombre")) : 1;
+  const iPos = hasHeader ? Math.max(header.indexOf("puesto"), header.indexOf("posicion")) : 2;
+  if (hasHeader) rows.shift();
+
+  const valid = [], errors = [];
+  rows.forEach((r, n) => {
+    const line = n + (hasHeader ? 2 : 1);
+    const name = String(r[iName] || "").replace(/\s+/g, " ").trim();
+    const clubRaw = String(r[iClub] || "").trim();
+    const posRaw = iPos >= 0 ? String(r[iPos] || "").trim() : "";
+    if (!name) return errors.push(`Línea ${line}: falta el jugador.`);
+    const club = clubIndex.get(normKey(clubRaw));
+    if (!club) return errors.push(`Línea ${line}: club desconocido “${clubRaw}” (${name}).`);
+    let position = null;
+    if (posRaw) {
+      position = /^\d+$/.test(posRaw) ? Number(posRaw) : PLAYER_POSITION_NAMES[normKey(posRaw)];
+      if (!(position >= 1 && position <= 15)) return errors.push(`Línea ${line}: puesto no válido “${posRaw}” (${name}).`);
+    }
+    valid.push(position ? { name, club, position } : { name, club });
+  });
+
+  const { added, repeated } = addPlayers(valid, $("#players-replace")?.checked);
+  const report = $("#players-import-report");
+  if (report) {
+    report.innerHTML = `<b>${added}</b> jugadores listos para guardar` +
+      (repeated ? `, ${repeated} repetidos ignorados` : "") +
+      (errors.length ? `.<br>⚠ ${errors.length} filas ignoradas:<br>${errors.slice(0, 15).map(esc).join("<br>")}${errors.length > 15 ? "<br>…" : ""}` : ".");
+  }
+  toast("Importación lista", `${added} jugadores agregados. Falta guardar.`, errors.length ? "error" : "ok");
+}
+
+async function savePlayers() {
+  const button = $("#players-save");
+  try {
+    if (button) { button.disabled = true; button.textContent = "GUARDANDO…"; }
+    const data = await api("save-players", { players: playersDraft });
+    state.content.players = Array.isArray(data.players) ? data.players : playersDraft;
+    playersDirty = false;
+    renderCounts();
+    renderPlayersAdmin(true);
+    toast("Jugadores guardados", `${state.content.players.length} jugadores publicados.`);
+  } catch (error) {
+    toast("No se pudo guardar", error.message || "Probá de nuevo.", "error");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "GUARDAR JUGADORES"; }
+  }
+}
+
+$("#players-save")?.addEventListener("click", savePlayers);
+$("#players-search")?.addEventListener("input", paintPlayersTable);
+$("#players-club-filter")?.addEventListener("change", paintPlayersTable);
+
+$("#players-import")?.addEventListener("click", async () => {
+  const file = $("#players-file")?.files?.[0];
+  const pasted = $("#players-paste")?.value || "";
+  const text = file ? await file.text() : pasted;
+  if (!text.trim()) { toast("Nada para importar", "Elegí un archivo o pegá el texto.", "error"); return; }
+  if ($("#players-replace")?.checked && !confirm("Se van a reemplazar todos los jugadores actuales cuando guardes. ¿Seguir?")) return;
+  importPlayersFromText(text);
+  if ($("#players-file")) $("#players-file").value = "";
+  if ($("#players-paste")) $("#players-paste").value = "";
+});
+
+$("#player-add")?.addEventListener("click", () => {
+  const name = $("#player-name").value.replace(/\s+/g, " ").trim();
+  const club = $("#player-club").value;
+  const position = Number($("#player-position").value) || null;
+  if (!name || !club) { toast("Faltan datos", "Poné el nombre y elegí el club.", "error"); return; }
+  const { repeated } = addPlayers([position ? { name, club, position } : { name, club }], false);
+  if (repeated) toast("Ya estaba", `${name} ya figura en ${club}.`, "error");
+  else $("#player-name").value = "";
+});
+
+$("#players-table")?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-player-del]");
+  if (!btn) return;
+  playersDraft.splice(Number(btn.dataset.playerDel), 1);
+  markPlayersDirty();
+  paintPlayersTable();
+});

@@ -46,6 +46,7 @@
       <button class="nav-item" data-section="fixtures">◷ <span>Partidos</span><b id="nav-fixtures-count">0</b></button>
       <button class="nav-item" data-section="results">▥ <span>Resultados TOP 14</span><b id="nav-results-count">0</b></button>
       <button class="nav-item" data-section="quiz">? <span>Quiz semanal</span><b id="nav-quiz-count">0</b></button>
+      <button class="nav-item" data-section="players">⚑ <span>Jugadores</span><b id="nav-players-count">0</b></button>
       <button class="nav-item" data-section="media">▧ <span>Media Manager</span><b id="nav-media-count">0</b></button>
     </nav>
 
@@ -267,6 +268,58 @@
             </div>
             <div id="quiz-questions" class="quiz-questions"></div>
           </div>
+        </div>
+      </section>
+
+      <section id="section-players" class="section">
+        <div class="heading">
+          <div>
+            <small>CONTENIDO</small>
+            <h1>Jugadores</h1>
+            <p class="muted">Alimentan el juego Rugby XV y la página URBA Top 14. Subí un CSV (club, jugador, puesto) o cargalos de a uno.</p>
+          </div>
+          <div class="heading-actions">
+            <button type="button" class="btn" data-site-nav="/rugby-xv.html">VER EN EL SITIO ↗</button>
+            <button id="players-save" type="button" class="btn primary">GUARDAR JUGADORES</button>
+          </div>
+        </div>
+
+        <div class="quiz-status" id="players-status"></div>
+
+        <div class="quiz-admin-grid">
+          <div class="panel">
+            <div class="panel-head"><h3>Importar CSV</h3></div>
+            <div class="quiz-fields">
+              <p class="muted">Columnas: <b>club, jugador, puesto</b>. El puesto es un número de 1 a 15 o un nombre (apertura, hooker, fullback…); puede ir vacío. Acepta coma o punto y coma.</p>
+              <label>Archivo CSV<input id="players-file" type="file" accept=".csv,text/csv,text/plain"></label>
+              <label>o pegá el texto<textarea id="players-paste" rows="5" placeholder="Newman;Nombre Apellido;10"></textarea></label>
+              <label class="quiz-toggle"><input id="players-replace" type="checkbox"> <span>Reemplazar todos los jugadores actuales</span></label>
+              <button id="players-import" type="button" class="btn">IMPORTAR</button>
+              <div id="players-import-report" class="muted"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Agregar uno</h3></div>
+            <div class="quiz-fields">
+              <label>Club<select id="player-club"></select></label>
+              <label>Jugador<input id="player-name" maxlength="60" placeholder="Nombre y apellido"></label>
+              <label>Puesto<select id="player-position"><option value="">Cualquiera</option></select></label>
+              <button id="player-add" type="button" class="btn">+ AGREGAR</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar" style="margin-top:18px">
+          <input id="players-search" placeholder="Buscar jugador..." autocomplete="off">
+          <select id="players-club-filter"><option value="">Todos los clubes</option></select>
+        </div>
+
+        <div class="panel table-wrap">
+          <table>
+            <thead><tr><th>JUGADOR</th><th>CLUB</th><th>PUESTO</th><th>ACCIONES</th></tr></thead>
+            <tbody id="players-table"></tbody>
+          </table>
         </div>
       </section>
 

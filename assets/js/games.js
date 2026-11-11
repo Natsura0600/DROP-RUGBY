@@ -63,13 +63,17 @@ async function loadClubs() {
 let PLAYERS_CACHE;
 async function loadPlayers() {
   if (PLAYERS_CACHE) return PLAYERS_CACHE;
-  try {
-    const response = await fetch(BASE + "data/players.json", { cache: "no-store" });
-    const data = response.ok ? await response.json() : {};
-    const list = Array.isArray(data) ? data : data.players;
-    PLAYERS_CACHE = (Array.isArray(list) ? list : []).filter(p => p && p.name);
-  } catch (_) {
-    PLAYERS_CACHE = [];
+  // Primero los que se cargaron desde el panel; si no hay, data/players.json.
+  const valid = list => (Array.isArray(list) ? list : []).filter(p => p && p.name);
+  PLAYERS_CACHE = valid((await loadContent())?.players);
+  if (!PLAYERS_CACHE.length) {
+    try {
+      const response = await fetch(BASE + "data/players.json", { cache: "no-store" });
+      const data = response.ok ? await response.json() : {};
+      PLAYERS_CACHE = valid(Array.isArray(data) ? data : data.players);
+    } catch (_) {
+      PLAYERS_CACHE = [];
+    }
   }
   return PLAYERS_CACHE;
 }

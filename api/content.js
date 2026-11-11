@@ -181,6 +181,7 @@ async function toPublic(data) {
       clubLogos: data.settings?.clubLogos || {},
       nationLogos: data.settings?.nationLogos || {}
     },
+    players: Array.isArray(data.players) ? data.players : [],
     quiz
   };
 }

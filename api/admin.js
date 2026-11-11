@@ -1602,6 +1602,46 @@ export default async function handler(
     }
 
     // ========================================================
+    // JUGADORES (Rugby XV y página URBA Top 14)
+    // ========================================================
+
+    if (action === "save-players") {
+      const text = (value, max) =>
+        String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+
+      const seen = new Set();
+      const players = [];
+
+      for (const item of Array.isArray(body.players) ? body.players : []) {
+        const name = text(item?.name, 60);
+        const club = text(item?.club, 60);
+        if (!name || !club) continue;
+
+        let position = Number(item?.position);
+        position = Number.isInteger(position) && position >= 1 && position <= 15 ? position : null;
+
+        const key = `${club.toLowerCase()}|${name.toLowerCase()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        players.push(position ? { name, club, position } : { name, club });
+        if (players.length >= 5000) break;
+      }
+
+      const content = await readContent();
+      content.players = players;
+      addHistory(content, "save", "players", { id: "players", title: `${players.length} jugadores` });
+
+      const saved = await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        players: saved.players,
+        content: saved
+      });
+    }
+
+    // ========================================================
     // SAVE GENERAL
     // ========================================================
 
