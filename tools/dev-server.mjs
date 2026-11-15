@@ -12,6 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getDivisions, migrateSeason, recalcTables, resetSeason, sanitizeDivisions } from "../lib/urba.js";
 import { generateDailyQuiz } from "../lib/quiz-ai.js";
+import { syncUrba } from "../lib/urba-sync.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.PORT) || 4173;
@@ -75,6 +76,11 @@ http.createServer(async (req, res) => {
         .filter(p => p && (p.last || p.name) && p.club)
         .map(p => ({ ...p, name: p.last ? `${p.first || ""} ${p.last}`.trim() : p.name }));
       return send(res, 200, { ok: true, players: content.players, content });
+    }
+    if (action === "urba-sync" || action === "save-urba-sync") {
+      if (action === "save-urba-sync") content.urbaSync = { ...(content.urbaSync || {}), enabled: body.enabled !== false };
+      if (content.urbaSync?.enabled !== false) await syncUrba(content); else recalcTables(content);
+      return send(res, 200, { ok: true, urbaSync: content.urbaSync, content });
     }
     if (action === "save-divisions") {
       content.divisions = sanitizeDivisions(body.divisions);

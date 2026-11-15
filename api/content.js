@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { r2GetJSON, r2PutJSONSafe } from '../lib/r2.js';
 import { DEFAULT_DIVISIONS, SEASON, getDivisions, migrateSeason, recalcTables, zeroBase } from '../lib/urba.js';
+import { syncUrba, urbaSyncDue } from '../lib/urba-sync.js';
 
 const BLOB_PATH = 'droprugby/content.json';
 
@@ -103,7 +104,22 @@ async function readData() {
   // Cambio de temporada: archiva la anterior y arranca en cero (una sola vez).
   const seasonChanged = migrateSeason(repaired);
 
-  if (changed || seasonChanged) {
+  // Tabla oficial de la URBA: se consulta cada 3 horas como mucho, con tope de 8 s
+  // para no demorar la página. Si la URBA no responde, queda la última tabla guardada.
+  let synced = false;
+  if (urbaSyncDue(repaired)) {
+    try {
+      await Promise.race([
+        syncUrba(repaired),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      ]);
+      synced = true;
+    } catch (error) {
+      console.error('URBA sync:', error?.message || error);
+    }
+  }
+
+  if (changed || seasonChanged || synced) {
     await r2PutJSONSafe(BLOB_PATH, repaired);
   }
 
@@ -160,6 +176,17 @@ async function toPublic(data) {
     results: Array.isArray(data.results) ? data.results : [],
     standings: Array.isArray(data.standings) ? data.standings : [],
     standingsA: Array.isArray(data.standingsA) ? data.standingsA : [],
+    urbaLogos: data.urbaSync?.logos && typeof data.urbaSync.logos === 'object' ? data.urbaSync.logos : {},
+    urbaSync: data.urbaSync
+      ? {
+          enabled: data.urbaSync.enabled !== false,
+          published: !!data.urbaSync.published,
+          lastRun: data.urbaSync.lastRun || '',
+          official: Object.fromEntries(
+            Object.entries(data.urbaSync.tables || {}).map(([key, t]) => [key, { lastRound: t.lastRound || null }])
+          )
+        }
+      : null,
     season: Number(data.season) || SEASON,
     divisions: Object.fromEntries(
       Object.entries(getDivisions(data)).map(([key, d]) => [key, { name: d.name, competition: d.competition, clubs: d.clubs }])

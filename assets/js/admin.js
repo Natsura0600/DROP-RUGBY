@@ -403,7 +403,8 @@ function normalizeContent(content) {
     divisions: data.divisions && typeof data.divisions === "object" ? data.divisions : null,
     season: Number(data.season) || null,
     seasons: data.seasons && typeof data.seasons === "object" ? data.seasons : {},
-    quizAI: data.quizAI && typeof data.quizAI === "object" ? data.quizAI : null
+    quizAI: data.quizAI && typeof data.quizAI === "object" ? data.quizAI : null,
+    urbaSync: data.urbaSync && typeof data.urbaSync === "object" ? data.urbaSync : null
   };
 }
 
@@ -1489,8 +1490,19 @@ function renderResults() {
 }
 
 // Misma regla que lib/urba.js: tabla base + resultados de la división.
+// Si la tabla viene de la URBA, se muestra la oficial que mandó el servidor.
+function officialTable(division) {
+  const sync = state.content.urbaSync;
+  return sync && sync.enabled !== false && Number(sync.season) === Number(state.content.season) && sync.tables?.[division.key]?.rows?.length
+    ? sync.tables[division.key]
+    : null;
+}
+
 function calculateStandings() {
   const division = resultsDivision();
+  if (officialTable(division)) {
+    return (state.content[division.tableKey] || []).map((r) => ({ ...r, bonus: Number(r.bonus) || 0, pf: Number(r.pf) || 0, pc: Number(r.pc) || 0 }));
+  }
   const rows = new Map();
 
   const row = (name) => {
@@ -5714,4 +5726,83 @@ const _renderQuizAdminBase = renderQuizAdmin;
 renderQuizAdmin = function (...args) {
   _renderQuizAdminBase(...args);
   paintQuizAI();
+};
+
+
+
+/* ==========================================================================
+   TABLA OFICIAL DE LA URBA
+   ========================================================================== */
+
+function paintUrbaSync() {
+  const sync = state.content.urbaSync;
+  const toggle = $("#urba-sync-enabled");
+  if (toggle) toggle.checked = sync?.enabled !== false;
+
+  const info = $("#urba-sync-info");
+  const box = $("#urba-sync-status");
+  if (!info || !box) return;
+
+  const division = resultsDivision();
+  const official = officialTable(division);
+
+  if (sync?.enabled === false) {
+    info.textContent = "Apagada: la tabla se calcula con los resultados cargados acá.";
+  } else if (official) {
+    info.textContent = `Usando la tabla oficial de la URBA${official.lastRound ? ` · ${official.lastRound.name}` : ""}.`;
+  } else {
+    info.textContent = "Activa · esperando que la URBA publique la temporada.";
+  }
+
+  if (!sync?.lastRun) {
+    box.innerHTML = "Todavía no se consultó la URBA. Tocá “Actualizar ahora”.";
+    return;
+  }
+  const when = new Date(sync.lastRun).toLocaleString("es-AR");
+  const tables = Object.entries(sync.tables || {})
+    .map(([key, t]) => `${esc(getDivision(key).label)}: ${t.rows.length} equipos${t.lastRound ? ` (${esc(t.lastRound.name)})` : ""}`)
+    .join(" · ");
+  box.innerHTML = `Última consulta: <b>${esc(when)}</b> · temporada ${esc(sync.season)}<br>` +
+    (sync.lastError
+      ? `<span class="pill off">Sin conexión con la URBA</span> ${esc(sync.lastError)} — se mantiene la última tabla guardada.`
+      : tables
+        ? `<span class="pill ok">Tabla oficial</span> ${tables}`
+        : `<span class="pill">Sin tabla todavía</span> ${esc(sync.message || "La URBA no publicó tablas para esta temporada.")} Se muestran las tablas de acá.`) +
+    (Object.keys(sync.logos || {}).length ? `<br><small class="muted">${Object.keys(sync.logos).length} escudos tomados de la URBA para clubes sin escudo propio.</small>` : "");
+}
+
+async function runUrbaSync(action, body = {}) {
+  const button = $("#urba-sync-now");
+  try {
+    if (button) { button.disabled = true; button.textContent = "CONSULTANDO A LA URBA…"; }
+    const data = await api(action, body);
+    state.content = normalizeContent(data.content);
+    renderAll();
+    const sync = state.content.urbaSync;
+    toast(
+      "Tabla actualizada",
+      sync?.enabled === false ? "Tabla automática apagada."
+        : sync?.lastError ? "No se pudo conectar con la URBA; quedó la última tabla."
+        : Object.keys(sync?.tables || {}).length ? "Se copió la tabla oficial de la URBA."
+        : (sync?.message || "La URBA todavía no publicó la temporada."),
+      sync?.lastError ? "error" : "ok"
+    );
+  } catch (error) {
+    toast("No se pudo actualizar", error.message || "Probá de nuevo.", "error");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "ACTUALIZAR AHORA"; }
+  }
+}
+
+$("#urba-sync-now")?.addEventListener("click", () => runUrbaSync("urba-sync"));
+$("#urba-sync-enabled")?.addEventListener("change", (event) => runUrbaSync("save-urba-sync", { enabled: event.target.checked }));
+
+const _renderResultsUrba = renderResults;
+renderResults = function () {
+  _renderResultsUrba();
+  paintUrbaSync();
+  // Con la tabla oficial, la tabla base no se usa: se avisa en el editor.
+  const official = officialTable(resultsDivision());
+  const baseSave = $("#standings-base-save");
+  if (baseSave) baseSave.title = official ? "Con la tabla oficial de la URBA activa, la tabla base no se usa." : "";
 };

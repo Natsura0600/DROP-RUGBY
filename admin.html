@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/admin.css?v=20261115">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261118">
   <!-- brand.css va DESPUÉS: es la identidad compartida con la web pública y manda sobre los colores del panel. -->
-  <link rel="stylesheet" href="/assets/css/brand.css?v=20261117">
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261118">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -198,6 +198,18 @@
             <p class="muted">Cargá únicamente el marcador y el punto bonus. La tabla se calcula sola.</p>
           </div>
           <button id="new-result-button" class="btn primary">+ CARGAR RESULTADO</button>
+        </div>
+
+        <div class="panel ai-panel urba-sync-panel">
+          <div class="panel-head">
+            <div><h3>Tabla oficial de la URBA</h3><small class="muted" id="urba-sync-info">—</small></div>
+            <label class="switch"><input id="urba-sync-enabled" type="checkbox"><i></i><span>Automática</span></label>
+          </div>
+          <div class="quiz-fields">
+            <p class="muted">Con la tabla automática, las posiciones del Top 14 y de la Primera A se copian solas de urba.org.ar (cada 3 horas y todas las noches), con puntos, bonus y diferencia oficiales. Mientras la URBA no publique la temporada en curso, quedan las tablas de acá. Si la apagás, la tabla se calcula con los resultados que cargues abajo.</p>
+            <div class="check-row"><button id="urba-sync-now" type="button" class="btn primary">ACTUALIZAR AHORA</button></div>
+            <div id="urba-sync-status" class="today-box">—</div>
+          </div>
         </div>
 
         <div class="division-switch" role="tablist" aria-label="División">
@@ -598,6 +610,6 @@
 
 <div id="modal-root"></div>
 <div id="toast-container"></div>
-<script src="/assets/js/admin.js?v=20261117"></script>
+<script src="/assets/js/admin.js?v=20261118"></script>
 </body>
 </html>

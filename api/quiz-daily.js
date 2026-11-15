@@ -9,6 +9,7 @@
 
 import { r2GetJSON, r2PutJSONSafe } from "../lib/r2.js";
 import { migrateSeason } from "../lib/urba.js";
+import { syncUrba } from "../lib/urba-sync.js";
 import { generateDailyQuiz, quizDateKey } from "../lib/quiz-ai.js";
 
 const BLOB_PATH = "droprugby/content.json";
@@ -29,14 +30,23 @@ export default async function handler(req, res) {
 
     migrateSeason(content);
 
+    // 1) Tabla oficial de la URBA (si está activa).
+    let urba = "desactivada";
+    if (content.urbaSync?.enabled !== false) {
+      await syncUrba(content);
+      urba = content.urbaSync.lastError || content.urbaSync.message || "actualizada";
+      await r2PutJSONSafe(BLOB_PATH, content);
+    }
+
+    // 2) Quiz del día.
     const settings = content.games?.quiz || {};
     if (settings.enabled === false || settings.ai === false) {
-      return res.status(200).json({ ok: true, skipped: "El quiz automático está desactivado." });
+      return res.status(200).json({ ok: true, urba, skipped: "El quiz automático está desactivado." });
     }
 
     const today = quizDateKey();
     if (content.quiz?.date === today) {
-      return res.status(200).json({ ok: true, skipped: "Ya hay quiz de hoy.", id: content.quiz.id });
+      return res.status(200).json({ ok: true, urba, skipped: "Ya hay quiz de hoy.", id: content.quiz.id });
     }
 
     const quiz = await generateDailyQuiz(content, { req, date: today });
@@ -54,7 +64,7 @@ export default async function handler(req, res) {
 
     await r2PutJSONSafe(BLOB_PATH, content);
 
-    return res.status(200).json({ ok: true, id: quiz.id, source: quiz.source, model: quiz.model, aiError: quiz.aiError });
+    return res.status(200).json({ ok: true, urba, id: quiz.id, source: quiz.source, model: quiz.model, aiError: quiz.aiError });
   } catch (error) {
     console.error("ERROR /api/quiz-daily:", error);
     return res.status(500).json({ ok: false, error: String(error?.message || error) });

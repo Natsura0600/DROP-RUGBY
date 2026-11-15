@@ -16,6 +16,7 @@ import {
   zeroBase
 } from "../lib/urba.js";
 import { generateDailyQuiz } from "../lib/quiz-ai.js";
+import { syncUrba } from "../lib/urba-sync.js";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1643,6 +1644,27 @@ export default async function handler(
         divisions: getDivisions(saved),
         content: saved
       });
+    }
+
+    // ========================================================
+    // TABLA OFICIAL DE LA URBA: actualizar ahora / activar
+    // ========================================================
+
+    if (action === "urba-sync" || action === "save-urba-sync") {
+      const content = await readContent();
+
+      if (action === "save-urba-sync") {
+        content.urbaSync = { ...(content.urbaSync || {}), enabled: body.enabled !== false };
+      }
+
+      if (content.urbaSync?.enabled !== false) {
+        await syncUrba(content);
+      } else {
+        calculateStandings(content);
+      }
+
+      const saved = await saveContent(content);
+      return json(res, 200, { ok: true, urbaSync: saved.urbaSync, content: saved });
     }
 
     // ========================================================

@@ -220,6 +220,21 @@ function applyTeamData(content) {
 
   applyLocalLogos();
 
+  // Escudos de la URBA (urba.org.ar) para los clubes que no tienen uno propio.
+  const urbaLogos = (content?.urbaLogos && typeof content.urbaLogos === "object" ? content.urbaLogos : null)
+    || (content?.urbaSync?.logos && typeof content.urbaSync.logos === "object" ? content.urbaSync.logos : {});
+  Object.entries(urbaLogos).forEach(([name, logo]) => {
+    if (!logo) return;
+    const key = normalizeTeamName(name);
+    let team = Object.values(DROP_RUGBY_TEAMS).find(t =>
+      normalizeTeamName(t.name) === key || (t.aliases || []).some(a => normalizeTeamName(a) === key));
+    if (!team) {
+      const id = key.replace(/[^a-z0-9]+/g, "_");
+      team = DROP_RUGBY_TEAMS[id] = { id, name, logo: "", aliases: [] };
+    }
+    if (!team.logo || /discordapp\.com/.test(team.logo)) team.logo = logo;
+  });
+
   Object.entries(nationLogos).forEach(([key, logo]) => {
     if (!logo) return;
     const nation = Object.values(DROP_RUGBY_NATIONS).find(item =>
@@ -1047,16 +1062,17 @@ async function renderUrbaStandings() {
   const content = await loadContent();
 
   const top14 = document.getElementById("urba-standings");
-  if (top14) paintStandings(top14, await loadStandings());
+  const official = content?.urbaSync?.official || {};
+  if (top14) paintStandings(top14, await loadStandings(), official.top14);
 
   const primeraA = document.getElementById("urba-standings-a");
   if (primeraA) {
-    paintStandings(primeraA, Array.isArray(content?.standingsA) ? content.standingsA : []);
+    paintStandings(primeraA, Array.isArray(content?.standingsA) ? content.standingsA : [], official.primeraA);
   }
 }
 
 /** Dibuja una tabla de posiciones (la API ya la manda filtrada por división). */
-function paintStandings(element, rows) {
+function paintStandings(element, rows, official = null) {
   const standings = (Array.isArray(rows) ? rows : [])
     .filter((team) => team && team.team)
     .slice()
@@ -1194,6 +1210,7 @@ function paintStandings(element, rows) {
       </span>
 
     </div>` : `<div class="standings-legend"><span>Temporada ${escapeHTML(String(window.DROP_SEASON || ""))} · todavía no se jugó ninguna fecha.</span></div>`}
+    ${official ? `<div class="standings-source">Tabla oficial de la URBA${official.lastRound ? ` · ${escapeHTML(official.lastRound.name)}` : ""} · se actualiza sola</div>` : ""}
   `;
 }
 
