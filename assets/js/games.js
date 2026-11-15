@@ -248,15 +248,6 @@ const XV_POSITIONS = [
   { n: 14, name: "Wing", short: "Wing", role: "wing", row: 1, col: 5 }
 ];
 
-// Puestos "espejo": un pilar puede ir de 1 o de 3, un wing de 11 o de 14, etc.
-const XV_PAIRS = {
-  pilares: [1, 3],
-  segundas: [4, 5],
-  alas: [6, 7],
-  centros: [12, 13],
-  wings: [11, 14]
-};
-
 const XV_PARTICLES = new Set(["de", "del", "la", "las", "los", "di", "da", "san", "y", "van", "von", "mc"]);
 
 function xvPosition(n) {
@@ -276,22 +267,9 @@ function xvRolesLabel(positions) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** Puestos donde puede entrar un jugador: los suyos y, si se permite, su espejo. */
-function xvSlotsForPlayer(player, flex) {
-  const slots = [];
-  (player.positions || []).forEach(n => xvSlotsFor(n, flex).forEach(slot => {
-    if (!slots.includes(slot)) slots.push(slot);
-  }));
-  return slots;
-}
-
-/** Puestos donde puede jugar alguien cuyo puesto natural es `n`. */
-function xvSlotsFor(n, flex) {
-  const slots = [n];
-  Object.entries(XV_PAIRS).forEach(([key, pair]) => {
-    if (flex[key] !== false && pair.includes(n)) slots.push(pair.find(x => x !== n));
-  });
-  return slots;
+/** Puestos donde puede entrar un jugador: solo los que tiene cargados en el panel. */
+function xvSlotsForPlayer(player) {
+  return [...new Set(player.positions || [])].sort((a, b) => a - b);
 }
 
 /**
@@ -487,7 +465,7 @@ async function mountRugbyXV(root) {
     let active = -1;       // opción resaltada con el teclado
     let choosing = null;   // jugador esperando que elijas el puesto
 
-    const freeSlots = player => xvSlotsForPlayer(player, settings.flex).filter(n => !lineup[n]);
+    const freeSlots = player => xvSlotsForPlayer(player).filter(n => !lineup[n]);
 
     function optionState(player) {
       if (used.has(player)) return { cls: "used", text: "Ya está en tu equipo" };
@@ -595,7 +573,7 @@ async function mountRugbyXV(root) {
       }
       const slots = freeSlots(player);
       if (!slots.length) {
-        const all = xvSlotsForPlayer(player, settings.flex);
+        const all = xvSlotsForPlayer(player);
         const holders = [...new Set(all.map(n => lineup[n].last))].join(", ").replace(/, ([^,]*)$/, " y $1");
         say(`${player.name} juega de ${xvRolesLabel(player.positions).toLowerCase()} y ${all.length > 1 ? "esos puestos ya los ocupan" : "ese puesto ya lo ocupa"} ${holders}. ¡Rebota!`, "bad");
         all.forEach(n => replay(slotEl(n), "shake"));
