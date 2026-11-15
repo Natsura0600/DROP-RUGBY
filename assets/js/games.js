@@ -348,8 +348,8 @@ async function mountRugbyXV(root) {
     });
 
   const competitions = [
-    { id: "urba", label: "URBA", sub: "Top 14 y Primera A", icon: "URBA", filter: p => !isSraClub(p.club) },
-    { id: "sra", label: "SRA", sub: "Super Rugby Américas", icon: "SRA", filter: p => isSraClub(p.club) }
+    { id: "urba", label: "URBA", sub: "Top 14 y Primera A", logo: "/assets/competitions/urba.png", filter: p => !isSraClub(p.club) },
+    { id: "sra", label: "SRA", sub: "Super Rugby Américas", logo: "/assets/competitions/sra.png", filter: p => isSraClub(p.club) }
   ].map(c => ({ ...c, players: allPlayers.filter(c.filter) }))
     .map(c => ({ ...c, ready: c.players.length >= 15 }));
 
@@ -379,7 +379,7 @@ async function mountRugbyXV(root) {
         <div class="xv-step">1 · Competencia</div>
         <div class="xv-modes xv-comps">
           ${competitions.map(c => `<button type="button" class="xv-mode xv-comp ${c.id === competition.id ? "active" : ""}" data-comp="${c.id}" ${c.ready ? "" : "disabled"}>
-              <span class="xv-mode-icon">${c.icon}</span>
+              <span class="xv-comp-logo"><img src="${c.logo}" alt="" loading="lazy"></span>
               <strong>${c.label}</strong><small>${c.ready ? `${c.sub} · ${c.players.length} jugadores` : `${c.sub} · planteles en carga`}</small></button>`).join("")}
         </div>
         <div class="xv-step">2 · Tiempo</div>
@@ -429,7 +429,7 @@ async function mountRugbyXV(root) {
 
     root.innerHTML = `
       <div class="xv-top">
-        <div><span class="drop-kicker">${competition.label} · ${mode.label}</span><strong class="xv-count" id="xv-count">0 / 15</strong></div>
+        <div class="xv-top-left"><img class="xv-top-logo" src="${competition.logo}" alt="${competition.label}"><div><span class="drop-kicker">${competition.label} · ${mode.label}</span><strong class="xv-count" id="xv-count">0 / 15</strong></div></div>
         <div class="xv-clock ${mode.secs ? "" : "hidden"}" id="xv-clock">${mode.secs}</div>
         <button class="btn ghost small" type="button" data-finish>Terminar</button>
       </div>

@@ -937,3 +937,14 @@ h1, h2, h3, h4, p { margin: 0; }
 .xv-step { margin: 20px 0 -10px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .xv-comps .xv-mode-icon { font-size: 13px; letter-spacing: .02em; }
 .xv-mode:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.xv-comp-logo { display: grid; place-items: center; height: 76px; margin-bottom: 4px; }
+.xv-comp-logo img { max-height: 72px; max-width: 110px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(17, 19, 21, .15)); transition: transform .25s var(--ease); }
+.xv-comp:hover .xv-comp-logo img, .xv-comp.active .xv-comp-logo img { transform: scale(1.06); }
+.xv-comp:not(.active) .xv-comp-logo img { filter: grayscale(.5) opacity(.75); }
+.xv-top-left { display: flex; align-items: center; gap: 12px; }
+.xv-top-logo { width: 42px; height: 42px; object-fit: contain; }
+@media (max-width: 640px) { .xv-comp-logo { height: 60px; } .xv-comp-logo img { max-height: 56px; } .xv-top-logo { width: 34px; height: 34px; } }
+.page-head-logo { position: relative; }
+.competition-logo { position: absolute; right: 24px; top: 50%; width: auto; height: 150px; margin-top: -75px; object-fit: contain; filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .45)); }
+@media (max-width: 900px) { .competition-logo { height: 96px; margin-top: -48px; } }
+@media (max-width: 640px) { .competition-logo { position: static; height: 64px; margin: 0 0 14px; } }
