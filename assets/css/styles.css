@@ -958,15 +958,15 @@ html.intro-on, html.intro-on body { overflow: hidden; }
 .intro-stage { position: relative; width: min(82vmin, 600px); aspect-ratio: 1; opacity: 0; transform-origin: 50% 37%; }
 .intro-stage img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); }
 .intro-ball { position: absolute; left: 63.7%; top: 61.1%; width: 5.2%; aspect-ratio: 60 / 84; transform: translate(-50%, -50%) rotate(30deg); }
-/* Pierna que patea: gira sobre la rodilla. */
-.intro-stage .intro-leg { position: absolute; left: 48.166%; top: 59.809%; width: 10.526%; height: auto; transform-origin: 18.2% 9.8%; -webkit-mask-image: none !important; mask-image: none !important; }
+/* Pierna derecha (la que patea): gira sobre la rodilla. La izquierda queda quieta. */
+.intro-stage .intro-leg { position: absolute; left: 46.252%; top: 52.871%; width: 10.048%; height: auto; transform-origin: 76.2% 72.8%; -webkit-mask-image: none; mask-image: none; }
 .intro-dust { position: absolute; left: 47%; top: 68%; width: 1.1%; aspect-ratio: 1; border-radius: 50%; background: #111; opacity: 0; }
 .intro-dust.d2 { left: 45.5%; top: 69.5%; width: .8%; }
 .intro-dust.d3 { left: 48.5%; top: 70%; width: .7%; }
 .intro-flash { position: absolute; left: 50%; top: 37%; width: 22%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) scale(.2); background: radial-gradient(circle, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 70%); opacity: 0; }
 
 #drop-intro.go .intro-stage { animation: intro-in .5s cubic-bezier(.2, .7, .3, 1) forwards, intro-kick .2s ease-out .74s, intro-enter .75s cubic-bezier(.6, 0, .4, 1) 1.72s forwards; }
-#drop-intro.go .intro-leg { animation: intro-leg .95s linear .3s forwards; }
+#drop-intro.go .intro-leg { animation: intro-leg .8s linear .3s forwards; }
 #drop-intro.go .intro-ball { animation: intro-ball .95s cubic-bezier(.25, .6, .35, 1) .74s forwards; }
 #drop-intro.go .intro-dust { animation: intro-dust .6s ease-out .74s forwards; }
 #drop-intro.go .intro-dust.d2 { animation-delay: .78s; }
@@ -974,13 +974,13 @@ html.intro-on, html.intro-on body { overflow: hidden; }
 #drop-intro.go .intro-flash { animation: intro-flash .55s ease-out 1.42s forwards; }
 #drop-intro.go { animation: intro-out .45s ease 2.12s forwards; }
 
-/* Carga hacia atrás, latigazo hacia la pelota y acompañamiento. */
+/* Carga un poco más, baja el pie con un latigazo hasta la pelota y acompaña. */
 @keyframes intro-leg {
   0%   { transform: rotate(0deg); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-  38%  { transform: rotate(16deg); animation-timing-function: cubic-bezier(.55, 0, .9, .5); }
-  50%  { transform: rotate(-30deg); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
-  75%  { transform: rotate(-20deg); }
-  100% { transform: rotate(-12deg); }
+  38%  { transform: rotate(12deg); animation-timing-function: cubic-bezier(.6, 0, .85, .4); }
+  52%  { transform: rotate(-128deg); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  72%  { transform: rotate(-152deg) scale(.96); }
+  100% { transform: rotate(-146deg) scale(.95); }
 }
 
 @keyframes intro-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }

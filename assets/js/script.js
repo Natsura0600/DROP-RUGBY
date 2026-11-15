@@ -1750,7 +1750,10 @@ function setupIntro() {
   if (root.classList.contains("intro-seen")) { intro.remove(); return; }
 
   const img = intro.querySelector("img");
-  if (img && img.complete && img.naturalWidth) intro.classList.add("go");
+  if (img && img.complete && img.naturalWidth) {
+    const go = () => intro.classList.add("go");
+    (img.decode ? img.decode() : Promise.resolve()).then(go, go);
+  }
 
   let done = false;
   const finish = () => {
