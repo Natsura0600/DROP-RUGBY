@@ -246,7 +246,7 @@ function imageLoads(src) {
 
 function gamePaused(root) {
   root.innerHTML = `<div class="quiz-empty"><h3>Este juego está en pausa.</h3><p>Volvé pronto: mientras tanto, probá los otros.</p>
-    <div class="quiz-actions center"><a class="btn accent" href="${BASE}index.html#juegos">Ver los juegos</a></div></div>`;
+    <div class="quiz-actions center"><a class="btn accent" href="${BASE}/#juegos">Ver los juegos</a></div></div>`;
 }
 
 /* ==========================================================================
@@ -1226,7 +1226,7 @@ async function mountHome() {
   if (rail) {
     const withLogo = clubs.filter(c => c.logo);
     if (withLogo.length >= 4) {
-      const items = withLogo.map(c => `<a href="${BASE}urba-top-14.html#clubes" title="${escapeHTML(c.name)}">${teamShield(c.name, "team-shield big")}<span>${escapeHTML(c.name)}</span></a>`).join("");
+      const items = withLogo.map(c => `<a href="${BASE}/urba-top-14#clubes" title="${escapeHTML(c.name)}">${teamShield(c.name, "team-shield big")}<span>${escapeHTML(c.name)}</span></a>`).join("");
       rail.innerHTML = `<div class="club-marquee-track">${items}${items}</div>`;
     } else {
       rail.closest("section")?.remove();

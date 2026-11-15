@@ -1264,15 +1264,15 @@ function paintStandings(element, rows, official = null, options = {}) {
    ========================================================================== */
 
 const SITE_NAV = [
-  ["index.html", "Inicio", "home"],
-  ["rugby-xv.html", "Rugby XV", "xv"],
-  ["wordle.html", "Wordle", "wordle"],
-  ["escudos.html", "Escudos", "escudos"],
-  ["quiz.html", "Quiz", "quiz"],
-  ["urba-top-14.html", "URBA", "urba"],
-  ["super-rugby-americas.html", "SRA", "sra"],
-  ["calendario.html", "Calendario", "calendario"],
-  ["contacto.html", "Contacto", "contacto"]
+  ["/", "Inicio", "home"],
+  ["/rugby-xv", "Rugby XV", "xv"],
+  ["/wordle", "Wordle", "wordle"],
+  ["/escudos", "Escudos", "escudos"],
+  ["/quiz", "Quiz", "quiz"],
+  ["/urba-top-14", "URBA", "urba"],
+  ["/super-rugby-americas", "SRA", "sra"],
+  ["/calendario", "Calendario", "calendario"],
+  ["/contacto", "Contacto", "contacto"]
 ];
 
 // Claves del menú que son juegos (se pueden pausar desde el panel).
@@ -1306,8 +1306,8 @@ function renderLayout() {
       <div class="read-progress" aria-hidden="true"><i id="read-progress-bar"></i></div>
       <header class="site-header">
         <div class="wrap header-inner">
-          <a class="brand" href="${BASE}index.html" aria-label="DropRugby inicio">
-            <img src="/logo.png" alt="" width="42" height="42">
+          <a class="brand" href="${BASE}/" aria-label="DropRugby inicio">
+            <img src="/assets/icons/logo-96.png" alt="" width="42" height="42">
             <span class="drop-wordmark">Drop<span>Rugby</span></span>
           </a>
           <nav class="main-nav" aria-label="Navegación principal">${desktopLinks}</nav>
@@ -1335,8 +1335,8 @@ function renderLayout() {
         <div class="wrap">
           <div class="footer-grid four">
             <div>
-              <a class="brand" href="${BASE}index.html">
-                <img src="/logo.png" alt="" width="42" height="42" loading="lazy">
+              <a class="brand" href="${BASE}/">
+                <img src="/assets/icons/logo-96.png" alt="" width="42" height="42" loading="lazy">
                 <span class="drop-wordmark">Drop<span>Rugby</span></span>
               </a>
               <p>Rugby para jugar: armá tu XV contra reloj, adiviná al jugador del día y poné a prueba cuánto sabés del URBA Top 14.</p>
@@ -1347,17 +1347,17 @@ function renderLayout() {
             </div>
             <div class="footer-col">
               <strong>TORNEO</strong>
-              <a href="${BASE}urba-top-14.html#top-14">Tabla Top 14</a>
-              <a href="${BASE}urba-top-14.html#primera-a">Tabla Primera A</a>
-              <a href="${BASE}super-rugby-americas.html">Super Rugby Américas</a>
-              <a href="${BASE}urba-top-14.html#clubes">Clubes y planteles</a>
-              <a href="${BASE}calendario.html">Calendario</a>
+              <a href="${BASE}/urba-top-14#top-14">Tabla Top 14</a>
+              <a href="${BASE}/urba-top-14#primera-a">Tabla Primera A</a>
+              <a href="${BASE}/super-rugby-americas">Super Rugby Américas</a>
+              <a href="${BASE}/urba-top-14#clubes">Clubes y planteles</a>
+              <a href="${BASE}/calendario">Calendario</a>
             </div>
             <div class="footer-col">
               <strong>SEGUINOS</strong>
               <a href="${SOCIAL.instagram}" target="_blank" rel="noopener">Instagram</a>
               <a href="${SOCIAL.tiktok}" target="_blank" rel="noopener">TikTok</a>
-              <a href="${BASE}contacto.html">Contacto</a>
+              <a href="${BASE}/contacto">Contacto</a>
             </div>
           </div>
           <div class="footer-bottom">
@@ -1714,7 +1714,7 @@ function mountQuiz(el, quiz) {
 
   function result() {
     const [headline, line] = quizVerdict(score, total);
-    const pageUrl = new URL(BASE + "quiz.html", location.href).href;
+    const pageUrl = new URL(BASE + "/quiz", location.href).href;
     const text = `Saqué ${score}/${total} en el quiz semanal de DropRugby 🏉 ¿Me ganás?`;
     index = -1;
 
@@ -1732,7 +1732,7 @@ function mountQuiz(el, quiz) {
       </div>
       <div class="quiz-actions">
         <button class="btn ghost" type="button" data-retry>Jugar de nuevo</button>
-        <a class="btn" href="${BASE}index.html#noticias">Seguir leyendo →</a>
+        <a class="btn" href="${BASE}/index#noticias">Seguir leyendo →</a>
       </div>`;
 
     el.querySelector("[data-copy]").addEventListener("click", async event => {
