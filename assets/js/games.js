@@ -415,10 +415,15 @@ async function mountRugbyXV(root) {
       </div>
       <div class="xv-timebar ${mode.secs ? "" : "hidden"}"><i id="xv-timebar"></i></div>
       <form class="xv-input-row" id="xv-form" autocomplete="off">
-        <input id="xv-input" type="text" maxlength="50" placeholder="Apellido del jugador…" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="send">
+        <div class="xv-field">
+          <input id="xv-input" type="text" maxlength="50" placeholder="Apellido del jugador…" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="send"
+            role="combobox" aria-expanded="false" aria-controls="xv-suggest" aria-autocomplete="list">
+          <div class="xv-suggest hidden" id="xv-suggest" role="listbox" aria-label="Jugadores con ese apellido"></div>
+        </div>
         <button class="btn accent" type="submit">Ubicar</button>
       </form>
-      <div class="xv-msg" id="xv-msg" role="status" aria-live="polite">Arrancá con quien quieras. Alcanza con el apellido.</div>
+      <div class="xv-chooser hidden" id="xv-chooser" role="group" aria-label="Elegí el puesto"></div>
+      <div class="xv-msg" id="xv-msg" role="status" aria-live="polite">Arrancá con quien quieras. Escribí el apellido y elegí al jugador.</div>
       ${pitchHTML(lineup, false)}`;
 
     const input = root.querySelector("#xv-input");
@@ -476,46 +481,75 @@ async function mountRugbyXV(root) {
 
     root.querySelector("[data-finish]").addEventListener("click", () => finish("manual"));
 
-    root.querySelector("#xv-form").addEventListener("submit", event => {
-      event.preventDefault();
-      if (over) return;
+    const suggest = root.querySelector("#xv-suggest");
+    const chooser = root.querySelector("#xv-chooser");
+    let options = [];      // jugadores de la lista desplegable
+    let active = -1;       // opción resaltada con el teclado
+    let choosing = null;   // jugador esperando que elijas el puesto
+
+    const freeSlots = player => xvSlotsForPlayer(player, settings.flex).filter(n => !lineup[n]);
+
+    function optionState(player) {
+      if (used.has(player)) return { cls: "used", text: "Ya está en tu equipo" };
+      const slots = freeSlots(player);
+      if (!slots.length) return { cls: "full", text: "Su puesto está ocupado" };
+      if (slots.length > 1) return { cls: "", text: `Elegí puesto: ${slots.join(" o ")}` };
+      return { cls: "", text: `Entra de ${xvPositionLabel(slots[0])}` };
+    }
+
+    function closeSuggest() {
+      options = [];
+      active = -1;
+      suggest.classList.add("hidden");
+      suggest.innerHTML = "";
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+
+    function paintSuggest() {
+      if (!options.length) { closeSuggest(); return; }
+      suggest.innerHTML = `
+        <div class="xv-suggest-head">${options.length === 1 ? "1 jugador" : `${options.length} jugadores`} con ese apellido</div>
+        ${options.map((player, i) => {
+          const state = optionState(player);
+          return `<button type="button" role="option" id="xv-opt-${i}" class="xv-option ${state.cls} ${i === active ? "active" : ""}" data-i="${i}" aria-selected="${i === active}">
+            <span class="xv-option-shield">${player.club ? teamShield(player.club, "team-shield") : ""}</span>
+            <span class="xv-option-main"><b>${escapeHTML(player.name)}</b><small>${escapeHTML(player.club || "")} · ${escapeHTML(xvRolesLabel(player.positions))}</small></span>
+            <span class="xv-option-state">${escapeHTML(state.text)}</span>
+          </button>`;
+        }).join("")}`;
+      suggest.classList.remove("hidden");
+      input.setAttribute("aria-expanded", "true");
+      if (active >= 0) input.setAttribute("aria-activedescendant", `xv-opt-${active}`);
+      else input.removeAttribute("aria-activedescendant");
+    }
+
+    // La lista se abre cuando lo escrito ya es un apellido (no adivina por la primera letra).
+    function refreshSuggest() {
+      if (choosing) cancelChoose();
       const text = input.value.trim();
-      if (!text) return;
-      input.value = "";
-      input.focus({ preventScroll: true });
+      const found = text.length >= 2 ? xvFind(players, text) : [];
+      options = found
+        .slice()
+        .sort((a, b) => Number(used.has(a)) - Number(used.has(b)) || Number(!freeSlots(a).length) - Number(!freeSlots(b).length) || a.name.localeCompare(b.name));
+      active = options.findIndex(p => !used.has(p) && freeSlots(p).length);
+      paintSuggest();
+    }
 
-      const found = xvFind(players, text);
-      if (!found.length) {
-        const onlyFirst = players.some(p => nameKey(p.first).split(" ").includes(nameKey(text)));
-        say(onlyFirst ? `Hay muchos "${text}": escribí el apellido.` : `No encontramos a "${text}". Probá con el apellido.`, "bad");
-        replay(input, "shake");
-        return;
-      }
+    function setPickable(slots) {
+      root.querySelectorAll(".xv-slot.pickable").forEach(el => el.classList.remove("pickable"));
+      slots.forEach(n => slotEl(n)?.classList.add("pickable"));
+    }
 
-      const fresh = found.filter(p => !used.has(p));
-      if (!fresh.length) {
-        say(`${found[0].name} ya está en tu equipo.`, "bad");
-        replay(slotEl(Object.keys(lineup).find(n => lineup[n] === found[0])), "shake");
-        return;
-      }
+    function cancelChoose() {
+      choosing = null;
+      chooser.classList.add("hidden");
+      chooser.innerHTML = "";
+      setPickable([]);
+    }
 
-      // Primer candidato que entre: en su puesto o en el puesto espejo.
-      let placed = null;
-      for (const player of fresh) {
-        const slot = xvSlotsForPlayer(player, settings.flex).find(n => !lineup[n]);
-        if (slot) { placed = { player, slot }; break; }
-      }
-
-      if (!placed) {
-        const player = fresh[0];
-        const slots = xvSlotsForPlayer(player, settings.flex);
-        const holders = [...new Set(slots.map(n => lineup[n].last))].join(", ").replace(/, ([^,]*)$/, " y $1");
-        say(`${player.name} juega de ${xvRolesLabel(player.positions).toLowerCase()} y ${slots.length > 1 ? "esos puestos ya los ocupan" : "ese puesto ya lo ocupa"} ${holders}. ¡Rebota!`, "bad");
-        slots.forEach(n => replay(slotEl(n), "shake"));
-        return;
-      }
-
-      const { player, slot } = placed;
+    function place(player, slot) {
+      cancelChoose();
       lineup[slot] = player;
       used.add(player);
       const el = slotEl(slot);
@@ -529,7 +563,129 @@ async function mountRugbyXV(root) {
       counter.textContent = `${count()} / 15`;
       replay(counter, "pop-in");
       say(`✓ ${player.name} (${player.club}) — ${xvPositionLabel(slot)}`, "ok");
+      input.value = "";
+      closeSuggest();
+      input.focus({ preventScroll: true });
       if (count() === 15) finish("complete");
+    }
+
+    // Jugador con más de un puesto libre: se elige en botones o tocando la cancha.
+    function choose(player, slots) {
+      closeSuggest();
+      choosing = { player, slots };
+      chooser.innerHTML = `
+        <span class="xv-chooser-q">¿Dónde ponés a <b>${escapeHTML(player.name)}</b>?</span>
+        <span class="xv-chooser-opts">
+          ${slots.map(n => `<button type="button" class="btn accent small" data-slot="${n}">${escapeHTML(xvPositionLabel(n))}</button>`).join("")}
+          <button type="button" class="btn ghost small" data-cancel>Cancelar</button>
+        </span>`;
+      chooser.classList.remove("hidden");
+      replay(chooser, "msg-in");
+      setPickable(slots);
+      say("Elegí el puesto: tocá un botón o la camiseta que titila en la cancha.", "");
+      chooser.querySelector("[data-slot]")?.focus({ preventScroll: true });
+    }
+
+    function pick(player) {
+      if (over || !player) return;
+      if (used.has(player)) {
+        say(`${player.name} ya está en tu equipo.`, "bad");
+        replay(slotEl(Object.keys(lineup).find(n => lineup[n] === player)), "shake");
+        return;
+      }
+      const slots = freeSlots(player);
+      if (!slots.length) {
+        const all = xvSlotsForPlayer(player, settings.flex);
+        const holders = [...new Set(all.map(n => lineup[n].last))].join(", ").replace(/, ([^,]*)$/, " y $1");
+        say(`${player.name} juega de ${xvRolesLabel(player.positions).toLowerCase()} y ${all.length > 1 ? "esos puestos ya los ocupan" : "ese puesto ya lo ocupa"} ${holders}. ¡Rebota!`, "bad");
+        all.forEach(n => replay(slotEl(n), "shake"));
+        input.value = "";
+        closeSuggest();
+        return;
+      }
+      if (slots.length === 1) place(player, slots[0]);
+      else choose(player, slots);
+    }
+
+    input.addEventListener("input", refreshSuggest);
+
+    input.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        if (choosing) cancelChoose();
+        closeSuggest();
+        return;
+      }
+      if (!options.length || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+      event.preventDefault();
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      active = (active + step + options.length) % options.length;
+      paintSuggest();
+    });
+
+    suggest.addEventListener("mousedown", event => event.preventDefault()); // no pierde el foco el campo
+    suggest.addEventListener("click", event => {
+      const btn = event.target.closest("[data-i]");
+      if (btn) pick(options[Number(btn.dataset.i)]);
+    });
+
+    chooser.addEventListener("click", event => {
+      const slotBtn = event.target.closest("[data-slot]");
+      if (slotBtn && choosing) { place(choosing.player, Number(slotBtn.dataset.slot)); return; }
+      if (event.target.closest("[data-cancel]")) {
+        cancelChoose();
+        say("Cancelado. Escribí otro apellido.", "");
+        input.focus({ preventScroll: true });
+      }
+    });
+
+    root.querySelector(".xv-pitch").addEventListener("click", event => {
+      const el = event.target.closest(".xv-slot.pickable");
+      if (el && choosing) place(choosing.player, Number(el.dataset.n));
+    });
+
+    // Al salir del campo se cierra la lista (salvo que se esté tocando una opción).
+    input.addEventListener("blur", () => setTimeout(() => {
+      if (!suggest.contains(document.activeElement)) closeSuggest();
+    }, 120));
+
+    root.querySelector("#xv-form").addEventListener("submit", event => {
+      event.preventDefault();
+      if (over) return;
+
+      if (choosing) {
+        // Enter con el selector abierto: el primer puesto ofrecido.
+        place(choosing.player, choosing.slots[0]);
+        return;
+      }
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      if (!options.length) refreshSuggest();
+
+      if (!options.length) {
+        const onlyFirst = players.some(p => nameKey(p.first).split(" ").includes(nameKey(text)));
+        say(onlyFirst ? `Hay muchos "${text}": escribí el apellido.` : `No encontramos a "${text}". Probá con el apellido.`, "bad");
+        replay(input, "shake");
+        input.value = "";
+        closeSuggest();
+        return;
+      }
+
+      // Con un solo jugador (o uno resaltado con las flechas) se elige directo.
+      const available = options.filter(p => !used.has(p) && freeSlots(p).length);
+      if (options.length === 1) { pick(options[0]); return; }
+      if (active >= 0 && (available.length <= 1 || suggest.dataset.arrowed === "1")) { pick(options[active]); return; }
+      if (available.length === 1) { pick(available[0]); return; }
+      if (!available.length) { pick(options[0]); return; }
+
+      say(`Hay ${options.length} con ese apellido: elegí uno de la lista.`, "");
+      replay(suggest, "shake");
+    });
+
+    input.addEventListener("keydown", event => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") suggest.dataset.arrowed = "1";
+      else if (event.key.length === 1 || event.key === "Backspace") delete suggest.dataset.arrowed;
     });
   }
 
