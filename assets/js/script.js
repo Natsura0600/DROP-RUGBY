@@ -575,7 +575,8 @@ const COMPETITION_ORDER = [
   "LOS PUMAS",
   "SUPER RUGBY",
   "URBA TOP 14",
-  "URBA PRIMERA A"
+  "URBA PRIMERA A",
+  "SUPER RUGBY AMERICAS"
 ];
 
 function competitionSortKey(name) {
@@ -1069,10 +1070,53 @@ async function renderUrbaStandings() {
   if (primeraA) {
     paintStandings(primeraA, Array.isArray(content?.standingsA) ? content.standingsA : [], official.primeraA);
   }
+
+  // Super Rugby Américas: sin descenso, se calcula con los resultados del panel.
+  const sra = document.getElementById("sra-standings");
+  if (sra) {
+    paintStandings(sra, Array.isArray(content?.standingsSRA) ? content.standingsSRA : [], null, { relegation: false });
+  }
+  const sraFixture = document.getElementById("sra-fixture");
+  if (sraFixture) renderCompetitionFixture(sraFixture, "SUPER RUGBY AMERICAS", content);
+}
+
+/** Partidos y resultados de una competición, agrupados por fecha. */
+function renderCompetitionFixture(element, competition, content) {
+  const same = (item) => String(item?.competition || "").trim().toUpperCase() === competition;
+  const fixtures = (Array.isArray(content?.fixtures) ? content.fixtures : []).filter(same);
+  const results = (Array.isArray(content?.results) ? content.results : []).filter(same);
+  const key = (a, b, date) => `${normalizeTeamName(a)}|${normalizeTeamName(b)}|${date || ""}`;
+  const scoreOf = new Map(results.map((r) => [key(r.home, r.away, r.date), r]));
+
+  const matches = fixtures.map((f) => ({ ...f, result: scoreOf.get(key(f.home, f.away, f.date)) || null }));
+  // Resultados cargados sin partido en el fixture también se muestran.
+  const listed = new Set(matches.map((m) => key(m.home, m.away, m.date)));
+  results.forEach((r) => { if (!listed.has(key(r.home, r.away, r.date))) matches.push({ ...r, result: r }); });
+
+  if (!matches.length) {
+    element.innerHTML = `<p class="muted">Todavía no hay partidos cargados. El fixture aparece acá apenas se publique.</p>`;
+    return;
+  }
+
+  const byDate = {};
+  matches.forEach((m) => { (byDate[m.date || "Sin fecha"] = byDate[m.date || "Sin fecha"] || []).push(m); });
+
+  element.innerHTML = Object.keys(byDate).sort().map((date) => `
+    <section class="competition-section">
+      <div class="competition-name">${escapeHTML(date === "Sin fecha" ? date : formatDateShort(date))}</div>
+      <div class="fixture-grid">
+        ${byDate[date].sort((a, b) => String(a.time || "").localeCompare(String(b.time || ""))).map((m) => {
+          const r = m.result;
+          if (!r) return renderFixtureTile(m);
+          return renderFixtureTile({ ...m, time: `Final · ${r.homeScore ?? ""} - ${r.awayScore ?? ""}` });
+        }).join("")}
+      </div>
+    </section>`).join("");
 }
 
 /** Dibuja una tabla de posiciones (la API ya la manda filtrada por división). */
-function paintStandings(element, rows, official = null) {
+function paintStandings(element, rows, official = null, options = {}) {
+  const withRelegation = options.relegation !== false;
   const standings = (Array.isArray(rows) ? rows : [])
     .filter((team) => team && team.team)
     .slice()
@@ -1105,7 +1149,7 @@ function paintStandings(element, rows, official = null) {
 
 
   const relegationFrom =
-    played
+    played && withRelegation
       ? Math.max(0, standings.length - 2)
       : Infinity;
 
@@ -1197,7 +1241,7 @@ function paintStandings(element, rows, official = null) {
 
     </div>
 
-    ${played ? `<div class="standings-legend">
+    ${played && !withRelegation ? "" : played ? `<div class="standings-legend">
 
       <span>
         <i class="dot dot-ok"></i>
@@ -1226,6 +1270,7 @@ const SITE_NAV = [
   ["escudos.html", "Escudos", "escudos"],
   ["quiz.html", "Quiz", "quiz"],
   ["urba-top-14.html", "URBA", "urba"],
+  ["super-rugby-americas.html", "SRA", "sra"],
   ["calendario.html", "Calendario", "calendario"],
   ["contacto.html", "Contacto", "contacto"]
 ];
@@ -1304,6 +1349,7 @@ function renderLayout() {
               <strong>TORNEO</strong>
               <a href="${BASE}urba-top-14.html#top-14">Tabla Top 14</a>
               <a href="${BASE}urba-top-14.html#primera-a">Tabla Primera A</a>
+              <a href="${BASE}super-rugby-americas.html">Super Rugby Américas</a>
               <a href="${BASE}urba-top-14.html#clubes">Clubes y planteles</a>
               <a href="${BASE}calendario.html">Calendario</a>
             </div>
@@ -1397,6 +1443,7 @@ function categoryLabel(category) {
   if (key === "super rugby") return "Internacional";
   if (key === "urba top 14") return "URBA Top 14";
   if (key === "urba primera a") return "Primera A";
+  if (key === "super rugby americas") return "SRA";
   return category || "Rugby";
 }
 

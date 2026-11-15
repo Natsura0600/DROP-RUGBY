@@ -92,9 +92,10 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: true, archivedAs, content });
     }
     if (action === "save-standings-base") {
-      content[body.division === "primeraA" ? "standingsBaseA" : "standingsBase"] = body.standingsBase || [];
+      const baseKey = body.division === "primeraA" ? "standingsBaseA" : body.division === "sra" ? "standingsBaseSRA" : "standingsBase";
+      content[baseKey] = body.standingsBase || [];
       recalcTables(content);
-      return send(res, 200, { ok: true, standingsBase: content[body.division === "primeraA" ? "standingsBaseA" : "standingsBase"], standings: content.standings, standingsA: content.standingsA, content });
+      return send(res, 200, { ok: true, standingsBase: content[baseKey], standings: content.standings, standingsA: content.standingsA, standingsSRA: content.standingsSRA, content });
     }
     if (action === "generate-quiz") {
       const quiz = await generateDailyQuiz(content, { req });

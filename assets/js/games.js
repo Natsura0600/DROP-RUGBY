@@ -22,8 +22,12 @@ const DEFAULT_DIVISION_CLUBS = {
     "Manuel Belgrano", "Banco Nación", "Lomas Athletic", "Curupaytí", "San Fernando", "Pucará",
     "Gimnasia y Esgrima", "Hurling", "San Andrés", "Pueyrredón", "Olivos", "Deportiva Francesa",
     "Champagnat", "Los Matreros"
-  ]
+  ],
+  sra: ["Pampas", "Tarucas", "Dogos XV", "Capibaras XV", "Peñarol Rugby", "Selknam", "Cobras", "Yacaré XV"]
 };
+
+const DIVISION_TABLE_KEY = { primeraA: "standingsA", sra: "standingsSRA" };
+const DIVISION_LABEL = { top14: "Top 14", primeraA: "Primera A", sra: "Super Rugby Américas" };
 
 // Super Rugby Américas (SRA): sus jugadores van en un modo aparte de Rugby XV.
 const SRA_TEAMS = [
@@ -156,8 +160,9 @@ async function loadClubs(division = "top14") {
   const content = await loadContent();
   const names = await divisionClubNames(division);
   const inDivision = new Set(names.map(name => normalizeTeamName(getTeamByName(name)?.name || name)));
-  const table = division === "primeraA"
-    ? (Array.isArray(content?.standingsA) ? content.standingsA : [])
+  const tableKey = DIVISION_TABLE_KEY[division];
+  const table = tableKey
+    ? (Array.isArray(content?.[tableKey]) ? content[tableKey] : [])
     : await loadStandings();
   const standings = table.filter(row => inDivision.has(normalizeTeamName(getTeamByName(row.team)?.name || row.team)));
   const seen = new Set();
@@ -248,22 +253,24 @@ function gamePaused(root) {
    1) RUGBY XV — escribí jugadores y armá el equipo contra reloj
    ========================================================================== */
 
+// Cancha vista desde atrás del equipo: el 15 abajo de todo y la formación
+// sube hasta los forwards arriba. El 11 va a la izquierda y el 14 a la derecha.
 const XV_POSITIONS = [
-  { n: 1, name: "Pilar izquierdo", short: "Pilar", role: "pilar", row: 6, col: 2 },
-  { n: 2, name: "Hooker", short: "Hooker", role: "hooker", row: 6, col: 3 },
-  { n: 3, name: "Pilar derecho", short: "Pilar", role: "pilar", row: 6, col: 4 },
-  { n: 4, name: "Segunda línea", short: "2ª línea", role: "segunda línea", row: 5, col: 2 },
-  { n: 5, name: "Segunda línea", short: "2ª línea", role: "segunda línea", row: 5, col: 4 },
-  { n: 6, name: "Ala", short: "Ala", role: "ala", row: 4, col: 1 },
-  { n: 8, name: "Octavo", short: "Octavo", role: "octavo", row: 4, col: 3 },
-  { n: 7, name: "Ala", short: "Ala", role: "ala", row: 4, col: 5 },
-  { n: 9, name: "Medio scrum", short: "M. scrum", role: "medio scrum", row: 3, col: 2 },
-  { n: 10, name: "Apertura", short: "Apertura", role: "apertura", row: 3, col: 4 },
-  { n: 12, name: "Centro", short: "Centro", role: "centro", row: 2, col: 2 },
-  { n: 13, name: "Centro", short: "Centro", role: "centro", row: 2, col: 4 },
-  { n: 11, name: "Wing", short: "Wing", role: "wing", row: 1, col: 1 },
-  { n: 15, name: "Fullback", short: "Fullback", role: "fullback", row: 1, col: 3 },
-  { n: 14, name: "Wing", short: "Wing", role: "wing", row: 1, col: 5 }
+  { n: 15, name: "Fullback", short: "Fullback", role: "fullback", row: 6, col: 3 },
+  { n: 11, name: "Wing", short: "Wing", role: "wing", row: 6, col: 1 },
+  { n: 14, name: "Wing", short: "Wing", role: "wing", row: 6, col: 5 },
+  { n: 12, name: "Centro", short: "Centro", role: "centro", row: 5, col: 2 },
+  { n: 13, name: "Centro", short: "Centro", role: "centro", row: 5, col: 4 },
+  { n: 9, name: "Medio scrum", short: "M. scrum", role: "medio scrum", row: 4, col: 2 },
+  { n: 10, name: "Apertura", short: "Apertura", role: "apertura", row: 4, col: 4 },
+  { n: 6, name: "Ala", short: "Ala", role: "ala", row: 3, col: 1 },
+  { n: 8, name: "Octavo", short: "Octavo", role: "octavo", row: 3, col: 3 },
+  { n: 7, name: "Ala", short: "Ala", role: "ala", row: 3, col: 5 },
+  { n: 4, name: "Segunda línea", short: "2ª línea", role: "segunda línea", row: 2, col: 2 },
+  { n: 5, name: "Segunda línea", short: "2ª línea", role: "segunda línea", row: 2, col: 4 },
+  { n: 1, name: "Pilar izquierdo", short: "Pilar", role: "pilar", row: 1, col: 2 },
+  { n: 2, name: "Hooker", short: "Hooker", role: "hooker", row: 1, col: 3 },
+  { n: 3, name: "Pilar derecho", short: "Pilar", role: "pilar", row: 1, col: 4 }
 ];
 
 const XV_PARTICLES = new Set(["de", "del", "la", "las", "los", "di", "da", "san", "y", "van", "von", "mc"]);
@@ -1063,7 +1070,9 @@ async function mountShieldGame(root) {
   if (!settings.enabled) return gamePaused(root);
 
   root.innerHTML = `<p class="empty-state">Preparando los escudos…</p>`;
-  const all = [...await loadClubs("top14"), ...await loadClubs("primeraA")].filter(c => c.logo);
+  // Solo clubes de la URBA: los escudos de Super Rugby Américas no entran.
+  const all = [...await loadClubs("top14"), ...await loadClubs("primeraA")]
+    .filter(c => c.logo && !isSraClub(c.name));
   const checks = await Promise.all(all.map(c => imageLoads(c.logo)));
   const clubs = all.filter((_, i) => checks[i]);
 
@@ -1159,7 +1168,7 @@ async function mountUrbaClubs(root, division = "top14") {
     return `
       <article class="club-card reveal" style="transition-delay:${(i % 4) * 60}ms">
         <div class="club-head">${teamShield(c.name, "team-shield big")}<div><h3>${escapeHTML(c.name)}</h3>
-          <span>${row && Number(row.pj) > 0 ? `${i + 1}° · ${Number(row.pts) || 0} pts · ${Number(row.pg) || 0}G ${Number(row.pe) || 0}E ${Number(row.pp) || 0}P` : division === "primeraA" ? "Primera A" : "Top 14"}</span></div></div>
+          <span>${row && Number(row.pj) > 0 ? `${i + 1}° · ${Number(row.pts) || 0} pts · ${Number(row.pg) || 0}G ${Number(row.pe) || 0}E ${Number(row.pp) || 0}P` : DIVISION_LABEL[division] || "Top 14"}</span></div></div>
         ${squad.length ? `
         <details class="club-squad">
           <summary>Ver el plantel <i>${squad.length} jugadores</i></summary>
@@ -1229,6 +1238,21 @@ async function mountHome() {
   }
 }
 
+/* Pestañas de sección: se marca la que está a la vista. */
+function watchSectionTabs() {
+  const tabs = [...document.querySelectorAll(".division-tabs a")];
+  const targets = tabs.map(tab => document.querySelector(tab.getAttribute("href"))).filter(Boolean);
+  if (tabs.length && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("href") === "#" + entry.target.id));
+      });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    targets.forEach(t => io.observe(t));
+  }
+}
+
 /* ---------- despachador ---------- */
 
 async function renderGames() {
@@ -1236,20 +1260,15 @@ async function renderGames() {
 
   if (page === "home") return mountHome();
 
-  if (page === "urba") {
-    // Pestañas Top 14 / Primera A: se marca la sección que está a la vista.
-    const tabs = [...document.querySelectorAll(".division-tabs a")];
-    const targets = tabs.map(tab => document.querySelector(tab.getAttribute("href"))).filter(Boolean);
-    if (tabs.length && "IntersectionObserver" in window) {
-      const io = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
-          tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("href") === "#" + entry.target.id));
-        });
-      }, { rootMargin: "-30% 0px -60% 0px" });
-      targets.forEach(t => io.observe(t));
-    }
+  if (page === "sra" || page === "urba") watchSectionTabs();
 
+  if (page === "sra") {
+    const sraClubs = document.getElementById("sra-clubs");
+    if (sraClubs) await mountUrbaClubs(sraClubs, "sra");
+    return;
+  }
+
+  if (page === "urba") {
     const top14 = document.getElementById("urba-clubs");
     const primeraA = document.getElementById("urba-clubs-a");
     await Promise.all([

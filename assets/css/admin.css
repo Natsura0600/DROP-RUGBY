@@ -793,3 +793,9 @@ body{background:var(--paper);font-family:var(--sans)}
 .ai-panel{margin-bottom:18px;border-left:3px solid var(--accent)}
 .ai-panel code{font-size:11px;padding:1px 5px;border-radius:5px;background:var(--paper-2)}
 @media(max-width:620px){.pos-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* Divisores por competencia en el gestor de escudos */
+.logo-divider{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 4px 6px;margin-top:6px;border-bottom:2px solid var(--line)}
+.logo-divider:first-child{margin-top:0}
+.logo-divider img{width:30px;height:30px;object-fit:contain}
+.logo-divider strong{font-size:13px;letter-spacing:.02em;text-transform:uppercase}
+.logo-divider small{margin-left:auto;color:var(--muted);font-size:10px;font-weight:800}

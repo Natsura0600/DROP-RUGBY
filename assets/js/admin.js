@@ -170,6 +170,16 @@ const DIVISION_DEFS = {
       "Gimnasia y Esgrima", "Hurling", "San Andrés", "Pueyrredón", "Olivos", "Deportiva Francesa",
       "Champagnat", "Los Matreros"
     ]
+  },
+  sra: {
+    key: "sra",
+    label: "Super Rugby Américas",
+    title: "SUPER RUGBY AMÉRICAS",
+    urba: false,
+    competition: "SUPER RUGBY AMERICAS",
+    baseKey: "standingsBaseSRA",
+    tableKey: "standingsSRA",
+    clubs: ["Pampas", "Tarucas", "Dogos XV", "Capibaras XV", "Peñarol Rugby", "Selknam", "Cobras", "Yacaré XV"]
   }
 };
 
@@ -180,7 +190,9 @@ const CLUB_KEY_ALIASES = {
   "biei": "buenos aires crc", "bac": "buenos aires crc", "buenos aires": "buenos aires crc",
   "champa": "champagnat", "matreros": "los matreros", "lomas": "lomas athletic",
   "geba": "gimnasia y esgrima", "gimnasia": "gimnasia y esgrima", "francesa": "deportiva francesa",
-  "hurlingham": "hurling", "banco": "banco nacion", "bna": "banco nacion"
+  "hurlingham": "hurling", "banco": "banco nacion", "bna": "banco nacion",
+  "pampas xv": "pampas", "dogos": "dogos xv", "capibaras": "capibaras xv", "penarol": "penarol rugby",
+  "cobras brasil": "cobras", "cobras brasil xv": "cobras", "yacare": "yacare xv"
 };
 
 /** Clave comparable de un club (misma regla que el servidor). */
@@ -400,6 +412,8 @@ function normalizeContent(content) {
 
     standingsA: Array.isArray(data.standingsA) ? data.standingsA : [],
     standingsBaseA: Array.isArray(data.standingsBaseA) ? data.standingsBaseA : [],
+    standingsSRA: Array.isArray(data.standingsSRA) ? data.standingsSRA : [],
+    standingsBaseSRA: Array.isArray(data.standingsBaseSRA) ? data.standingsBaseSRA : [],
     divisions: data.divisions && typeof data.divisions === "object" ? data.divisions : null,
     season: Number(data.season) || null,
     seasons: data.seasons && typeof data.seasons === "object" ? data.seasons : {},
@@ -1294,7 +1308,8 @@ function fixtureForm(fixture = {}) {
             "Los Pumas",
             "Super Rugby",
             "URBA TOP 14",
-            "URBA PRIMERA A"
+            "URBA PRIMERA A",
+            "SUPER RUGBY AMERICAS"
           ]
             .map(
               (competition) =>
@@ -1431,7 +1446,10 @@ function renderResults() {
 
   $$('[data-results-division]').forEach((btn) => btn.classList.toggle('active', btn.dataset.resultsDivision === RESULTS_DIVISION));
   const divisionLabel = $('#results-division-label');
-  if (divisionLabel) divisionLabel.textContent = `URBA ${resultsDivision().label.toUpperCase()} · TEMPORADA ${state.content.season || ""}`;
+  if (divisionLabel) divisionLabel.textContent = `${resultsDivision().title || `URBA ${resultsDivision().label.toUpperCase()}`} · TEMPORADA ${state.content.season || ""}`;
+  // La tabla automática es solo de la URBA: con SRA se oculta.
+  const syncPanel = $(".urba-sync-panel");
+  if (syncPanel) syncPanel.hidden = resultsDivision().urba === false;
 
   const list = $('#results-list');
   if (list) {
@@ -1829,6 +1847,10 @@ $("#standings-base-save")
         state.content.standingsA =
           data.standingsA ||
           state.content.standingsA;
+
+        state.content.standingsSRA =
+          data.standingsSRA ||
+          state.content.standingsSRA;
 
         renderStandingsBaseEditor();
         renderStandingsTable();
@@ -2720,7 +2742,7 @@ function renderLogoRows(kind) {
   if (countEl) countEl.textContent = `${rows.length} ${isNation ? "selecciones" : "clubes"}`;
   if (summaryEl) summaryEl.textContent = `${assigned}/${allRows.length}`;
 
-  root.innerHTML = rows.map(({ id, item, current }) => `
+  const rowHtml = ({ id, item, current }) => `
     <div class="club-logo-row">
       <div class="club-logo-preview">
         ${current ? `<img src="${esc(current)}" alt="${esc(item.name || id)}" loading="lazy">` : `<span>—</span>`}
@@ -2733,7 +2755,26 @@ function renderLogoRows(kind) {
       <button class="action" data-${isNation ? "nation" : "club"}-pick="${esc(id)}">${current ? "CAMBIAR" : "ELEGIR"}</button>
       ${current ? `<button class="action danger" data-${isNation ? "nation" : "club"}-clear="${esc(id)}">QUITAR</button>` : `<span></span>`}
     </div>
-  `).join("") || `<div class="empty-state"><strong>No hay resultados</strong><span>Probá con otro término o filtro.</span></div>`;
+  `;
+  const empty = `<div class="empty-state"><strong>No hay resultados</strong><span>Probá con otro término o filtro.</span></div>`;
+  if (isNation) {
+    root.innerHTML = rows.map(rowHtml).join("") || empty;
+    return;
+  }
+  // Clubes separados por competencia: URBA y Super Rugby Américas.
+  const isSra = row => String(row.item.league || "").toUpperCase() === "SRA";
+  const groups = [
+    { label: "URBA", sub: "Top 14 y Primera A", logo: "/assets/competitions/urba.png", rows: rows.filter(r => !isSra(r)) },
+    { label: "Super Rugby Américas", sub: "SRA", logo: "/assets/competitions/sra.png", rows: rows.filter(isSra) }
+  ].filter(g => g.rows.length);
+  root.innerHTML = groups.map(g => `
+    <div class="logo-divider">
+      <img src="${g.logo}" alt="" loading="lazy">
+      <strong>${esc(g.label)}</strong>
+      <small>${esc(g.sub)} · ${g.rows.length} ${g.rows.length === 1 ? "club" : "clubes"}</small>
+    </div>
+    ${g.rows.map(rowHtml).join("")}
+  `).join("") || empty;
 }
 
 function renderClubLogos() {
@@ -4691,10 +4732,8 @@ checkSession();
 
 // Clubes de las dos divisiones (los del panel o, si no hay, los de DIVISION_DEFS).
 // Equipos de Super Rugby Américas: sus jugadores juegan en el modo SRA de Rugby XV.
-const SRA_CLUBS = ["Pampas", "Tarucas", "Dogos XV", "Capibaras XV", "Peñarol Rugby", "Selknam", "Cobras", "Yacaré XV"];
-
 function allDivisionClubs() {
-  return [...getDivision("top14").clubs, ...getDivision("primeraA").clubs, ...SRA_CLUBS];
+  return [...getDivision("top14").clubs, ...getDivision("primeraA").clubs, ...getDivision("sra").clubs];
 }
 
 const PLAYER_POSITIONS = [
@@ -5580,7 +5619,7 @@ $$("[data-results-division]").forEach((btn) => btn.addEventListener("click", () 
 }));
 
 function paintDivisionsEditor() {
-  ["top14", "primeraA"].forEach((key) => {
+  ["top14", "primeraA", "sra"].forEach((key) => {
     const area = $(`#division-${key}`);
     const count = $(`#division-count-${key}`);
     const clubs = getDivision(key).clubs;
@@ -5607,9 +5646,9 @@ renderResults = function () {
 
 $("#divisions-save")?.addEventListener("click", async () => {
   const read = (key) => ($(`#division-${key}`)?.value || "").split("\n").map((x) => x.trim()).filter(Boolean);
-  const divisions = { top14: { clubs: read("top14") }, primeraA: { clubs: read("primeraA") } };
+  const divisions = { top14: { clubs: read("top14") }, primeraA: { clubs: read("primeraA") }, sra: { clubs: read("sra") } };
 
-  if (!divisions.top14.clubs.length || !divisions.primeraA.clubs.length) {
+  if (!divisions.top14.clubs.length || !divisions.primeraA.clubs.length || !divisions.sra.clubs.length) {
     toast("Faltan clubes", "Cada división necesita al menos un club.", "error");
     return;
   }
@@ -5622,7 +5661,7 @@ $("#divisions-save")?.addEventListener("click", async () => {
     state.content = normalizeContent(data.content);
     buildClubIndex();
     renderAll();
-    toast("Clubes guardados", `Top 14: ${divisions.top14.clubs.length} · Primera A: ${divisions.primeraA.clubs.length}.`);
+    toast("Clubes guardados", `Top 14: ${divisions.top14.clubs.length} · Primera A: ${divisions.primeraA.clubs.length} · SRA: ${divisions.sra.clubs.length}.`);
   } catch (error) {
     toast("No se pudo guardar", error.message || "Probá de nuevo.", "error");
   } finally {

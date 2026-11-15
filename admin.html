@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/admin.css?v=20261118">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261125">
   <!-- brand.css va DESPUÉS: es la identidad compartida con la web pública y manda sobre los colores del panel. -->
-  <link rel="stylesheet" href="/assets/css/brand.css?v=20261124">
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261125">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -177,6 +177,8 @@
             <option>Los Pumas</option>
             <option>Super Rugby</option>
             <option>URBA TOP 14</option>
+            <option>URBA PRIMERA A</option>
+            <option>SUPER RUGBY AMERICAS</option>
           </select>
         </div>
 
@@ -215,6 +217,7 @@
         <div class="division-switch" role="tablist" aria-label="División">
           <button type="button" data-results-division="top14" class="active">Top 14</button>
           <button type="button" data-results-division="primeraA">Primera A</button>
+          <button type="button" data-results-division="sra">Super Rugby Américas</button>
         </div>
 
         <div class="result-info">
@@ -276,6 +279,7 @@
                 <label>URBA Top 14 <small class="muted" id="division-count-top14"></small><textarea id="division-top14" rows="15"></textarea></label>
                 <label>Primera A <small class="muted" id="division-count-primeraA"></small><textarea id="division-primeraA" rows="15"></textarea></label>
               </div>
+              <label>Super Rugby Américas <small class="muted" id="division-count-sra"></small><textarea id="division-sra" rows="8"></textarea></label>
               <small class="muted">Escribí el nombre como querés que aparezca. Los clubes nuevos entran a la tabla en cero.</small>
               <div class="check-row"><button id="divisions-save" type="button" class="btn primary">GUARDAR CLUBES</button></div>
             </div>
@@ -610,6 +614,6 @@
 
 <div id="modal-root"></div>
 <div id="toast-container"></div>
-<script src="/assets/js/admin.js?v=20261119"></script>
+<script src="/assets/js/admin.js?v=20261125"></script>
 </body>
 </html>

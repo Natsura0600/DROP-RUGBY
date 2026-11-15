@@ -139,7 +139,7 @@ function fixtureKey(fixture) {
 }
 
 function isTop14(fixture) {
-  // Competiciones con tabla propia: URBA TOP 14 y URBA PRIMERA A.
+  // Competiciones con tabla propia: URBA TOP 14, URBA PRIMERA A y SUPER RUGBY AMERICAS.
   return isDivisionCompetition(fixture?.competition);
 }
 
@@ -2402,7 +2402,7 @@ export default async function handler(
           {
             ok: false,
             error:
-              "Solo se pueden cargar resultados de URBA Top 14 o Primera A."
+              "Solo se pueden cargar resultados de URBA Top 14, Primera A o Super Rugby Américas."
           }
         );
       }
@@ -2717,7 +2717,9 @@ export default async function handler(
       const baseKey =
         body.division === "primeraA"
           ? "standingsBaseA"
-          : "standingsBase";
+          : body.division === "sra"
+            ? "standingsBaseSRA"
+            : "standingsBase";
 
       content[baseKey] =
         rows
@@ -2785,6 +2787,8 @@ export default async function handler(
             content.standings,
           standingsA:
             content.standingsA,
+          standingsSRA:
+            content.standingsSRA,
           content
         }
       );

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { r2GetJSON, r2PutJSONSafe } from '../lib/r2.js';
-import { DEFAULT_DIVISIONS, SEASON, getDivisions, migrateSeason, recalcTables, zeroBase } from '../lib/urba.js';
+import { DEFAULT_DIVISIONS, SEASON, getDivisions, migrateSeason, recalcTables, zeroBase, computeTable } from '../lib/urba.js';
 import { syncUrba, urbaSyncDue } from '../lib/urba-sync.js';
 
 const BLOB_PATH = 'droprugby/content.json';
@@ -27,6 +27,7 @@ async function seed() {
     results: [],
     standingsBase: DEFAULT_STANDINGS_BASE,
     standingsBaseA: zeroBase(DEFAULT_DIVISIONS.primeraA.clubs),
+    standingsBaseSRA: zeroBase(DEFAULT_DIVISIONS.sra.clubs),
     season: SEASON
   };
   recalcTables(data);
@@ -176,6 +177,7 @@ async function toPublic(data) {
     results: Array.isArray(data.results) ? data.results : [],
     standings: Array.isArray(data.standings) ? data.standings : [],
     standingsA: Array.isArray(data.standingsA) ? data.standingsA : [],
+    standingsSRA: Array.isArray(data.standingsSRA) && data.standingsSRA.length ? data.standingsSRA : computeTable(data, 'sra'),
     urbaLogos: data.urbaSync?.logos && typeof data.urbaSync.logos === 'object' ? data.urbaSync.logos : {},
     urbaSync: data.urbaSync
       ? {
