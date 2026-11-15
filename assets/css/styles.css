@@ -1120,3 +1120,35 @@ html.intro-game #drop-intro.go .rain-caption { animation: caption-in .5s cubic-b
 .rain-logo.gl-escudos { width: min(42vmin, 250px); height: auto; aspect-ratio: 1; border-radius: 50%; overflow: hidden; }
 .rain-logo.gl-xv { width: min(40vmin, 240px); height: min(48vmin, 290px); }
 .rain-logo.gl-quiz { width: min(48vmin, 280px); }
+
+/* Calendario: se van arrancando las hojas hasta llegar a hoy */
+.rain-logo.gl-cal { position: relative; width: min(38vmin, 220px); height: min(40vmin, 236px); }
+.gl-cal:before { content: ""; position: absolute; left: 18%; right: 18%; top: -10px; z-index: 9; height: 20px; background: radial-gradient(circle, #8b9097 0 5px, transparent 6px) 0 0 / 33.3% 100% repeat-x; }
+.gl-page { position: absolute; inset: 0; z-index: calc(10 - var(--i)); display: grid; grid-template-rows: 30% 1fr; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 18px 44px rgba(0, 0, 0, .5); transform-origin: 50% 0; backface-visibility: hidden; }
+
+.gl-month { display: grid; place-items: center; background: #d71920; color: #fff; font-family: var(--display); font-size: min(6vmin, 34px); font-weight: 900; letter-spacing: .12em; }
+.gl-day { display: grid; place-items: center; color: #0d0f11; font-family: var(--display); font-size: min(17vmin, 104px); font-weight: 900; letter-spacing: -.05em; line-height: 1; }
+#drop-intro.go .gl-page:not(:last-child) { animation: cal-tear .5s cubic-bezier(.5, 0, .9, .6) calc(.45s + var(--i) * .32s) forwards; }
+#drop-intro.go .gl-page:last-child { animation: cal-today .45s cubic-bezier(.2, 1.5, .4, 1) 1.8s; }
+@keyframes cal-tear { 0% { transform: rotate(0) translateY(0); opacity: 1; } 25% { transform: rotate(-4deg) translateY(-6px); } 100% { transform: rotate(-28deg) translate(-60%, 140%); opacity: 0; } }
+@keyframes cal-today { 50% { transform: scale(1.08); } }
+
+/* Contacto: el sobre llega, suena la notificación y sale volando */
+.rain-logo.gl-mail { position: relative; width: min(40vmin, 240px); height: min(32vmin, 190px); display: grid; place-items: center; }
+.gl-env { display: block; font-size: min(30vmin, 170px); line-height: 1; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .55)); }
+#drop-intro.go .gl-env { animation: mail-wiggle .6s ease .55s, mail-fly .6s cubic-bezier(.5, 0, .8, .4) 1.85s forwards; }
+.gl-badge { position: absolute; right: 8%; top: 4%; display: grid; place-items: center; width: min(9vmin, 50px); aspect-ratio: 1; border-radius: 50%; background: #d71920; color: #fff; font-family: var(--display); font-size: min(5vmin, 26px); font-style: normal; font-weight: 900; box-shadow: 0 0 0 4px #020202; opacity: 0; transform: scale(0); }
+#drop-intro.go .gl-badge { animation: mail-badge .4s cubic-bezier(.2, 1.8, .4, 1) 1.15s forwards, mail-badge-out .2s ease 1.85s forwards; }
+.gl-trail { position: absolute; left: 50%; top: 55%; width: 46px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7)); opacity: 0; }
+.gl-trail.t2 { top: 40%; width: 30px; } .gl-trail.t3 { top: 70%; width: 22px; }
+#drop-intro.go .gl-trail { animation: mail-trail .5s ease-out 2s forwards; }
+@keyframes mail-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+@keyframes mail-badge { to { opacity: 1; transform: scale(1); } }
+@keyframes mail-badge-out { to { opacity: 0; transform: scale(0); } }
+@keyframes mail-fly { 0% { transform: translate(0, 0) rotate(0); } 20% { transform: translate(-14px, 8px) rotate(-6deg); } 100% { transform: translate(70vw, -60vh) rotate(18deg) scale(.5); opacity: 0; } }
+@keyframes mail-trail { 0% { opacity: 0; transform: translateX(-80px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateX(-200px); } }
+@media (prefers-reduced-motion: reduce) {
+  #drop-intro.go .gl-page:not(:last-child) { animation: none; opacity: 0; }
+  #drop-intro.go .gl-env, #drop-intro.go .gl-trail { animation: none; }
+  #drop-intro.go .gl-badge { animation: none; opacity: 1; transform: none; }
+}
