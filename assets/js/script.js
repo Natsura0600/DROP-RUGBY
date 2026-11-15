@@ -1808,7 +1808,7 @@ function setupIntro() {
     done = true;
     intro.remove();
     root.classList.remove("intro-on");
-    try { sessionStorage.setItem("dropIntro", "1"); } catch (_) {}
+    try { sessionStorage.setItem(root.getAttribute("data-intro-key") || "dropIntro", "1"); } catch (_) {}
   };
   intro.addEventListener("animationend", (event) => { if (event.target === intro) finish(); });
   intro.addEventListener("click", finish); // un toque la saltea

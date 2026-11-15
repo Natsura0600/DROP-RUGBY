@@ -1026,4 +1026,9 @@ html.intro-rain #drop-intro.go { animation: intro-out .5s ease 2.2s forwards; }
 
 /* Super Rugby Américas: fixture */
 .sra-fixture .competition-section:first-child .competition-name { margin-top: 0; }
-.sra-fixture { margin-bottom: 34px; }
+.sra-fixture { margin-bottom: 72px; }
+.sra-fixture .fixture-grid { margin-bottom: 8px; }
+
+/* Pantalla de inicio con el logo de la competición (URBA / SRA) */
+.rain-logo.rain-logo-comp { display: grid; place-items: center; width: min(58vmin, 320px); aspect-ratio: 1; border-radius: 50%; background: #fff; -webkit-mask-image: none; mask-image: none; box-shadow: 0 0 0 6px rgba(255, 255, 255, .14), 0 24px 60px rgba(0, 0, 0, .55); }
+.rain-logo-comp img { width: 68%; height: 68%; object-fit: contain; }
