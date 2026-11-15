@@ -164,6 +164,69 @@
         "Francesa"
       ],
       "logo": ""
+    },
+    "pampas": {
+      "name": "Pampas",
+      "league": "SRA",
+      "aliases": [
+        "Pampas XV"
+      ],
+      "logo": ""
+    },
+    "tarucas": {
+      "name": "Tarucas",
+      "league": "SRA",
+      "logo": ""
+    },
+    "dogos_xv": {
+      "name": "Dogos XV",
+      "league": "SRA",
+      "aliases": [
+        "Dogos"
+      ],
+      "logo": ""
+    },
+    "capibaras_xv": {
+      "name": "Capibaras XV",
+      "league": "SRA",
+      "aliases": [
+        "Capibaras"
+      ],
+      "logo": ""
+    },
+    "penarol_rugby": {
+      "name": "Peñarol Rugby",
+      "league": "SRA",
+      "aliases": [
+        "Penarol Rugby",
+        "Peñarol",
+        "Penarol"
+      ],
+      "logo": ""
+    },
+    "selknam": {
+      "name": "Selknam",
+      "league": "SRA",
+      "logo": ""
+    },
+    "cobras": {
+      "name": "Cobras",
+      "league": "SRA",
+      "aliases": [
+        "Cobras Brasil",
+        "Cobras Brasil XV"
+      ],
+      "logo": ""
+    },
+    "yacare_xv": {
+      "name": "Yacaré XV",
+      "league": "SRA",
+      "aliases": [
+        "Yacare XV",
+        "Yacaré",
+        "Yacare"
+      ],
+      "logo": ""
     }
   },
   "nations": {

@@ -25,6 +25,24 @@ const DEFAULT_DIVISION_CLUBS = {
   ]
 };
 
+// Super Rugby Américas (SRA): sus jugadores van en un modo aparte de Rugby XV.
+const SRA_TEAMS = [
+  { name: "Pampas", aliases: ["Pampas XV"] },
+  { name: "Tarucas", aliases: [] },
+  { name: "Dogos XV", aliases: ["Dogos"] },
+  { name: "Capibaras XV", aliases: ["Capibaras"] },
+  { name: "Peñarol Rugby", aliases: ["Penarol Rugby", "Peñarol", "Penarol"] },
+  { name: "Selknam", aliases: [] },
+  { name: "Cobras", aliases: ["Cobras Brasil", "Cobras Brasil XV"] },
+  { name: "Yacaré XV", aliases: ["Yacare XV", "Yacaré", "Yacare"] }
+];
+
+const SRA_KEYS = new Set(SRA_TEAMS.flatMap(t => [t.name, ...t.aliases]).map(n => normalizeTeamName(n)));
+
+function isSraClub(name) {
+  return SRA_KEYS.has(normalizeTeamName(name));
+}
+
 async function divisionClubNames(division) {
   const content = await loadContent();
   const saved = content?.divisions?.[division]?.clubs;
@@ -315,7 +333,7 @@ async function mountRugbyXV(root) {
   const settings = (await loadGameSettings()).xv;
   if (!settings.enabled) return gamePaused(root);
 
-  const players = (await loadPlayers())
+  const allPlayers = (await loadPlayers())
     .filter(p => p.positions.length)
     .map(p => {
       const full = nameKey(p.name);
@@ -329,17 +347,27 @@ async function mountRugbyXV(root) {
       };
     });
 
-  if (players.length < 15) {
+  const competitions = [
+    { id: "urba", label: "URBA", sub: "Top 14 y Primera A", icon: "URBA", filter: p => !isSraClub(p.club) },
+    { id: "sra", label: "SRA", sub: "Super Rugby Américas", icon: "SRA", filter: p => isSraClub(p.club) }
+  ].map(c => ({ ...c, players: allPlayers.filter(c.filter) }))
+    .map(c => ({ ...c, ready: c.players.length >= 15 }));
+
+  if (!competitions.some(c => c.ready)) {
     root.innerHTML = `<div class="quiz-empty"><h3>Rugby XV vuelve pronto.</h3><p>Estamos cargando los planteles.</p></div>`;
     return;
   }
+
+  let competition = competitions.find(c => c.ready);
+  let players = competition.players;
 
   const modes = (settings.times.length ? settings.times : [60, 90, 0]).map(secs => ({
     id: String(secs),
     secs,
     label: secs ? `${secs} segundos` : "Sin tiempo"
   }));
-  const bestKey = id => `xv_best_${id}`;
+  // Los récords de URBA conservan la clave de antes.
+  const bestKey = id => (competition.id === "urba" ? `xv_best_${id}` : `xv_best_${competition.id}_${id}`);
   let mode = modes[0];
 
   function menu() {
@@ -347,8 +375,15 @@ async function mountRugbyXV(root) {
       <div class="xv-menu">
         <span class="drop-kicker">Elegí cómo jugar</span>
         <h3>¿Cuántos del XV te acordás?</h3>
-        <p class="quiz-intro-text">Escribí el apellido de un jugador del URBA Top 14 y lo ubicamos en su puesto. Un jugador por puesto: si el suyo ya está ocupado, rebota.</p>
-        <div class="xv-modes">
+        <p class="quiz-intro-text">Elegí la competencia y el tiempo. Escribí el apellido de un jugador y lo ubicamos en su puesto. Un jugador por puesto: si el suyo ya está ocupado, rebota.</p>
+        <div class="xv-step">1 · Competencia</div>
+        <div class="xv-modes xv-comps">
+          ${competitions.map(c => `<button type="button" class="xv-mode xv-comp ${c.id === competition.id ? "active" : ""}" data-comp="${c.id}" ${c.ready ? "" : "disabled"}>
+              <span class="xv-mode-icon">${c.icon}</span>
+              <strong>${c.label}</strong><small>${c.ready ? `${c.sub} · ${c.players.length} jugadores` : `${c.sub} · planteles en carga`}</small></button>`).join("")}
+        </div>
+        <div class="xv-step">2 · Tiempo</div>
+        <div class="xv-modes" id="xv-times">
           ${modes.map(m => {
             const best = gStore(bestKey(m.id));
             return `<button type="button" class="xv-mode ${m.id === mode.id ? "active" : ""}" data-mode="${m.id}">
@@ -361,6 +396,12 @@ async function mountRugbyXV(root) {
     root.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
       mode = modes.find(m => m.id === b.dataset.mode);
       root.querySelectorAll("[data-mode]").forEach(x => x.classList.toggle("active", x === b));
+    }));
+    root.querySelectorAll("[data-comp]").forEach(b => b.addEventListener("click", () => {
+      const next = competitions.find(c => c.id === b.dataset.comp);
+      if (!next?.ready) return;
+      competition = next;
+      menu(); // repinta récords de esa competencia
     }));
     root.querySelector("[data-start]").addEventListener("click", play);
   }
@@ -379,6 +420,7 @@ async function mountRugbyXV(root) {
   }
 
   function play() {
+    players = competition.players;
     const lineup = {};
     const used = new Set();
     const started = Date.now();
@@ -387,7 +429,7 @@ async function mountRugbyXV(root) {
 
     root.innerHTML = `
       <div class="xv-top">
-        <div><span class="drop-kicker">${mode.label}</span><strong class="xv-count" id="xv-count">0 / 15</strong></div>
+        <div><span class="drop-kicker">${competition.label} · ${mode.label}</span><strong class="xv-count" id="xv-count">0 / 15</strong></div>
         <div class="xv-clock ${mode.secs ? "" : "hidden"}" id="xv-clock">${mode.secs}</div>
         <button class="btn ghost small" type="button" data-finish>Terminar</button>
       </div>
@@ -424,20 +466,20 @@ async function mountRugbyXV(root) {
         .map(p => `${p.n}. ${lineup[p.n] ? lineup[p.n].name : "—"}`).join("\n");
 
       root.innerHTML = `
-        <div class="quiz-top"><span class="drop-kicker">${mode.label}</span><span class="quiz-score">Récord: ${best}/15</span></div>
+        <div class="quiz-top"><span class="drop-kicker">${competition.label} · ${mode.label}</span><span class="quiz-score">Récord: ${best}/15</span></div>
         <div class="quiz-result-score pop-in">${done}<small>/15</small></div>
         <h3>${title}</h3>
         <p class="quiz-intro-text">${done === 15 ? `Lo armaste en ${secs} segundos.` : done ? "Estos son los que lograste ubicar." : "Esta vez no entró ninguno. ¡Revancha!"}</p>
         ${pitchHTML(lineup, true)}
         <div class="quiz-actions">
           <button class="btn accent" type="button" data-again>Jugar de nuevo</button>
-          <button class="btn ghost" type="button" data-menu>Cambiar tiempo</button>
+          <button class="btn ghost" type="button" data-menu>Cambiar modo</button>
           <button class="btn ghost" type="button" data-share>Copiar mi XV</button>
         </div>`;
       root.querySelector("[data-again]").addEventListener("click", play);
       root.querySelector("[data-menu]").addEventListener("click", menu);
       root.querySelector("[data-share]").addEventListener("click", e =>
-        copyText(`Armé ${done}/15 de mi XV en DropRugby (${mode.label}) 🏉\n${shareLines}\n${location.origin}/rugby-xv`, e.currentTarget));
+        copyText(`Armé ${done}/15 de mi XV ${competition.label} en DropRugby (${mode.label}) 🏉\n${shareLines}\n${location.origin}/rugby-xv`, e.currentTarget));
       if (done === 15) confetti();
     }
 
@@ -729,7 +771,7 @@ async function mountPlayerWordle(root) {
   const settings = (await loadGameSettings()).wordle;
   if (!settings.enabled) return gamePaused(root);
 
-  const pool = wdPool(await loadPlayers());
+  const pool = wdPool((await loadPlayers()).filter(p => !isSraClub(p.club)));
   if (pool.length < 5) {
     root.innerHTML = `<div class="quiz-empty"><h3>El Wordle vuelve pronto.</h3><p>Estamos cargando los jugadores.</p></div>`;
     return;

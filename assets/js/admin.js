@@ -4690,8 +4690,11 @@ checkSession();
    ========================================================================== */
 
 // Clubes de las dos divisiones (los del panel o, si no hay, los de DIVISION_DEFS).
+// Equipos de Super Rugby Américas: sus jugadores juegan en el modo SRA de Rugby XV.
+const SRA_CLUBS = ["Pampas", "Tarucas", "Dogos XV", "Capibaras XV", "Peñarol Rugby", "Selknam", "Cobras", "Yacaré XV"];
+
 function allDivisionClubs() {
-  return [...getDivision("top14").clubs, ...getDivision("primeraA").clubs];
+  return [...getDivision("top14").clubs, ...getDivision("primeraA").clubs, ...SRA_CLUBS];
 }
 
 const PLAYER_POSITIONS = [
@@ -5534,7 +5537,7 @@ function renderGamesDashboard() {
 
   if ($("#stat-players")) $("#stat-players").textContent = players.length;
   if ($("#stat-squads")) $("#stat-squads").textContent = squads;
-  if ($("#stat-squads-total")) $("#stat-squads-total").textContent = `de ${top14.length} clubes (Top 14 y Primera A)`;
+  if ($("#stat-squads-total")) $("#stat-squads-total").textContent = `de ${top14.length} equipos (URBA y SRA)`;
   if ($("#nav-players-count")) $("#nav-players-count").textContent = players.length;
   if ($("#nav-games-count") && !gamesDirty) {
     $("#nav-games-count").textContent = Object.keys(GAME_LABELS).filter((id) => games[id].enabled).length;
