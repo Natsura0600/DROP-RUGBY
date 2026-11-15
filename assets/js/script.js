@@ -1742,7 +1742,31 @@ async function renderQuiz() {
    INICIALIZACIÓN
    ========================================================================== */
 
+/* Pantalla de inicio: se retira sola al terminar la animación (o a los 4 s). */
+function setupIntro() {
+  const intro = document.getElementById("drop-intro");
+  if (!intro) return;
+  const root = document.documentElement;
+  if (root.classList.contains("intro-seen")) { intro.remove(); return; }
+
+  const img = intro.querySelector("img");
+  if (img && img.complete && img.naturalWidth) intro.classList.add("go");
+
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    intro.remove();
+    root.classList.remove("intro-on");
+    try { sessionStorage.setItem("dropIntro", "1"); } catch (_) {}
+  };
+  intro.addEventListener("animationend", (event) => { if (event.target === intro) finish(); });
+  intro.addEventListener("click", finish); // un toque la saltea
+  setTimeout(finish, 4000);
+}
+
 async function initDropRugby() {
+  setupIntro();
   renderLayout();
   setupMobileMenu();
   setupScrollUI();

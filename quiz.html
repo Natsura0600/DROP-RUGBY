@@ -19,11 +19,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/brand.css?v=20261120">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=20261120">
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261121">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20261121">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7081370352193016" crossorigin="anonymous"></script>
+  <link rel="preload" as="image" href="/assets/img/drop-intro.jpg">
+  <link rel="preload" as="image" href="/assets/img/drop-intro-leg.png">
+  <script>try{if(sessionStorage.getItem("dropIntro"))document.documentElement.classList.add("intro-seen");else document.documentElement.classList.add("intro-on")}catch(e){document.documentElement.classList.add("intro-seen")}</script>
 </head>
 <body data-page="quiz">
+  <!-- Pantalla de inicio: se muestra una vez por visita (assets/js/script.js la retira). -->
+  <div id="drop-intro" aria-hidden="true">
+    <div class="intro-stage">
+      <img src="/assets/img/drop-intro.jpg" alt="" width="900" height="900" decoding="async" onload="this.closest('#drop-intro').classList.add('go')" onerror="this.closest('#drop-intro').remove()">
+      <img class="intro-leg" src="/assets/img/drop-intro-leg.png" alt="" decoding="async">
+      <i class="intro-dust"></i><i class="intro-dust d2"></i><i class="intro-dust d3"></i>
+      <svg class="intro-ball" viewBox="0 0 60 84" aria-hidden="true"><ellipse cx="30" cy="42" rx="27" ry="39" fill="#0d0f11" stroke="#f0ebe5" stroke-width="3"/><path d="M16 22 C 20 12, 34 8, 42 14" fill="none" stroke="#f0ebe5" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>
+      <i class="intro-flash"></i>
+    </div>
+  </div>
   <!-- El header y el footer los arma assets/js/script.js (renderLayout) para que sean iguales en todas las páginas. -->
   <div id="site-header" style="min-height:68px;background:#0d0f11"></div>
 
@@ -92,7 +105,7 @@
   </main>
 
   <div id="site-footer"></div>
-  <script src="/assets/js/script.js?v=20261120"></script>
-  <script src="/assets/js/games.js?v=20261120"></script>
+  <script src="/assets/js/script.js?v=20261121"></script>
+  <script src="/assets/js/games.js?v=20261121"></script>
 </body>
 </html>
