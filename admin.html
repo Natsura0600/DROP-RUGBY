@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/admin.css?v=20261112">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261115">
   <!-- brand.css va DESPUÉS: es la identidad compartida con la web pública y manda sobre los colores del panel. -->
-  <link rel="stylesheet" href="/assets/css/brand.css?v=20261112">
+  <link rel="stylesheet" href="/assets/css/brand.css?v=20261115">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -48,7 +48,7 @@
 
       <div class="nav-title">TORNEO</div>
       <button class="nav-item" data-section="fixtures">◷ <span>Partidos</span><b id="nav-fixtures-count">0</b></button>
-      <button class="nav-item" data-section="results">▥ <span>Resultados TOP 14</span><b id="nav-results-count">0</b></button>
+      <button class="nav-item" data-section="results">▥ <span>Resultados y tablas</span><b id="nav-results-count">0</b></button>
 
       <div class="nav-title">ARCHIVOS</div>
       <button class="nav-item" data-section="media">▧ <span>Escudos y media</span><b id="nav-media-count">0</b></button>
@@ -82,7 +82,7 @@
           <div>
             <small>RESUMEN</small>
             <h1>Dashboard</h1>
-            <p class="muted">Juegos, jugadores y torneo del URBA Top 14.</p>
+            <p class="muted">Juegos, jugadores y torneos de la URBA: Top 14 y Primera A.</p>
           </div>
           <div class="heading-actions">
             <button type="button" class="btn" data-go="players">CARGAR JUGADORES</button>
@@ -92,7 +92,7 @@
 
         <div class="stats">
           <div><small>JUGADORES</small><strong id="stat-players">0</strong><span>cargados</span></div>
-          <div><small>PLANTELES</small><strong id="stat-squads">0</strong><span>de 14 clubes</span></div>
+          <div><small>PLANTELES</small><strong id="stat-squads">0</strong><span id="stat-squads-total">de 28 clubes</span></div>
           <div><small>PARTIDOS</small><strong id="stat-fixtures">0</strong><span>registrados</span></div>
           <div><small>RESULTADOS</small><strong id="stat-results">0</strong><span>cargados</span></div>
         </div>
@@ -193,11 +193,16 @@
       <section id="section-results" class="section">
         <div class="heading">
           <div>
-            <small>URBA TOP 14</small>
-            <h1>Resultados</h1>
+            <small id="results-division-label">URBA TOP 14</small>
+            <h1>Resultados y tablas</h1>
             <p class="muted">Cargá únicamente el marcador y el punto bonus. La tabla se calcula sola.</p>
           </div>
           <button id="new-result-button" class="btn primary">+ CARGAR RESULTADO</button>
+        </div>
+
+        <div class="division-switch" role="tablist" aria-label="División">
+          <button type="button" data-results-division="top14" class="active">Top 14</button>
+          <button type="button" data-results-division="primeraA">Primera A</button>
         </div>
 
         <div class="result-info">
@@ -248,6 +253,32 @@
             <button id="standings-base-save" class="btn primary">GUARDAR TABLA BASE</button>
           </div>
         </div>
+
+        <div class="grid2" style="margin-top:22px;">
+          <div class="panel">
+            <div class="panel-head">
+              <div><h3>Clubes por división</h3><small class="muted">Un club por línea. Se usan en las tablas, los partidos y los juegos.</small></div>
+            </div>
+            <div class="quiz-fields">
+              <div class="field-row two">
+                <label>URBA Top 14 <small class="muted" id="division-count-top14"></small><textarea id="division-top14" rows="15"></textarea></label>
+                <label>Primera A <small class="muted" id="division-count-primeraA"></small><textarea id="division-primeraA" rows="15"></textarea></label>
+              </div>
+              <small class="muted">Escribí el nombre como querés que aparezca. Los clubes nuevos entran a la tabla en cero.</small>
+              <div class="check-row"><button id="divisions-save" type="button" class="btn primary">GUARDAR CLUBES</button></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><div><h3>Nueva temporada</h3><small class="muted" id="season-info"></small></div></div>
+            <div class="quiz-fields">
+              <p class="muted">Deja las tablas del Top 14 y de la Primera A en cero: borra los resultados y los partidos de la URBA de la temporada actual. Antes los guarda en un archivo de temporadas, así no se pierde nada. Los partidos de Los Pumas y del rugby internacional no se tocan.</p>
+              <label>Temporada que arranca<input id="season-next" type="number" min="2020" max="2100" step="1"></label>
+              <div id="season-archive" class="muted"></div>
+              <div class="check-row"><button id="season-reset" type="button" class="btn danger-btn">REINICIAR TABLAS A CERO</button></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="section-quiz" class="section">
@@ -265,6 +296,21 @@
         </div>
 
         <div class="quiz-status" id="quiz-status"></div>
+
+        <div class="panel ai-panel">
+          <div class="panel-head">
+            <div><h3>Quiz del día con IA</h3><small class="muted" id="quiz-ai-info">—</small></div>
+            <label class="switch"><input id="quiz-ai-enabled" type="checkbox"><i></i><span>Automático</span></label>
+          </div>
+          <div class="quiz-fields">
+            <p class="muted">Con el modo automático, todos los días a la medianoche se publica un quiz nuevo de 5 preguntas: dos salen de los jugadores y clubes cargados (siempre correctas) y tres de reglamento e historia las escribe la IA. Si la IA no responde, las cinco salen de los datos. Si querés publicar un quiz propio, apagá el automático y guardalo abajo.</p>
+            <div class="check-row">
+              <button id="quiz-ai-generate" type="button" class="btn primary">GENERAR UNO NUEVO AHORA</button>
+              <button id="quiz-ai-save" type="button" class="btn">GUARDAR MODO</button>
+            </div>
+            <div id="quiz-ai-status" class="today-box">—</div>
+          </div>
+        </div>
 
         <div class="quiz-admin-grid">
           <div class="panel">
@@ -419,11 +465,14 @@
                 <label>Nombre<input id="player-first" maxlength="40" placeholder="Juan Pablo"></label>
                 <label>Apellido<input id="player-last" maxlength="50" placeholder="De la Vega" required></label>
               </div>
-              <div class="field-row two">
-                <label>Club<select id="player-club"></select></label>
-                <label>Puesto<select id="player-position"><option value="">Sin puesto</option></select></label>
+              <label>Club<select id="player-club"></select></label>
+              <div class="field-group">
+                <b>Puestos <small class="muted">— tocá uno o varios</small></b>
+                <div class="pos-grid" id="player-positions"></div>
+                <div class="check-row pos-quick" id="player-pos-quick"></div>
+                <small class="muted" id="player-pos-summary">Sin puesto: no entra en Rugby XV.</small>
               </div>
-              <small class="muted">El apellido es lo que se escribe en Rugby XV y lo que se adivina en el Wordle. Sin puesto, el jugador no entra en Rugby XV.</small>
+              <small class="muted">El apellido es lo que se escribe en Rugby XV y lo que se adivina en el Wordle. Con varios puestos, en Rugby XV entra en cualquiera de ellos que esté libre.</small>
               <div class="check-row">
                 <button id="player-add" type="submit" class="btn primary">+ AGREGAR</button>
                 <button id="player-cancel" type="button" class="btn hidden">CANCELAR</button>
@@ -434,7 +483,7 @@
           <div class="panel">
             <div class="panel-head"><h3>Importar CSV</h3></div>
             <div class="quiz-fields">
-              <p class="muted">Columnas: <b>club, nombre, apellido, puesto</b> (también sirve <b>club, jugador, puesto</b>). El puesto es un número de 1 a 15 o un nombre (apertura, hooker, fullback…). Acepta coma o punto y coma.</p>
+              <p class="muted">Columnas: <b>club, nombre, apellido, puesto</b> (también sirve <b>club, jugador, puesto</b>). El puesto puede ser un número (10), varios (<b>11/14</b>, <b>9-15</b>) o nombres (pilar, wing, back, forward, <b>wing/fullback</b>). Acepta coma o punto y coma.</p>
               <label>Archivo CSV<input id="players-file" type="file" accept=".csv,text/csv,text/plain"></label>
               <label>o pegá el texto<textarea id="players-paste" rows="4" placeholder="Newman;Isidro;Bosch;1"></textarea></label>
               <label class="quiz-toggle"><input id="players-replace" type="checkbox"> <span>Reemplazar todos los jugadores actuales</span></label>
@@ -559,6 +608,6 @@
 
 <div id="modal-root"></div>
 <div id="toast-container"></div>
-<script src="/assets/js/admin.js?v=20261112"></script>
+<script src="/assets/js/admin.js?v=20261115"></script>
 </body>
 </html>

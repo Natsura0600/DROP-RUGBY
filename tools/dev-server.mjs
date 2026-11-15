@@ -10,6 +10,8 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getDivisions, migrateSeason, recalcTables, resetSeason, sanitizeDivisions } from "../lib/urba.js";
+import { generateDailyQuiz } from "../lib/quiz-ai.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.PORT) || 4173;
@@ -37,15 +39,8 @@ const content = {
   results: [], standings: [], standingsBase: [], settings: {}
 };
 
-// La tabla base vive en api/content.js: la tomamos de ahí para no duplicarla.
-try {
-  const source = await fs.readFile(path.join(ROOT, "api", "content.js"), "utf8");
-  const block = source.match(/const DEFAULT_STANDINGS_BASE = (\[[\s\S]*?\]);/);
-  if (block) {
-    content.standingsBase = new Function(`return ${block[1]}`)();
-    content.standings = content.standingsBase.map((row, i) => ({ position: i + 1, ...row }));
-  }
-} catch {}
+// Igual que en producción: temporada vigente con las tablas en cero (lib/urba.js).
+migrateSeason(content);
 
 const send = (res, status, body, type = "application/json; charset=utf-8") => {
   res.writeHead(status, { "Content-Type": type, "Cache-Control": "no-store" });
@@ -80,6 +75,26 @@ http.createServer(async (req, res) => {
         .filter(p => p && (p.last || p.name) && p.club)
         .map(p => ({ ...p, name: p.last ? `${p.first || ""} ${p.last}`.trim() : p.name }));
       return send(res, 200, { ok: true, players: content.players, content });
+    }
+    if (action === "save-divisions") {
+      content.divisions = sanitizeDivisions(body.divisions);
+      recalcTables(content);
+      return send(res, 200, { ok: true, divisions: getDivisions(content), content });
+    }
+    if (action === "reset-season") {
+      const archivedAs = resetSeason(content, { archiveAs: String(content.season || ""), newSeason: Number(body.season) || content.season });
+      return send(res, 200, { ok: true, archivedAs, content });
+    }
+    if (action === "save-standings-base") {
+      content[body.division === "primeraA" ? "standingsBaseA" : "standingsBase"] = body.standingsBase || [];
+      recalcTables(content);
+      return send(res, 200, { ok: true, standingsBase: content[body.division === "primeraA" ? "standingsBaseA" : "standingsBase"], standings: content.standings, standingsA: content.standingsA, content });
+    }
+    if (action === "generate-quiz") {
+      const quiz = await generateDailyQuiz(content, { req });
+      content.quiz = quiz;
+      content.quizAI = { lastRun: new Date().toISOString(), lastError: quiz.aiError || "", model: quiz.model || "", source: quiz.source };
+      return send(res, 200, { ok: true, quiz, content });
     }
     if (action === "save-games") {
       content.games = { ...body.games, updatedAt: new Date().toISOString() };

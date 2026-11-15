@@ -1,26 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { r2GetJSON, r2PutJSONSafe } from '../lib/r2.js';
+import { DEFAULT_DIVISIONS, SEASON, getDivisions, migrateSeason, recalcTables, zeroBase } from '../lib/urba.js';
 
 const BLOB_PATH = 'droprugby/content.json';
 
-// Tabla base de URBA TOP 14 al 10/08 — misma tabla que api/admin.js.
-const DEFAULT_STANDINGS_BASE = [
-  { team: "Newman", pj: 17, pg: 16, pe: 0, pp: 1, diff: 255, pts: 71 },
-  { team: "CASI", pj: 17, pg: 13, pe: 0, pp: 4, diff: 179, pts: 60 },
-  { team: "Hindu", pj: 17, pg: 12, pe: 0, pp: 5, diff: 160, pts: 57 },
-  { team: "Alumni", pj: 17, pg: 11, pe: 0, pp: 6, diff: 220, pts: 56 },
-  { team: "SIC", pj: 17, pg: 11, pe: 0, pp: 6, diff: 127, pts: 51 },
-  { team: "Regatas Bella Vista", pj: 17, pg: 9, pe: 0, pp: 8, diff: 63, pts: 45 },
-  { team: "Los Tilos", pj: 17, pg: 9, pe: 1, pp: 7, diff: -48, pts: 42 },
-  { team: "Belgrano Athletic", pj: 17, pg: 8, pe: 1, pp: 8, diff: -15, pts: 41 },
-  { team: "CUBA", pj: 17, pg: 6, pe: 0, pp: 11, diff: 9, pts: 35 },
-  { team: "Atletico del Rosario", pj: 17, pg: 6, pe: 0, pp: 11, diff: -96, pts: 29 },
-  { team: "Los Matreros", pj: 17, pg: 6, pe: 0, pp: 11, diff: -246, pts: 27 },
-  { team: "La Plata", pj: 17, pg: 4, pe: 0, pp: 13, diff: -92, pts: 25 },
-  { team: "Buenos Aires C&RC", pj: 17, pg: 4, pe: 0, pp: 13, diff: -210, pts: 19 },
-  { team: "Champagnat", pj: 17, pg: 3, pe: 0, pp: 14, diff: -306, pts: 14 }
-];
+// Tabla base por defecto: Top 14 vigente en cero (misma regla que api/admin.js).
+const DEFAULT_STANDINGS_BASE = zeroBase(DEFAULT_DIVISIONS.top14.clubs);
 
 async function seed() {
   const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
@@ -39,17 +25,10 @@ async function seed() {
     teams: JSON.parse(teamsFile),
     results: [],
     standingsBase: DEFAULT_STANDINGS_BASE,
-    standings: DEFAULT_STANDINGS_BASE.map((row, i) => ({
-      position: i + 1,
-      team: row.team,
-      pj: row.pj,
-      pg: row.pg,
-      pe: row.pe,
-      pp: row.pp,
-      diff: row.diff,
-      pts: row.pts
-    }))
+    standingsBaseA: zeroBase(DEFAULT_DIVISIONS.primeraA.clubs),
+    season: SEASON
   };
+  recalcTables(data);
 
   await r2PutJSONSafe(BLOB_PATH, data);
 
@@ -102,6 +81,7 @@ async function repairBlobData(data) {
     local.fixtures.length > 0 &&
     Array.isArray(data.fixtures) &&
     data.fixtures.length === 0 &&
+    !data.season &&
     !hasDeletedHistory(data, 'fixture')
   ) {
     repaired.fixtures = local.fixtures;
@@ -120,7 +100,10 @@ async function readData() {
 
   const { repaired, changed } = await repairBlobData(data);
 
-  if (changed) {
+  // Cambio de temporada: archiva la anterior y arranca en cero (una sola vez).
+  const seasonChanged = migrateSeason(repaired);
+
+  if (changed || seasonChanged) {
     await r2PutJSONSafe(BLOB_PATH, repaired);
   }
 
@@ -176,6 +159,11 @@ async function toPublic(data) {
     fixtures: Array.isArray(data.fixtures) ? data.fixtures : [],
     results: Array.isArray(data.results) ? data.results : [],
     standings: Array.isArray(data.standings) ? data.standings : [],
+    standingsA: Array.isArray(data.standingsA) ? data.standingsA : [],
+    season: Number(data.season) || SEASON,
+    divisions: Object.fromEntries(
+      Object.entries(getDivisions(data)).map(([key, d]) => [key, { name: d.name, competition: d.competition, clubs: d.clubs }])
+    ),
     teams: data.teams && typeof data.teams === 'object' ? data.teams : {},
     settings: {
       clubLogos: data.settings?.clubLogos || {},

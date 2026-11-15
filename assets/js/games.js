@@ -10,11 +10,26 @@
 
 /* ---------- utilidades ---------- */
 
-const TOP14_CLUBS = [
-  "Newman", "CASI", "Hindú", "Alumni", "SIC", "Regatas Bella Vista", "Los Tilos",
-  "Belgrano Athletic", "CUBA", "Atletico del Rosario", "Los Matreros", "La Plata",
-  "Buenos Aires C&RC", "Champagnat"
-];
+// Clubes por división (temporada 2027). Los que valen son los del panel,
+// que llegan en /api/content → divisions; estos son el respaldo.
+const DEFAULT_DIVISION_CLUBS = {
+  top14: [
+    "Newman", "CASI", "SIC", "Buenos Aires C&RC", "Belgrano Athletic", "Regatas Bella Vista",
+    "Hindú", "Los Tilos", "CUBA", "Atletico del Rosario", "La Plata", "Alumni",
+    "San Cirano", "San Luis"
+  ],
+  primeraA: [
+    "Manuel Belgrano", "Banco Nación", "Lomas Athletic", "Curupaytí", "San Fernando", "Pucará",
+    "Gimnasia y Esgrima", "Hurling", "San Andrés", "Pueyrredón", "Olivos", "Deportiva Francesa",
+    "Champagnat", "Los Matreros"
+  ]
+};
+
+async function divisionClubNames(division) {
+  const content = await loadContent();
+  const saved = content?.divisions?.[division]?.clubs;
+  return Array.isArray(saved) && saved.length ? saved : DEFAULT_DIVISION_CLUBS[division] || [];
+}
 
 function gStore(key, value) {
   const k = `drop_game_${key}`;
@@ -98,7 +113,7 @@ function wordLetters(value) {
     .toUpperCase()
     .replace(/Ñ/g, "\u0001")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\u0001/g, "Ñ")
     .replace(/[^A-ZÑ]/g, "");
 }
@@ -118,9 +133,15 @@ function levenshtein(a, b) {
   return prev[b.length];
 }
 
-/** Clubes del Top 14: los de la tabla (en su orden) más los que falten. */
-async function loadClubs() {
-  const standings = await loadStandings();
+/** Clubes de una división: los de su tabla (en su orden) más los que falten. */
+async function loadClubs(division = "top14") {
+  const content = await loadContent();
+  const names = await divisionClubNames(division);
+  const inDivision = new Set(names.map(name => normalizeTeamName(getTeamByName(name)?.name || name)));
+  const table = division === "primeraA"
+    ? (Array.isArray(content?.standingsA) ? content.standingsA : [])
+    : await loadStandings();
+  const standings = table.filter(row => inDivision.has(normalizeTeamName(getTeamByName(row.team)?.name || row.team)));
   const seen = new Set();
   const out = [];
   const add = (name, row) => {
@@ -133,7 +154,7 @@ async function loadClubs() {
     out.push({ name: canonical, logo: team?.logo || "", row: row || null });
   };
   standings.forEach(row => add(row.team, row));
-  TOP14_CLUBS.forEach(name => add(name, null));
+  names.forEach(name => add(name, null));
   return out;
 }
 
@@ -155,13 +176,14 @@ async function loadPlayers() {
         first = parts.length > 1 ? parts[0] : "";
         last = parts.slice(parts.length > 1 ? 1 : 0).join(" ");
       }
-      const position = Number(p.position);
+      const positions = playerPositions(p);
       return {
         first,
         last,
         name: `${first} ${last}`.trim(),
         club: getTeamByName(p.club)?.name || String(p.club || "").trim(),
-        position: position >= 1 && position <= 15 ? position : null
+        position: positions[0] || null,
+        positions
       };
     });
 
@@ -178,6 +200,12 @@ async function loadPlayers() {
   }
 
   return PLAYERS_CACHE;
+}
+
+/** Puestos de un jugador (1 a 15). Acepta "positions" (varios) o "position" (uno). */
+function playerPositions(p) {
+  const raw = Array.isArray(p?.positions) ? p.positions : [p?.position];
+  return [...new Set(raw.map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 15))];
 }
 
 /** Comprueba que una imagen cargue de verdad. */
@@ -240,6 +268,23 @@ function xvPositionLabel(n) {
   return pos ? `${pos.n} · ${pos.name}` : "";
 }
 
+/** "Wing o fullback", "Pilar", "Centro o apertura"… a partir de los números. */
+function xvRolesLabel(positions) {
+  const roles = [...new Set((positions || []).map(n => xvPosition(n)?.role).filter(Boolean))];
+  if (!roles.length) return "";
+  const text = roles.length > 1 ? `${roles.slice(0, -1).join(", ")} o ${roles[roles.length - 1]}` : roles[0];
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** Puestos donde puede entrar un jugador: los suyos y, si se permite, su espejo. */
+function xvSlotsForPlayer(player, flex) {
+  const slots = [];
+  (player.positions || []).forEach(n => xvSlotsFor(n, flex).forEach(slot => {
+    if (!slots.includes(slot)) slots.push(slot);
+  }));
+  return slots;
+}
+
 /** Puestos donde puede jugar alguien cuyo puesto natural es `n`. */
 function xvSlotsFor(n, flex) {
   const slots = [n];
@@ -293,7 +338,7 @@ async function mountRugbyXV(root) {
   if (!settings.enabled) return gamePaused(root);
 
   const players = (await loadPlayers())
-    .filter(p => p.position)
+    .filter(p => p.positions.length)
     .map(p => {
       const full = nameKey(p.name);
       const last = nameKey(p.last);
@@ -457,16 +502,15 @@ async function mountRugbyXV(root) {
       // Primer candidato que entre: en su puesto o en el puesto espejo.
       let placed = null;
       for (const player of fresh) {
-        const slot = xvSlotsFor(player.position, settings.flex).find(n => !lineup[n]);
+        const slot = xvSlotsForPlayer(player, settings.flex).find(n => !lineup[n]);
         if (slot) { placed = { player, slot }; break; }
       }
 
       if (!placed) {
         const player = fresh[0];
-        const pos = xvPosition(player.position);
-        const slots = xvSlotsFor(player.position, settings.flex);
-        const holders = slots.map(n => lineup[n].last).join(" y ");
-        say(`${player.name} juega de ${pos.role} y ${slots.length > 1 ? "esos puestos ya los ocupan" : "ese puesto ya lo ocupa"} ${holders}. ¡Rebota!`, "bad");
+        const slots = xvSlotsForPlayer(player, settings.flex);
+        const holders = [...new Set(slots.map(n => lineup[n].last))].join(", ").replace(/, ([^,]*)$/, " y $1");
+        say(`${player.name} juega de ${xvRolesLabel(player.positions).toLowerCase()} y ${slots.length > 1 ? "esos puestos ya los ocupan" : "ese puesto ya lo ocupa"} ${holders}. ¡Rebota!`, "bad");
         slots.forEach(n => replay(slotEl(n), "shake"));
         return;
       }
@@ -643,7 +687,7 @@ async function mountPlayerWordle(root) {
     return `<div class="wd-hints">
       <div class="wd-hint open"><small>Apellido</small><span>${entry.word.length} letras</span></div>
       ${chip("Club", settings.hintClubAfter, `<span class="wd-hint-club">${teamShield(p.club, "team-shield")} ${escapeHTML(p.club)}</span>`)}
-      ${chip("Puesto", settings.hintPositionAfter, `<span>${p.position ? escapeHTML(xvPositionLabel(p.position)) : "—"}</span>`)}
+      ${chip("Puesto", settings.hintPositionAfter, `<span>${p.positions.length ? escapeHTML(xvRolesLabel(p.positions)) : "—"}</span>`)}
     </div>`;
   }
 
@@ -699,7 +743,7 @@ async function mountPlayerWordle(root) {
     return `<div class="wd-result ${ok ? "win" : "lose"}">
       <span class="drop-kicker">${ok ? (guesses.length === 1 ? "¡De primera!" : "¡Lo sacaste!") : "Se acabaron los intentos"}</span>
       <div class="wd-answer">${teamShield(p.club, "team-shield big")}
-        <div><strong>${escapeHTML(p.name)}</strong><span>${escapeHTML(p.club)}${p.position ? " · " + escapeHTML(xvPositionLabel(p.position)) : ""}</span></div>
+        <div><strong>${escapeHTML(p.name)}</strong><span>${escapeHTML(p.club)}${p.positions.length ? " · " + escapeHTML(xvRolesLabel(p.positions)) : ""}</span></div>
       </div>
       ${daily ? statsHTML() : ""}
       <div class="quiz-actions">
@@ -843,7 +887,7 @@ async function mountShieldGame(root) {
   if (!settings.enabled) return gamePaused(root);
 
   root.innerHTML = `<p class="empty-state">Preparando los escudos…</p>`;
-  const all = (await loadClubs()).filter(c => c.logo);
+  const all = [...await loadClubs("top14"), ...await loadClubs("primeraA")].filter(c => c.logo);
   const checks = await Promise.all(all.map(c => imageLoads(c.logo)));
   const clubs = all.filter((_, i) => checks[i]);
 
@@ -914,7 +958,7 @@ async function mountShieldGame(root) {
       </div>`;
     root.querySelector("[data-again]").addEventListener("click", start);
     root.querySelector("[data-share]").addEventListener("click", e =>
-      copyText(`Adiviné ${score}/${ROUNDS} escudos del URBA Top 14 en DropRugby 🏉 ¿Me ganás? ${location.origin}/escudos`, e.currentTarget));
+      copyText(`Adiviné ${score}/${ROUNDS} escudos de la URBA en DropRugby 🏉 ¿Me ganás? ${location.origin}/escudos`, e.currentTarget));
     if (score === ROUNDS) confetti();
   }
 
@@ -925,13 +969,13 @@ async function mountShieldGame(root) {
    4) URBA TOP 14 — clubes y planteles
    ========================================================================== */
 
-async function mountUrbaClubs(root) {
-  const [clubs, players] = await Promise.all([loadClubs(), loadPlayers()]);
+async function mountUrbaClubs(root, division = "top14") {
+  const [clubs, players] = await Promise.all([loadClubs(division), loadPlayers()]);
   if (!clubs.length) { root.innerHTML = `<p class="empty-state">Todavía no hay clubes cargados.</p>`; return; }
 
   const squadOf = name => players
     .filter(p => normalizeTeamName(p.club) === normalizeTeamName(name))
-    .sort((a, b) => (a.position || 99) - (b.position || 99));
+    .sort((a, b) => (a.position || 99) - (b.position || 99) || a.last.localeCompare(b.last));
 
   root.innerHTML = clubs.map((c, i) => {
     const row = c.row;
@@ -939,11 +983,11 @@ async function mountUrbaClubs(root) {
     return `
       <article class="club-card reveal" style="transition-delay:${(i % 4) * 60}ms">
         <div class="club-head">${teamShield(c.name, "team-shield big")}<div><h3>${escapeHTML(c.name)}</h3>
-          <span>${row ? `${i + 1}° · ${Number(row.pts) || 0} pts · ${Number(row.pg) || 0}G ${Number(row.pe) || 0}E ${Number(row.pp) || 0}P` : "URBA Top 14"}</span></div></div>
+          <span>${row && Number(row.pj) > 0 ? `${i + 1}° · ${Number(row.pts) || 0} pts · ${Number(row.pg) || 0}G ${Number(row.pe) || 0}E ${Number(row.pp) || 0}P` : division === "primeraA" ? "Primera A" : "Top 14"}</span></div></div>
         ${squad.length ? `
         <details class="club-squad">
-          <summary>Ver el XV <i>${squad.length} jugadores</i></summary>
-          <ol class="club-players">${squad.map(p => `<li><b>${p.position || "·"}</b><span>${escapeHTML(p.name)}</span></li>`).join("")}</ol>
+          <summary>Ver el plantel <i>${squad.length} jugadores</i></summary>
+          <ol class="club-players">${squad.map(p => `<li><b>${p.positions.length ? p.positions.join("/") : "·"}</b><span>${escapeHTML(p.name)}</span></li>`).join("")}</ol>
         </details>` : `<p class="club-empty">Plantel en carga.</p>`}
       </article>`;
   }).join("");
@@ -1017,8 +1061,25 @@ async function renderGames() {
   if (page === "home") return mountHome();
 
   if (page === "urba") {
-    const el = document.getElementById("urba-clubs");
-    if (el) await mountUrbaClubs(el);
+    // Pestañas Top 14 / Primera A: se marca la sección que está a la vista.
+    const tabs = [...document.querySelectorAll(".division-tabs a")];
+    const targets = tabs.map(tab => document.querySelector(tab.getAttribute("href"))).filter(Boolean);
+    if (tabs.length && "IntersectionObserver" in window) {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("href") === "#" + entry.target.id));
+        });
+      }, { rootMargin: "-30% 0px -60% 0px" });
+      targets.forEach(t => io.observe(t));
+    }
+
+    const top14 = document.getElementById("urba-clubs");
+    const primeraA = document.getElementById("urba-clubs-a");
+    await Promise.all([
+      top14 ? mountUrbaClubs(top14, "top14") : null,
+      primeraA ? mountUrbaClubs(primeraA, "primeraA") : null
+    ]);
     return;
   }
 

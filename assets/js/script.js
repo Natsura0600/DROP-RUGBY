@@ -86,7 +86,7 @@ const DROP_RUGBY_TEAMS = {
   atletico_del_rosario: {
     name: "Atletico del Rosario",
     logo: "https://cdn.discordapp.com/attachments/1536231065184903278/1536231293858226186/rosario.png?ex=6a7aa662&is=6a7954e2&hm=94ec235340236bf245fd7380de7905518da04584180a7314140d35185156f7fb",
-    aliases: ["plaza", "atletico del rosario", "atlético del rosario"]
+    aliases: ["plaza", "rosario", "atletico del rosario", "atlético del rosario"]
   },
 
   sic: {
@@ -371,6 +371,7 @@ async function loadContent() {
       };
 
       applyTeamData(CONTENT_CACHE);
+      window.DROP_SEASON = CONTENT_CACHE.season || "";
 
       return CONTENT_CACHE;
 
@@ -558,7 +559,8 @@ function escapeHTML(value) {
 const COMPETITION_ORDER = [
   "LOS PUMAS",
   "SUPER RUGBY",
-  "URBA TOP 14"
+  "URBA TOP 14",
+  "URBA PRIMERA A"
 ];
 
 function competitionSortKey(name) {
@@ -1042,57 +1044,29 @@ async function renderCalendar() {
    ========================================================================== */
 
 async function renderUrbaStandings() {
-  const element =
-    document.getElementById(
-      "urba-standings"
+  const content = await loadContent();
+
+  const top14 = document.getElementById("urba-standings");
+  if (top14) paintStandings(top14, await loadStandings());
+
+  const primeraA = document.getElementById("urba-standings-a");
+  if (primeraA) {
+    paintStandings(primeraA, Array.isArray(content?.standingsA) ? content.standingsA : []);
+  }
+}
+
+/** Dibuja una tabla de posiciones (la API ya la manda filtrada por división). */
+function paintStandings(element, rows) {
+  const standings = (Array.isArray(rows) ? rows : [])
+    .filter((team) => team && team.team)
+    .slice()
+    .sort((a, b) =>
+      (Number(b.pts) || 0) - (Number(a.pts) || 0) ||
+      (Number(b.diff) || 0) - (Number(a.diff) || 0)
     );
 
-  if (!element) return;
-
-  const TOP14_NAMES = new Set([
-    "newman", "casi", "hindu", "alumni", "sic",
-    "regatas bella vista", "los tilos", "belgrano athletic",
-    "cuba", "atletico del rosario", "los matreros", "la plata",
-    "buenos aires c&rc", "champagnat"
-  ]);
-
-  const TOP14_ALIASES = {
-    "belgrano": "belgrano athletic",
-    "regatas": "regatas bella vista",
-    "plaza": "atletico del rosario",
-    "biei": "buenos aires c&rc",
-    "bac": "buenos aires c&rc",
-    "champa": "champagnat"
-  };
-
-  const normalizePublicTeam = (name) =>
-    String(name || "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const standings =
-    (await loadStandings())
-      .filter((team) => {
-        const key = normalizePublicTeam(team.team);
-        return TOP14_NAMES.has(TOP14_ALIASES[key] || key);
-      })
-      .map((team) => ({
-        ...team,
-        team:
-          TOP14_ALIASES[normalizePublicTeam(team.team)] ||
-          team.team
-      }))
-      .slice(0, 14)
-      .sort((a, b) =>
-        (Number(b.pts) || 0) -
-        (Number(a.pts) || 0) ||
-        (Number(b.diff) || 0) -
-        (Number(a.diff) || 0)
-      );
+  // Hasta que se juegue la primera fecha no se marcan zonas.
+  const played = standings.some((team) => (Number(team.pj) || 0) > 0);
 
   if (!standings.length) {
     element.innerHTML = `
@@ -1115,10 +1089,9 @@ async function renderUrbaStandings() {
 
 
   const relegationFrom =
-    Math.max(
-      0,
-      standings.length - 2
-    );
+    played
+      ? Math.max(0, standings.length - 2)
+      : Infinity;
 
 
   element.innerHTML = `
@@ -1132,7 +1105,7 @@ async function renderUrbaStandings() {
 
     <div class="table-scroll">
 
-      <table class="standings-table">
+      <table class="standings-table${played ? "" : " not-started"}">
 
         <thead>
           <tr>
@@ -1208,7 +1181,7 @@ async function renderUrbaStandings() {
 
     </div>
 
-    <div class="standings-legend">
+    ${played ? `<div class="standings-legend">
 
       <span>
         <i class="dot dot-ok"></i>
@@ -1220,7 +1193,7 @@ async function renderUrbaStandings() {
         Descenso
       </span>
 
-    </div>
+    </div>` : `<div class="standings-legend"><span>Temporada ${escapeHTML(String(window.DROP_SEASON || ""))} · todavía no se jugó ninguna fecha.</span></div>`}
   `;
 }
 
@@ -1235,7 +1208,7 @@ const SITE_NAV = [
   ["wordle.html", "Wordle", "wordle"],
   ["escudos.html", "Escudos", "escudos"],
   ["quiz.html", "Quiz", "quiz"],
-  ["urba-top-14.html", "URBA Top 14", "urba"],
+  ["urba-top-14.html", "URBA", "urba"],
   ["calendario.html", "Calendario", "calendario"],
   ["contacto.html", "Contacto", "contacto"]
 ];
@@ -1312,7 +1285,8 @@ function renderLayout() {
             </div>
             <div class="footer-col">
               <strong>TORNEO</strong>
-              <a href="${BASE}urba-top-14.html">Tabla de posiciones</a>
+              <a href="${BASE}urba-top-14.html#top-14">Tabla Top 14</a>
+              <a href="${BASE}urba-top-14.html#primera-a">Tabla Primera A</a>
               <a href="${BASE}urba-top-14.html#clubes">Clubes y planteles</a>
               <a href="${BASE}calendario.html">Calendario</a>
             </div>
@@ -1405,6 +1379,7 @@ function categoryLabel(category) {
   const key = normalizeTeamName(category);
   if (key === "super rugby") return "Internacional";
   if (key === "urba top 14") return "URBA Top 14";
+  if (key === "urba primera a") return "Primera A";
   return category || "Rugby";
 }
 
@@ -1496,7 +1471,7 @@ const GAME_DEFAULTS = {
     manualPlayer: ""
   },
   escudos: { enabled: true, rounds: 10 },
-  quiz: { enabled: true }
+  quiz: { enabled: true, ai: true }
 };
 
 let GAME_SETTINGS = null;
@@ -1535,7 +1510,7 @@ async function loadGameSettings() {
       enabled: r.escudos?.enabled !== false,
       rounds: clampInt(r.escudos?.rounds, 3, 14, d.escudos.rounds)
     },
-    quiz: { enabled: r.quiz?.enabled !== false }
+    quiz: { enabled: r.quiz?.enabled !== false, ai: r.quiz?.ai !== false }
   };
 
   return GAME_SETTINGS;

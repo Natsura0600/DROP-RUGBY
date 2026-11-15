@@ -29,14 +29,31 @@ for (const club of Object.values(teams.clubs || {})) {
   for (const key of [club.name, ...(club.aliases || [])]) clubIndex.set(norm(key), club.name);
 }
 
-// Puestos por nombre → número (los ambiguos toman el primero; mejor usar número)
+// Puestos por nombre → números de camiseta (un jugador puede tener varios).
 const POSITIONS = {
-  pilar: 1, "pilar izquierdo": 1, hooker: 2, talonador: 2, "pilar derecho": 3,
-  "segunda linea": 4, "2da linea": 4, segunda: 4, ala: 6, "ala ciego": 6, "ala abierto": 7,
-  octavo: 8, "numero 8": 8, "medio scrum": 9, scrum: 9, apertura: 10, "medio apertura": 10,
-  centro: 12, "primer centro": 12, "segundo centro": 13, wing: 11, "wing izquierdo": 11,
-  "wing derecho": 14, fullback: 15, "back": 15
+  pilar: [1, 3], "pilar izquierdo": [1], "pilar derecho": [3], hooker: [2], talonador: [2],
+  "segunda linea": [4, 5], "2da linea": [4, 5], segunda: [4, 5],
+  ala: [6, 7], "ala ciego": [6], "ala abierto": [7], "tercera linea": [6, 7, 8],
+  octavo: [8], "numero 8": [8], "medio scrum": [9], scrum: [9], medio: [9],
+  apertura: [10], "medio apertura": [10], centro: [12, 13], "primer centro": [12], "segundo centro": [13],
+  wing: [11, 14], "wing izquierdo": [11], "wing derecho": [14], fullback: [15], zaguero: [15],
+  back: [9, 10, 11, 12, 13, 14, 15], backs: [9, 10, 11, 12, 13, 14, 15],
+  forward: [1, 2, 3, 4, 5, 6, 7, 8], forwards: [1, 2, 3, 4, 5, 6, 7, 8], delantero: [1, 2, 3, 4, 5, 6, 7, 8]
 };
+
+// "10", "11/14", "9-15", "wing/fullback", "pilar y hooker" → [números] (null si no se entiende)
+function parsePositions(raw) {
+  const out = [];
+  for (const part of String(raw).split(/[\/|+;]|\s+y\s+|\s+o\s+/i).map(norm).filter(Boolean)) {
+    const range = part.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
+    if (range) for (let n = Number(range[1]); n <= Number(range[2]); n++) out.push(n);
+    else if (/^\d{1,2}$/.test(part)) out.push(Number(part));
+    else if (POSITIONS[part]) out.push(...POSITIONS[part]);
+    else return null;
+  }
+  if (!out.length || out.some((n) => !(n >= 1 && n <= 15))) return null;
+  return [...new Set(out)].sort((a, b) => a - b);
+}
 
 function parseCSV(text) {
   const first = text.split(/\r?\n/)[0] || "";
@@ -88,15 +105,17 @@ rows.forEach((r, n) => {
   if (!last) return errors.push(`Línea ${line}: falta el apellido.`);
   const club = clubIndex.get(norm(clubRaw));
   if (!club) return errors.push(`Línea ${line}: club desconocido "${clubRaw}" (${name}).`);
-  let position = null;
+  let positions = [];
   if (posRaw) {
-    position = /^\d+$/.test(posRaw) ? Number(posRaw) : POSITIONS[norm(posRaw)];
-    if (!(position >= 1 && position <= 15)) return errors.push(`Línea ${line}: puesto no válido "${posRaw}" (${name}).`);
+    positions = parsePositions(posRaw);
+    if (!positions) return errors.push(`Línea ${line}: puesto no válido "${posRaw}" (${name}).`);
   }
   const key = `${norm(club)}|${norm(name)}`;
   if (seen.has(key)) return errors.push(`Línea ${line}: repetido ${name} (${club}).`);
   seen.add(key);
-  players.push(position ? { first, last, name, club, position } : { first, last, name, club });
+  players.push(positions.length
+    ? { first, last, name, club, position: positions[0], positions }
+    : { first, last, name, club });
 });
 
 players.sort((a, b) => a.club.localeCompare(b.club) || (a.position || 99) - (b.position || 99) || a.name.localeCompare(b.name));

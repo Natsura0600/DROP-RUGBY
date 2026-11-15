@@ -344,8 +344,9 @@ h1, h2, h3, h4, p { margin: 0; }
 .standings-table .col-team { text-align: left; }
 .standings-table td:last-child { font-family: var(--display); font-size: 16px; font-weight: 800; }
 .standings-table tbody tr:nth-child(-n+4) .col-pos { color: var(--ink); box-shadow: inset 3px 0 0 var(--success); }
+.standings-table.not-started tbody tr .col-pos { color: var(--muted-2); box-shadow: none; }
 .standings-table tr.is-relegation .col-pos { color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
-.standing-team { display: flex; align-items: center; gap: 10px; font-weight: 700; text-transform: capitalize; }
+.standing-team { display: flex; align-items: center; gap: 10px; font-weight: 700; }
 .is-positive { color: var(--success); font-weight: 700; }
 .is-negative { color: var(--accent); font-weight: 700; }
 .standings-legend { display: flex; gap: 20px; padding: 14px 16px 0; color: var(--muted); font-size: 12.5px; font-weight: 600; }
@@ -893,3 +894,10 @@ h1, h2, h3, h4, p { margin: 0; }
   .club-marquee-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; padding: 0 16px; }
   .club-marquee { -webkit-mask-image: none; mask-image: none; }
 }
+
+/* Divisiones (página URBA) */
+.division-tabs { position: sticky; top: 76px; z-index: 20; display: inline-flex; gap: 4px; margin-bottom: 28px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.division-tabs a { padding: 9px 18px; border-radius: 999px; font-size: 12.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); transition: background .18s, color .18s; }
+.division-tabs a.active, .division-tabs a:hover { background: var(--ink); color: #fff; }
+#top-14, #primera-a, #clubes, #clubes-primera-a { scroll-margin-top: 140px; }
+@media (max-width: 640px) { .division-tabs { top: 68px; } }

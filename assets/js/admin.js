@@ -144,6 +144,77 @@ const TOP14_ALIASES = {
   "los matreros": "Los Matreros"
 };
 
+/* ---------- Divisiones: Top 14 y Primera A (misma lista que lib/urba.js) ---------- */
+
+const DIVISION_DEFS = {
+  top14: {
+    key: "top14",
+    label: "Top 14",
+    competition: "URBA TOP 14",
+    baseKey: "standingsBase",
+    tableKey: "standings",
+    clubs: [
+      "Newman", "CASI", "SIC", "Buenos Aires C&RC", "Belgrano Athletic", "Regatas Bella Vista",
+      "Hindú", "Los Tilos", "CUBA", "Atletico del Rosario", "La Plata", "Alumni",
+      "San Cirano", "San Luis"
+    ]
+  },
+  primeraA: {
+    key: "primeraA",
+    label: "Primera A",
+    competition: "URBA PRIMERA A",
+    baseKey: "standingsBaseA",
+    tableKey: "standingsA",
+    clubs: [
+      "Manuel Belgrano", "Banco Nación", "Lomas Athletic", "Curupaytí", "San Fernando", "Pucará",
+      "Gimnasia y Esgrima", "Hurling", "San Andrés", "Pueyrredón", "Olivos", "Deportiva Francesa",
+      "Champagnat", "Los Matreros"
+    ]
+  }
+};
+
+const CLUB_KEY_ALIASES = {
+  "belgrano": "belgrano athletic", "regatas": "regatas bella vista", "regatas de bella vista": "regatas bella vista",
+  "plaza": "atletico del rosario", "rosario": "atletico del rosario", "atletico rosario": "atletico del rosario",
+  "atletico del rosario uba": "atletico del rosario", "ca atletico del rosario": "atletico del rosario",
+  "biei": "buenos aires crc", "bac": "buenos aires crc", "buenos aires": "buenos aires crc",
+  "champa": "champagnat", "matreros": "los matreros", "lomas": "lomas athletic",
+  "geba": "gimnasia y esgrima", "gimnasia": "gimnasia y esgrima", "francesa": "deportiva francesa",
+  "hurlingham": "hurling", "banco": "banco nacion", "bna": "banco nacion"
+};
+
+/** Clave comparable de un club (misma regla que el servidor). */
+function clubKey(name) {
+  const key = String(name || "").trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/^club\s+/, "").replace(/&/g, "")
+    .replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  return CLUB_KEY_ALIASES[key] || key;
+}
+
+let RESULTS_DIVISION = "top14";
+
+function getDivision(key) {
+  const def = DIVISION_DEFS[key] || DIVISION_DEFS.top14;
+  const saved = state.content.divisions?.[def.key]?.clubs;
+  return { ...def, clubs: Array.isArray(saved) && saved.length ? saved : def.clubs };
+}
+
+function resultsDivision() {
+  return getDivision(RESULTS_DIVISION);
+}
+
+function divisionOfCompetition(competition) {
+  const comp = String(competition || "").trim().toUpperCase();
+  return Object.keys(DIVISION_DEFS).find((key) => DIVISION_DEFS[key].competition === comp) || null;
+}
+
+/** Nombre del club según la lista de su división (o el que vino). */
+function canonicalDivisionClub(name, division = resultsDivision()) {
+  const key = clubKey(name);
+  return division.clubs.find((club) => clubKey(club) === key) || "";
+}
+
 function normalizeTop14Team(name) {
   const raw = String(name || "").trim();
   if (!raw) return "";
@@ -152,7 +223,7 @@ function normalizeTop14Team(name) {
 }
 
 function isOfficialTop14Team(name) {
-  return TOP14_TEAMS.includes(normalizeTop14Team(name));
+  return !!canonicalDivisionClub(name);
 }
 
 function fixtureKey(fixture) {
@@ -171,10 +242,15 @@ function fixtureKey(fixture) {
     .toLowerCase();
 }
 
+// Partidos de la división elegida en Resultados (Top 14 o Primera A).
 function isURBATop14(fixture) {
   return String(fixture?.competition || "")
     .trim()
-    .toUpperCase() === "URBA TOP 14";
+    .toUpperCase() === resultsDivision().competition;
+}
+
+function isDivisionFixture(fixture) {
+  return !!divisionOfCompetition(fixture?.competition);
 }
 
 function getFixtureName(fixture) {
@@ -320,7 +396,14 @@ function normalizeContent(content) {
       data.quiz &&
       typeof data.quiz === "object"
         ? data.quiz
-        : null
+        : null,
+
+    standingsA: Array.isArray(data.standingsA) ? data.standingsA : [],
+    standingsBaseA: Array.isArray(data.standingsBaseA) ? data.standingsBaseA : [],
+    divisions: data.divisions && typeof data.divisions === "object" ? data.divisions : null,
+    season: Number(data.season) || null,
+    seasons: data.seasons && typeof data.seasons === "object" ? data.seasons : {},
+    quizAI: data.quizAI && typeof data.quizAI === "object" ? data.quizAI : null
   };
 }
 
@@ -389,7 +472,7 @@ function switchSection(section) {
     dashboard: "Dashboard",
     articles: "Noticias",
     fixtures: "Partidos",
-    results: "Resultados TOP 14",
+    results: "Resultados y tablas",
     quiz: "Quiz",
     games: "Juegos",
     players: "Jugadores",
@@ -559,7 +642,7 @@ function renderDashboard() {
       No hay noticias programadas.
     </div>`;
 
-  const pending = getPendingFixtures();
+  const pending = getPendingFixtures(true);
 
   $("#dashboard-pending-results").innerHTML =
     pending
@@ -573,7 +656,7 @@ function renderDashboard() {
             </div>
             <div class="dashboard-fixture-main">
               <b>${esc(getFixtureName(fixture))}</b>
-              <small>URBA TOP 14 · resultado pendiente</small>
+              <small>${esc(getDivision(divisionOfCompetition(fixture.competition)).label)} · resultado pendiente</small>
             </div>
             <button class="action" data-add-result="${esc(fixture.id || fixtureKey(fixture))}">CARGAR</button>
           </article>
@@ -1209,7 +1292,8 @@ function fixtureForm(fixture = {}) {
           ${[
             "Los Pumas",
             "Super Rugby",
-            "URBA TOP 14"
+            "URBA TOP 14",
+            "URBA PRIMERA A"
           ]
             .map(
               (competition) =>
@@ -1324,9 +1408,9 @@ function resultForFixture(fixture) {
   );
 }
 
-function getPendingFixtures() {
+function getPendingFixtures(all = false) {
   return state.content.fixtures
-    .filter(isURBATop14)
+    .filter(all ? isDivisionFixture : isURBATop14)
     .filter(
       (fixture) =>
         !resultForFixture(fixture)
@@ -1341,8 +1425,12 @@ function getPendingFixtures() {
 
 function renderResults() {
   const results = [...state.content.results]
-    .filter((result) => String(result.competition || '').toUpperCase() === 'URBA TOP 14')
+    .filter((result) => String(result.competition || '').toUpperCase() === resultsDivision().competition)
     .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+  $$('[data-results-division]').forEach((btn) => btn.classList.toggle('active', btn.dataset.resultsDivision === RESULTS_DIVISION));
+  const divisionLabel = $('#results-division-label');
+  if (divisionLabel) divisionLabel.textContent = `URBA ${resultsDivision().label.toUpperCase()} · TEMPORADA ${state.content.season || ""}`;
 
   const list = $('#results-list');
   if (list) {
@@ -1400,166 +1488,59 @@ function renderResults() {
   }
 }
 
+// Misma regla que lib/urba.js: tabla base + resultados de la división.
 function calculateStandings() {
-  const teams = new Map();
-  const baseByTeam = new Map();
+  const division = resultsDivision();
+  const rows = new Map();
 
-  (state.content.standingsBase || [])
-    .forEach((base) => {
-      const cleanName = normalizeTop14Team(base.team);
-      if (!cleanName) return;
-
-      baseByTeam.set(
-        cleanName.toLowerCase(),
-        {
-          pj: Number(base.pj) || 0,
-          pg: Number(base.pg) || 0,
-          pe: Number(base.pe) || 0,
-          pp: Number(base.pp) || 0,
-          diff: Number(base.diff) || 0,
-          pts: Number(base.pts) || 0
-        }
-      );
-    });
-
-  const ensureTeam = (name) => {
-    const clean = normalizeTop14Team(name);
-    if (!clean || !isOfficialTop14Team(clean)) return null;
-
-    const key = clean.toLowerCase();
-
-    if (!teams.has(key)) {
-      const base =
-        baseByTeam.get(key);
-
-      teams.set(key, {
-        team: clean,
-        pj: base ? base.pj : 0,
-        pg: base ? base.pg : 0,
-        pe: base ? base.pe : 0,
-        pp: base ? base.pp : 0,
-        pf: 0,
-        pc: 0,
-        baseDiff: base ? base.diff : 0,
-        diff: 0,
-        bonus: 0,
-        pts: base ? base.pts : 0
-      });
+  const row = (name) => {
+    const club = canonicalDivisionClub(name, division);
+    if (!club) return null;
+    const key = clubKey(club);
+    if (!rows.has(key)) {
+      rows.set(key, { team: club, pj: 0, pg: 0, pe: 0, pp: 0, pf: 0, pc: 0, baseDiff: 0, bonus: 0, pts: 0 });
     }
-
-    return teams.get(key);
+    return rows.get(key);
   };
 
-  (state.content.standingsBase || [])
-    .forEach((base) =>
-      ensureTeam(base.team)
-    );
+  division.clubs.forEach(row);
 
-  state.content.fixtures
-    .filter(isURBATop14)
-    .forEach((fixture) => {
-      ensureTeam(
-        fixture.home ||
-        fixture.team1 ||
-        fixture.local
-      );
-
-      ensureTeam(
-        fixture.away ||
-        fixture.team2 ||
-        fixture.visitante
-      );
-    });
+  (state.content[division.baseKey] || []).forEach((base) => {
+    const r = row(base.team);
+    if (!r) return;
+    r.pj += Number(base.pj) || 0;
+    r.pg += Number(base.pg) || 0;
+    r.pe += Number(base.pe) || 0;
+    r.pp += Number(base.pp) || 0;
+    r.baseDiff += Number(base.diff) || 0;
+    r.pts += Number(base.pts) || 0;
+  });
 
   state.content.results
-    .filter(
-      (result) =>
-        String(
-          result.competition || ""
-        ).toUpperCase() ===
-        "URBA TOP 14"
-    )
+    .filter((result) => String(result.competition || "").toUpperCase() === division.competition)
     .forEach((result) => {
-      const home =
-        ensureTeam(result.home);
+      const home = row(result.home);
+      const away = row(result.away);
+      const hs = Number(result.homeScore);
+      const as = Number(result.awayScore);
+      if (!home || !away || !Number.isInteger(hs) || !Number.isInteger(as)) return;
 
-      const away =
-        ensureTeam(result.away);
+      home.pj++; away.pj++;
+      home.pf += hs; home.pc += as;
+      away.pf += as; away.pc += hs;
 
-      if (!home || !away) return;
+      if (hs > as) { home.pg++; away.pp++; home.pts += 4; }
+      else if (hs < as) { away.pg++; home.pp++; away.pts += 4; }
+      else { home.pe++; away.pe++; home.pts += 2; away.pts += 2; }
 
-      const hs =
-        Number(result.homeScore);
-
-      const as =
-        Number(result.awayScore);
-
-      if (
-        !Number.isFinite(hs) ||
-        !Number.isFinite(as)
-      ) {
-        return;
-      }
-
-      home.pj++;
-      away.pj++;
-
-      home.pf += hs;
-      home.pc += as;
-
-      away.pf += as;
-      away.pc += hs;
-
-      if (hs > as) {
-        home.pg++;
-        away.pp++;
-        home.pts += 4;
-      } else if (hs < as) {
-        away.pg++;
-        home.pp++;
-        away.pts += 4;
-      } else {
-        home.pe++;
-        away.pe++;
-        home.pts += 2;
-        away.pts += 2;
-      }
-
-      const bonus = normalizeTop14Team(result.bonusTeam || "").toLowerCase();
-
-      if (
-        bonus &&
-        bonus ===
-          home.team.toLowerCase()
-      ) {
-        home.bonus++;
-        home.pts++;
-      }
-
-      if (
-        bonus &&
-        bonus ===
-          away.team.toLowerCase()
-      ) {
-        away.bonus++;
-        away.pts++;
-      }
+      const bonus = clubKey(result.bonusTeam || "");
+      if (bonus && bonus === clubKey(home.team)) { home.bonus++; home.pts++; }
+      if (bonus && bonus === clubKey(away.team)) { away.bonus++; away.pts++; }
     });
 
-  return [...teams.values()]
-    .map((team) => ({
-      ...team,
-      diff:
-        (team.baseDiff || 0) +
-        (team.pf - team.pc)
-    }))
-    .sort(
-      (a, b) =>
-        b.pts - a.pts ||
-        b.diff - a.diff ||
-        b.pf - a.pf ||
-        a.team.localeCompare(b.team)
-    );
+  return [...rows.values()]
+    .map((r) => ({ ...r, diff: r.baseDiff + (r.pf - r.pc) }))
+    .sort((a, b) => b.pts - a.pts || b.diff - a.diff || b.pf - a.pf || a.team.localeCompare(b.team, "es"));
 }
 
 function renderStandingsTable() {
@@ -1605,7 +1586,7 @@ function renderStandingsTable() {
       .join("") ||
     `<tr>
       <td colspan="11" class="muted">
-        No hay equipos de URBA TOP 14.
+        No hay equipos cargados en esta división.
       </td>
     </tr>`;
 }
@@ -1616,9 +1597,10 @@ function renderStandingsBaseEditor() {
 
   if (!tbody) return;
 
+  const baseKey = resultsDivision().baseKey;
   const rows =
-    state.content.standingsBase?.length
-      ? state.content.standingsBase
+    state.content[baseKey]?.length
+      ? state.content[baseKey]
       : [
           {
             team: "",
@@ -1726,7 +1708,7 @@ function renderStandingsBaseEditor() {
 
           rows.splice(idx, 1);
 
-          state.content.standingsBase =
+          state.content[resultsDivision().baseKey] =
             rows;
 
           renderStandingsBaseEditor();
@@ -1797,7 +1779,7 @@ $("#standings-base-add-row")
         pts: 0
       });
 
-      state.content.standingsBase =
+      state.content[resultsDivision().baseKey] =
         rows;
 
       renderStandingsBaseEditor();
@@ -1819,17 +1801,22 @@ $("#standings-base-save")
           await api(
             "save-standings-base",
             {
-              standingsBase: rows
+              standingsBase: rows,
+              division: RESULTS_DIVISION
             }
           );
 
-        state.content.standingsBase =
+        state.content[resultsDivision().baseKey] =
           data.standingsBase ||
           rows;
 
         state.content.standings =
           data.standings ||
           state.content.standings;
+
+        state.content.standingsA =
+          data.standingsA ||
+          state.content.standingsA;
 
         renderStandingsBaseEditor();
         renderStandingsTable();
@@ -2064,7 +2051,7 @@ function resultForm(
   ) {
     return `
       <div class="empty-state">
-        No hay partidos de URBA TOP 14 disponibles
+        No hay partidos de ${esc(resultsDivision().competition)} disponibles
         para cargar un resultado.
         Primero creá el partido desde "Partidos".
       </div>
@@ -2252,6 +2239,14 @@ function openResult(
       ""
     );
 
+  // El formulario muestra los partidos de la división del partido elegido.
+  const targetDivision =
+    divisionOfCompetition(target?.competition || existing.competition);
+  if (targetDivision && targetDivision !== RESULTS_DIVISION) {
+    RESULTS_DIVISION = targetDivision;
+    if (state.section === "results") renderResults();
+  }
+
   openModal(
     existing.id
       ? "Editar resultado"
@@ -2326,7 +2321,7 @@ function openResult(
           selected.time || "",
 
         competition:
-          "URBA TOP 14",
+          String(selected.competition || resultsDivision().competition).toUpperCase(),
 
         home:
           selected.home ||
@@ -4682,11 +4677,10 @@ checkSession();
    JUGADORES Y JUEGOS — utilidades compartidas
    ========================================================================== */
 
-const TOP14_NAMES = [
-  "Newman", "CASI", "Hindú", "Alumni", "SIC", "Regatas Bella Vista", "Los Tilos",
-  "Belgrano Athletic", "CUBA", "Atletico del Rosario", "Los Matreros", "La Plata",
-  "Buenos Aires C&RC", "Champagnat"
-];
+// Clubes de las dos divisiones (los del panel o, si no hay, los de DIVISION_DEFS).
+function allDivisionClubs() {
+  return [...getDivision("top14").clubs, ...getDivision("primeraA").clubs];
+}
 
 const PLAYER_POSITIONS = [
   [1, "1 · Pilar"], [2, "2 · Hooker"], [3, "3 · Pilar"],
@@ -4696,16 +4690,58 @@ const PLAYER_POSITIONS = [
   [13, "13 · Centro"], [14, "14 · Wing"], [15, "15 · Fullback"]
 ];
 
+// Nombre de puesto → números de camiseta. "Pilar" vale 1 y 3, "Wing" 11 y 14, etc.
 const PLAYER_POSITION_NAMES = {
-  pilar: 1, "pilar izquierdo": 1, hooker: 2, talonador: 2, "pilar derecho": 3,
-  "segunda linea": 4, "2da linea": 4, segunda: 4, ala: 6, "ala ciego": 6, "ala abierto": 7,
-  octavo: 8, "numero 8": 8, "medio scrum": 9, scrum: 9, apertura: 10, "medio apertura": 10,
-  centro: 12, "primer centro": 12, "segundo centro": 13, wing: 11, "wing izquierdo": 11,
-  "wing derecho": 14, fullback: 15
+  pilar: [1, 3], "pilar izquierdo": [1], "pilar derecho": [3],
+  hooker: [2], talonador: [2],
+  "segunda linea": [4, 5], "2da linea": [4, 5], segunda: [4, 5],
+  ala: [6, 7], "ala ciego": [6], "ala abierto": [7], "tercera linea": [6, 7, 8],
+  octavo: [8], "numero 8": [8],
+  "medio scrum": [9], scrum: [9], medio: [9],
+  apertura: [10], "medio apertura": [10],
+  centro: [12, 13], "primer centro": [12], "segundo centro": [13],
+  wing: [11, 14], "wing izquierdo": [11], "wing derecho": [14],
+  fullback: [15], zaguero: [15],
+  back: [9, 10, 11, 12, 13, 14, 15], backs: [9, 10, 11, 12, 13, 14, 15], "tres cuartos": [11, 12, 13, 14],
+  forward: [1, 2, 3, 4, 5, 6, 7, 8], forwards: [1, 2, 3, 4, 5, 6, 7, 8], delantero: [1, 2, 3, 4, 5, 6, 7, 8]
 };
 
+// Atajos del formulario.
+const POSITION_SHORTCUTS = [
+  ["Pilar", [1, 3]], ["Hooker", [2]], ["2ª línea", [4, 5]], ["Ala", [6, 7]], ["Octavo", [8]],
+  ["Medio scrum", [9]], ["Apertura", [10]], ["Centro", [12, 13]], ["Wing", [11, 14]], ["Fullback", [15]],
+  ["Forwards (1-8)", [1, 2, 3, 4, 5, 6, 7, 8]], ["Backs (9-15)", [9, 10, 11, 12, 13, 14, 15]]
+];
+
+/** Lista de puestos a partir de un texto: "11/14", "pilar", "wing + fullback", "9-15"… */
+function parsePositions(raw) {
+  const out = [];
+  const parts = String(raw || "").split(/[\/|+;,]|\s+y\s+|\s+o\s+/i).map((x) => normKey(x)).filter(Boolean);
+  for (const part of parts) {
+    const range = part.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
+    if (range) {
+      for (let n = Number(range[1]); n <= Number(range[2]); n++) out.push(n);
+    } else if (/^\d{1,2}$/.test(part)) {
+      out.push(Number(part));
+    } else if (PLAYER_POSITION_NAMES[part]) {
+      out.push(...PLAYER_POSITION_NAMES[part]);
+    } else {
+      return null; // texto que no se entiende
+    }
+  }
+  if (out.some((n) => !(n >= 1 && n <= 15))) return null;
+  return [...new Set(out)].sort((a, b) => a - b);
+}
+
+/** "Pilar", "Wing o fullback"… */
+function positionsLabel(positions) {
+  const roles = [...new Set((positions || []).map((n) => positionLabel(n).split(" · ")[1]).filter(Boolean))];
+  if (!roles.length) return "Sin puesto";
+  return roles.length > 1 ? `${roles.slice(0, -1).join(", ")} o ${roles[roles.length - 1].toLowerCase()}` : roles[0];
+}
+
 const normKey = (value) =>
-  String(value ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+  String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
 const cleanText = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 
@@ -4721,13 +4757,16 @@ function normalizePlayer(p) {
     first = parts.length > 1 ? parts[0] : "";
     last = parts.slice(parts.length > 1 ? 1 : 0).join(" ");
   }
-  const position = Number(p?.position);
+  const raw = Array.isArray(p?.positions) ? p.positions : [p?.position];
+  const positions = [...new Set(raw.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 15))]
+    .sort((a, b) => a - b);
   return {
     first,
     last,
     name: `${first} ${last}`.trim(),
     club: canonicalClub(p?.club),
-    position: Number.isInteger(position) && position >= 1 && position <= 15 ? position : null
+    position: positions[0] || null,
+    positions
   };
 }
 
@@ -4736,7 +4775,7 @@ function normalizePlayer(p) {
 let teamsSeed = null;
 let teamsSeedRequested = false;
 let clubIndex = new Map();
-let clubNames = TOP14_NAMES.slice();
+let clubNames = allDivisionClubs();
 
 function buildClubIndex() {
   clubIndex = new Map();
@@ -4746,7 +4785,7 @@ function buildClubIndex() {
       if (!clubIndex.has(normKey(key))) clubIndex.set(normKey(key), club.name);
     }
   };
-  TOP14_NAMES.forEach((name) => add({ name }));
+  allDivisionClubs().forEach((name) => add({ name }));
   Object.values(teamsSeed?.clubs || {}).forEach(add);
   Object.values(state.content.teams?.clubs || {}).forEach(add);
   clubNames = [...new Set(clubIndex.values())].sort((a, b) => a.localeCompare(b));
@@ -4780,7 +4819,7 @@ function wordLetters(value) {
     .toUpperCase()
     .replace(/Ñ/g, "\u0001")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\u0001/g, "Ñ")
     .replace(/[^A-ZÑ]/g, "");
 }
@@ -4882,7 +4921,7 @@ function paintPlayersClubs() {
   const filter = $("#players-club-filter")?.value || "";
   const counts = {};
   playersDraft.forEach((p) => { counts[p.club] = (counts[p.club] || 0) + 1; });
-  const names = [...new Set([...TOP14_NAMES.map(canonicalClub), ...Object.keys(counts)])];
+  const names = [...new Set([...allDivisionClubs().map(canonicalClub), ...Object.keys(counts)])];
 
   box.innerHTML = names.map((name) => {
     const n = counts[name] || 0;
@@ -4906,12 +4945,54 @@ function paintPlayersControls() {
     filter.innerHTML = `<option value="">Todos los clubes</option>` + options;
     filter.value = current;
   }
-  const pos = $("#player-position");
-  if (pos && pos.options.length <= 1) {
-    pos.innerHTML = `<option value="">Sin puesto</option>` +
-      PLAYER_POSITIONS.map(([n, label]) => `<option value="${n}">${esc(label)}</option>`).join("");
+  paintPositionPicker();
+}
+
+/* ---- selector de puestos del formulario (uno o varios) ---- */
+
+let playerFormPositions = new Set();
+
+function paintPositionPicker() {
+  const grid = $("#player-positions");
+  if (grid && !grid.children.length) {
+    grid.innerHTML = PLAYER_POSITIONS.map(([n, label]) =>
+      `<button type="button" class="pos-toggle" data-pos="${n}" title="${esc(label)}"><b>${n}</b><span>${esc(label.split(" · ")[1])}</span></button>`).join("");
+  }
+  const quick = $("#player-pos-quick");
+  if (quick && !quick.children.length) {
+    quick.innerHTML = POSITION_SHORTCUTS.map(([label, list]) =>
+      `<button type="button" class="action" data-pos-group="${list.join(",")}">${esc(label)}</button>`).join("") +
+      `<button type="button" class="action danger" data-pos-group="">Ninguno</button>`;
+  }
+  $$("#player-positions [data-pos]").forEach((btn) => btn.classList.toggle("on", playerFormPositions.has(Number(btn.dataset.pos))));
+  const summary = $("#player-pos-summary");
+  if (summary) {
+    const list = [...playerFormPositions].sort((a, b) => a - b);
+    summary.textContent = list.length ? `${positionsLabel(list)} · camiseta ${list.join(", ")}` : "Sin puesto: no entra en Rugby XV.";
   }
 }
+
+$("#player-positions")?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-pos]");
+  if (!btn) return;
+  const n = Number(btn.dataset.pos);
+  if (playerFormPositions.has(n)) playerFormPositions.delete(n);
+  else playerFormPositions.add(n);
+  paintPositionPicker();
+});
+
+$("#player-pos-quick")?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-pos-group]");
+  if (!btn) return;
+  const list = btn.dataset.posGroup ? btn.dataset.posGroup.split(",").map(Number) : [];
+  if (!list.length) playerFormPositions.clear();
+  else {
+    // Si ya estaban todos, el atajo los saca; si no, los suma.
+    const all = list.every((n) => playerFormPositions.has(n));
+    list.forEach((n) => (all ? playerFormPositions.delete(n) : playerFormPositions.add(n)));
+  }
+  paintPositionPicker();
+});
 
 function paintPlayersTable() {
   const body = $("#players-table");
@@ -4935,7 +5016,7 @@ function paintPlayersTable() {
   const LIMIT = 300;
   body.innerHTML = rows.slice(0, LIMIT).map(({ p, i }) => `
     <tr class="${i === playerEditing ? "editing" : ""}">
-      <td>${p.position ? `<span class="pos-badge">${p.position}</span> ${esc(positionLabel(p.position).split(" · ")[1])}` : `<span class="muted">Sin puesto</span>`}</td>
+      <td>${p.positions.length ? `${p.positions.map((n) => `<span class="pos-badge">${n}</span>`).join("")} ${esc(positionsLabel(p.positions))}` : `<span class="muted">Sin puesto</span>`}</td>
       <td>${esc(p.first)} <b>${esc(p.last)}</b></td>
       <td>${esc(p.club)}</td>
       <td>${wordleWord(p) ? `<span class="pill ok">${esc(wordleWord(p))}</span>` : `<span class="muted" title="El Wordle usa apellidos de una sola palabra, de 4 a 9 letras">—</span>`}</td>
@@ -4953,6 +5034,8 @@ function resetPlayerForm() {
   if (!form) return;
   $("#player-first").value = "";
   $("#player-last").value = "";
+  playerFormPositions = new Set();
+  paintPositionPicker();
   $("#player-form-title").textContent = "Agregar jugador";
   $("#player-add").textContent = "+ AGREGAR";
   $("#player-cancel").classList.add("hidden");
@@ -5057,9 +5140,10 @@ function importPlayersFromText(text) {
     if (!player.last) return errors.push(`Línea ${line}: falta el apellido.`);
     if (!club) return errors.push(`Línea ${line}: club desconocido “${clubRaw}” (${player.name}).`);
     if (posRaw) {
-      const position = /^\d+$/.test(posRaw) ? Number(posRaw) : PLAYER_POSITION_NAMES[normKey(posRaw)];
-      if (!(position >= 1 && position <= 15)) return errors.push(`Línea ${line}: puesto no válido “${posRaw}” (${player.name}).`);
-      player.position = position;
+      const positions = parsePositions(posRaw);
+      if (!positions || !positions.length) return errors.push(`Línea ${line}: puesto no válido “${posRaw}” (${player.name}).`);
+      player.positions = positions;
+      player.position = positions[0];
     }
     valid.push(player);
   });
@@ -5080,7 +5164,7 @@ function exportPlayersCSV() {
     playersDraft
       .slice()
       .sort((a, b) => a.club.localeCompare(b.club) || (a.position || 99) - (b.position || 99))
-      .map((p) => [p.club, p.first, p.last, p.position || ""].map(quote).join(","))
+      .map((p) => [p.club, p.first, p.last, (p.positions || []).join("/")].map(quote).join(","))
   );
   const blob = new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
   const link = document.createElement("a");
@@ -5143,7 +5227,7 @@ $("#player-form")?.addEventListener("submit", (event) => {
     first: $("#player-first").value,
     last: $("#player-last").value,
     club: $("#player-club").value,
-    position: $("#player-position").value
+    positions: [...playerFormPositions]
   });
 
   if (!player.last || !player.club) {
@@ -5187,7 +5271,8 @@ $("#players-table")?.addEventListener("click", (event) => {
       $("#player-club").insertAdjacentHTML("beforeend", `<option value="${esc(p.club)}">${esc(p.club)}</option>`);
     }
     $("#player-club").value = p.club;
-    $("#player-position").value = p.position ? String(p.position) : "";
+    playerFormPositions = new Set(p.positions || []);
+    paintPositionPicker();
     $("#player-form-title").textContent = "Editar jugador";
     $("#player-add").textContent = "GUARDAR CAMBIOS";
     $("#player-cancel").classList.remove("hidden");
@@ -5220,7 +5305,7 @@ const GAME_DEFAULTS = {
   xv: { enabled: true, times: [60, 90, 0], flex: { pilares: true, segundas: true, alas: true, centros: true, wings: true } },
   wordle: { enabled: true, attempts: 6, hintClubAfter: 3, hintPositionAfter: 5, manualDate: "", manualPlayer: "" },
   escudos: { enabled: true, rounds: 10 },
-  quiz: { enabled: true }
+  quiz: { enabled: true, ai: true }
 };
 
 const GAME_LABELS = { xv: "Rugby XV", wordle: "Wordle", escudos: "Escudos", quiz: "Quiz" };
@@ -5254,7 +5339,7 @@ function gamesFromContent() {
       manualPlayer: String(r.wordle?.manualPlayer || "")
     },
     escudos: { enabled: r.escudos?.enabled !== false, rounds: clampInt(r.escudos?.rounds, 3, 14, d.escudos.rounds) },
-    quiz: { enabled: r.quiz?.enabled !== false }
+    quiz: { enabled: r.quiz?.enabled !== false, ai: r.quiz?.ai !== false }
   };
 }
 
@@ -5278,7 +5363,7 @@ function paintGamesStatus() {
 function paintGamesInfo() {
   if (!gamesDraft) return;
   const players = workingPlayers();
-  const withPos = players.filter((p) => p.position);
+  const withPos = players.filter((p) => p.positions.length);
   const squads = new Set(withPos.map((p) => p.club)).size;
   const pool = wordlePool(players);
   const set = (id, text) => { const el = $(id); if (el) el.textContent = text; };
@@ -5432,11 +5517,12 @@ function renderGamesDashboard() {
 
   const counts = {};
   players.forEach((p) => { counts[p.club] = (counts[p.club] || 0) + 1; });
-  const top14 = TOP14_NAMES.map(canonicalClub);
+  const top14 = allDivisionClubs().map(canonicalClub);
   const squads = top14.filter((name) => counts[name]).length;
 
   if ($("#stat-players")) $("#stat-players").textContent = players.length;
   if ($("#stat-squads")) $("#stat-squads").textContent = squads;
+  if ($("#stat-squads-total")) $("#stat-squads-total").textContent = `de ${top14.length} clubes (Top 14 y Primera A)`;
   if ($("#nav-players-count")) $("#nav-players-count").textContent = players.length;
   if ($("#nav-games-count") && !gamesDirty) {
     $("#nav-games-count").textContent = Object.keys(GAME_LABELS).filter((id) => games[id].enabled).length;
@@ -5466,3 +5552,166 @@ function renderGamesDashboard() {
     }).join("") + `</div>`;
   }
 }
+
+
+
+/* ==========================================================================
+   RESULTADOS: DIVISIONES Y NUEVA TEMPORADA
+   ========================================================================== */
+
+$$("[data-results-division]").forEach((btn) => btn.addEventListener("click", () => {
+  RESULTS_DIVISION = btn.dataset.resultsDivision;
+  renderResults();
+}));
+
+function paintDivisionsEditor() {
+  ["top14", "primeraA"].forEach((key) => {
+    const area = $(`#division-${key}`);
+    const count = $(`#division-count-${key}`);
+    const clubs = getDivision(key).clubs;
+    if (area && document.activeElement !== area) area.value = clubs.join("\n");
+    if (count) count.textContent = `(${clubs.length} clubes)`;
+  });
+
+  const season = state.content.season || new Date().getFullYear();
+  if ($("#season-info")) $("#season-info").textContent = `Temporada en curso: ${season}`;
+  if ($("#season-next") && !$("#season-next").value) $("#season-next").value = season;
+  const archive = Object.keys(state.content.seasons || {});
+  if ($("#season-archive")) {
+    $("#season-archive").textContent = archive.length
+      ? `Temporadas archivadas: ${archive.join(", ")}.`
+      : "Todavía no hay temporadas archivadas.";
+  }
+}
+
+const _renderResultsBase = renderResults;
+renderResults = function () {
+  _renderResultsBase();
+  paintDivisionsEditor();
+};
+
+$("#divisions-save")?.addEventListener("click", async () => {
+  const read = (key) => ($(`#division-${key}`)?.value || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  const divisions = { top14: { clubs: read("top14") }, primeraA: { clubs: read("primeraA") } };
+
+  if (!divisions.top14.clubs.length || !divisions.primeraA.clubs.length) {
+    toast("Faltan clubes", "Cada división necesita al menos un club.", "error");
+    return;
+  }
+
+  const button = $("#divisions-save");
+  try {
+    button.disabled = true;
+    button.textContent = "GUARDANDO…";
+    const data = await api("save-divisions", { divisions });
+    state.content = normalizeContent(data.content);
+    buildClubIndex();
+    renderAll();
+    toast("Clubes guardados", `Top 14: ${divisions.top14.clubs.length} · Primera A: ${divisions.primeraA.clubs.length}.`);
+  } catch (error) {
+    toast("No se pudo guardar", error.message || "Probá de nuevo.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "GUARDAR CLUBES";
+  }
+});
+
+$("#season-reset")?.addEventListener("click", async () => {
+  const season = Number($("#season-next")?.value) || state.content.season;
+  const ok = await askConfirm(
+    "Reiniciar tablas",
+    `Las tablas del Top 14 y de la Primera A quedan en cero para la temporada ${season}. Los resultados y partidos actuales de la URBA se guardan en el archivo de temporadas.`,
+    "REINICIAR"
+  );
+  if (!ok) return;
+
+  const button = $("#season-reset");
+  try {
+    button.disabled = true;
+    button.textContent = "REINICIANDO…";
+    const data = await api("reset-season", { season });
+    state.content = normalizeContent(data.content);
+    renderAll();
+    toast("Tablas en cero", `Se archivó la temporada como “${data.archivedAs}”.`);
+  } catch (error) {
+    toast("No se pudo reiniciar", error.message || "Probá de nuevo.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "REINICIAR TABLAS A CERO";
+  }
+});
+
+
+/* ==========================================================================
+   QUIZ CON IA
+   ========================================================================== */
+
+function paintQuizAI() {
+  const games = gamesFromContent();
+  const toggle = $("#quiz-ai-enabled");
+  if (toggle && !toggle.dataset.touched) toggle.checked = games.quiz.ai;
+
+  const quiz = state.content.quiz;
+  const info = $("#quiz-ai-info");
+  if (info) {
+    info.textContent = quiz?.date
+      ? `Publicado: quiz del ${quiz.date}${quiz.source === "ia" ? " · con IA" : quiz.source === "datos" ? " · solo con datos" : ""}`
+      : "Todavía no se generó ningún quiz automático.";
+  }
+
+  const box = $("#quiz-ai-status");
+  if (box) {
+    const ai = state.content.quizAI;
+    if (!ai) {
+      box.innerHTML = games.quiz.ai
+        ? "El primer quiz automático se genera esta medianoche. Podés generar uno ahora con el botón."
+        : "El modo automático está apagado: se muestra el quiz que guardes abajo.";
+    } else {
+      const when = ai.lastRun ? new Date(ai.lastRun).toLocaleString("es-AR") : "—";
+      box.innerHTML = `Última generación: <b>${esc(when)}</b>${ai.model ? ` · modelo <code>${esc(ai.model)}</code>` : ""}` +
+        (ai.lastError ? `<br><span class="pill off">IA no disponible</span> ${esc(ai.lastError)}<br><small class="muted">Las preguntas salieron de los datos del sitio. Revisá que AI Gateway esté activo en el proyecto de Vercel.</small>` : "");
+    }
+  }
+}
+
+$("#quiz-ai-enabled")?.addEventListener("change", (event) => { event.target.dataset.touched = "1"; });
+
+$("#quiz-ai-save")?.addEventListener("click", async () => {
+  const games = gamesFromContent();
+  games.quiz.ai = $("#quiz-ai-enabled").checked;
+  try {
+    const data = await api("save-games", { games });
+    state.content.games = data.games || games;
+    delete $("#quiz-ai-enabled").dataset.touched;
+    renderGamesAdmin(true);
+    paintQuizAI();
+    toast("Guardado", games.quiz.ai ? "El quiz se genera solo todos los días." : "Quiz automático apagado.");
+  } catch (error) {
+    toast("No se pudo guardar", error.message || "Probá de nuevo.", "error");
+  }
+});
+
+$("#quiz-ai-generate")?.addEventListener("click", async () => {
+  const button = $("#quiz-ai-generate");
+  try {
+    button.disabled = true;
+    button.textContent = "GENERANDO… (puede tardar 30 s)";
+    const data = await api("generate-quiz");
+    state.content = normalizeContent(data.content);
+    renderQuizAdmin(true);
+    paintQuizAI();
+    renderCounts();
+    toast("Quiz nuevo publicado", data.quiz?.source === "ia" ? "Con preguntas de la IA y de los datos." : "La IA no respondió: las preguntas salieron de los datos.");
+  } catch (error) {
+    toast("No se pudo generar", error.message || "Probá de nuevo.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "GENERAR UNO NUEVO AHORA";
+  }
+});
+
+const _renderQuizAdminBase = renderQuizAdmin;
+renderQuizAdmin = function (...args) {
+  _renderQuizAdminBase(...args);
+  paintQuizAI();
+};

@@ -5,6 +5,17 @@
 
 import { Resend } from "resend";
 import { r2GetJSON, r2PutJSONSafe } from "../lib/r2.js";
+import {
+  DEFAULT_DIVISIONS,
+  getDivisions,
+  isDivisionCompetition,
+  migrateSeason,
+  recalcTables,
+  resetSeason,
+  sanitizeDivisions,
+  zeroBase
+} from "../lib/urba.js";
+import { generateDailyQuiz } from "../lib/quiz-ai.js";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -32,134 +43,8 @@ const SITE_URL = "https://droprugby.com";
 // CONTENIDO POR DEFECTO
 // ============================================================
 
-const DEFAULT_STANDINGS_BASE = [
-  {
-    team: "Newman",
-    pj: 17,
-    pg: 16,
-    pe: 0,
-    pp: 1,
-    diff: 255,
-    pts: 71
-  },
-  {
-    team: "CASI",
-    pj: 17,
-    pg: 13,
-    pe: 0,
-    pp: 4,
-    diff: 179,
-    pts: 60
-  },
-  {
-    team: "Hindu",
-    pj: 17,
-    pg: 12,
-    pe: 0,
-    pp: 5,
-    diff: 160,
-    pts: 57
-  },
-  {
-    team: "Alumni",
-    pj: 17,
-    pg: 11,
-    pe: 0,
-    pp: 6,
-    diff: 220,
-    pts: 56
-  },
-  {
-    team: "SIC",
-    pj: 17,
-    pg: 11,
-    pe: 0,
-    pp: 6,
-    diff: 127,
-    pts: 51
-  },
-  {
-    team: "Regatas Bella Vista",
-    pj: 17,
-    pg: 9,
-    pe: 0,
-    pp: 8,
-    diff: 63,
-    pts: 45
-  },
-  {
-    team: "Los Tilos",
-    pj: 17,
-    pg: 9,
-    pe: 1,
-    pp: 7,
-    diff: -48,
-    pts: 42
-  },
-  {
-    team: "Belgrano Athletic",
-    pj: 17,
-    pg: 8,
-    pe: 1,
-    pp: 8,
-    diff: -15,
-    pts: 41
-  },
-  {
-    team: "CUBA",
-    pj: 17,
-    pg: 6,
-    pe: 0,
-    pp: 11,
-    diff: 9,
-    pts: 35
-  },
-  {
-    team: "Atletico del Rosario",
-    pj: 17,
-    pg: 6,
-    pe: 0,
-    pp: 11,
-    diff: -96,
-    pts: 29
-  },
-  {
-    team: "Los Matreros",
-    pj: 17,
-    pg: 6,
-    pe: 0,
-    pp: 11,
-    diff: -246,
-    pts: 27
-  },
-  {
-    team: "La Plata",
-    pj: 17,
-    pg: 4,
-    pe: 0,
-    pp: 13,
-    diff: -92,
-    pts: 25
-  },
-  {
-    team: "Buenos Aires C&RC",
-    pj: 17,
-    pg: 4,
-    pe: 0,
-    pp: 13,
-    diff: -210,
-    pts: 19
-  },
-  {
-    team: "Champagnat",
-    pj: 17,
-    pg: 3,
-    pe: 0,
-    pp: 14,
-    diff: -306,
-    pts: 14
-  }
-];
+// Tabla base por defecto: los clubes del Top 14 vigente, en cero.
+const DEFAULT_STANDINGS_BASE = zeroBase(DEFAULT_DIVISIONS.top14.clubs);
 
 const DEFAULT_CONTENT = {
   articles: [],
@@ -253,11 +138,8 @@ function fixtureKey(fixture) {
 }
 
 function isTop14(fixture) {
-  return (
-    String(fixture?.competition || "")
-      .trim()
-      .toUpperCase() === "URBA TOP 14"
-  );
+  // Competiciones con tabla propia: URBA TOP 14 y URBA PRIMERA A.
+  return isDivisionCompetition(fixture?.competition);
 }
 
 // ============================================================
@@ -1095,6 +977,7 @@ async function repairLegacyBlobContent(
       blob.fixtures
     ) &&
     blob.fixtures.length === 0 &&
+    !blob.season &&
     !hasDeletedHistory(
       blob,
       "fixture"
@@ -1127,8 +1010,12 @@ async function readContent(
         blob
       );
 
+    // Cambio de temporada: archiva la anterior y arranca en cero (una sola vez).
+    const seasonChanged =
+      migrateSeason(repaired.content);
+
     if (
-      repaired.changed &&
+      (repaired.changed || seasonChanged) &&
       options.persistRepair !==
         false
     ) {
@@ -1628,14 +1515,23 @@ export default async function handler(
 
         const name = `${first} ${last}`.trim();
 
-        let position = Number(item?.position);
-        position = Number.isInteger(position) && position >= 1 && position <= 15 ? position : null;
+        // Puestos: lista de números 1-15 (un jugador puede tener varios).
+        const rawPositions = Array.isArray(item?.positions) ? item.positions : [item?.position];
+        const positions = [...new Set(
+          rawPositions
+            .map((value) => Number(value))
+            .filter((value) => Number.isInteger(value) && value >= 1 && value <= 15)
+        )].slice(0, 15);
 
         const key = `${club.toLowerCase()}|${name.toLowerCase()}`;
         if (seen.has(key)) continue;
         seen.add(key);
 
-        players.push(position ? { first, last, name, club, position } : { first, last, name, club });
+        players.push(
+          positions.length
+            ? { first, last, name, club, position: positions[0], positions }
+            : { first, last, name, club }
+        );
         if (players.length >= 5000) break;
       }
 
@@ -1702,7 +1598,8 @@ export default async function handler(
           rounds: int(incoming.escudos?.rounds, 3, 14, 10)
         },
         quiz: {
-          enabled: incoming.quiz?.enabled !== false
+          enabled: incoming.quiz?.enabled !== false,
+          ai: incoming.quiz?.ai !== false
         },
         updatedAt: new Date().toISOString()
       };
@@ -1716,6 +1613,93 @@ export default async function handler(
       return json(res, 200, {
         ok: true,
         games: saved.games,
+        content: saved
+      });
+    }
+
+    // ========================================================
+    // DIVISIONES (clubes del Top 14 y de la Primera A)
+    // ========================================================
+
+    if (action === "save-divisions") {
+      const content = await readContent();
+      content.divisions = sanitizeDivisions(body.divisions);
+
+      for (const division of Object.values(getDivisions(content))) {
+        // La tabla base se ajusta a la lista: quedan los clubes de la
+        // división (con lo que tenían cargado) y los nuevos entran en cero.
+        const current = Array.isArray(content[division.baseKey]) ? content[division.baseKey] : [];
+        const byName = new Map(current.map((row) => [String(row.team || "").toLowerCase(), row]));
+        content[division.baseKey] = division.clubs.map((team) =>
+          byName.get(team.toLowerCase()) || { team, pj: 0, pg: 0, pe: 0, pp: 0, diff: 0, pts: 0 });
+      }
+
+      calculateStandings(content);
+      addHistory(content, "save", "divisions", { id: "divisions", title: "Clubes por división" });
+      const saved = await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        divisions: getDivisions(saved),
+        content: saved
+      });
+    }
+
+    // ========================================================
+    // NUEVA TEMPORADA: archiva resultados y deja las tablas en 0
+    // ========================================================
+
+    if (action === "reset-season") {
+      const content = await readContent();
+      const archivedAs = resetSeason(content, {
+        archiveAs: String(content.season || ""),
+        newSeason: Number(body.season) || content.season
+      });
+      addHistory(content, "save", "season", { id: "season", title: `Tablas reiniciadas (archivo ${archivedAs})` });
+      const saved = await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        archivedAs,
+        content: saved
+      });
+    }
+
+    // ========================================================
+    // QUIZ CON IA: generar uno nuevo ahora
+    // ========================================================
+
+    if (action === "generate-quiz") {
+      const content = await readContent();
+
+      try {
+        const quiz = await generateDailyQuiz(content, { req });
+        content.quiz = quiz;
+        content.quizHistory = [
+          { id: quiz.id, date: quiz.date, questions: quiz.questions.map((q) => q.q) },
+          ...(Array.isArray(content.quizHistory) ? content.quizHistory : [])
+        ].slice(0, 30);
+        content.quizAI = { lastRun: new Date().toISOString(), lastError: "", model: quiz.model || "" };
+      } catch (error) {
+        content.quizAI = {
+          ...(content.quizAI || {}),
+          lastRun: new Date().toISOString(),
+          lastError: String(error?.message || error).slice(0, 300)
+        };
+        await saveContent(content);
+        return json(res, 502, {
+          ok: false,
+          error: "No se pudo generar el quiz con IA: " + content.quizAI.lastError,
+          content
+        });
+      }
+
+      addHistory(content, "save", "quiz", content.quiz);
+      const saved = await saveContent(content);
+
+      return json(res, 200, {
+        ok: true,
+        quiz: saved.quiz,
         content: saved
       });
     }
@@ -2396,7 +2380,7 @@ export default async function handler(
           {
             ok: false,
             error:
-              "Solo se pueden cargar resultados de URBA TOP 14."
+              "Solo se pueden cargar resultados de URBA Top 14 o Primera A."
           }
         );
       }
@@ -2515,7 +2499,7 @@ export default async function handler(
           "",
 
         competition:
-          "URBA TOP 14",
+          String(fixture.competition || "URBA TOP 14").trim().toUpperCase(),
 
         home,
         away,
@@ -2708,7 +2692,12 @@ export default async function handler(
       const content =
         await readContent();
 
-      content.standingsBase =
+      const baseKey =
+        body.division === "primeraA"
+          ? "standingsBaseA"
+          : "standingsBase";
+
+      content[baseKey] =
         rows
           .map(
             (row) => ({
@@ -2769,9 +2758,11 @@ export default async function handler(
         {
           ok: true,
           standingsBase:
-            content.standingsBase,
+            content[baseKey],
           standings:
             content.standings,
+          standingsA:
+            content.standingsA,
           content
         }
       );
@@ -3079,7 +3070,15 @@ function normalizeTeamKey(name) {
   return normalized;
 }
 
-function calculateStandings(
+// Calcula las tablas de todas las divisiones (lib/urba.js) y devuelve la del Top 14.
+// content.standingsA queda actualizada como efecto.
+function calculateStandings(content) {
+  recalcTables(content);
+  return content.standings;
+}
+
+// Cálculo anterior (solo Top 14). Se conserva como referencia; ya no se usa.
+function calculateStandingsLegacy(
   content
 ) {
   const teams =

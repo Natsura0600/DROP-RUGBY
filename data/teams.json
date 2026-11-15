@@ -55,7 +55,10 @@
     },
     "los_matreros": {
       "name": "Los Matreros",
-      "logo": "/assets/clubs/los_matreros.png"
+      "logo": "/assets/clubs/los_matreros.png",
+      "aliases": [
+        "Matreros"
+      ]
     },
     "regatas_bella_vista": {
       "name": "Regatas Bella Vista",
@@ -67,13 +70,100 @@
     "atletico_del_rosario": {
       "name": "Atletico del Rosario",
       "aliases": [
-        "Plaza"
+        "Plaza",
+        "Rosario"
       ],
       "logo": "https://cdn.discordapp.com/attachments/1536231065184903278/1536231293858226186/rosario.png?ex=6a7aa662&is=6a7954e2&hm=94ec235340236bf245fd7380de7905518da04584180a7314140d35185156f7fb"
     },
     "sic": {
       "name": "SIC",
       "logo": "/assets/clubs/sic.png"
+    },
+    "san_luis": {
+      "name": "San Luis",
+      "logo": ""
+    },
+    "san_cirano": {
+      "name": "San Cirano",
+      "logo": ""
+    },
+    "manuel_belgrano": {
+      "name": "Manuel Belgrano",
+      "logo": ""
+    },
+    "banco_nacion": {
+      "name": "Banco Nación",
+      "aliases": [
+        "Banco Nacion",
+        "Banco",
+        "BNA"
+      ],
+      "logo": ""
+    },
+    "lomas_athletic": {
+      "name": "Lomas Athletic",
+      "aliases": [
+        "Lomas"
+      ],
+      "logo": ""
+    },
+    "curupayti": {
+      "name": "Curupaytí",
+      "aliases": [
+        "Curupayti"
+      ],
+      "logo": ""
+    },
+    "san_fernando": {
+      "name": "San Fernando",
+      "logo": ""
+    },
+    "pucara": {
+      "name": "Pucará",
+      "aliases": [
+        "Pucara"
+      ],
+      "logo": ""
+    },
+    "gimnasia_y_esgrima": {
+      "name": "Gimnasia y Esgrima",
+      "aliases": [
+        "GEBA",
+        "Gimnasia"
+      ],
+      "logo": ""
+    },
+    "hurling": {
+      "name": "Hurling",
+      "aliases": [
+        "Hurlingham"
+      ],
+      "logo": ""
+    },
+    "san_andres": {
+      "name": "San Andrés",
+      "aliases": [
+        "San Andres"
+      ],
+      "logo": ""
+    },
+    "pueyrredon": {
+      "name": "Pueyrredón",
+      "aliases": [
+        "Pueyrredon"
+      ],
+      "logo": ""
+    },
+    "olivos": {
+      "name": "Olivos",
+      "logo": ""
+    },
+    "deportiva_francesa": {
+      "name": "Deportiva Francesa",
+      "aliases": [
+        "Francesa"
+      ],
+      "logo": ""
     }
   },
   "nations": {

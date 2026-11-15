@@ -22,5 +22,11 @@
       "destination": "/",
       "permanent": false
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/quiz-daily",
+      "schedule": "7 3 * * *"
+    }
   ]
 }

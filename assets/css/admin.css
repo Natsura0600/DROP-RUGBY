@@ -773,3 +773,23 @@ body{background:var(--paper);font-family:var(--sans)}
 .squad-bar.empty{color:var(--muted-2)}
 @media(max-width:1000px){.games-admin-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.field-row,.field-row.two{grid-template-columns:1fr}.squad-bar{grid-template-columns:minmax(0,110px) minmax(0,1fr) 24px}}
+
+/* ==========================================================================
+   PUESTOS, DIVISIONES, TEMPORADA Y QUIZ CON IA
+   ========================================================================== */
+.pos-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.pos-toggle{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;color:var(--ink-2);transition:background .15s,border-color .15s,transform .15s}
+.pos-toggle b{font-size:15px;font-weight:900;line-height:1}
+.pos-toggle span{font-size:9.5px;font-weight:700;letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pos-toggle:hover{border-color:var(--ink);transform:translateY(-1px)}
+.pos-toggle.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pos-quick .action{height:30px;min-height:30px;padding:0 10px;font-size:10px}
+.pos-badge+.pos-badge{margin-left:-2px}
+.division-switch{display:inline-flex;gap:4px;margin-bottom:18px;padding:4px;border:1px solid var(--line);border-radius:999px;background:#fff}
+.division-switch button{padding:9px 18px;border:0;border-radius:999px;background:transparent;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
+.division-switch button.active{background:var(--ink);color:#fff}
+.btn.danger-btn{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.danger-btn:hover{filter:brightness(.92)}
+.ai-panel{margin-bottom:18px;border-left:3px solid var(--accent)}
+.ai-panel code{font-size:11px;padding:1px 5px;border-radius:5px;background:var(--paper-2)}
+@media(max-width:620px){.pos-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
