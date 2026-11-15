@@ -1121,11 +1121,20 @@ async function mountShieldGame(root) {
       const fb = root.querySelector("#shield-feedback");
       fb.classList.remove("hidden");
       fb.classList.add(right ? "ok" : "bad");
-      fb.innerHTML = `<strong>${right ? "¡Eso es!" : "Casi."}</strong> Es ${escapeHTML(answer.name)}.
-        <div class="quiz-actions"><button class="btn accent" type="button" data-next>${round + 1 < ROUNDS ? "Siguiente →" : "Ver resultado"}</button></div>`;
-      const next = fb.querySelector("[data-next]");
-      next.addEventListener("click", () => { round++; round < ROUNDS ? ask() : finish(); });
-      next.focus({ preventScroll: true });
+      // Acierto: pasa enseguida. Error: avisa "Fallaste", muestra el club y sigue solo.
+      fb.innerHTML = right
+        ? `<strong>¡Eso es!</strong> ${escapeHTML(answer.name)}.`
+        : `<strong>¡Fallaste!</strong> Era ${escapeHTML(answer.name)}.`;
+      if (!right) replay(fb, "shake");
+      let moved = false;
+      const advance = () => {
+        if (moved) return;
+        moved = true;
+        round++;
+        round < ROUNDS ? ask() : finish();
+      };
+      setTimeout(advance, right ? 650 : 1700);
+      fb.addEventListener("click", advance); // tocar el aviso lo saltea
     }));
   }
 
