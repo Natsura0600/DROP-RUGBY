@@ -1362,7 +1362,7 @@ function renderLayout() {
           </div>
           <div class="footer-bottom">
             <span>© ${new Date().getFullYear()} DropRugby</span>
-            <span>Rugby para jugar</span>
+            <span class="footer-credit">Sitio diseñado por <a href="https://picturewebdev.vercel.app" target="_blank" rel="noopener">Picture Web Dev</a></span>
           </div>
         </div>
       </footer>

@@ -1050,3 +1050,5 @@ html.intro-logo-only #drop-intro.go .rain-caption { animation: caption-in .5s cu
   html.intro-logo-only #drop-intro.go .rain-caption { animation: caption-in .3s ease forwards; }
   html.intro-logo-only #drop-intro.go { animation: intro-out .3s ease .9s forwards; }
 }
+.footer-credit a { color: #fff; text-decoration: underline; text-decoration-color: #d71920; text-underline-offset: 3px; transition: color .16s; }
+.footer-credit a:hover { color: #ff4d55; }
