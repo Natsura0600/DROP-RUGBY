@@ -222,7 +222,10 @@ function applyTeamData(content) {
 
   // Escudos de la URBA (urba.org.ar) para los clubes que no tienen uno propio.
   const urbaLogos = (content?.urbaLogos && typeof content.urbaLogos === "object" ? content.urbaLogos : null)
-    || (content?.urbaSync?.logos && typeof content.urbaSync.logos === "object" ? content.urbaSync.logos : {});
+    || {
+      ...(content?.urbaSync?.logos && typeof content.urbaSync.logos === "object" ? content.urbaSync.logos : {}),
+      ...(content?.sraSync?.enabled !== false && content?.sraSync?.logos && typeof content.sraSync.logos === "object" ? content.sraSync.logos : {})
+    };
   Object.entries(urbaLogos).forEach(([name, logo]) => {
     if (!logo) return;
     const key = normalizeTeamName(name);
@@ -1074,7 +1077,8 @@ async function renderUrbaStandings() {
   // Super Rugby Américas: sin descenso, se calcula con los resultados del panel.
   const sra = document.getElementById("sra-standings");
   if (sra) {
-    paintStandings(sra, Array.isArray(content?.standingsSRA) ? content.standingsSRA : [], null, { relegation: false });
+    const sraOfficial = content?.sraSync && content.sraSync.enabled !== false && (content.sraSync.official || content.sraSync.rows?.length) ? { label: "Tabla oficial de la Super Rugby Américas" } : null;
+    paintStandings(sra, Array.isArray(content?.standingsSRA) ? content.standingsSRA : [], sraOfficial, { relegation: false });
   }
   const sraFixture = document.getElementById("sra-fixture");
   if (sraFixture) renderCompetitionFixture(sraFixture, "SUPER RUGBY AMERICAS", content);
@@ -1254,7 +1258,7 @@ function paintStandings(element, rows, official = null, options = {}) {
       </span>
 
     </div>` : `<div class="standings-legend"><span>Temporada ${escapeHTML(String(window.DROP_SEASON || ""))} · todavía no se jugó ninguna fecha.</span></div>`}
-    ${official ? `<div class="standings-source">Tabla oficial de la URBA${official.lastRound ? ` · ${escapeHTML(official.lastRound.name)}` : ""} · se actualiza sola</div>` : ""}
+    ${official ? `<div class="standings-source">${escapeHTML(official.label || "Tabla oficial de la URBA")}${official.lastRound ? ` · ${escapeHTML(official.lastRound.name)}` : ""} · se actualiza sola</div>` : ""}
   `;
 }
 

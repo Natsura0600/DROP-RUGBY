@@ -3,6 +3,7 @@ import path from 'node:path';
 import { r2GetJSON, r2PutJSONSafe } from '../lib/r2.js';
 import { DEFAULT_DIVISIONS, SEASON, getDivisions, migrateSeason, recalcTables, zeroBase, computeTable } from '../lib/urba.js';
 import { syncUrba, urbaSyncDue } from '../lib/urba-sync.js';
+import { syncSra, sraSyncDue } from '../lib/sra-sync.js';
 
 const BLOB_PATH = 'droprugby/content.json';
 
@@ -107,16 +108,20 @@ async function readData() {
 
   // Tabla oficial de la URBA: se consulta cada 3 horas como mucho, con tope de 8 s
   // para no demorar la página. Si la URBA no responde, queda la última tabla guardada.
+  // Lo mismo con la tabla oficial de la Super Rugby Américas.
   let synced = false;
-  if (urbaSyncDue(repaired)) {
+  const jobs = [];
+  if (urbaSyncDue(repaired)) jobs.push(['URBA', syncUrba]);
+  if (sraSyncDue(repaired)) jobs.push(['SRA', syncSra]);
+  for (const [name, run] of jobs) {
     try {
       await Promise.race([
-        syncUrba(repaired),
+        run(repaired),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
       ]);
       synced = true;
     } catch (error) {
-      console.error('URBA sync:', error?.message || error);
+      console.error(name + ' sync:', error?.message || error);
     }
   }
 
@@ -178,7 +183,13 @@ async function toPublic(data) {
     standings: Array.isArray(data.standings) ? data.standings : [],
     standingsA: Array.isArray(data.standingsA) ? data.standingsA : [],
     standingsSRA: Array.isArray(data.standingsSRA) && data.standingsSRA.length ? data.standingsSRA : computeTable(data, 'sra'),
-    urbaLogos: data.urbaSync?.logos && typeof data.urbaSync.logos === 'object' ? data.urbaSync.logos : {},
+    urbaLogos: {
+      ...(data.urbaSync?.logos && typeof data.urbaSync.logos === 'object' ? data.urbaSync.logos : {}),
+      ...(data.sraSync?.enabled !== false && data.sraSync?.logos && typeof data.sraSync.logos === 'object' ? data.sraSync.logos : {})
+    },
+    sraSync: data.sraSync
+      ? { enabled: data.sraSync.enabled !== false, lastRun: data.sraSync.lastRun || '', official: data.sraSync.enabled !== false && Array.isArray(data.sraSync.rows) && data.sraSync.rows.length > 0 }
+      : null,
     urbaSync: data.urbaSync
       ? {
           enabled: data.urbaSync.enabled !== false,

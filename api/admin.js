@@ -17,6 +17,7 @@ import {
 } from "../lib/urba.js";
 import { generateDailyQuiz } from "../lib/quiz-ai.js";
 import { syncUrba } from "../lib/urba-sync.js";
+import { syncSra } from "../lib/sra-sync.js";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1649,6 +1650,20 @@ export default async function handler(
     // ========================================================
     // TABLA OFICIAL DE LA URBA: actualizar ahora / activar
     // ========================================================
+
+    if (action === "sra-sync" || action === "save-sra-sync") {
+      const content = await readContent();
+      if (action === "save-sra-sync") {
+        content.sraSync = { ...(content.sraSync || {}), enabled: body.enabled !== false };
+      }
+      if (content.sraSync?.enabled !== false) {
+        await syncSra(content);
+      } else {
+        calculateStandings(content);
+      }
+      const saved = await saveContent(content);
+      return json(res, 200, { ok: true, sraSync: saved.sraSync, content: saved });
+    }
 
     if (action === "urba-sync" || action === "save-urba-sync") {
       const content = await readContent();

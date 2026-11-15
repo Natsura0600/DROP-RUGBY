@@ -418,7 +418,8 @@ function normalizeContent(content) {
     season: Number(data.season) || null,
     seasons: data.seasons && typeof data.seasons === "object" ? data.seasons : {},
     quizAI: data.quizAI && typeof data.quizAI === "object" ? data.quizAI : null,
-    urbaSync: data.urbaSync && typeof data.urbaSync === "object" ? data.urbaSync : null
+    urbaSync: data.urbaSync && typeof data.urbaSync === "object" ? data.urbaSync : null,
+    sraSync: data.sraSync && typeof data.sraSync === "object" ? data.sraSync : null
   };
 }
 
@@ -1447,9 +1448,7 @@ function renderResults() {
   $$('[data-results-division]').forEach((btn) => btn.classList.toggle('active', btn.dataset.resultsDivision === RESULTS_DIVISION));
   const divisionLabel = $('#results-division-label');
   if (divisionLabel) divisionLabel.textContent = `${resultsDivision().title || `URBA ${resultsDivision().label.toUpperCase()}`} · TEMPORADA ${state.content.season || ""}`;
-  // La tabla automática es solo de la URBA: con SRA se oculta.
-  const syncPanel = $(".urba-sync-panel");
-  if (syncPanel) syncPanel.hidden = resultsDivision().urba === false;
+
 
   const list = $('#results-list');
   if (list) {
@@ -1510,6 +1509,10 @@ function renderResults() {
 // Misma regla que lib/urba.js: tabla base + resultados de la división.
 // Si la tabla viene de la URBA, se muestra la oficial que mandó el servidor.
 function officialTable(division) {
+  if (division.key === "sra") {
+    const sra = state.content.sraSync;
+    return sra && sra.enabled !== false && sra.rows?.length ? { rows: sra.rows, lastRound: null } : null;
+  }
   const sync = state.content.urbaSync;
   return sync && sync.enabled !== false && Number(sync.season) === Number(state.content.season) && sync.tables?.[division.key]?.rows?.length
     ? sync.tables[division.key]
@@ -5776,7 +5779,33 @@ renderQuizAdmin = function (...args) {
    TABLA OFICIAL DE LA URBA
    ========================================================================== */
 
+function paintSraSync() {
+  const sync = state.content.sraSync;
+  const toggle = $("#urba-sync-enabled");
+  if (toggle) toggle.checked = sync?.enabled !== false;
+  const info = $("#urba-sync-info");
+  const box = $("#urba-sync-status");
+  if (!info || !box) return;
+  info.textContent = sync?.enabled === false
+    ? "Apagada: la tabla se calcula con los resultados cargados acá."
+    : sync?.rows?.length ? "Usando la tabla oficial de la Super Rugby Américas." : "Activa · esperando la primera consulta.";
+  if (!sync?.lastRun) { box.innerHTML = "Todavía no se consultó la SRA. Tocá “Actualizar ahora”."; return; }
+  const when = new Date(sync.lastRun).toLocaleString("es-AR");
+  box.innerHTML = `Última consulta: <b>${esc(when)}</b><br>` + (sync.lastError
+    ? `<span class="pill off">Sin conexión con la SRA</span> ${esc(sync.lastError)} — se mantiene la última tabla guardada.`
+    : `<span class="pill ok">Tabla oficial</span> ${sync.rows.length} equipos · líder: ${esc(sync.rows[0]?.team || "—")} (${esc(sync.rows[0]?.pts ?? 0)} pts)`) +
+    (Object.keys(sync.logos || {}).length ? `<br><small class="muted">${Object.keys(sync.logos).length} escudos tomados de la SRA para equipos sin escudo propio.</small>` : "");
+}
+
 function paintUrbaSync() {
+  const isSra = resultsDivision().key === "sra";
+  const title = $(".urba-sync-panel h3");
+  if (title) title.textContent = isSra ? "Tabla oficial de la Super Rugby Américas" : "Tabla oficial de la URBA";
+  const help = $(".urba-sync-panel .quiz-fields > p.muted");
+  if (help) help.textContent = isSra
+    ? "Con la tabla automática, las posiciones de la Super Rugby Américas se copian solas de superrugbyamericas.com (cada 3 horas y todas las noches), con puntos, bonus y diferencia oficiales. Si la apagás, la tabla se calcula con los resultados que cargues abajo."
+    : "Con la tabla automática, las posiciones del Top 14 y de la Primera A se copian solas de urba.org.ar (cada 3 horas y todas las noches), con puntos, bonus y diferencia oficiales. Mientras la URBA no publique la temporada en curso, quedan las tablas de acá. Si la apagás, la tabla se calcula con los resultados que cargues abajo.";
+  if (isSra) return paintSraSync();
   const sync = state.content.urbaSync;
   const toggle = $("#urba-sync-enabled");
   if (toggle) toggle.checked = sync?.enabled !== false;
@@ -5816,11 +5845,19 @@ function paintUrbaSync() {
 async function runUrbaSync(action, body = {}) {
   const button = $("#urba-sync-now");
   try {
-    if (button) { button.disabled = true; button.textContent = "CONSULTANDO A LA URBA…"; }
+    if (button) { button.disabled = true; button.textContent = action.includes("sra") ? "CONSULTANDO A LA SRA…" : "CONSULTANDO A LA URBA…"; }
     const data = await api(action, body);
     state.content = normalizeContent(data.content);
     renderAll();
-    const sync = state.content.urbaSync;
+    const sync = action.startsWith("save-sra") || action === "sra-sync" ? state.content.sraSync : state.content.urbaSync;
+    if (action.includes("sra")) {
+      toast("Tabla actualizada",
+        sync?.enabled === false ? "Tabla automática apagada."
+          : sync?.lastError ? "No se pudo conectar con la SRA; quedó la última tabla."
+          : "Se copió la tabla oficial de la Super Rugby Américas.",
+        sync?.lastError ? "error" : "ok");
+      return;
+    }
     toast(
       "Tabla actualizada",
       sync?.enabled === false ? "Tabla automática apagada."
@@ -5836,8 +5873,9 @@ async function runUrbaSync(action, body = {}) {
   }
 }
 
-$("#urba-sync-now")?.addEventListener("click", () => runUrbaSync("urba-sync"));
-$("#urba-sync-enabled")?.addEventListener("change", (event) => runUrbaSync("save-urba-sync", { enabled: event.target.checked }));
+const syncIsSra = () => resultsDivision().key === "sra";
+$("#urba-sync-now")?.addEventListener("click", () => runUrbaSync(syncIsSra() ? "sra-sync" : "urba-sync"));
+$("#urba-sync-enabled")?.addEventListener("change", (event) => runUrbaSync(syncIsSra() ? "save-sra-sync" : "save-urba-sync", { enabled: event.target.checked }));
 
 const _renderResultsUrba = renderResults;
 renderResults = function () {
