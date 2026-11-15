@@ -1032,3 +1032,21 @@ html.intro-rain #drop-intro.go { animation: intro-out .5s ease 2.2s forwards; }
 /* Pantalla de inicio con el logo de la competición (URBA / SRA) */
 .rain-logo.rain-logo-comp { display: grid; place-items: center; width: min(58vmin, 320px); aspect-ratio: 1; border-radius: 50%; background: #fff; -webkit-mask-image: none; mask-image: none; box-shadow: 0 0 0 6px rgba(255, 255, 255, .14), 0 24px 60px rgba(0, 0, 0, .55); }
 .rain-logo-comp img { width: 68%; height: 68%; object-fit: contain; }
+
+/* Pantalla de carga solo con logo (URBA, SRA y juegos): sin pelotas */
+html.intro-logo-only .intro-rain-layer { background: radial-gradient(circle at 50% 50%, #1a1d21 0, #020202 62%); }
+html.intro-logo-only .rain-logo:not(.rain-logo-comp) { width: min(50vmin, 320px); }
+html.intro-logo-only #drop-intro.go .rain-logo { animation: rain-logo-in .6s cubic-bezier(.2, 1.3, .4, 1) .15s forwards, logo-pulse .9s ease-in-out .8s 1, rain-logo-out .5s cubic-bezier(.6, 0, .4, 1) 1.75s forwards; }
+html.intro-logo-only #drop-intro.go { animation: intro-out .45s ease 1.95s forwards; }
+.rain-caption { position: absolute; left: 50%; top: calc(50% + min(25vmin, 160px) + 26px); z-index: 2; display: grid; justify-items: center; gap: 6px; transform: translateX(-50%); opacity: 0; color: #fff; text-align: center; white-space: nowrap; }
+.rain-caption span { color: #ff5a60; font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; }
+.rain-caption strong { font-family: var(--display); font-size: clamp(30px, 6vmin, 48px); font-weight: 900; letter-spacing: -.03em; text-transform: uppercase; }
+html.intro-logo-only #drop-intro.go .rain-caption { animation: caption-in .5s cubic-bezier(.2, 1, .3, 1) .45s forwards, caption-out .4s ease 1.7s forwards; }
+@keyframes logo-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.05); } }
+@keyframes caption-in { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes caption-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html.intro-logo-only #drop-intro.go .rain-logo { animation: rain-logo-in .3s ease forwards; }
+  html.intro-logo-only #drop-intro.go .rain-caption { animation: caption-in .3s ease forwards; }
+  html.intro-logo-only #drop-intro.go { animation: intro-out .3s ease .9s forwards; }
+}
